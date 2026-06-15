@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../AppContext';
 import CustomButton from '../component/reusable/CustomButton';
 import { leads as initialLeads, kanbanCols, counselors, statusConfig } from '../mockData';
@@ -6,6 +6,11 @@ import { leads as initialLeads, kanbanCols, counselors, statusConfig } from '../
 const Pipeline = () => {
   const { openAddLeadModal, navTo, showToast } = useAppContext();
   const [leads, setLeads] = useState(initialLeads);
+  const [activeStatus, setActiveStatus] = useState(kanbanCols[0].key);
+
+  const filteredLeads = useMemo(() => {
+    return leads.filter(l => l.status === activeStatus);
+  }, [leads, activeStatus]);
 
   const onDragStart = (e, id) => {
     e.dataTransfer.setData('leadId', id);
@@ -46,72 +51,79 @@ const Pipeline = () => {
         </div>
       </div>
 
-      {/* Kanban Board */}
-      <div className="flex gap-4 overflow-x-auto pb-4 min-h-[calc(100vh-220px)] scrollbar-hide">
+      {/* ── Status Cards as Tabs ── */}
+      <div className="stat-grid" style={{ marginBottom: '24px' }}>
         {kanbanCols.map((col) => {
           const colLeads = leads.filter((l) => l.status === col.key);
+          const isActive = activeStatus === col.key;
           return (
             <div
               key={col.key}
-              className="min-w-[280px] max-w-[280px] bg-gray-100 rounded-xl flex flex-col h-fit"
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={(e) => onDrop(e, col.key)}
+              className={`stat-card ${isActive ? 'blue' : 'gray'}`}
+              onClick={() => setActiveStatus(col.key)}
+              style={{ 
+                cursor: 'pointer',
+                border: isActive ? '2px solid var(--primary)' : '1px solid transparent',
+                transform: isActive ? 'scale(1.02)' : 'scale(1)',
+                transition: 'all 0.2s ease'
+              }}
             >
-              {/* Column Header */}
-              <div className="p-3.5 flex items-center justify-between border-b border-gray-200">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: col.color }}></div>
-                  <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wider">{col.label}</h3>
-                </div>
-                <span className="bg-white border border-gray-200 text-gray-500 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                  {colLeads.length}
-                </span>
+              <div className="stat-label" style={{ color: isActive ? 'var(--primary)' : 'var(--gray-500)' }}>
+                {col.label}
               </div>
-
-              {/* Column Body / Cards */}
-              <div className="p-2 flex flex-col gap-2 overflow-y-auto max-h-[calc(100vh-300px)]">
-                {colLeads.map((lead) => (
-                  <div
-                    key={lead.id}
-                    draggable
-                    onDragStart={(e) => onDragStart(e, lead.id)}
-                    onClick={() => navTo('lead-detail')}
-                    className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 cursor-pointer hover:border-blue-500 transition-all group"
-                  >
-                    <div className="text-sm font-bold text-gray-800 mb-1 group-hover:text-blue-600 transition-colors">
-                      {lead.name}
-                    </div>
-                    <div className="flex items-center gap-1.5 text-[11px] text-gray-500 mb-2">
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07" />
-                      </svg>
-                      {lead.phone}
-                    </div>
-                    <div className="inline-block bg-blue-50 text-blue-600 text-[10px] font-semibold px-2 py-0.5 rounded mb-2">
-                      {lead.course}
-                    </div>
-                    <div className="text-[10px] text-gray-400 mb-3 flex items-center gap-1">
-                      <span>📍 {lead.city}</span>
-                      <span>•</span>
-                      <span>{lead.source}</span>
-                    </div>
-                    <div className="flex items-center justify-between pt-2 border-t border-gray-50">
-                      <div className="flex items-center gap-1.5">
-                        <div 
-                          className="w-5 h-5 rounded-full flex items-center justify-center text-white text-[8px] font-bold"
-                          style={{ backgroundColor: counselors.find(c => c.name === lead.counselor)?.color || '#94A3B8' }}
-                        >
-                          {lead.counselor.split(' ').map(n => n[0]).join('')}
-                        </div>
-                        <span className="text-[10px] text-gray-500 font-medium">{lead.counselor.split(' ')[0]}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+              <div className="stat-value">{colLeads.length}</div>
+              <div className="stat-icon" style={{ background: col.color, opacity: 0.1 }}>
+                <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: col.color }}></div>
               </div>
             </div>
           );
         })}
+      </div>
+
+      {/* ── Leads Table ── */}
+      <div className="card animate-fadeIn">
+        <div className="card-header">
+          <div className="card-title">Leads for {statusConfig[activeStatus]?.label}</div>
+        </div>
+        <div className="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Lead Name</th>
+                <th>Course</th>
+                <th>Counselor</th>
+                <th>Source</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredLeads.length > 0 ? (
+                filteredLeads.map((lead) => (
+                  <tr key={lead.id}>
+                    <td>
+                      <div style={{ fontWeight: 600, color: 'var(--gray-800)' }}>{lead.name}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--gray-400)' }}>{lead.phone}</div>
+                    </td>
+                    <td style={{ color: 'var(--gray-700)' }}>{lead.course}</td>
+                    <td style={{ color: 'var(--gray-700)' }}>{lead.counselor}</td>
+                    <td style={{ color: 'var(--gray-500)', fontSize: '12px' }}>{lead.source}</td>
+                    <td>
+                      <button className="btn btn-ghost btn-sm" onClick={() => navTo('lead-detail')}>
+                        View Details
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="5" style={{ textAlign: 'center', padding: '40px', color: 'var(--gray-400)' }}>
+                    Is category mein koi leads nahi hain.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

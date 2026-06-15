@@ -1,4 +1,4 @@
-import { useAppContext } from '../AppContext';
+import React, { useMemo } from 'react';
 import { leads, counselors, followups, funnelData, statusConfig } from '../mockData';
 import {
   Chart as ChartJS,
@@ -9,6 +9,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import { useAppContext } from '../AppContext';
 import { Bar, Doughnut } from 'react-chartjs-2';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend);
@@ -17,7 +18,7 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Le
 const statCards = [
   {
     color: 'blue',
-    label: 'Total Leads',
+    label: 'Total Leads', // This will be dynamically calculated
     value: '2,847',
     change: '+12.5% this month',
     changeColor: 'var(--success)',
@@ -33,7 +34,7 @@ const statCards = [
     ),
   },
   {
-    color: 'green',
+    color: 'green', // This will be dynamically calculated
     label: 'Connected',
     value: '1,624',
     change: '+8.2% this month',
@@ -47,7 +48,7 @@ const statCards = [
     ),
   },
   {
-    color: 'orange',
+    color: 'orange', // This will be dynamically calculated
     label: 'Hot Leads',
     value: '387',
     change: '+24.1% this month',
@@ -62,7 +63,7 @@ const statCards = [
     ),
   },
   {
-    color: 'gray',
+    color: 'gray', // This will be dynamically calculated
     label: 'Cold Leads',
     value: '512',
     change: '-3.8% this month',
@@ -76,7 +77,7 @@ const statCards = [
     ),
   },
   {
-    color: 'green',
+    color: 'green', // This will be dynamically calculated
     label: 'Registrations',
     value: '342',
     change: '+18.6% this month',
@@ -90,7 +91,7 @@ const statCards = [
     ),
   },
   {
-    color: 'red',
+    color: 'red', // This will be dynamically calculated
     label: 'Bad Leads',
     value: '147',
     change: '+2.1% this month',
@@ -103,6 +104,78 @@ const statCards = [
         <line x1="15" y1="9" x2="9" y2="15"/>
         <line x1="9" y1="9" x2="15" y2="15"/>
       </svg>
+    ),
+  },
+  {
+    color: 'purple',
+    label: 'Not Connected',
+    value: '0', // Dynamic
+    change: '+5.0% this month',
+    changeColor: 'var(--primary)',
+    up: true,
+    iconBg: '#EDE9FE',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2">
+        <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
+        <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+      </svg>
+    ),
+  },
+  {
+    color: 'blue',
+    label: 'Interested Leads',
+    value: '0', // Dynamic
+    change: '+10.0% this month',
+    changeColor: 'var(--primary)',
+    up: true,
+    iconBg: '#DBEAFE',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2">
+        <path d="M17 14V2H7v12l5 5 5-5z"/>
+        <path d="M9 18l-6 6"/>
+        <path d="M15 18l6 6"/>
+      </svg>
+    ),
+  },
+  {
+    color: 'red',
+    label: 'Not Interested',
+    value: '0', // Dynamic
+    change: '-2.5% this month',
+    changeColor: 'var(--danger)',
+    up: false,
+    iconBg: '#FEE2E2',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="8" y1="12" x2="16" y2="12"/>
+      </svg>
+    ),
+  },
+  {
+    color: 'gray',
+    label: 'Not Registered Yet',
+    value: '0', // Dynamic
+    change: '+1.0% this month',
+    changeColor: 'var(--gray-500)',
+    up: true,
+    iconBg: 'var(--gray-100)',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gray-500)" strokeWidth="2">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+    ),
+  },
+  {
+    color: 'orange',
+    label: 'Total Follow-ups',
+    value: '0', // Dynamic
+    change: '+7.0% this month',
+    changeColor: 'var(--warning)',
+    up: true,
+    iconBg: '#FFF7ED',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EA580C" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01"/></svg>
     ),
   },
 ];
@@ -178,7 +251,39 @@ const recentLeads = leads.slice(0, 20);
 const todayFollowups = followups.filter((f) => f.status === 'today');
 
 const Dashboard = () => {
-  const { openAddLeadModal, navTo } = useAppContext();
+  const { openAddLeadModal, navTo } = useAppContext(); // Assuming useAppContext is defined elsewhere
+
+  // Calculate dynamic values for stat cards
+  const calculatedStatCards = useMemo(() => {
+    const totalLeads = leads.length;
+    const connectedLeads = leads.filter(l => l.status === 'connected').length;
+    const hotLeads = leads.filter(l => l.status === 'hot').length;
+    const coldLeads = leads.filter(l => l.status === 'cold').length;
+    const registeredLeads = leads.filter(l => l.status === 'registered').length;
+    const badLeads = leads.filter(l => l.status === 'bad').length;
+    const interestedLeads = leads.filter(l => l.status === 'interested').length;
+    const notInterestedLeads = leads.filter(l => l.status === 'notinterested').length;
+    const notConnectedLeads = leads.filter(l => l.status !== 'connected').length;
+    const notRegisteredYetLeads = totalLeads - registeredLeads;
+    const totalFollowups = followups.length;
+
+    return statCards.map(card => {
+      switch (card.label) {
+        case 'Total Leads': return { ...card, value: totalLeads.toLocaleString() };
+        case 'Connected': return { ...card, value: connectedLeads.toLocaleString() };
+        case 'Hot Leads': return { ...card, value: hotLeads.toLocaleString() };
+        case 'Cold Leads': return { ...card, value: coldLeads.toLocaleString() };
+        case 'Registrations': return { ...card, value: registeredLeads.toLocaleString() };
+        case 'Bad Leads': return { ...card, value: badLeads.toLocaleString() };
+        case 'Not Connected': return { ...card, value: notConnectedLeads.toLocaleString() };
+        case 'Interested Leads': return { ...card, value: interestedLeads.toLocaleString() };
+        case 'Not Interested': return { ...card, value: notInterestedLeads.toLocaleString() };
+        case 'Not Registered Yet': return { ...card, value: notRegisteredYetLeads.toLocaleString() };
+        case 'Total Follow-ups': return { ...card, value: totalFollowups.toLocaleString() };
+        default: return card;
+      }
+    });
+  }, [leads, followups]);
 
   return (
     <div>
@@ -214,7 +319,7 @@ const Dashboard = () => {
 
       {/* ── Stat Cards ── */}
       <div className="stat-grid">
-        {statCards.map((card) => (
+        {calculatedStatCards.map((card) => (
           <div key={card.label} className={`stat-card ${card.color}`}>
             <div className="stat-label">{card.label}</div>
             <div className="stat-value">{card.value}</div>

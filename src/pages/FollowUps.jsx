@@ -7,32 +7,32 @@ const FollowUps = () => {
   const [activeTab, setActiveTab] = useState('fu-today');
 
   return (
-    <div className="page active" id="page-followups">
-      <div className="page-header">
-        <div className="page-header-left">
+    <div className="block" id="page-followups">
+      <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
+        <div>
           <h1 className="text-xl font-bold text-gray-900">Follow-up Management</h1>
           <p className="text-sm text-gray-500 mt-1">Track and manage all scheduled follow-ups</p>
         </div>
-        <CustomButton variant="primary" onClick={openAddLeadModal} className="btn-sm">
+        <CustomButton variant="primary" onClick={openAddLeadModal} className="text-xs py-1.5 px-3">
           + Schedule Follow-up
         </CustomButton>
       </div>
 
-      <div className="tabs">
+      <div className="flex gap-1 bg-gray-100 p-1 rounded-lg mb-5 w-fit">
         <div
-          className={`tab ${activeTab === 'fu-today' ? 'active' : ''}`}
+          className={`px-4 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-all duration-150 ${activeTab === 'fu-today' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
           onClick={() => setActiveTab('fu-today')}
         >
           Today (12)
         </div>
         <div
-          className={`tab ${activeTab === 'fu-upcoming' ? 'active' : ''}`}
+          className={`px-4 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-all duration-150 ${activeTab === 'fu-upcoming' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
           onClick={() => setActiveTab('fu-upcoming')}
         >
           Upcoming (47)
         </div>
         <div
-          className={`tab ${activeTab === 'fu-missed' ? 'active' : ''}`}
+          className={`px-4 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-all duration-150 ${activeTab === 'fu-missed' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
           onClick={() => setActiveTab('fu-missed')}
         >
           Missed (8)
@@ -40,18 +40,18 @@ const FollowUps = () => {
       </div>
 
       {activeTab === 'fu-today' && (
-        <div id="fu-today" className="tab-pane">
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '10px' }} id="followup-today-list">
+        <div id="fu-today">
+          <div className="grid grid-cols-1 gap-2.5" id="followup-today-list">
             {/* Content for today's follow-ups will go here */}
           </div>
         </div>
       )}
 
       {activeTab === 'fu-upcoming' && (
-        <div id="fu-upcoming" className="tab-pane">
-          <div className="card">
-            <div style={{ padding: '20px' }}>
-              <div className="calendar-grid" id="calendar-grid"></div>
+        <div id="fu-upcoming">
+          <div className="bg-white border border-gray-200 rounded-xl shadow-sm">
+            <div className="p-5">
+              <div className="grid grid-cols-7 gap-1" id="calendar-grid"></div>
             </div>
           </div>
         </div>

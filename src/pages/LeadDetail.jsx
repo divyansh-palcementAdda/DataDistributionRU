@@ -10,7 +10,7 @@ const LeadDetail = () => {
       {/* Page Header */}
       <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
         <div className="flex items-center gap-3">
-          <button 
+          <button
             className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
             onClick={() => navTo('leads')}
           >
@@ -110,7 +110,7 @@ const LeadDetail = () => {
           {/* Remarks */}
           <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
             <h3 className="text-sm font-bold text-gray-800 mb-3">Remarks & Notes</h3>
-            <textarea 
+            <textarea
               className="w-full p-3 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
               rows="3"
               defaultValue="Lead is very interested in Full Stack. Has budget clarity. Needs EMI option info. Decision maker herself. Likely to register by end of June."
@@ -132,7 +132,7 @@ const LeadDetail = () => {
               <span className="absolute text-xl font-black text-orange-600">87</span>
             </div>
             <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Lead Score</div>
-            
+
             <div className="space-y-3 px-1">
               {[
                 { label: 'Engagement', val: 90, color: 'bg-green-500' },

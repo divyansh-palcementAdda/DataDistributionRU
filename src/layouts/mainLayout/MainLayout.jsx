@@ -2,7 +2,7 @@ import { Outlet } from "react-router-dom";
 import { useAppContext } from "../../AppContext";
 import Sidebar from "../../pages/Sidebar";
 import Header from "../../pages/Header";
-import AddLeadModal from "../../pages/AddLeadModal";
+import AddLeadModal from "../../component/reusable/AddLeadModal";
 
 const MainLayout = () => {
   const { isDarkMode, isAddLeadModalOpen } = useAppContext();

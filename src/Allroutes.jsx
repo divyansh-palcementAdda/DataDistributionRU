@@ -21,6 +21,7 @@ import Counselors from "./pages/Counselors";
 import Reports from "./pages/Reports";
 import Courses from "./pages/Courses";
 import Settings from "./pages/Settings";
+import Leadsourse from "./pages/LeadSource"
 
 const Allroutes = () => {
   return (
@@ -45,6 +46,8 @@ const Allroutes = () => {
         <Route path="/reports" element={<Reports />} />
         <Route path="/courses" element={<Courses />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/lead-source" element={<Leadsourse />} />
+
       </Route>
 
       {/* Fallback */}

@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import CustomInput from '../component/reusable/CustomInput';
-import CustomButton from '../component/reusable/CustomButton';
-import { useAppContext } from '../AppContext';
+import CustomInput from './CustomInput';
+import CustomButton from './CustomButton';
+import { useAppContext } from '../../AppContext';
 
 const AddLeadModal = () => {
   const { isAddLeadModalOpen, closeAddLeadModal, showToast } = useAppContext();
@@ -34,7 +34,7 @@ const AddLeadModal = () => {
         <div className="modal-header">
           <div className="modal-title">Add New Lead</div>
           <CustomButton variant="ghost" className="btn-icon" onClick={closeAddLeadModal}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
           </CustomButton>
         </div>
         <div className="modal-body">

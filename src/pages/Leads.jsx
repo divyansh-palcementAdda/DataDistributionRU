@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { leads, statusConfig } from '../mockData';
 import { useAppContext } from '../AppContext';
+import ReusableTable from '../component/reusable/table';
 
 const PAGE_SIZE = 20;
 
@@ -205,102 +206,52 @@ const Leads = () => {
       {/* ── Table Card ── */}
       <div className="card">
         <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>
-                  <input
-                    type="checkbox"
-                    checked={allChecked}
-                    onChange={toggleAll}
-                    aria-label="Select all leads on this page"
-                  />
-                </th>
-                <th>Lead</th>
-                <th>Course</th>
-                <th>Source</th>
-                <th>Status</th>
-                <th>Counselor</th>
-                <th>Follow-up</th>
-                <th>Score</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginated.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={9}
-                    style={{
-                      textAlign: 'center',
-                      padding: '32px',
-                      color: 'var(--gray-400)',
-                      fontSize: '13px',
-                    }}
-                  >
-                    No leads match your filters.
-                  </td>
-                </tr>
-              ) : (
-                paginated.map((lead) => {
-                  const sc = statusConfig[lead.status];
-                  return (
-                    <tr key={lead.id}>
-                      <td>
-                        <input
-                          type="checkbox"
-                          checked={selectedIds.includes(lead.id)}
-                          onChange={() => toggleOne(lead.id)}
-                          aria-label={`Select ${lead.name}`}
-                        />
-                      </td>
-                      <td>
-                        <div style={{ fontWeight: 600, color: 'var(--gray-800)' }}>
-                          {lead.name}
-                        </div>
-                        <div style={{ fontSize: '11px', color: 'var(--gray-400)' }}>
-                          {lead.phone}
-                        </div>
-                      </td>
-                      <td style={{ color: 'var(--gray-700)' }}>{lead.course}</td>
-                      <td style={{ color: 'var(--gray-500)', fontSize: '12px' }}>
-                        {lead.source}
-                      </td>
-                      <td>
-                        <span className={`badge ${sc?.cls}`}>{sc?.label}</span>
-                      </td>
-                      <td style={{ color: 'var(--gray-700)' }}>{lead.counselor}</td>
-                      <td style={{ color: 'var(--gray-500)', fontSize: '12px' }}>
-                        {lead.followup}
-                      </td>
-                      <td>
-                        <span
-                          style={{
-                            fontSize: '11px',
-                            fontWeight: 600,
-                            padding: '2px 8px',
-                            borderRadius: '20px',
-                            ...scoreBg(lead.score),
-                          }}
-                        >
-                          {lead.score}
-                        </span>
-                      </td>
-                      <td>
-                        <button
-                          className="btn btn-ghost btn-sm"
-                          style={{ fontSize: '12px' }}
-                          onClick={() => navTo('lead-detail')}
-                        >
-                          View
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+  <ReusableTable
+    columns={[
+      {
+        key: 'lead',
+        header: 'Lead',
+        render: (value, row) => (
+          <div>
+            <div style={{ fontWeight: 600, color: 'var(--gray-800)' }}>{row.name}</div>
+            <div style={{ fontSize: '11px', color: 'var(--gray-400)' }}>{row.phone}</div>
+          </div>
+        ),
+      },
+      { key: 'course', header: 'Course' },
+      { key: 'source', header: 'Source' },
+      {
+        key: 'status',
+        header: 'Status',
+        render: (value, row) => {
+          const sc = statusConfig[row.status];
+          return <span className={`badge ${sc?.cls}`}>{sc?.label}</span>;
+        },
+      },
+      { key: 'counselor', header: 'Counselor' },
+      { key: 'followup', header: 'Follow-up' },
+      {
+        key: 'score',
+        header: 'Score',
+        render: (value, row) => (
+          <span style={scoreBg(row.score)}>{row.score}</span>
+        ),
+      },
+    ]}
+    data={paginated}
+    actions={(row) => (
+      <button
+        className="btn btn-ghost btn-sm"
+        style={{ fontSize: '12px' }}
+        onClick={() => navTo('lead-detail')}
+      >
+        View
+      </button>
+    )}
+    emptyMessage="No leads match your filters."
+  />
+</div>
+
         </div>
 
         {/* ── Pagination ── */}
@@ -347,7 +298,8 @@ const Leads = () => {
             </button>
           </div>
         </div>
-      </div>
+      
+
     </div>
   );
 };

@@ -35,7 +35,8 @@ const Login = () => {
         // Success
         setLoading(false);
         toast.success("Login successful!");
-        // Assuming you might want to store token here, e.g., localStorage.setItem('token', response.data.token);
+        localStorage.setItem('accessToken', response.data.data.accessToken);
+        localStorage.setItem('refreshToken', response.data.data.refreshToken);
         navigate("/dashboard");
       } else {
         // Error handling

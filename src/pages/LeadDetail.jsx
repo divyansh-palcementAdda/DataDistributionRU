@@ -1,9 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAppContext } from '../AppContext';
 import CustomButton from '../component/reusable/CustomButton';
+import LeadRemarkModal from '../component/reusable/LeadRemarkModal';
 
 const LeadDetail = () => {
   const { navTo, showToast, openAddLeadModal } = useAppContext();
+  const [isRemarkModalOpen, setIsRemarkModalOpen] = useState(false);
+  
+  const mockLead = { name: 'Priya Kumar', phone: '+91 98765 43210', course: 'Full Stack Dev', remark: 'Lead is very interested in Full Stack. Has budget clarity. Needs EMI option info. Decision maker herself. Likely to register by end of June.' };
+
 
   return (
     <div className="block" id="page-lead-detail">
@@ -109,15 +114,15 @@ const LeadDetail = () => {
 
           {/* Remarks */}
           <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-            <h3 className="text-sm font-bold text-gray-800 mb-3">Remarks & Notes</h3>
-            <textarea
-              className="w-full p-3 text-xs border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-              rows="3"
-              defaultValue="Lead is very interested in Full Stack. Has budget clarity. Needs EMI option info. Decision maker herself. Likely to register by end of June."
-            />
-            <CustomButton variant="primary" className="mt-3 text-xs py-1.5 px-4" onClick={() => showToast('Remark saved')}>
-              Save Remark
-            </CustomButton>
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-sm font-bold text-gray-800">Remarks & Notes</h3>
+              <CustomButton variant="secondary" className="text-[10px] py-1 px-2" onClick={() => setIsRemarkModalOpen(true)}>
+                Edit Remark
+              </CustomButton>
+            </div>
+            <div className="p-3 text-xs border border-gray-200 rounded-lg bg-gray-50 text-gray-700">
+              Lead is very interested in Full Stack. Has budget clarity. Needs EMI option info. Decision maker herself. Likely to register by end of June.
+            </div>
           </div>
         </div>
 
@@ -184,6 +189,13 @@ const LeadDetail = () => {
           </div>
         </div>
       </div>
+
+      <LeadRemarkModal
+        isOpen={isRemarkModalOpen}
+        onClose={() => setIsRemarkModalOpen(false)}
+        lead={mockLead}
+        onSave={(lead, remark) => showToast('Remark saved')}
+      />
     </div>
   );
 };

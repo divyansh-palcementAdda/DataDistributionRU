@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { login } from "../../Services/auth/login";
+import { toast } from "react-toastify";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -17,14 +19,36 @@ const Login = () => {
     e.preventDefault();
     if (!form.email || !form.password) {
       setError("Please fill in all fields.");
+      toast.warning("Please fill in all fields.");
       return;
     }
     setLoading(true);
-    // TODO: connect real API
-    setTimeout(() => {
+
+    try {
+      const payload = {
+        emailOrUsername: form.email,
+        password: form.password,
+      };
+      const response = await login(payload);
+
+      if (response && response.status === 200) {
+        // Success
+        setLoading(false);
+        toast.success("Login successful!");
+        // Assuming you might want to store token here, e.g., localStorage.setItem('token', response.data.token);
+        navigate("/dashboard");
+      } else {
+        // Error handling
+        setLoading(false);
+        const errMsg = response?.response?.data?.message || response?.message || "Login failed. Please try again.";
+        setError(errMsg);
+        toast.error(errMsg);
+      }
+    } catch (err) {
       setLoading(false);
-      navigate("/dashboard");
-    }, 1200);
+      setError("An error occurred during login.");
+      toast.error("An error occurred during login.");
+    }
   };
 
   return (

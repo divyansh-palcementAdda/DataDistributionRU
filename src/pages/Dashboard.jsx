@@ -11,6 +11,7 @@ import {
 } from 'chart.js';
 import { useAppContext } from '../AppContext';
 import { Bar, Doughnut } from 'react-chartjs-2';
+import ReusableTable from '../component/reusable/table';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend);
 
@@ -18,8 +19,8 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Le
 const statCards = [
   {
     color: 'blue',
-    label: 'Total Leads', // This will be dynamically calculated
-    value: '2,847',
+    label: 'RAW Data',
+    value: '0',
     change: '+12.5% this month',
     changeColor: 'var(--success)',
     up: true,
@@ -27,155 +28,142 @@ const statCards = [
     iconStroke: 'var(--primary)',
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2">
-        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
-        <circle cx="9" cy="7" r="4"/>
-        <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
-      </svg>
-    ),
-  },
-  {
-    color: 'green', // This will be dynamically calculated
-    label: 'Connected',
-    value: '1,624',
-    change: '+8.2% this month',
-    changeColor: 'var(--success)',
-    up: true,
-    iconBg: 'var(--success-light)',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2">
-        <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 8.9"/>
-      </svg>
-    ),
-  },
-  {
-    color: 'orange', // This will be dynamically calculated
-    label: 'Hot Leads',
-    value: '387',
-    change: '+24.1% this month',
-    changeColor: 'var(--warning)',
-    up: true,
-    iconBg: '#FFF7ED',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EA580C" strokeWidth="2">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/>
-        <path d="M12 8v4l3 3"/>
-      </svg>
-    ),
-  },
-  {
-    color: 'gray', // This will be dynamically calculated
-    label: 'Cold Leads',
-    value: '512',
-    change: '-3.8% this month',
-    changeColor: 'var(--danger)',
-    up: false,
-    iconBg: 'var(--gray-100)',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gray-500)" strokeWidth="2">
-        <path d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-      </svg>
-    ),
-  },
-  {
-    color: 'green', // This will be dynamically calculated
-    label: 'Registrations',
-    value: '342',
-    change: '+18.6% this month',
-    changeColor: 'var(--success)',
-    up: true,
-    iconBg: 'var(--success-light)',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2">
-        <polyline points="20 6 9 17 4 12"/>
-      </svg>
-    ),
-  },
-  {
-    color: 'red', // This will be dynamically calculated
-    label: 'Bad Leads',
-    value: '147',
-    change: '+2.1% this month',
-    changeColor: 'var(--danger)',
-    up: false,
-    iconBg: 'var(--danger-light)',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2">
-        <circle cx="12" cy="12" r="10"/>
-        <line x1="15" y1="9" x2="9" y2="15"/>
-        <line x1="9" y1="9" x2="15" y2="15"/>
-      </svg>
-    ),
-  },
-  {
-    color: 'purple',
-    label: 'Not Connected',
-    value: '0', // Dynamic
-    change: '+5.0% this month',
-    changeColor: 'var(--primary)',
-    up: true,
-    iconBg: '#EDE9FE',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" strokeWidth="2">
-        <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/>
-        <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
       </svg>
     ),
   },
   {
     color: 'blue',
-    label: 'Interested Leads',
-    value: '0', // Dynamic
-    change: '+10.0% this month',
+    label: 'Connected',
+    value: '0',
+    change: '+8.2% this month',
+    changeColor: 'var(--success)',
+    up: true,
+    iconBg: 'var(--primary-light)',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2">
+        <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 8.9" />
+      </svg>
+    ),
+  },
+  {
+    color: 'gray',
+    label: 'Not Connected',
+    value: '0',
+    change: '+5.0% this month',
     changeColor: 'var(--primary)',
     up: true,
-    iconBg: '#DBEAFE',
+    iconBg: 'var(--gray-100)',
     icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2">
-        <path d="M17 14V2H7v12l5 5 5-5z"/>
-        <path d="M9 18l-6 6"/>
-        <path d="M15 18l6 6"/>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gray-500)" strokeWidth="2">
+        <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+        <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
+      </svg>
+    ),
+  },
+  {
+    color: 'green',
+    label: 'Interested',
+    value: '0',
+    change: '+10.0% this month',
+    changeColor: 'var(--success)',
+    up: true,
+    iconBg: 'var(--success-light)',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2">
+        <path d="M17 14V2H7v12l5 5 5-5z" />
+        <path d="M9 18l-6 6" />
+        <path d="M15 18l6 6" />
       </svg>
     ),
   },
   {
     color: 'red',
     label: 'Not Interested',
-    value: '0', // Dynamic
+    value: '0',
     change: '-2.5% this month',
     changeColor: 'var(--danger)',
     up: false,
-    iconBg: '#FEE2E2',
+    iconBg: 'var(--danger-light)',
     icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2">
-        <circle cx="12" cy="12" r="10"/>
-        <line x1="8" y1="12" x2="16" y2="12"/>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="8" y1="12" x2="16" y2="12" />
       </svg>
     ),
   },
   {
-    color: 'gray',
-    label: 'Not Registered Yet',
-    value: '0', // Dynamic
-    change: '+1.0% this month',
-    changeColor: 'var(--gray-500)',
+    color: 'orange',
+    label: 'Interested in Another Course',
+    value: '0',
+    change: '+2.0% this month',
+    changeColor: 'var(--warning)',
     up: true,
-    iconBg: 'var(--gray-100)',
+    iconBg: '#FFF7ED',
     icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gray-500)" strokeWidth="2">
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EA580C" strokeWidth="2">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
+        <path d="M12 8v4l3 3" />
+      </svg>
+    ),
+  },
+  {
+    color: 'green',
+    label: 'Registered',
+    value: '0',
+    change: '+18.6% this month',
+    changeColor: 'var(--success)',
+    up: true,
+    iconBg: 'var(--success-light)',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2">
+        <polyline points="20 6 9 17 4 12" />
+      </svg>
+    ),
+  },
+  {
+    color: 'red',
+    label: 'Bad Data',
+    value: '0',
+    change: '+2.1% this month',
+    changeColor: 'var(--danger)',
+    up: false,
+    iconBg: 'var(--danger-light)',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="15" y1="9" x2="9" y2="15" />
+        <line x1="9" y1="9" x2="15" y2="15" />
+      </svg>
+    ),
+  },
+  {
+    color: 'red',
+    label: 'Finally Not Connected',
+    value: '0',
+    change: '+1.5% this month',
+    changeColor: 'var(--danger)',
+    up: false,
+    iconBg: 'var(--danger-light)',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2">
+        <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+        <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
       </svg>
     ),
   },
   {
     color: 'orange',
     label: 'Total Follow-ups',
-    value: '0', // Dynamic
+    value: '0',
     change: '+7.0% this month',
     changeColor: 'var(--warning)',
     up: true,
     iconBg: '#FFF7ED',
     icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EA580C" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01"/></svg>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EA580C" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /><path d="M8 14h.01M12 14h.01M16 14h.01" /></svg>
     ),
   },
 ];
@@ -183,12 +171,12 @@ const statCards = [
 /* ── Arrow icons ── */
 const ArrowUp = () => (
   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-    <polyline points="18 15 12 9 6 15"/>
+    <polyline points="18 15 12 9 6 15" />
   </svg>
 );
 const ArrowDown = () => (
   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-    <polyline points="6 9 12 15 18 9"/>
+    <polyline points="6 9 12 15 18 9" />
   </svg>
 );
 
@@ -253,32 +241,29 @@ const todayFollowups = followups.filter((f) => f.status === 'today');
 const Dashboard = () => {
   const { openAddLeadModal, navTo } = useAppContext(); // Assuming useAppContext is defined elsewhere
 
-  // Calculate dynamic values for stat cards
   const calculatedStatCards = useMemo(() => {
-    const totalLeads = leads.length;
+    const rawData = leads.length;
     const connectedLeads = leads.filter(l => l.status === 'connected').length;
-    const hotLeads = leads.filter(l => l.status === 'hot').length;
-    const coldLeads = leads.filter(l => l.status === 'cold').length;
-    const registeredLeads = leads.filter(l => l.status === 'registered').length;
-    const badLeads = leads.filter(l => l.status === 'bad').length;
+    const notConnectedLeads = leads.filter(l => l.status === 'notconnected').length;
     const interestedLeads = leads.filter(l => l.status === 'interested').length;
     const notInterestedLeads = leads.filter(l => l.status === 'notinterested').length;
-    const notConnectedLeads = leads.filter(l => l.status !== 'connected').length;
-    const notRegisteredYetLeads = totalLeads - registeredLeads;
+    const interestedAnotherCourse = leads.filter(l => l.status === 'interestedanother').length;
+    const registeredLeads = leads.filter(l => l.status === 'registered').length;
+    const badData = leads.filter(l => l.status === 'bad' || l.status === 'baddata').length;
+    const finallyNotConnected = leads.filter(l => l.status === 'finallynotconnected').length;
     const totalFollowups = followups.length;
 
     return statCards.map(card => {
       switch (card.label) {
-        case 'Total Leads': return { ...card, value: totalLeads.toLocaleString() };
+        case 'RAW Data': return { ...card, value: rawData.toLocaleString() };
         case 'Connected': return { ...card, value: connectedLeads.toLocaleString() };
-        case 'Hot Leads': return { ...card, value: hotLeads.toLocaleString() };
-        case 'Cold Leads': return { ...card, value: coldLeads.toLocaleString() };
-        case 'Registrations': return { ...card, value: registeredLeads.toLocaleString() };
-        case 'Bad Leads': return { ...card, value: badLeads.toLocaleString() };
         case 'Not Connected': return { ...card, value: notConnectedLeads.toLocaleString() };
-        case 'Interested Leads': return { ...card, value: interestedLeads.toLocaleString() };
+        case 'Interested': return { ...card, value: interestedLeads.toLocaleString() };
         case 'Not Interested': return { ...card, value: notInterestedLeads.toLocaleString() };
-        case 'Not Registered Yet': return { ...card, value: notRegisteredYetLeads.toLocaleString() };
+        case 'Interested in Another Course': return { ...card, value: interestedAnotherCourse.toLocaleString() };
+        case 'Registered': return { ...card, value: registeredLeads.toLocaleString() };
+        case 'Bad Data': return { ...card, value: badData.toLocaleString() };
+        case 'Finally Not Connected': return { ...card, value: finallyNotConnected.toLocaleString() };
         case 'Total Follow-ups': return { ...card, value: totalFollowups.toLocaleString() };
         default: return card;
       }
@@ -298,8 +283,8 @@ const Dashboard = () => {
         <div style={{ display: 'flex', gap: '8px' }}>
           <button className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="3" y="4" width="18" height="18" rx="2"/>
-              <path d="M16 2v4M8 2v4M3 10h18"/>
+              <rect x="3" y="4" width="18" height="18" rx="2" />
+              <path d="M16 2v4M8 2v4M3 10h18" />
             </svg>
             Jun 2025
           </button>
@@ -309,8 +294,8 @@ const Dashboard = () => {
             onClick={openAddLeadModal}
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="12" y1="5" x2="12" y2="19"/>
-              <line x1="5" y1="12" x2="19" y2="12"/>
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
             </svg>
             Add Lead
           </button>
@@ -455,48 +440,53 @@ const Dashboard = () => {
           </button>
         </div>
         <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Lead Name</th>
-                <th>Status</th>
-                <th>Course</th>
-                <th>Counselor</th>
-                <th>Last Activity</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentLeads.map((lead) => {
-                const sc = statusConfig[lead.status];
-                return (
-                  <tr key={lead.id}>
-                    <td>
-                      <div style={{ fontWeight: 600, color: 'var(--gray-800)' }}>{lead.name}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--gray-400)' }}>{lead.phone}</div>
-                    </td>
-                    <td>
-                      <span className={`badge ${sc?.cls}`}>{sc?.label}</span>
-                    </td>
-                    <td style={{ color: 'var(--gray-700)' }}>{lead.course}</td>
-                    <td style={{ color: 'var(--gray-700)' }}>{lead.counselor}</td>
-                    <td style={{ color: 'var(--gray-500)', fontSize: '12px' }}>
-                      Follow-up: {lead.followup}
-                    </td>
-                    <td>
-                      <button
-                        className="btn btn-ghost btn-sm"
-                        style={{ fontSize: '12px' }}
-                        onClick={() => navTo('lead-detail')}
-                      >
-                        View
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <ReusableTable
+            data={recentLeads}
+            columns={[
+              {
+                key: 'name',
+                header: 'Lead Name',
+                render: (_, row) => (
+                  <div>
+                    <div style={{ fontWeight: 600, color: 'var(--gray-800)' }}>{row.name}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--gray-400)' }}>{row.phone}</div>
+                  </div>
+                ),
+              },
+              {
+                key: 'status',
+                header: 'Status',
+                render: (_, row) => {
+                  const sc = statusConfig[row.status];
+                  return <span className={`badge ${sc?.cls}`}>{sc?.label}</span>;
+                },
+              },
+              {
+                key: 'course',
+                header: 'Course',
+                render: (val) => <span style={{ color: 'var(--gray-700)' }}>{val}</span>,
+              },
+              {
+                key: 'counselor',
+                header: 'Counselor',
+                render: (val) => <span style={{ color: 'var(--gray-700)' }}>{val}</span>,
+              },
+              {
+                key: 'followup',
+                header: 'Last Activity',
+                render: (val) => <span style={{ color: 'var(--gray-500)', fontSize: '12px' }}>Follow-up: {val}</span>,
+              },
+            ]}
+            actions={() => (
+              <button
+                className="btn btn-ghost btn-sm"
+                style={{ fontSize: '12px' }}
+                onClick={() => navTo('lead-detail')}
+              >
+                View
+              </button>
+            )}
+          />
         </div>
       </div>
     </div>

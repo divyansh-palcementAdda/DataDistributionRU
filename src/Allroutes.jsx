@@ -21,7 +21,11 @@ import Counselors from "./pages/Counselors";
 import Reports from "./pages/Reports";
 import Courses from "./pages/Courses";
 import Settings from "./pages/Settings";
-import Leadsourse from "./pages/LeadSource"
+import Leadsourse from "./pages/LeadSource";
+
+// Reusable Components / Standalone Pages
+import StudentForm from "./component/reusable/studentForm";
+import QRCodePage from "./component/reusable/qrCode";
 
 const Allroutes = () => {
   return (
@@ -49,6 +53,10 @@ const Allroutes = () => {
         <Route path="/lead-source" element={<Leadsourse />} />
 
       </Route>
+
+      {/* Standalone Route for Student Form from QR */}
+      <Route path="/student-form" element={<StudentForm />} />
+      <Route path="/qr-code" element={<QRCodePage />} />
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />

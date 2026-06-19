@@ -2,9 +2,9 @@ import { useState, useMemo } from 'react';
 import { leads, statusConfig } from '../mockData';
 import { useAppContext } from '../AppContext';
 import ReusableTable from '../component/reusable/table';
+import LeadRemarkModal from '../component/reusable/LeadRemarkModal';
 
 
-const PAGE_SIZE = 20;
 
 const STATUSES = [
     { value: '', label: 'All Status' },
@@ -36,7 +36,24 @@ const Leadsource = () => {
     const [filterCounselor, setFilterCounselor] = useState('All Counselors');
     const [filterCourse, setFilterCourse] = useState('All Courses');
     const [selectedIds, setSelectedIds] = useState([]);
-    const [page, setPage] = useState(1);
+    
+    const [isRemarkModalOpen, setIsRemarkModalOpen] = useState(false);
+    const [selectedLeadForRemark, setSelectedLeadForRemark] = useState(null);
+
+    const openRemarkModal = (lead) => {
+        setSelectedLeadForRemark(lead);
+        setIsRemarkModalOpen(true);
+    };
+
+    const closeRemarkModal = () => {
+        setIsRemarkModalOpen(false);
+        setSelectedLeadForRemark(null);
+    };
+
+    const handleSaveRemark = (lead, remark) => {
+        console.log('Saved remark for', lead.name, ':', remark);
+    };
+
 
     /* ── Filtered leads ── */
     const filtered = useMemo(() => {
@@ -55,29 +72,11 @@ const Leadsource = () => {
         });
     }, [search, filterStatus, filterCounselor, filterCourse]);
 
-    const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-    const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
-    /* ── Select all on current page ── */
-    const allChecked =
-        paginated.length > 0 && paginated.every((l) => selectedIds.includes(l.id));
-
-    const toggleAll = () => {
-        const pageIds = paginated.map((l) => l.id);
-        if (allChecked) {
-            setSelectedIds((prev) => prev.filter((id) => !pageIds.includes(id)));
-        } else {
-            setSelectedIds((prev) => [...new Set([...prev, ...pageIds])]);
-        }
-    };
-
     const toggleOne = (id) => {
         setSelectedIds((prev) =>
             prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
         );
     };
-
-    const resetPage = () => setPage(1);
 
     return (
         <div>
@@ -150,13 +149,13 @@ const Leadsource = () => {
                     placeholder="Search leads…"
                     style={{ maxWidth: '240px' }}
                     value={search}
-                    onChange={(e) => { setSearch(e.target.value); resetPage(); }}
+                    onChange={(e) => { setSearch(e.target.value); }}
                 />
                 <select
                     className="form-control"
                     style={{ maxWidth: '140px' }}
                     value={filterStatus}
-                    onChange={(e) => { setFilterStatus(e.target.value); resetPage(); }}
+                    onChange={(e) => { setFilterStatus(e.target.value); }}
                 >
                     {STATUSES.map((s) => (
                         <option key={s.value} value={s.value}>
@@ -168,7 +167,7 @@ const Leadsource = () => {
                     className="form-control"
                     style={{ maxWidth: '160px' }}
                     value={filterCounselor}
-                    onChange={(e) => { setFilterCounselor(e.target.value); resetPage(); }}
+                    onChange={(e) => { setFilterCounselor(e.target.value); }}
                 >
                     {COUNSELORS.map((c) => (
                         <option key={c}>{c}</option>
@@ -178,7 +177,7 @@ const Leadsource = () => {
                     className="form-control"
                     style={{ maxWidth: '160px' }}
                     value={filterCourse}
-                    onChange={(e) => { setFilterCourse(e.target.value); resetPage(); }}
+                    onChange={(e) => { setFilterCourse(e.target.value); }}
                 >
                     {COURSES.map((c) => (
                         <option key={c}>{c}</option>
@@ -247,9 +246,9 @@ const Leadsource = () => {
                             ),
                         },
                     ]}
-                    data={paginated}
+                    data={filtered}
                     actions={(row) => (
-                        <>
+                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
                             <input
                                 type="checkbox"
                                 checked={selectedIds.includes(row.id)}
@@ -259,32 +258,31 @@ const Leadsource = () => {
                             <button
                                 className="btn btn-ghost btn-sm"
                                 style={{ fontSize: "12px" }}
+                                onClick={() => openRemarkModal(row)}
+                            >
+                                Remark
+                            </button>
+                            <button
+                                className="btn btn-ghost btn-sm"
+                                style={{ fontSize: "12px" }}
                                 onClick={() => navTo("lead-detail")}
                             >
                                 View
                             </button>
-                        </>
+                        </div>
                     )}
                     emptyMessage="No leads match your filters."
                 />
             </div>
 
-                {/* ── Pagination ── */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--gray-100)' }}>
-                    <span style={{ fontSize: '12px', color: 'var(--gray-500)' }}>
-                        Showing {filtered.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1}–
-                        {Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length} leads
-                    </span>
-                    <div style={{ display: 'flex', gap: '4px' }}>
-                        <button className="btn btn-secondary btn-sm" disabled={page === 1} onClick={() => setPage((p) => p - 1)}>←</button>
-                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                            <button key={p} className={`btn btn-sm ${p === page ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setPage(p)}>{p}</button>
-                        ))}
-                        <button className="btn btn-secondary btn-sm" disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}>→</button>
-                    </div>
-                </div></div>
-            
-        
+            {/* Lead Remark Modal */}
+            <LeadRemarkModal
+                isOpen={isRemarkModalOpen}
+                onClose={closeRemarkModal}
+                lead={selectedLeadForRemark}
+                onSave={handleSaveRemark}
+            />
+        </div>
     );
 };
 

@@ -35,9 +35,27 @@ export const getLeadById = async (id) => {
         throw error;
     }
 };
+export const getLeadAssignmentHistory = async (id) => {
+    try {
+        const response = await axiosInstance.get(`${ApiRoutes.Lead.assignmentHistory}/${id}/assignment-history`);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
 export const deleteLead = async (id) => {
     try {
         const response = await axiosInstance.delete(`${ApiRoutes.Lead.getAllLeads}/${id}`);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
+export const getLeadSourceWiseStats = async () => {
+    try {
+        const response = await axiosInstance.get(ApiRoutes.Lead.sourceWiseStats);
         return response;
     } catch (error) {
         throw error;

@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
 import CustomButton from '../component/reusable/CustomButton';
 import LeadRemarkModal from "../component/reusable/Leads/LeadRemarkModal";
-import { getLeadById } from '../Services/lead/leadService';
+import { getLeadById, getLeadAssignmentHistory } from '../Services/lead/leadService';
 
 const LeadDetail = () => {
   const { id } = useParams();
@@ -11,6 +11,8 @@ const LeadDetail = () => {
   const [isRemarkModalOpen, setIsRemarkModalOpen] = useState(false);
   const [leadDetails, setLeadDetails] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [assignmentHistory, setAssignmentHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -28,6 +30,21 @@ const LeadDetail = () => {
         }
       };
       fetchLead();
+
+      const fetchHistory = async () => {
+        setHistoryLoading(true);
+        try {
+          const res = await getLeadAssignmentHistory(id);
+          if (res?.data?.success) {
+            setAssignmentHistory(res.data.data || []);
+          }
+        } catch (err) {
+          console.error('Failed to fetch assignment history', err);
+        } finally {
+          setHistoryLoading(false);
+        }
+      };
+      fetchHistory();
     }
   }, [id]);
 
@@ -135,9 +152,58 @@ const LeadDetail = () => {
           {/* Communication History */}
           <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
             <h3 className="text-sm font-bold text-gray-800 mb-4">Communication History</h3>
-            <div className="space-y-4" id="timeline-list">
-              {/* Timeline content can be mapped here */}
-              <div className="text-xs text-gray-400 italic text-center py-4">No recent activity</div>
+            <div className="space-y-3" id="timeline-list">
+              {historyLoading ? (
+                <div className="text-xs text-gray-400 italic text-center py-6">Loading history...</div>
+              ) : assignmentHistory.length === 0 ? (
+                <div className="text-xs text-gray-400 italic text-center py-6">No assignment history found</div>
+              ) : (
+                assignmentHistory.map((item, idx) => {
+                  const isFirst = idx === 0;
+                  const assignedAt = item.assignedAt ? new Date(item.assignedAt) : null;
+                  return (
+                    <div key={item.id || idx} className="relative flex gap-3">
+                      {/* Timeline line */}
+                      {idx < assignmentHistory.length - 1 && (
+                        <div className="absolute left-[15px] top-8 bottom-0 w-px bg-gray-100" />
+                      )}
+                      {/* Dot */}
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 z-10 ${
+                        isFirst ? 'bg-blue-100' : 'bg-gray-100'
+                      }`}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={isFirst ? '#2563eb' : '#9ca3af'} strokeWidth="2">
+                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                          <circle cx="12" cy="7" r="4" />
+                        </svg>
+                      </div>
+                      {/* Content */}
+                      <div className="flex-1 bg-gray-50 border border-gray-100 rounded-lg p-3">
+                        <div className="flex flex-wrap items-start justify-between gap-1 mb-1">
+                          <span className="text-xs font-bold text-gray-800">
+                            {item.assignedTo?.fullName || item.assignedTo?.name || 'Unknown User'}
+                          </span>
+                          {assignedAt && (
+                            <span className="text-[10px] text-gray-400">
+                              {assignedAt.toLocaleDateString()} · {assignedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          )}
+                        </div>
+                        {item.assignedBy && (
+                          <p className="text-[11px] text-gray-500">
+                            Assigned by <span className="font-semibold text-gray-700">{item.assignedBy?.fullName || item.assignedBy?.name || 'System'}</span>
+                          </p>
+                        )}
+                        {item.remarks && (
+                          <p className="text-[11px] text-gray-600 mt-1 italic">"{item.remarks}"</p>
+                        )}
+                        {isFirst && (
+                          <span className="inline-block mt-1.5 bg-blue-50 text-blue-600 text-[9px] font-bold px-2 py-0.5 rounded-full border border-blue-100 uppercase tracking-wide">Current</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
 

@@ -8,6 +8,8 @@ const ApiRoutes = {
         update: '/api/leads',
         delete: '/api/leads',
         getById: '/api/leads',
+        assignmentHistory: '/api/leads',
+        sourceWiseStats: '/api/leads/stats/source-wise',
     },
     Lead_Source: {
         create: '/api/lead-sources',
@@ -16,7 +18,11 @@ const ApiRoutes = {
         update: '/api/lead-sources',
         delete: '/api/lead-sources',
         toggle: '/api/lead-sources/{id}/toggle-active'
-    }
+    },
+    Users: {
+        getAllUser: "/api/users",
+
+    },
 }
 
 export default ApiRoutes;   

@@ -4,6 +4,7 @@ import ReusableTable from '../component/reusable/table';
 import AddLeadSourceModal from '../component/reusable/Leads/addLeadSourceModel';
 import ViewLeadSourceModal from '../component/reusable/Leads/viewLeadSourseModel';
 import { getAllLeadSource, getLeadSourceById, deleteLeadSource, toggleLeadSource } from '../Services/leadsource/leadSourceService';
+import { getLeadSourceWiseStats } from '../Services/lead/leadService';
 import CustomToggle from '../component/reusable/custumToggle';
 import DeleteModal from '../component/reusable/deleteModel';
 
@@ -49,6 +50,10 @@ const SORTABLE_COLS = [
 const LeadSource = () => {
     const { showToast } = useAppContext();
 
+    /* ── Stats Cards state ── */
+    const [statsData, setStatsData] = useState([]);
+    const [statsLoading, setStatsLoading] = useState(false);
+
     /* ── API state ── */
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -87,6 +92,22 @@ const LeadSource = () => {
     const [deleteModalData, setDeleteModalData] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
+    /* ── Fetch Stats ── */
+    const fetchStats = useCallback(async () => {
+        setStatsLoading(true);
+        try {
+            const res = await getLeadSourceWiseStats();
+            const payload = res?.data;
+            if (payload?.success) {
+                setStatsData(payload.data ?? []);
+            }
+        } catch (err) {
+            // silently fail stats
+        } finally {
+            setStatsLoading(false);
+        }
+    }, []);
+
     /* ── Fetch ── */
     const fetchData = useCallback(async () => {
         setLoading(true);
@@ -112,6 +133,10 @@ const LeadSource = () => {
     useEffect(() => {
         fetchData();
     }, [fetchData]);
+
+    useEffect(() => {
+        fetchStats();
+    }, [fetchStats]);
 
     /* ── Handlers ── */
     const handleSort = (col) => {
@@ -239,6 +264,16 @@ const LeadSource = () => {
         },
     ];
 
+    /* ── Palette for stat cards ── */
+    const CARD_COLORS = [
+        { bg: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', icon: '#a78bfa' },
+        { bg: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', icon: '#f9a8d4' },
+        { bg: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', icon: '#7dd3fc' },
+        { bg: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', icon: '#6ee7b7' },
+        { bg: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', icon: '#fde68a' },
+        { bg: 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)', icon: '#d8b4fe' },
+    ];
+
     return (
         <div>
             {/* ── Page Header ── */}
@@ -255,7 +290,6 @@ const LeadSource = () => {
                     <h1 style={{ fontSize: '22px', fontWeight: '700', color: 'var(--gray-900)' }}>
                         Lead Sources
                     </h1>
-
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
                     <button
@@ -271,6 +305,97 @@ const LeadSource = () => {
                     </button>
                 </div>
             </div>
+
+            {/* ── Source-wise Stats Cards ── */}
+            {statsLoading ? (
+                <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
+                    {[1, 2, 3].map((i) => (
+                        <div key={i} style={{
+                            flex: '1 1 180px', minWidth: '160px', height: '110px',
+                            borderRadius: '12px', background: 'var(--gray-100)',
+                            animation: 'pulse 1.5s ease-in-out infinite',
+                        }} />
+                    ))}
+                    <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }`}</style>
+                </div>
+            ) : statsData.length > 0 ? (
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
+                    gap: '14px',
+                    marginBottom: '22px',
+                }}>
+                    {statsData.map((stat, idx) => {
+                        const palette = CARD_COLORS[idx % CARD_COLORS.length];
+                        return (
+                            <div key={stat.sourceId} style={{
+                                background: palette.bg,
+                                borderRadius: '14px',
+                                padding: '16px 18px',
+                                color: '#fff',
+                                boxShadow: '0 4px 15px rgba(0,0,0,0.12)',
+                                position: 'relative',
+                                overflow: 'hidden',
+                                transition: 'transform 0.2s, box-shadow 0.2s',
+                                cursor: 'default',
+                            }}
+                                onMouseEnter={e => {
+                                    e.currentTarget.style.transform = 'translateY(-3px)';
+                                    e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.18)';
+                                }}
+                                onMouseLeave={e => {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.12)';
+                                }}
+                            >
+                                {/* decorative circle */}
+                                <div style={{
+                                    position: 'absolute', top: '-18px', right: '-18px',
+                                    width: '80px', height: '80px', borderRadius: '50%',
+                                    background: 'rgba(255,255,255,0.15)',
+                                }} />
+                                <div style={{
+                                    position: 'absolute', bottom: '-22px', right: '18px',
+                                    width: '55px', height: '55px', borderRadius: '50%',
+                                    background: 'rgba(255,255,255,0.10)',
+                                }} />
+
+                                {/* source name */}
+                                <div style={{
+                                    fontSize: '11px', fontWeight: '600', textTransform: 'uppercase',
+                                    letterSpacing: '0.8px', opacity: 0.85, marginBottom: '8px',
+                                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                                }}>
+                                    {stat.sourceName}
+                                </div>
+
+                                {/* count */}
+                                <div style={{ fontSize: '28px', fontWeight: '800', lineHeight: 1, marginBottom: '10px' }}>
+                                    {stat.count}
+                                    <span style={{ fontSize: '12px', fontWeight: '500', opacity: 0.8, marginLeft: '4px' }}>leads</span>
+                                </div>
+
+                                {/* progress bar */}
+                                <div style={{
+                                    background: 'rgba(255,255,255,0.25)',
+                                    borderRadius: '999px', height: '5px', overflow: 'hidden',
+                                }}>
+                                    <div style={{
+                                        width: `${stat.percentage}%`,
+                                        height: '100%',
+                                        background: '#fff',
+                                        borderRadius: '999px',
+                                        transition: 'width 0.6s ease',
+                                    }} />
+                                </div>
+                                <div style={{ fontSize: '11px', opacity: 0.85, marginTop: '5px', fontWeight: '600' }}>
+                                    {stat.percentage}% of total
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            ) : null}
 
             {/* ── Search & Sort Bar ── */}
             <div

@@ -1,10 +1,11 @@
 import { useState, useMemo, useEffect } from 'react';
 import { FiEye, FiEdit, FiTrash2, FiMessageSquare } from 'react-icons/fi';
 import { statusConfig } from '../mockData';
-import { getAllLeads } from '../Services/lead/leadService';
+import { getAllLeads, deleteLead } from '../Services/lead/leadService';
 import { useAppContext } from '../AppContext';
 import ReusableTable from '../component/reusable/table';
 import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
+import DeleteModal from "../component/reusable/deleteModel"
 
 
 const STATUSES = [
@@ -30,13 +31,45 @@ const scoreBg = (score) => {
 };
 
 const Leads = () => {
-  const { openAddLeadModal, navTo } = useAppContext();
+  const { openAddLeadModal, navTo, showToast } = useAppContext();
 
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterCounselor, setFilterCounselor] = useState('All Counselors');
   const [filterCourse, setFilterCourse] = useState('All Courses');
   const [selectedIds, setSelectedIds] = useState([]);
+  // Delete modal state
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [leadToDelete, setLeadToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const openDeleteModal = (lead) => {
+    console.log("openDeleteModal called with lead:", lead);
+    setLeadToDelete(lead);
+    setIsDeleteModalOpen(true);
+  };
+
+  const closeDeleteModal = () => {
+    console.log("closeDeleteModal called");
+    setIsDeleteModalOpen(false);
+    setLeadToDelete(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!leadToDelete) return;
+    setIsDeleting(true);
+    try {
+      await deleteLead(leadToDelete.id);
+      showToast('Lead deleted successfully');
+      fetchLeads();
+      closeDeleteModal();
+    } catch (error) {
+      console.error('Delete error', error);
+      showToast('Failed to delete lead', 'error');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   // API State
   const [leadsData, setLeadsData] = useState([]);
@@ -300,18 +333,22 @@ const Leads = () => {
                 >
                   <FiEye size={18} />
                 </button>
-                 <button
-                   className="text-gray-500 hover:text-gray-700 transition"
-                   title="Edit"
-                   style={{ color: '#6b7280', background: 'transparent', border: 'none', cursor: 'pointer' }}
-                   onClick={() => openAddLeadModal(row)}
-                 >
+                <button
+                  className="text-gray-500 hover:text-gray-700 transition"
+                  title="Edit"
+                  style={{ color: '#6b7280', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                  onClick={() => openAddLeadModal(row)}
+                >
                   <FiEdit size={18} />
                 </button>
                 <button
                   className="text-red-500 hover:text-red-700 transition"
                   title="Delete"
                   style={{ color: '#ef4444', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                  onClick={() => {
+                    console.log("Inline delete button clicked for row:", row);
+                    openDeleteModal(row);
+                  }}
                 >
                   <FiTrash2 size={18} />
                 </button>
@@ -330,6 +367,14 @@ const Leads = () => {
         onClose={closeRemarkModal}
         lead={selectedLeadForRemark}
         onSave={handleSaveRemark}
+      />
+      <DeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={closeDeleteModal}
+        onConfirm={handleConfirmDelete}
+        isLoading={isDeleting}
+        title="Delete Lead"
+        message={`Are you sure you want to delete lead "${leadToDelete?.fullName}"? This action cannot be undone.`}
       />
     </div>
   );

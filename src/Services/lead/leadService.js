@@ -6,7 +6,7 @@ export const createLead = async (data) => {
         const response = await axiosInstance.post(ApiRoutes.Lead.create, data);
         return response;
     } catch (error) {
-        return error;
+        throw error;
     }
 };
 
@@ -33,5 +33,13 @@ export const getLeadById = async (id) => {
         return response;
     } catch (error) {
         return error;
+    }
+};
+export const deleteLead = async (id) => {
+    try {
+        const response = await axiosInstance.delete(`${ApiRoutes.Lead.getAllLeads}/${id}`);
+        return response;
+    } catch (error) {
+        throw error;
     }
 };

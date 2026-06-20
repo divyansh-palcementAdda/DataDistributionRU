@@ -1,13 +1,13 @@
 import React from 'react';
 import CustomButton from './CustomButton';
 
-const DeleteModal = ({ 
-    isOpen, 
-    onClose, 
-    onConfirm, 
-    title = "Confirm Deletion", 
+const DeleteModal = ({
+    isOpen,
+    onClose,
+    onConfirm,
+    title = "Confirm Deletion",
     message = "Are you sure you want to delete this item? This action cannot be undone.",
-    isLoading = false 
+    isLoading = false
 }) => {
     if (!isOpen) return null;
 
@@ -39,8 +39,8 @@ const DeleteModal = ({
                     <CustomButton variant="secondary" onClick={onClose} disabled={isLoading}>
                         Cancel
                     </CustomButton>
-                    <CustomButton 
-                        onClick={onConfirm} 
+                    <CustomButton
+                        onClick={onConfirm}
                         disabled={isLoading}
                         className="bg-red-600 hover:bg-red-700 text-white border-transparent"
                         style={{ backgroundColor: '#dc2626', color: 'white', borderColor: '#dc2626' }}

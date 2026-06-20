@@ -52,7 +52,7 @@ const ReusableTable = ({
     return (
         <div className="w-full overflow-hidden rounded-xl border border-gray-200 bg-white">
             {/* Desktop Table */}
-            <div className="hidden md:block overflow-x-auto">
+            <div style={{ overflowX: 'auto' }}>
                 <table className="w-full min-w-max">
                     <thead>
                         <tr className="bg-gray-50 border-b border-gray-200">
@@ -131,7 +131,7 @@ const ReusableTable = ({
             </div>
 
             {/* Mobile Cards */}
-            <div className="md:hidden">
+            <div style={{ display: 'none' }}>
                 {currentData.length > 0 ? (
                     currentData.map((row, index) => (
                         <div

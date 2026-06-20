@@ -45,6 +45,7 @@ const Allroutes = () => {
         <Route path="/leads" element={<Leads />} />
         <Route path="/pipeline" element={<Pipeline />} />
         <Route path="/lead-detail" element={<LeadDetail />} />
+        <Route path="/lead-detail/:id" element={<LeadDetail />} />
         <Route path="/followups" element={<FollowUps />} />
         <Route path="/counselors" element={<Counselors />} />
         <Route path="/reports" element={<Reports />} />

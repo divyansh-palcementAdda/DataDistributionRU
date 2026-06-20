@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import CustomInput from '../CustomInput';
 import CustomButton from '../CustomButton';
 import { useAppContext } from '../../../AppContext';
-import { createLead } from '../../../Services/lead/leadService';
+import { createLead, updateLead } from '../../../Services/lead/leadService';
 import { getAllLeadSource } from '../../../Services/leadsource/leadSourceService';
 
 const AddLeadModal = () => {
-  const { isAddLeadModalOpen, closeAddLeadModal, showToast } = useAppContext();
+  const { isAddLeadModalOpen, closeAddLeadModal, showToast, editLeadData } = useAppContext();
 
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -41,6 +41,39 @@ const AddLeadModal = () => {
       fetchLeadSources();
     }
   }, [isAddLeadModalOpen]);
+
+  useEffect(() => {
+    if (editLeadData) {
+      const { fullName, phoneNumber, alternatePhoneNumber, email, city, state, country, sourceId, courseInterested, remarks, nextFollowUpDate } = editLeadData;
+      setFormData({
+        fullName: fullName || '',
+        phoneNumber: phoneNumber || '',
+        alternatePhoneNumber: alternatePhoneNumber || '',
+        email: email || '',
+        city: city || '',
+        state: state || '',
+        country: country || '',
+        sourceId: sourceId || '',
+        courseInterested: courseInterested || '',
+        remarks: remarks || '',
+        nextFollowUpDate: nextFollowUpDate ? new Date(nextFollowUpDate).toISOString().slice(0, 16) : '',
+      });
+    } else {
+      setFormData({
+        fullName: '',
+        phoneNumber: '',
+        alternatePhoneNumber: '',
+        email: '',
+        city: '',
+        state: '',
+        country: '',
+        sourceId: '',
+        courseInterested: '',
+        remarks: '',
+        nextFollowUpDate: '',
+      });
+    }
+  }, [editLeadData]);
 
   const handleChange = (field) => (e) => {
     setFormData((prev) => ({ ...prev, [field]: e.target.value }));
@@ -78,16 +111,21 @@ const AddLeadModal = () => {
 
     setLoading(true);
     try {
-      const response = await createLead(payload);
+      let response;
+      if (editLeadData) {
+        response = await updateLead(editLeadData.id, payload);
+      } else {
+        response = await createLead(payload);
+      }
       if (response?.status === 200 || response?.status === 201) {
-        showToast('Lead added successfully!');
+        showToast(editLeadData ? 'Lead updated successfully!' : 'Lead added successfully!');
         resetForm();
         closeAddLeadModal();
       } else {
         const msg =
           response?.response?.data?.message ||
           response?.message ||
-          'Failed to add lead. Please try again.';
+          'Failed to submit lead. Please try again.';
         showToast(msg, 'error');
       }
     } catch (err) {

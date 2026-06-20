@@ -8,20 +8,31 @@ export const AppProvider = ({ children }) => {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isAddLeadModalOpen, setIsAddLeadModalOpen] = useState(false);
+  const [editLeadData, setEditLeadData] = useState(null);
   const [currentPage, setCurrentPage] = useState('dashboard');
 
   const navigate = useNavigate();
 
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
   const toggleDarkMode = () => setIsDarkMode((prev) => !prev);
-  const openAddLeadModal = () => setIsAddLeadModalOpen(true);
-  const closeAddLeadModal = () => setIsAddLeadModalOpen(false);
+  
+  const openAddLeadModal = (leadData = null) => {
+    setEditLeadData(leadData);
+    setIsAddLeadModalOpen(true);
+  };
+  
+  const closeAddLeadModal = () => {
+    setIsAddLeadModalOpen(false);
+    setEditLeadData(null);
+  };
+
   const navTo = (page) => { 
     setCurrentPage(page); 
     setIsSidebarOpen(false); 
     // Navigate to the route path. Assumes page names match routes.
     navigate(`/${page}`);
   };
+
   const showToast = (msg, type = 'success') => {
     if (type === 'success') {
       toast.success(msg);
@@ -35,6 +46,7 @@ export const AppProvider = ({ children }) => {
       toast(msg);
     }
   };
+
   return (
     <AppContext.Provider
       value={{
@@ -45,6 +57,7 @@ export const AppProvider = ({ children }) => {
         isAddLeadModalOpen,
         openAddLeadModal,
         closeAddLeadModal,
+        editLeadData,
         currentPage,
         navTo,
         showToast,

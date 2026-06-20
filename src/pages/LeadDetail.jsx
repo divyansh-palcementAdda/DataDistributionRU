@@ -1,14 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
 import CustomButton from '../component/reusable/CustomButton';
 import LeadRemarkModal from "../component/reusable/Leads/LeadRemarkModal";
+import { getLeadById } from '../Services/lead/leadService';
 
 const LeadDetail = () => {
+  const { id } = useParams();
   const { navTo, showToast, openAddLeadModal } = useAppContext();
   const [isRemarkModalOpen, setIsRemarkModalOpen] = useState(false);
-  
+  const [leadDetails, setLeadDetails] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (id) {
+      const fetchLead = async () => {
+        setLoading(true);
+        try {
+          const res = await getLeadById(id);
+          if (res?.data?.success) {
+            setLeadDetails(res.data.data);
+          }
+        } catch (err) {
+          console.error("Failed to fetch lead", err);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchLead();
+    }
+  }, [id]);
+
   const mockLead = { name: 'Priya Kumar', phone: '+91 98765 43210', course: 'Full Stack Dev', remark: 'Lead is very interested in Full Stack. Has budget clarity. Needs EMI option info. Decision maker herself. Likely to register by end of June.' };
 
+  const currentLead = leadDetails || mockLead;
+  const initials = leadDetails?.fullName ? leadDetails.fullName.substring(0, 2).toUpperCase() : 'PK';
+
+  if (loading) {
+    return <div className="p-6">Loading lead details...</div>;
+  }
 
   return (
     <div className="block" id="page-lead-detail">
@@ -25,11 +55,10 @@ const LeadDetail = () => {
           </button>
           <div>
             <h1 className="text-xl font-bold text-gray-900 leading-tight">Lead Details</h1>
-            <p className="text-sm text-gray-500">Full CRM profile for this lead</p>
+
           </div>
         </div>
         <div className="flex gap-2">
-          <CustomButton variant="secondary" className="text-xs py-1.5 px-3">Edit Lead</CustomButton>
           <CustomButton variant="primary" onClick={() => showToast('Scheduled successfully')} className="text-xs py-1.5 px-3 flex items-center gap-1.5">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="3" y="4" width="18" height="18" rx="2" />
@@ -46,15 +75,15 @@ const LeadDetail = () => {
           <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
             <div className="flex flex-col sm:flex-row items-start gap-5 mb-6">
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
-                PK
+                {initials}
               </div>
               <div className="flex-1">
-                <h2 className="text-lg font-bold text-gray-900 mb-1">Priya Kumar</h2>
-                <p className="text-sm text-gray-500 mb-3">+91 98765 43210 · priya.kumar@gmail.com</p>
+                <h2 className="text-lg font-bold text-gray-900 mb-1">{leadDetails?.fullName || 'Priya Kumar'}</h2>
+                <p className="text-sm text-gray-500 mb-3">{leadDetails ? `${leadDetails.phoneNumber} · ${leadDetails.email}` : '+91 98765 43210 · priya.kumar@gmail.com'}</p>
                 <div className="flex flex-wrap gap-2">
-                  <span className="bg-orange-50 text-orange-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-orange-100 uppercase tracking-wide">🔥 Hot Lead</span>
-                  <span className="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-100 uppercase tracking-wide">Full Stack Dev</span>
-                  <span className="bg-gray-50 text-gray-500 text-[10px] font-medium px-2 py-0.5 rounded-full border border-gray-100">Source: Google Ads</span>
+                  <span className="bg-orange-50 text-orange-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-orange-100 uppercase tracking-wide">🔥 {leadDetails?.currentStatus || 'Hot Lead'}</span>
+                  <span className="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-100 uppercase tracking-wide">{leadDetails?.courseInterested || 'Full Stack Dev'}</span>
+                  <span className="bg-gray-50 text-gray-500 text-[10px] font-medium px-2 py-0.5 rounded-full border border-gray-100">Source: {leadDetails?.source?.name || 'Google Ads'}</span>
                 </div>
               </div>
               <div className="flex gap-1.5">
@@ -65,12 +94,12 @@ const LeadDetail = () => {
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {[
-                { label: 'City', value: 'Bangalore, KA' },
-                { label: 'Qualification', value: 'B.Tech (CS)' },
-                { label: 'Work Status', value: 'Professional' },
-                { label: 'Experience', value: '2 years' },
-                { label: 'Lead Date', value: 'June 3, 2025' },
-                { label: 'Source', value: 'Google Ads' }
+                { label: 'City', value: leadDetails?.city || 'Bangalore, KA' },
+                { label: 'State', value: leadDetails?.state || 'Karnataka' },
+                { label: 'Country', value: leadDetails?.country || 'India' },
+                { label: 'Status', value: leadDetails?.currentStatus || 'Professional' },
+                { label: 'Lead Date', value: leadDetails?.createdAt ? new Date(leadDetails.createdAt).toLocaleDateString() : 'June 3, 2025' },
+                { label: 'Source', value: leadDetails?.source?.name || 'Google Ads' }
               ].map((item, idx) => (
                 <div key={idx} className="bg-gray-50 p-3 rounded-lg border border-gray-100">
                   <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{item.label}</div>
@@ -86,7 +115,7 @@ const LeadDetail = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
                 <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Interested Course</div>
-                <div className="text-xs font-bold text-blue-600">Full Stack Development</div>
+                <div className="text-xs font-bold text-blue-600">{leadDetails?.courseInterested || 'Full Stack Development'}</div>
               </div>
               <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
                 <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Batch Preference</div>
@@ -121,7 +150,7 @@ const LeadDetail = () => {
               </CustomButton>
             </div>
             <div className="p-3 text-xs border border-gray-200 rounded-lg bg-gray-50 text-gray-700">
-              Lead is very interested in Full Stack. Has budget clarity. Needs EMI option info. Decision maker herself. Likely to register by end of June.
+              {leadDetails?.remarks || 'Lead is very interested in Full Stack. Has budget clarity. Needs EMI option info. Decision maker herself. Likely to register by end of June.'}
             </div>
           </div>
         </div>
@@ -182,8 +211,8 @@ const LeadDetail = () => {
           <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
             <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Next Follow-up</h3>
             <div className="bg-orange-50 border border-orange-100 rounded-lg p-3 mb-3">
-              <div className="text-xs font-bold text-orange-800">June 15, 2025</div>
-              <div className="text-[10px] text-orange-600 mt-0.5 font-medium">10:00 AM · Call</div>
+              <div className="text-xs font-bold text-orange-800">{leadDetails?.nextFollowUpDate ? new Date(leadDetails.nextFollowUpDate).toLocaleDateString() : 'June 15, 2025'}</div>
+              <div className="text-[10px] text-orange-600 mt-0.5 font-medium">{leadDetails?.nextFollowUpDate ? new Date(leadDetails.nextFollowUpDate).toLocaleTimeString() : '10:00 AM · Call'}</div>
             </div>
             <CustomButton variant="secondary" className="w-full text-[11px] py-1.5" onClick={openAddLeadModal}>Reschedule</CustomButton>
           </div>

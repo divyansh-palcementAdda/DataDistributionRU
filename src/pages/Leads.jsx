@@ -295,16 +295,17 @@ const Leads = () => {
                 <button
                   className="text-gray-500 hover:text-gray-700 transition"
                   title="View"
-                  onClick={() => navTo('lead-detail')}
+                  onClick={() => navTo(`lead-detail/${row.id}`)}
                   style={{ color: '#6b7280', background: 'transparent', border: 'none', cursor: 'pointer' }}
                 >
                   <FiEye size={18} />
                 </button>
-                <button
-                  className="text-gray-500 hover:text-gray-700 transition"
-                  title="Edit"
-                  style={{ color: '#6b7280', background: 'transparent', border: 'none', cursor: 'pointer' }}
-                >
+                 <button
+                   className="text-gray-500 hover:text-gray-700 transition"
+                   title="Edit"
+                   style={{ color: '#6b7280', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                   onClick={() => openAddLeadModal(row)}
+                 >
                   <FiEdit size={18} />
                 </button>
                 <button

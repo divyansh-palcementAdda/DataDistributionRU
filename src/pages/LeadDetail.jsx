@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../AppContext';
 import CustomButton from '../component/reusable/CustomButton';
-import LeadRemarkModal from '../component/reusable/LeadRemarkModal';
+import LeadRemarkModal from "../component/reusable/Leads/LeadRemarkModal";
 
 const LeadDetail = () => {
   const { navTo, showToast, openAddLeadModal } = useAppContext();

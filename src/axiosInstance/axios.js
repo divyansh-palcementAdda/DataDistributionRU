@@ -32,8 +32,9 @@ axiosInstance.interceptors.response.use(
     // Any status codes that falls outside the range of 2xx cause this function to trigger
     if (error.response && error.response.status === 401) {
       // Handle unauthorized errors, e.g., redirect to login or clear token
-      // localStorage.removeItem('token');
-      // window.location.href = '/login';
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('user');
+      window.location.href = '/';
     }
     return Promise.reject(error);
   }

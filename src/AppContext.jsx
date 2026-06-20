@@ -1,5 +1,6 @@
 import { createContext, useContext, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 const AppContext = createContext(null);
 
@@ -21,8 +22,19 @@ export const AppProvider = ({ children }) => {
     // Navigate to the route path. Assumes page names match routes.
     navigate(`/${page}`);
   };
-  const showToast = (msg) => console.log('Toast:', msg); // placeholder
-
+  const showToast = (msg, type = 'success') => {
+    if (type === 'success') {
+      toast.success(msg);
+    } else if (type === 'error') {
+      toast.error(msg);
+    } else if (type === 'info') {
+      toast.info(msg);
+    } else if (type === 'warning') {
+      toast.warning(msg);
+    } else {
+      toast(msg);
+    }
+  };
   return (
     <AppContext.Provider
       value={{

@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import CustomInput from './CustomInput';
-import CustomButton from './CustomButton';
-import { useAppContext } from '../../AppContext';
-import { createLead } from '../../Services/lead/leadService';
+import { useState, useEffect } from 'react';
+import CustomInput from '../CustomInput';
+import CustomButton from '../CustomButton';
+import { useAppContext } from '../../../AppContext';
+import { createLead } from '../../../Services/lead/leadService';
+import { getAllLeadSource } from '../../../Services/leadsource/leadSourceService';
 
 const AddLeadModal = () => {
   const { isAddLeadModalOpen, closeAddLeadModal, showToast } = useAppContext();
@@ -16,11 +17,30 @@ const AddLeadModal = () => {
     city: '',
     state: '',
     country: '',
-    sourceDetails: '',
+    sourceId: '',
     courseInterested: '',
     remarks: '',
     nextFollowUpDate: '',
   });
+
+  const [leadSources, setLeadSources] = useState([]);
+
+  useEffect(() => {
+    const fetchLeadSources = async () => {
+      try {
+        const res = await getAllLeadSource({ size: 100 });
+        if (res?.data?.success) {
+          setLeadSources(res.data.data?.content || []);
+        }
+      } catch (err) {
+        console.error('Failed to fetch lead sources:', err);
+      }
+    };
+    
+    if (isAddLeadModalOpen) {
+      fetchLeadSources();
+    }
+  }, [isAddLeadModalOpen]);
 
   const handleChange = (field) => (e) => {
     setFormData((prev) => ({ ...prev, [field]: e.target.value }));
@@ -35,7 +55,7 @@ const AddLeadModal = () => {
       city: '',
       state: '',
       country: '',
-      sourceDetails: '',
+      sourceId: '',
       courseInterested: '',
       remarks: '',
       nextFollowUpDate: '',
@@ -136,12 +156,21 @@ const AddLeadModal = () => {
               value={formData.country}
               onChange={handleChange('country')}
             />
-            <CustomInput
-              label="Source Details"
-              placeholder="e.g. Google Ads, Facebook"
-              value={formData.sourceDetails}
-              onChange={handleChange('sourceDetails')}
-            />
+            <div>
+              <label className="form-label">Source Details</label>
+              <select
+                className="form-control"
+                value={formData.sourceId}
+                onChange={handleChange('sourceId')}
+              >
+                <option value="">Select Source</option>
+                {leadSources.map((source) => (
+                  <option key={source.id} value={source.id}>
+                    {source.name}
+                  </option>
+                ))}
+              </select>
+            </div>
             <CustomInput
               label="Course Interested"
               placeholder="e.g. Full Stack Development"

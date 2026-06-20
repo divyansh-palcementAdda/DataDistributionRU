@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import CustomButton from './CustomButton';
+import CustomButton from '../CustomButton';
 
 const LeadRemarkModal = ({ isOpen, onClose, lead, onSave }) => {
   const [remark, setRemark] = useState('');

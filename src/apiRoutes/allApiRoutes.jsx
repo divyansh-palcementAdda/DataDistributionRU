@@ -4,6 +4,15 @@ const ApiRoutes = {
     },
     Lead: {
         create: '/api/leads',
+        getAllLeads: "/api/leads",
+    },
+    Lead_Source: {
+        create: '/api/lead-sources',
+        getAll: '/api/lead-sources',
+        view: '/api/lead-sources',
+        update: '/api/lead-sources',
+        delete: '/api/lead-sources',
+        toggle: '/api/lead-sources/{id}/toggle-active'
     }
 }
 

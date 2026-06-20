@@ -1,8 +1,10 @@
-import { useState, useMemo } from 'react';
-import { leads, statusConfig } from '../mockData';
+import { useState, useMemo, useEffect } from 'react';
+import { FiEye, FiEdit, FiTrash2, FiMessageSquare } from 'react-icons/fi';
+import { statusConfig } from '../mockData';
+import { getAllLeads } from '../Services/lead/leadService';
 import { useAppContext } from '../AppContext';
 import ReusableTable from '../component/reusable/table';
-import LeadRemarkModal from '../component/reusable/LeadRemarkModal';
+import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 
 
 const STATUSES = [
@@ -35,7 +37,43 @@ const Leads = () => {
   const [filterCounselor, setFilterCounselor] = useState('All Counselors');
   const [filterCourse, setFilterCourse] = useState('All Courses');
   const [selectedIds, setSelectedIds] = useState([]);
-  
+
+  // API State
+  const [leadsData, setLeadsData] = useState([]);
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(10);
+  const [totalElements, setTotalElements] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  const fetchLeads = async () => {
+    setLoading(true);
+    try {
+      const params = {
+        page: page,
+        size: size,
+        search: search || undefined
+      };
+      const res = await getAllLeads(params);
+      if (res?.data?.success) {
+        setLeadsData(res.data.data.content);
+        setTotalElements(res.data.data.totalElements);
+        setTotalPages(res.data.data.totalPages);
+      }
+    } catch (error) {
+      console.error("Failed to fetch leads", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      fetchLeads();
+    }, 500);
+    return () => clearTimeout(delayDebounceFn);
+  }, [page, size, search]);
+
   const [isRemarkModalOpen, setIsRemarkModalOpen] = useState(false);
   const [selectedLeadForRemark, setSelectedLeadForRemark] = useState(null);
 
@@ -52,25 +90,6 @@ const Leads = () => {
   const handleSaveRemark = (lead, remark) => {
     console.log('Saved remark for', lead.name, ':', remark);
   };
-
-  /* ── Filtered leads ── */
-  const filtered = useMemo(() => {
-    return leads.filter((l) => {
-      const matchSearch =
-        !search ||
-        l.name.toLowerCase().includes(search.toLowerCase()) ||
-        l.phone.includes(search);
-      const matchStatus = !filterStatus || l.status === filterStatus;
-      const matchCounselor =
-        filterCounselor === 'All Counselors' || l.counselor === filterCounselor;
-      const matchCourse =
-        filterCourse === 'All Courses' ||
-        l.course.toLowerCase().includes(filterCourse.toLowerCase());
-      return matchSearch && matchStatus && matchCounselor && matchCourse;
-    });
-  }, [search, filterStatus, filterCounselor, filterCourse]);
-
-
 
   return (
     <div>
@@ -200,62 +219,108 @@ const Leads = () => {
       {/* ── Table Card ── */}
       <div className="card">
         <div className="table-wrap">
-  <ReusableTable
-    columns={[
-      {
-        key: 'lead',
-        header: 'Lead',
-        render: (value, row) => (
-          <div>
-            <div style={{ fontWeight: 600, color: 'var(--gray-800)' }}>{row.name}</div>
-            <div style={{ fontSize: '11px', color: 'var(--gray-400)' }}>{row.phone}</div>
-          </div>
-        ),
-      },
-      { key: 'course', header: 'Course' },
-      { key: 'source', header: 'Source' },
-      {
-        key: 'status',
-        header: 'Status',
-        render: (value, row) => {
-          const sc = statusConfig[row.status];
-          return <span className={`badge ${sc?.cls}`}>{sc?.label}</span>;
-        },
-      },
-      { key: 'counselor', header: 'Counselor' },
-      { key: 'followup', header: 'Follow-up' },
-      {
-        key: 'score',
-        header: 'Score',
-        render: (value, row) => (
-          <span style={scoreBg(row.score)}>{row.score}</span>
-        ),
-      },
-    ]}
-    data={filtered}
-    actions={(row) => (
-      <div style={{ display: 'flex', gap: '4px' }}>
-        <button
-          className="btn btn-ghost btn-sm"
-          style={{ fontSize: '12px' }}
-          onClick={() => openRemarkModal(row)}
-        >
-          Remark
-        </button>
-        <button
-          className="btn btn-ghost btn-sm"
-          style={{ fontSize: '12px' }}
-          onClick={() => navTo('lead-detail')}
-        >
-          View
-        </button>
-      </div>
-    )}
-    emptyMessage="No leads match your filters."
-  />
-</div>
-
+          <ReusableTable
+            columns={[
+              {
+                key: 'leadCode',
+                header: 'Lead Code',
+                render: (value) => <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{value}</span>,
+              },
+              {
+                key: 'lead',
+                header: 'Lead Info',
+                render: (value, row) => (
+                  <div>
+                    <div style={{ fontWeight: 600, color: 'var(--gray-800)' }}>{row.fullName}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--gray-400)' }}>{row.email}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--gray-400)' }}>{row.phoneNumber}</div>
+                  </div>
+                ),
+              },
+              { key: 'courseInterested', header: 'Course' },
+              {
+                key: 'source',
+                header: 'Source',
+                render: (value, row) => row.source?.name || 'N/A',
+              },
+              {
+                key: 'currentStatus',
+                header: 'Status',
+                render: (value, row) => (
+                  <span className={`badge`} style={{ background: '#E2E8F0', color: '#1E293B', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: '500' }}>
+                    {row.currentStatus}
+                  </span>
+                ),
+              },
+              {
+                key: 'assignedTo',
+                header: 'Counselor',
+                render: (value, row) =>
+                  row.assignedTo ? `${row.assignedTo.firstName} ${row.assignedTo.lastName}` : 'Unassigned',
+              },
+              {
+                key: 'nextFollowUpDate',
+                header: 'Follow-up',
+                render: (value, row) =>
+                  row.nextFollowUpDate ? new Date(row.nextFollowUpDate).toLocaleDateString() : 'None',
+              },
+              {
+                key: 'createdBy',
+                header: 'Created By',
+                render: (value, row) =>
+                  row.createdBy ? `${row.createdBy.firstName} ${row.createdBy.lastName}` : 'N/A',
+              },
+            ]}
+            data={leadsData}
+            isServerSide={true}
+            totalElements={totalElements}
+            totalPages={totalPages}
+            currentPage={page + 1}
+            rowsPerPage={size}
+            onPageChange={(newPage) => setPage(newPage - 1)}
+            onRowsPerPageChange={(newSize) => {
+              setSize(newSize);
+              setPage(0);
+            }}
+            actions={(row) => (
+              <div className="flex justify-center items-center gap-3" style={{ display: 'flex', gap: '12px' }}>
+                <button
+                  className="text-blue-500 hover:text-blue-700 transition"
+                  title="Remark"
+                  onClick={() => openRemarkModal(row)}
+                  style={{ color: '#3b82f6', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                >
+                  <FiMessageSquare size={18} />
+                </button>
+                <button
+                  className="text-gray-500 hover:text-gray-700 transition"
+                  title="View"
+                  onClick={() => navTo('lead-detail')}
+                  style={{ color: '#6b7280', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                >
+                  <FiEye size={18} />
+                </button>
+                <button
+                  className="text-gray-500 hover:text-gray-700 transition"
+                  title="Edit"
+                  style={{ color: '#6b7280', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                >
+                  <FiEdit size={18} />
+                </button>
+                <button
+                  className="text-red-500 hover:text-red-700 transition"
+                  title="Delete"
+                  style={{ color: '#ef4444', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                >
+                  <FiTrash2 size={18} />
+                </button>
+              </div>
+            )}
+            emptyMessage={loading ? "Loading..." : "No leads match your filters."}
+          />
         </div>
+
+      </div>
 
 
       {/* Lead Remark Modal */}

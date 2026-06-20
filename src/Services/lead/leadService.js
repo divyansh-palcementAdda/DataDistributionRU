@@ -9,3 +9,12 @@ export const createLead = async (data) => {
         return error;
     }
 };
+
+export const getAllLeads = async (params) => {
+    try {
+        const response = await axiosInstance.get(ApiRoutes.Lead.getAllLeads, { params });
+        return response;
+    } catch (error) {
+        return error;
+    }
+};

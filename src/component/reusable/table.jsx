@@ -1,28 +1,52 @@
 import React, { useState } from "react";
+import { FiEye, FiEdit, FiTrash2 } from "react-icons/fi";
 
 const ReusableTable = ({
     columns = [],
     data = [],
     actions,
+    onView,
+    onEdit,
+    onDelete,
     emptyMessage = "No data found",
+    isServerSide = false,
+    totalElements = 0,
+    totalPages: serverTotalPages = 0,
+    currentPage: serverCurrentPage = 1,
+    rowsPerPage: serverRowsPerPage = 10,
+    onPageChange,
+    onRowsPerPageChange,
 }) => {
-    const [currentPage, setCurrentPage] = useState(1);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [clientPage, setClientPage] = useState(1);
+    const [clientRows, setClientRows] = useState(10);
 
-    // Calculate pagination data
-    const totalPages = Math.max(1, Math.ceil(data.length / rowsPerPage));
-    const startIndex = (currentPage - 1) * rowsPerPage;
-    const currentData = data.slice(startIndex, startIndex + rowsPerPage);
+    const currentPage = isServerSide ? serverCurrentPage : clientPage;
+    const rowsPerPage = isServerSide ? serverRowsPerPage : clientRows;
+    const totalPages = isServerSide ? serverTotalPages : Math.max(1, Math.ceil(data.length / rowsPerPage));
+
+    const startIndex = isServerSide ? ((currentPage - 1) * rowsPerPage) : ((clientPage - 1) * clientRows);
+    const currentData = isServerSide ? data : data.slice(startIndex, startIndex + clientRows);
+    
+    const totalItems = isServerSide ? totalElements : data.length;
 
     const handlePageChange = (newPage) => {
         if (newPage >= 1 && newPage <= totalPages) {
-            setCurrentPage(newPage);
+            if (isServerSide && onPageChange) {
+                onPageChange(newPage);
+            } else {
+                setClientPage(newPage);
+            }
         }
     };
 
     const handleRowsPerPageChange = (e) => {
-        setRowsPerPage(Number(e.target.value));
-        setCurrentPage(1); // Reset to first page
+        const newRows = Number(e.target.value);
+        if (isServerSide && onRowsPerPageChange) {
+            onRowsPerPageChange(newRows);
+        } else {
+            setClientRows(newRows);
+            setClientPage(1);
+        }
     };
 
     return (
@@ -41,7 +65,7 @@ const ReusableTable = ({
                                 </th>
                             ))}
 
-                            {actions && (
+                            {(actions || onView || onEdit || onDelete) && (
                                 <th className="px-4 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-600">
                                     Actions
                                 </th>
@@ -67,9 +91,27 @@ const ReusableTable = ({
                                         </td>
                                     ))}
 
-                                    {actions && (
+                                    {(actions || onView || onEdit || onDelete) && (
                                         <td className="px-4 py-3 text-center">
-                                            {actions(row)}
+                                            {actions ? actions(row) : (
+                                                <div className="flex justify-center items-center gap-3">
+                                                    {onView && (
+                                                        <button onClick={() => onView(row)} className="text-gray-500 hover:text-gray-700 transition" title="View">
+                                                            <FiEye size={18} />
+                                                        </button>
+                                                    )}
+                                                    {onEdit && (
+                                                        <button onClick={() => onEdit(row)} className="text-gray-500 hover:text-gray-700 transition" title="Edit">
+                                                            <FiEdit size={18} />
+                                                        </button>
+                                                    )}
+                                                    {onDelete && (
+                                                        <button onClick={() => onDelete(row)} className="text-red-500 hover:text-red-700 transition" title="Delete">
+                                                            <FiTrash2 size={18} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            )}
                                         </td>
                                     )}
                                 </tr>
@@ -77,7 +119,7 @@ const ReusableTable = ({
                         ) : (
                             <tr>
                                 <td
-                                    colSpan={columns.length + (actions ? 1 : 0)}
+                                    colSpan={columns.length + ((actions || onView || onEdit || onDelete) ? 1 : 0)}
                                     className="py-6 text-center text-gray-500"
                                 >
                                     {emptyMessage}
@@ -113,9 +155,27 @@ const ReusableTable = ({
                                 </div>
                             ))}
 
-                            {actions && (
-                                <div className="pt-2 border-t border-gray-100">
-                                    {actions(row)}
+                            {(actions || onView || onEdit || onDelete) && (
+                                <div className="pt-2 border-t border-gray-100 flex justify-center gap-4">
+                                    {actions ? actions(row) : (
+                                        <>
+                                            {onView && (
+                                                <button onClick={() => onView(row)} className="text-gray-500 hover:text-gray-700 transition" title="View">
+                                                    <FiEye size={20} />
+                                                </button>
+                                            )}
+                                            {onEdit && (
+                                                <button onClick={() => onEdit(row)} className="text-gray-500 hover:text-gray-700 transition" title="Edit">
+                                                    <FiEdit size={20} />
+                                                </button>
+                                            )}
+                                            {onDelete && (
+                                                <button onClick={() => onDelete(row)} className="text-red-500 hover:text-red-700 transition" title="Delete">
+                                                    <FiTrash2 size={20} />
+                                                </button>
+                                            )}
+                                        </>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -128,7 +188,7 @@ const ReusableTable = ({
             </div>
 
             {/* Pagination Controls */}
-            {data.length > 0 && (
+            {totalItems > 0 && (
                 <div className="flex flex-col sm:flex-row justify-between items-center px-4 py-3 border-t border-gray-200 bg-gray-50 gap-4">
                     <div className="flex items-center text-sm text-gray-600">
                         <span>Show</span>
@@ -140,12 +200,13 @@ const ReusableTable = ({
                             <option value={5}>5</option>
                             <option value={10}>10</option>
                             <option value={20}>20</option>
+                            <option value={50}>50</option>
                         </select>
                         <span>entries</span>
                     </div>
 
                     <div className="text-sm text-gray-600">
-                        Showing {startIndex + 1} to {Math.min(startIndex + rowsPerPage, data.length)} of {data.length} entries
+                        Showing {totalItems === 0 ? 0 : startIndex + 1} to {Math.min(startIndex + currentData.length, totalItems)} of {totalItems} entries
                     </div>
 
                     <div className="flex items-center gap-1">
@@ -167,9 +228,9 @@ const ReusableTable = ({
 
                         <button
                             onClick={() => handlePageChange(currentPage + 1)}
-                            disabled={currentPage === totalPages}
+                            disabled={currentPage === totalPages || totalPages === 0}
                             className={`px-3 py-1 rounded border text-sm ${
-                                currentPage === totalPages
+                                currentPage === totalPages || totalPages === 0
                                     ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
                                     : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50 cursor-pointer"
                             }`}

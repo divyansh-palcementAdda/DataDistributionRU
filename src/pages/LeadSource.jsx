@@ -1,82 +1,243 @@
-import { useState, useMemo } from 'react';
-import { leads, statusConfig } from '../mockData';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAppContext } from '../AppContext';
 import ReusableTable from '../component/reusable/table';
-import LeadRemarkModal from '../component/reusable/LeadRemarkModal';
+import AddLeadSourceModal from '../component/reusable/Leads/addLeadSourceModel';
+import ViewLeadSourceModal from '../component/reusable/Leads/viewLeadSourseModel';
+import { getAllLeadSource, getLeadSourceById, deleteLeadSource, toggleLeadSource } from '../Services/leadsource/leadSourceService';
+import CustomToggle from '../component/reusable/custumToggle';
+import DeleteModal from '../component/reusable/deleteModel';
+
+/* ── Sort direction toggle helper ── */
+const nextDir = (cur) => (cur === 'ASC' ? 'DESC' : 'ASC');
+
+/* ── Sort icon ── */
+const SortIcon = ({ active, direction }) => (
+    <svg
+        width="12"
+        height="12"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke={active ? 'var(--primary)' : 'var(--gray-400)'}
+        strokeWidth="2.5"
+        style={{ marginLeft: '4px', flexShrink: 0, transition: 'transform 0.2s', transform: active && direction === 'DESC' ? 'rotate(180deg)' : 'none' }}
+    >
+        <path d="M12 5l7 7H5z" fill={active ? 'var(--primary)' : 'var(--gray-400)'} stroke="none" />
+    </svg>
+);
 
 
 
-const STATUSES = [
-    { value: '', label: 'All Status' },
-    { value: 'raw', label: 'Raw Lead' },
-    { value: 'connected', label: 'Connected' },
-    { value: 'interested', label: 'Interested' },
-    { value: 'hot', label: 'Hot Lead' },
-    { value: 'registered', label: 'Registered' },
-    { value: 'cold', label: 'Cold Lead' },
-    { value: 'notinterested', label: 'Not Interested' },
-    { value: 'bad', label: 'Bad Lead' },
-];
-
-const COUNSELORS = ['All Counselors', 'Rahul Singh', 'Neha Joshi', 'Priya Patel', 'Vikram Das'];
-const COURSES = ['All Courses', 'Full Stack Dev', 'Data Science', 'UI/UX Design', 'DevOps'];
-
-/* ── Score badge colour ── */
-const scoreBg = (score) => {
-    if (score >= 80) return { background: 'var(--success-light)', color: 'var(--success)' };
-    if (score >= 50) return { background: '#FFF7ED', color: '#EA580C' };
-    return { background: 'var(--danger-light)', color: 'var(--danger)' };
+/* ── Date formatter ── */
+const fmtDate = (iso) => {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+    });
 };
 
-const Leadsource = () => {
-    const { openAddLeadModal, navTo } = useAppContext();
+const SORTABLE_COLS = [
+    { key: 'name', label: 'Name' },
+    { key: 'description', label: 'Description' },
+    { key: 'active', label: 'Status' },
+    { key: 'createdAt', label: 'Created At' },
+];
 
+
+
+const LeadSource = () => {
+    const { showToast } = useAppContext();
+
+    /* ── API state ── */
+    const [data, setData] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [totalElements, setTotalElements] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
+
+    /* ── Pagination ── */
+    const [page, setPage] = useState(0);
+    const [size, setSize] = useState(10);
+
+    /* ── Sort ── */
+    const [sortBy, setSortBy] = useState('createdAt');
+    const [sortDirection, setSortDirection] = useState('DESC');
+
+    /* ── Search (debounced) ── */
     const [search, setSearch] = useState('');
-    const [filterStatus, setFilterStatus] = useState('');
-    const [filterCounselor, setFilterCounselor] = useState('All Counselors');
-    const [filterCourse, setFilterCourse] = useState('All Courses');
-    const [selectedIds, setSelectedIds] = useState([]);
-    
-    const [isRemarkModalOpen, setIsRemarkModalOpen] = useState(false);
-    const [selectedLeadForRemark, setSelectedLeadForRemark] = useState(null);
+    const [searchInput, setSearchInput] = useState('');
+    const debounceRef = useRef(null);
 
-    const openRemarkModal = (lead) => {
-        setSelectedLeadForRemark(lead);
-        setIsRemarkModalOpen(true);
+    const handleSearchInput = (e) => {
+        const val = e.target.value;
+        setSearchInput(val);
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => {
+            setSearch(val);
+            setPage(0);
+        }, 300);
     };
 
-    const closeRemarkModal = () => {
-        setIsRemarkModalOpen(false);
-        setSelectedLeadForRemark(null);
+    /* ── Modal ── */
+    const [isAddLeadSourceModalOpen, setIsAddLeadSourceModalOpen] = useState(false);
+    const [editModalData, setEditModalData] = useState(null);
+    const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+    const [viewModalData, setViewModalData] = useState(null);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+    const [deleteModalData, setDeleteModalData] = useState(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+
+    /* ── Fetch ── */
+    const fetchData = useCallback(async () => {
+        setLoading(true);
+        try {
+            const params = { page, size, sortBy, sortDirection };
+            if (search.trim()) params.search = search.trim();
+            const res = await getAllLeadSource(params);
+            const payload = res?.data;
+            if (payload?.success) {
+                setData(payload.data?.content ?? []);
+                setTotalElements(payload.data?.totalElements ?? 0);
+                setTotalPages(payload.data?.totalPages ?? 0);
+            } else {
+                showToast(payload?.message || 'Failed to load lead sources', 'error');
+            }
+        } catch (err) {
+            showToast('Error fetching lead sources', 'error');
+        } finally {
+            setLoading(false);
+        }
+    }, [page, size, sortBy, sortDirection, search]);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
+    /* ── Handlers ── */
+    const handleSort = (col) => {
+        if (sortBy === col) {
+            setSortDirection(nextDir(sortDirection));
+        } else {
+            setSortBy(col);
+            setSortDirection('ASC');
+        }
+        setPage(0);
     };
 
-    const handleSaveRemark = (lead, remark) => {
-        console.log('Saved remark for', lead.name, ':', remark);
+
+
+    const handleModalClose = (didChange) => {
+        setIsAddLeadSourceModalOpen(false);
+        setEditModalData(null);
+        if (didChange === true) fetchData(); // refresh after creation or update
     };
 
-
-    /* ── Filtered leads ── */
-    const filtered = useMemo(() => {
-        return leads.filter((l) => {
-            const matchSearch =
-                !search ||
-                l.name.toLowerCase().includes(search.toLowerCase()) ||
-                l.phone.includes(search);
-            const matchStatus = !filterStatus || l.status === filterStatus;
-            const matchCounselor =
-                filterCounselor === 'All Counselors' || l.counselor === filterCounselor;
-            const matchCourse =
-                filterCourse === 'All Courses' ||
-                l.course.toLowerCase().includes(filterCourse.toLowerCase());
-            return matchSearch && matchStatus && matchCounselor && matchCourse;
-        });
-    }, [search, filterStatus, filterCounselor, filterCourse]);
-
-    const toggleOne = (id) => {
-        setSelectedIds((prev) =>
-            prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-        );
+    const handleView = async (row) => {
+        try {
+            const res = await getLeadSourceById(row.id);
+            if (res?.data?.success) {
+                setViewModalData(res.data.data);
+                setIsViewModalOpen(true);
+            } else {
+                showToast(res?.data?.message || 'Failed to fetch lead source details', 'error');
+            }
+        } catch (err) {
+            showToast('Error fetching lead source details', 'error');
+        }
     };
+
+    const handleEdit = (row) => {
+        setEditModalData(row);
+        setIsAddLeadSourceModalOpen(true);
+    };
+
+    const handleDelete = (row) => {
+        setDeleteModalData(row);
+        setIsDeleteModalOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!deleteModalData) return;
+        setIsDeleting(true);
+        try {
+            const res = await deleteLeadSource(deleteModalData.id);
+            if (res?.data?.success) {
+                showToast('Lead source deleted successfully', 'success');
+                setIsDeleteModalOpen(false);
+                setDeleteModalData(null);
+                fetchData();
+            } else {
+                showToast(res?.data?.message || 'Failed to delete lead source', 'error');
+            }
+        } catch (err) {
+            showToast('Error deleting lead source', 'error');
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    const handleToggle = async (row) => {
+        try {
+            const res = await toggleLeadSource(row.id);
+            if (res?.data?.success) {
+                showToast('Status updated successfully', 'success');
+                fetchData(); // refresh the list to reflect new status
+            } else {
+                showToast(res?.data?.message || 'Failed to update status', 'error');
+            }
+        } catch (err) {
+            showToast('Error updating status', 'error');
+        }
+    };
+
+    /* ── Column header renderer ── */
+    const SortHeader = ({ col }) => (
+        <div
+            onClick={() => handleSort(col.key)}
+            style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                cursor: 'pointer',
+                userSelect: 'none',
+                color: sortBy === col.key ? 'var(--primary)' : 'inherit',
+            }}
+        >
+            {col.label}
+            <SortIcon active={sortBy === col.key} direction={sortDirection} />
+        </div>
+    );
+
+    /* ── Table columns ── */
+    const columns = [
+        {
+            key: 'name',
+            header: <SortHeader col={{ key: 'name', label: 'Name' }} />,
+            render: (value) => (
+                <span style={{ fontWeight: 600, color: 'var(--gray-800)' }}>{value}</span>
+            ),
+        },
+        {
+            key: 'description',
+            header: <SortHeader col={{ key: 'description', label: 'Description' }} />,
+            render: (value) => (
+                <span style={{ color: 'var(--gray-500)', fontSize: '13px' }}>
+                    {value || '—'}
+                </span>
+            ),
+        },
+        {
+            key: 'active',
+            header: <SortHeader col={{ key: 'active', label: 'Status' }} />,
+            render: (value, row) => <CustomToggle checked={value} onChange={() => handleToggle(row)} />,
+        },
+        {
+            key: 'createdAt',
+            header: <SortHeader col={{ key: 'createdAt', label: 'Created At' }} />,
+            render: (value) => (
+                <span style={{ fontSize: '12px', color: 'var(--gray-500)' }}>{fmtDate(value)}</span>
+            ),
+        },
+    ];
 
     return (
         <div>
@@ -92,198 +253,125 @@ const Leadsource = () => {
             >
                 <div>
                     <h1 style={{ fontSize: '22px', fontWeight: '700', color: 'var(--gray-900)' }}>
-                        All Leads Source
+                        Lead Sources
                     </h1>
-                    <p style={{ fontSize: '13px', color: 'var(--gray-500)', marginTop: '4px' }}>
-                        Manage and track all your education leads
-                    </p>
+
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                    {/* Export */}
-                    <button
-                        className="btn btn-secondary btn-sm"
-                        style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-                    >
-                        <svg
-                            width="13"
-                            height="13"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                        >
-                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
-                        </svg>
-                        Export
-                    </button>
-                    {/* Add Lead */}
                     <button
                         className="btn btn-primary btn-sm"
                         style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-                        onClick={openAddLeadModal}
+                        onClick={() => setIsAddLeadSourceModalOpen(true)}
                     >
-                        <svg
-                            width="13"
-                            height="13"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                        >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <line x1="12" y1="5" x2="12" y2="19" />
                             <line x1="5" y1="12" x2="19" y2="12" />
                         </svg>
-                        Add Lead
+                        Add Lead Source
                     </button>
                 </div>
             </div>
 
-            {/* ── Filter Bar ── */}
+            {/* ── Search & Sort Bar ── */}
             <div
                 className="filter-bar"
-                style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px' }}
+                style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px', alignItems: 'center' }}
             >
-                <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Search leads…"
-                    style={{ maxWidth: '240px' }}
-                    value={search}
-                    onChange={(e) => { setSearch(e.target.value); }}
-                />
-                <select
-                    className="form-control"
-                    style={{ maxWidth: '140px' }}
-                    value={filterStatus}
-                    onChange={(e) => { setFilterStatus(e.target.value); }}
-                >
-                    {STATUSES.map((s) => (
-                        <option key={s.value} value={s.value}>
-                            {s.label}
-                        </option>
-                    ))}
-                </select>
-                <select
-                    className="form-control"
-                    style={{ maxWidth: '160px' }}
-                    value={filterCounselor}
-                    onChange={(e) => { setFilterCounselor(e.target.value); }}
-                >
-                    {COUNSELORS.map((c) => (
-                        <option key={c}>{c}</option>
-                    ))}
-                </select>
-                <select
-                    className="form-control"
-                    style={{ maxWidth: '160px' }}
-                    value={filterCourse}
-                    onChange={(e) => { setFilterCourse(e.target.value); }}
-                >
-                    {COURSES.map((c) => (
-                        <option key={c}>{c}</option>
-                    ))}
-                </select>
-                <button
-                    className="btn btn-ghost btn-sm"
-                    style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-                >
+                {/* Debounced search input */}
+                <div style={{ position: 'relative' }}>
                     <svg
-                        width="13"
-                        height="13"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
+                        width="14" height="14" viewBox="0 0 24 24" fill="none"
+                        stroke="var(--gray-400)" strokeWidth="2"
+                        style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
                     >
-                        <line x1="4" y1="6" x2="20" y2="6" />
-                        <line x1="8" y1="12" x2="16" y2="12" />
-                        <line x1="11" y1="18" x2="13" y2="18" />
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="M21 21l-4.35-4.35" />
                     </svg>
-                    Filters
-                </button>
-            </div>
-            {/* ── Table Card ── */}
-            <div className="card">
-                <ReusableTable
-                    columns={[
-                        {
-                            key: "name",
-                            header: "Lead",
-                            render: (value, row) => (
-                                <div>
-                                    <div style={{ fontWeight: 600, color: "var(--gray-800)" }}>{value}</div>
-                                    <div style={{ fontSize: "11px", color: "var(--gray-400)" }}>{row.phone}</div>
-                                </div>
-                            ),
-                        },
-                        { key: "course", header: "Course" },
-                        { key: "source", header: "Source" },
-                        {
-                            key: "status",
-                            header: "Status",
-                            render: (value) => {
-                                const sc = statusConfig[value];
-                                return <span className={`badge ${sc?.cls}`}>{sc?.label}</span>;
-                            },
-                        },
-                        { key: "counselor", header: "Counselor" },
-                        { key: "followup", header: "Follow-up" },
-                        {
-                            key: "score",
-                            header: "Score",
-                            render: (value) => (
-                                <span
-                                    style={{
-                                        fontSize: "11px",
-                                        fontWeight: 600,
-                                        padding: "2px 8px",
-                                        borderRadius: "20px",
-                                        ...scoreBg(value),
-                                    }}
-                                >
-                                    {value}
-                                </span>
-                            ),
-                        },
-                    ]}
-                    data={filtered}
-                    actions={(row) => (
-                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                            <input
-                                type="checkbox"
-                                checked={selectedIds.includes(row.id)}
-                                onChange={() => toggleOne(row.id)}
-                                aria-label={`Select ${row.name}`}
-                            />
-                            <button
-                                className="btn btn-ghost btn-sm"
-                                style={{ fontSize: "12px" }}
-                                onClick={() => openRemarkModal(row)}
-                            >
-                                Remark
-                            </button>
-                            <button
-                                className="btn btn-ghost btn-sm"
-                                style={{ fontSize: "12px" }}
-                                onClick={() => navTo("lead-detail")}
-                            >
-                                View
-                            </button>
-                        </div>
-                    )}
-                    emptyMessage="No leads match your filters."
-                />
+                    <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Search by name…"
+                        style={{ maxWidth: '240px', paddingLeft: '32px' }}
+                        value={searchInput}
+                        onChange={handleSearchInput}
+                    />
+                </div>
+
+                {/* Sort By dropdown */}
+                <select
+                    className="form-control"
+                    style={{ maxWidth: '150px', fontSize: '13px' }}
+                    value={sortBy}
+                    onChange={(e) => { setSortBy(e.target.value); setPage(0); }}
+                >
+                    {SORTABLE_COLS.map((c) => (
+                        <option key={c.key} value={c.key}>{c.label}</option>
+                    ))}
+                </select>
             </div>
 
-            {/* Lead Remark Modal */}
-            <LeadRemarkModal
-                isOpen={isRemarkModalOpen}
-                onClose={closeRemarkModal}
-                lead={selectedLeadForRemark}
-                onSave={handleSaveRemark}
+            {/* ── Table Card ── */}
+            <div className="card">
+                {loading ? (
+                    <div style={{ padding: '48px', textAlign: 'center', color: 'var(--gray-400)' }}>
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                            style={{ animation: 'spin 1s linear infinite', display: 'block', margin: '0 auto 12px' }}>
+                            <path d="M21 12a9 9 0 11-6.219-8.56" />
+                        </svg>
+                        Loading lead sources…
+                        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                    </div>
+                ) : (
+                    <ReusableTable
+                        columns={columns}
+                        data={data}
+                        emptyMessage={
+                            search
+                                ? `No lead sources match "${search}".`
+                                : 'No lead sources found. Add one to get started.'
+                        }
+                        onView={handleView}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                        isServerSide={true}
+                        totalElements={totalElements}
+                        totalPages={totalPages}
+                        currentPage={page + 1}
+                        rowsPerPage={size}
+                        onPageChange={(newPage) => setPage(newPage - 1)}
+                        onRowsPerPageChange={(newSize) => {
+                            setSize(newSize);
+                            setPage(0);
+                        }}
+                    />
+                )}
+            </div>
+
+            {/* ── Add/Edit Lead Source Modal ── */}
+            <AddLeadSourceModal
+                isOpen={isAddLeadSourceModalOpen}
+                onClose={handleModalClose}
+                editData={editModalData}
+            />
+
+            {/* ── View Lead Source Modal ── */}
+            <ViewLeadSourceModal
+                isOpen={isViewModalOpen}
+                onClose={() => setIsViewModalOpen(false)}
+                data={viewModalData}
+            />
+
+            {/* ── Delete Modal ── */}
+            <DeleteModal
+                isOpen={isDeleteModalOpen}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onConfirm={confirmDelete}
+                isLoading={isDeleting}
+                title="Delete Lead Source"
+                message={`Are you sure you want to delete the lead source "${deleteModalData?.name}"? This action cannot be undone.`}
             />
         </div>
     );
 };
 
-export default Leadsource;
+export default LeadSource;

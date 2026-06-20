@@ -21,7 +21,14 @@ const ApiRoutes = {
     },
     Users: {
         getAllUser: "/api/users",
+        create: "/api/users",
+    },
+    Role: {
+        getPermissions: '/api/roles',
+    },
 
+    Counselors: {
+        getAllCounselors: ""
     },
 }
 

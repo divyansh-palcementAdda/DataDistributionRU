@@ -1,19 +1,51 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../AppContext';
 import CustomButton from '../component/reusable/CustomButton';
 import CustomInput from '../component/reusable/CustomInput';
-
+import ReusableTable from '../component/reusable/table';
+import { getAllUser } from '../Services/user/user';
+import AddUserModal from '../component/reusable/user/addUser';
 const Settings = () => {
   const { showToast, openAddLeadModal } = useAppContext();
   const [activeTab, setActiveTab] = useState('st-users');
+  const [users, setUsers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
 
-  const users = [
-    { name: 'Arjun Kumar', email: 'arjun@techonly.com', role: 'Admin', status: 'active', last: 'Just now' },
-    { name: 'Rahul Singh', email: 'rahul@techonly.com', role: 'Counselor', status: 'active', last: '2 hrs ago' },
-    { name: 'Neha Joshi', email: 'neha@techonly.com', role: 'Counselor', status: 'active', last: '1 hr ago' },
-    { name: 'Priya Patel', email: 'priya.p@techonly.com', role: 'Manager', status: 'active', last: '3 hrs ago' },
-    { name: 'Vikram Das', email: 'vikram@techonly.com', role: 'Counselor', status: 'inactive', last: '2 days ago' },
-  ];
+  useEffect(() => {
+    if (activeTab === 'st-users') {
+      fetchUsers();
+    }
+  }, [activeTab]);
+
+  const fetchUsers = async () => {
+    try {
+      setLoadingUsers(true);
+      const res = await getAllUser();
+      console.log('API Response for getAllUser:', res.data);
+      
+      let usersArray = [];
+      const responseData = res.data;
+      
+      if (responseData?.data?.content && Array.isArray(responseData.data.content)) {
+        usersArray = responseData.data.content;
+      } else if (responseData?.data && Array.isArray(responseData.data)) {
+        usersArray = responseData.data;
+      } else if (responseData?.content && Array.isArray(responseData.content)) {
+        usersArray = responseData.content;
+      } else if (Array.isArray(responseData)) {
+        usersArray = responseData;
+      }
+
+      setUsers(usersArray);
+    } catch (error) {
+      console.error('Failed to fetch users', error);
+      showToast('Failed to fetch users', 'error');
+      setUsers([]);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
 
   const roles = [
     { name: 'Admin', perms: ['All access', 'User management', 'Reports', 'Settings', 'Lead management'], color: '#2563EB' },
@@ -37,6 +69,49 @@ const Settings = () => {
     { id: 'st-crm', label: 'CRM Config' },
   ];
 
+  const userColumns = [
+    {
+      header: 'Name',
+      key: 'name',
+      render: (_, u) => (
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-[10px]">
+            {u.name ? u.name.split(' ').map(n => n[0]).join('') : (u.firstName ? u.firstName[0] : 'U')}
+          </div>
+          <span className="font-medium text-gray-900">{u.name || (u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : u.firstName) || 'Unknown'}</span>
+        </div>
+      )
+    },
+    { header: 'Email', key: 'email', render: (val) => <span className="text-gray-500">{val}</span> },
+    {
+      header: 'Role',
+      key: 'roles',
+      render: (roles) => (
+        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${roles && (roles.includes('SUPER_ADMIN') || roles.includes('ADMIN')) ? 'bg-purple-50 text-purple-600' : 'bg-gray-100 text-gray-600'}`}>
+          {roles ? roles.join(', ').replace(/_/g, ' ') : 'User'}
+        </span>
+      )
+    },
+    {
+      header: 'Status',
+      key: 'active',
+      render: (active) => (
+        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${active ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
+          {active ? 'Active' : 'Inactive'}
+        </span>
+      )
+    },
+    {
+      header: 'Last Active',
+      key: 'lastLogin',
+      render: (_, u) => (
+        <span className="text-gray-400">
+          {u.lastLogin ? new Date(u.lastLogin).toLocaleDateString() : (u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'N/A')}
+        </span>
+      )
+    }
+  ];
+
   return (
     <div className="block" id="page-settings">
       {/* Page Header */}
@@ -45,17 +120,16 @@ const Settings = () => {
         <p className="text-sm text-gray-500 mt-1">Manage users, roles, and CRM configuration</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-[200px_1fr] gap-6">
-        {/* Settings Sidebar */}
-        <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-6">
+        {/* Settings Tabs */}
+        <div className="flex flex-row gap-2 border-b border-gray-100 pb-4 overflow-x-auto">
           {menuItems.map((item) => (
             <div
               key={item.id}
-              className={`px-4 py-2.5 rounded-lg text-sm font-medium cursor-pointer transition-all ${
-                activeTab === item.id 
-                ? 'bg-blue-50 text-blue-600 shadow-sm' 
-                : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-              }`}
+              className={`px-4 py-2.5 rounded-lg text-sm font-medium cursor-pointer transition-all whitespace-nowrap ${activeTab === item.id
+                  ? 'bg-blue-50 text-blue-600 shadow-sm border border-blue-100'
+                  : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                }`}
               onClick={() => setActiveTab(item.id)}
             >
               {item.label}
@@ -69,55 +143,17 @@ const Settings = () => {
             <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden animate-fadeIn">
               <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-gray-800">User Management</h2>
-                <CustomButton variant="primary" onClick={() => openAddLeadModal()} className="text-xs py-1.5 px-3">
+                <CustomButton variant="primary" onClick={() => setIsAddUserModalOpen(true)} className="text-xs py-1.5 px-3">
                   + Invite User
                 </CustomButton>
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-gray-50 text-gray-500 uppercase font-bold tracking-wider">
-                    <tr>
-                      <th className="px-5 py-3 border-b">Name</th>
-                      <th className="px-5 py-3 border-b">Email</th>
-                      <th className="px-5 py-3 border-b">Role</th>
-                      <th className="px-5 py-3 border-b">Status</th>
-                      <th className="px-5 py-3 border-b">Last Active</th>
-                      <th className="px-5 py-3 border-b">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {users.map((u, i) => (
-                      <tr key={i} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-5 py-4">
-                          <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold text-[10px]">
-                              {u.name.split(' ').map(n => n[0]).join('')}
-                            </div>
-                            <span className="font-medium text-gray-900">{u.name}</span>
-                          </div>
-                        </td>
-                        <td className="px-5 py-4 text-gray-500">{u.email}</td>
-                        <td className="px-5 py-4">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${u.role === 'Admin' ? 'bg-purple-50 text-purple-600' : 'bg-gray-100 text-gray-600'}`}>
-                            {u.role}
-                          </span>
-                        </td>
-                        <td className="px-5 py-4">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${u.status === 'active' ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-400'}`}>
-                            {u.status}
-                          </span>
-                        </td>
-                        <td className="px-5 py-4 text-gray-400">{u.last}</td>
-                        <td className="px-5 py-4">
-                          <div className="flex gap-2">
-                            <button className="text-blue-600 hover:underline font-medium">Edit</button>
-                            <button className="text-red-500 hover:underline font-medium" onClick={() => showToast('User removed')}>Remove</button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="p-4">
+                <ReusableTable
+                  columns={userColumns}
+                  data={Array.isArray(users) ? users : []}
+                  onEdit={() => console.log('Edit User')}
+                  onDelete={() => showToast('User removed')}
+                />
               </div>
             </div>
           )}
@@ -188,6 +224,12 @@ const Settings = () => {
           )}
         </div>
       </div>
+      
+      <AddUserModal 
+        isOpen={isAddUserModalOpen} 
+        onClose={() => setIsAddUserModalOpen(false)} 
+        onSuccess={fetchUsers} 
+      />
     </div>
   );
 };

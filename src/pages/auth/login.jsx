@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { login } from "../../Services/auth/login";
+import { getRolePermissions } from "../../Services/role/roleService";
 import { toast } from "react-toastify";
 
 const Login = () => {
@@ -37,6 +38,20 @@ const Login = () => {
         toast.success("Login successful!");
         localStorage.setItem('accessToken', response.data.data.accessToken);
         localStorage.setItem('refreshToken', response.data.data.refreshToken);
+        
+        // Fetch permissions using roleId
+        const roleId = response.data.data.role?.id;
+        if (roleId) {
+          try {
+            const permissionsResponse = await getRolePermissions(roleId);
+            if (permissionsResponse && permissionsResponse.status === 200) {
+              localStorage.setItem('permissions', JSON.stringify(permissionsResponse.data.data || permissionsResponse.data));
+            }
+          } catch (err) {
+            console.error("Failed to fetch permissions:", err);
+          }
+        }
+
         navigate("/dashboard");
       } else {
         // Error handling

@@ -1,100 +1,283 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAppContext } from '../AppContext';
 import CustomButton from '../component/reusable/CustomButton';
-import { counselors } from '../mockData';
+import ReusableTable from '../component/reusable/table';
+
+/* ── Sort direction toggle helper ── */
+const nextDir = (cur) => (cur === 'ASC' ? 'DESC' : 'ASC');
+
+/* ── Sort icon ── */
+const SortIcon = ({ active, direction }) => (
+  <svg
+    width="12"
+    height="12"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={active ? 'var(--primary)' : 'var(--gray-400)'}
+    strokeWidth="2.5"
+    style={{ marginLeft: '4px', flexShrink: 0, transition: 'transform 0.2s', transform: active && direction === 'DESC' ? 'rotate(180deg)' : 'none' }}
+  >
+    <path d="M12 5l7 7H5z" fill={active ? 'var(--primary)' : 'var(--gray-400)'} stroke="none" />
+  </svg>
+);
+
+const SORTABLE_COLS = [
+  { key: 'firstName', label: 'Name' },
+  { key: 'email', label: 'Email' },
+  { key: 'role', label: 'Role' }
+];
 
 const Counselors = () => {
-  const { openAddLeadModal } = useAppContext();
+  const { openAddLeadModal, showToast } = useAppContext();
+
+  /* ── API state ── */
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [totalElements, setTotalElements] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
+  /* ── Pagination ── */
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(10);
+
+  /* ── Sort ── */
+  const [sortBy, setSortBy] = useState('firstName');
+  const [sortDirection, setSortDirection] = useState('ASC');
+
+  /* ── Search (debounced) ── */
+  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const debounceRef = useRef(null);
+
+  const handleSearchInput = (e) => {
+    const val = e.target.value;
+    setSearchInput(val);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setSearch(val);
+      setPage(0);
+    }, 300);
+  };
+
+  /* ── Fetch ── */
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      // Temporarily removed API call as requested.
+      // Returning empty data for now so the UI doesn't crash.
+      setData([]);
+      setTotalElements(0);
+      setTotalPages(0);
+    } catch (err) {
+      showToast('Error fetching users', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [page, size, sortBy, sortDirection, search]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  /* ── Handlers ── */
+  const handleSort = (col) => {
+    if (sortBy === col) {
+      setSortDirection(nextDir(sortDirection));
+    } else {
+      setSortBy(col);
+      setSortDirection('ASC');
+    }
+    setPage(0);
+  };
+
+  /* ── Column header renderer ── */
+  const SortHeader = ({ col }) => (
+    <div
+      onClick={() => handleSort(col.key)}
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        cursor: 'pointer',
+        userSelect: 'none',
+        color: sortBy === col.key ? 'var(--primary, #2563EB)' : 'inherit',
+      }}
+    >
+      {col.label}
+      <SortIcon active={sortBy === col.key} direction={sortDirection} />
+    </div>
+  );
+
+  /* ── Helper to generate colors and initials ── */
+  const getColor = (str) => {
+    const colors = ['#7C3AED', '#0891B2', '#16A34A', '#EA580C', '#DB2777', '#0369A1', '#2563EB'];
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
+  };
+
+  const getInitials = (first, last) => {
+    if (first && last) return `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
+    if (first) return first.slice(0, 2).toUpperCase();
+    return 'U';
+  };
+
+  /* ── Table columns ── */
+  const columns = [
+    {
+      key: 'user',
+      header: <SortHeader col={{ key: 'firstName', label: 'Counselor Name' }} />,
+      render: (_, row) => {
+        const name = row.name || `${row.firstName || ''} ${row.lastName || ''}`.trim() || 'Unknown User';
+        const color = getColor(name);
+        const initials = getInitials(row.firstName || name, row.lastName || '');
+        return (
+          <div className="flex items-center gap-3">
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs"
+              style={{ backgroundColor: color }}
+            >
+              {initials}
+            </div>
+            <div>
+              <div className="font-semibold text-gray-900">{name}</div>
+              <div className="text-xs text-gray-400">{row.role?.name || row.role || 'Counselor'}</div>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      key: 'email',
+      header: <SortHeader col={{ key: 'email', label: 'Email Address' }} />,
+      render: (value, row) => (
+        <span className="text-gray-600 text-sm">{value || row.email || '—'}</span>
+      ),
+    },
+    {
+      key: 'contact',
+      header: 'Contact',
+      render: (_, row) => (
+        <span className="text-gray-600 text-sm">{row.mobileNo || row.phone || '—'}</span>
+      ),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (_, row) => {
+        const isActive = row.isActive !== false;
+        return (
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+            {isActive ? 'Active' : 'Inactive'}
+          </span>
+        );
+      },
+    }
+  ];
 
   return (
-    <div className="block" id="page-counselors">
-      {/* Page Header */}
-      <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
+    <div>
+      {/* ── Page Header ── */}
+      <div
+        className="page-header"
+        style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          marginBottom: '20px',
+        }}
+      >
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Counselors</h1>
-          <p className="text-sm text-gray-500 mt-1">Team performance and lead assignments</p>
+          <h1 style={{ fontSize: '22px', fontWeight: '700', color: 'var(--gray-900)' }}>
+            Counselors / Users
+          </h1>
         </div>
-        <CustomButton variant="primary" onClick={openAddLeadModal} className="text-xs py-1.5 px-3">
-          + Add Counselor
-        </CustomButton>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            className="btn btn-primary btn-sm"
+            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            onClick={openAddLeadModal}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Add Counselor
+          </button>
+        </div>
       </div>
 
-      {/* Counselor Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-        {counselors.map((c, i) => {
-          const rate = Math.round((c.registered / c.assigned) * 100);
-          return (
-            <div key={i} className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm transition-all hover:shadow-md">
-              <div
-                className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold mx-auto mb-3"
-                style={{ backgroundColor: c.color }}
-              >
-                {c.initials}
-              </div>
-              <div className="text-center mb-4">
-                <div className="font-semibold text-gray-900">{c.name}</div>
-                <div className="text-xs text-gray-400 mt-1">Senior Counselor</div>
-              </div>
-              <div className="mb-4">
-                <div className="flex justify-between text-xs font-medium text-gray-500 mb-2">
-                  <span>Conversion Rate</span>
-                  <span className="font-bold" style={{ color: c.color }}>{rate}%</span>
-                </div>
-                <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full transition-all duration-500"
-                    style={{ width: `${rate}%`, backgroundColor: c.color }}
-                  ></div>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="bg-gray-50 p-2 rounded-lg text-center">
-                  <div className="text-sm font-bold text-gray-900">{c.assigned}</div>
-                  <div className="text-[10px] text-gray-500 font-medium">Assigned</div>
-                </div>
-                <div className="bg-gray-50 p-2 rounded-lg text-center">
-                  <div className="text-sm font-bold text-green-600">{c.registered}</div>
-                  <div className="text-[10px] text-gray-500 font-medium">Registered</div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+      {/* ── Search & Sort Bar ── */}
+      <div
+        className="filter-bar"
+        style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px', alignItems: 'center' }}
+      >
+        {/* Debounced search input */}
+        <div style={{ position: 'relative' }}>
+          <svg
+            width="14" height="14" viewBox="0 0 24 24" fill="none"
+            stroke="var(--gray-400)" strokeWidth="2"
+            style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
+          >
+            <circle cx="11" cy="11" r="8" />
+            <path d="M21 21l-4.35-4.35" />
+          </svg>
+          <input
+            type="text"
+            className="form-control"
+            placeholder="Search by name…"
+            style={{ maxWidth: '240px', paddingLeft: '32px' }}
+            value={searchInput}
+            onChange={handleSearchInput}
+          />
+        </div>
+
+        {/* Sort By dropdown */}
+        <select
+          className="form-control"
+          style={{ maxWidth: '150px', fontSize: '13px' }}
+          value={sortBy}
+          onChange={(e) => { setSortBy(e.target.value); setPage(0); }}
+        >
+          {SORTABLE_COLS.map((c) => (
+            <option key={c.key} value={c.key}>{c.label}</option>
+          ))}
+        </select>
       </div>
 
-      {/* Performance Ranking Card */}
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-800">Performance Ranking</h2>
-          <select className="text-xs border-gray-200 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-            <option>June 2025</option>
-            <option>May 2025</option>
-          </select>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-gray-50 text-gray-500 uppercase font-bold tracking-wider">
-              <tr>
-                <th className="px-5 py-3 border-b">Rank</th>
-                <th className="px-5 py-3 border-b">Counselor</th>
-                <th className="px-5 py-3 border-b text-center">Assigned</th>
-                <th className="px-5 py-3 border-b text-center">Registered</th>
-                <th className="px-5 py-3 border-b text-center">Conv. Rate</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {counselors.map((c, i) => (
-                <tr key={i} className="hover:bg-gray-50">
-                  <td className="px-5 py-4 font-medium text-gray-900">{i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}</td>
-                  <td className="px-5 py-4 font-medium text-gray-900">{c.name}</td>
-                  <td className="px-5 py-4 text-center text-gray-600">{c.assigned}</td>
-                  <td className="px-5 py-4 text-center text-green-600 font-bold">{c.registered}</td>
-                  <td className="px-5 py-4 text-center text-blue-600 font-bold">{Math.round((c.registered / c.assigned) * 100)}%</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      {/* ── Table Card ── */}
+      <div className="card">
+        {loading ? (
+          <div style={{ padding: '48px', textAlign: 'center', color: 'var(--gray-400)' }}>
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+              style={{ animation: 'spin 1s linear infinite', display: 'block', margin: '0 auto 12px' }}>
+              <path d="M21 12a9 9 0 11-6.219-8.56" />
+            </svg>
+            Loading counselors…
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+          </div>
+        ) : (
+          <ReusableTable
+            columns={columns}
+            data={data}
+            emptyMessage={
+              search
+                ? `No counselors match "${search}".`
+                : 'No counselors found.'
+            }
+            isServerSide={true}
+            totalElements={totalElements}
+            totalPages={totalPages}
+            currentPage={page + 1}
+            rowsPerPage={size}
+            onPageChange={(newPage) => setPage(newPage - 1)}
+            onRowsPerPageChange={(newSize) => {
+              setSize(newSize);
+              setPage(0);
+            }}
+          />
+        )}
       </div>
     </div>
   );

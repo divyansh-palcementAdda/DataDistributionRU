@@ -25,7 +25,7 @@ const Counselors = () => {
           const rate = Math.round((c.registered / c.assigned) * 100);
           return (
             <div key={i} className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm transition-all hover:shadow-md">
-              <div 
+              <div
                 className="w-12 h-12 rounded-full flex items-center justify-center text-white font-bold mx-auto mb-3"
                 style={{ backgroundColor: c.color }}
               >
@@ -41,8 +41,8 @@ const Counselors = () => {
                   <span className="font-bold" style={{ color: c.color }}>{rate}%</span>
                 </div>
                 <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full transition-all duration-500" 
+                  <div
+                    className="h-full transition-all duration-500"
                     style={{ width: `${rate}%`, backgroundColor: c.color }}
                   ></div>
                 </div>

@@ -56,10 +56,14 @@ const Leads = () => {
   };
 
   const handleConfirmDelete = async () => {
-    if (!leadToDelete) return;
+    const leadId = leadToDelete?.id ?? leadToDelete?.leadId;
+    if (!leadId) {
+      showToast('Lead ID not found. Cannot delete.', 'error');
+      return;
+    }
     setIsDeleting(true);
     try {
-      await deleteLead(leadToDelete.id);
+      await deleteLead(leadId);
       showToast('Lead deleted successfully');
       fetchLeads();
       closeDeleteModal();
@@ -89,7 +93,11 @@ const Leads = () => {
       };
       const res = await getAllLeads(params);
       if (res?.data?.success) {
-        setLeadsData(res.data.data.content);
+        const content = res.data.data.content;
+        if (content?.length > 0) {
+          console.log('🔍 Lead object structure from backend:', content[0]);
+        }
+        setLeadsData(content);
         setTotalElements(res.data.data.totalElements);
         setTotalPages(res.data.data.totalPages);
       }
@@ -166,7 +174,7 @@ const Leads = () => {
           <button
             className="btn btn-primary btn-sm"
             style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-            onClick={openAddLeadModal}
+            onClick={() => openAddLeadModal()}
           >
             <svg
               width="13"
@@ -328,7 +336,7 @@ const Leads = () => {
                 <button
                   className="text-gray-500 hover:text-gray-700 transition"
                   title="View"
-                  onClick={() => navTo(`lead-detail/${row.id}`)}
+                  onClick={() => navTo(`lead-detail/${row?.id ?? row?.leadId}`)}
                   style={{ color: '#6b7280', background: 'transparent', border: 'none', cursor: 'pointer' }}
                 >
                   <FiEye size={18} />

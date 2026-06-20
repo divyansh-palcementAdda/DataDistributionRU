@@ -4,7 +4,10 @@ const ApiRoutes = {
     },
     Lead: {
         create: '/api/leads',
-        getAllLeads: "/api/leads",
+        getAllLeads: '/api/leads',
+        update: '/api/leads',
+        delete: '/api/leads',
+        getById: '/api/leads',
     },
     Lead_Source: {
         create: '/api/lead-sources',

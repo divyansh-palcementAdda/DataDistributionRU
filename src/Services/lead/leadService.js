@@ -20,19 +20,19 @@ export const getAllLeads = async (params) => {
 };
 export const updateLead = async (id, data) => {
     try {
-        const response = await axiosInstance.put(`${ApiRoutes.Lead.getAllLeads}/${id}`, data);
+        const response = await axiosInstance.put(`${ApiRoutes.Lead.update}/${id}`, data);
         return response;
     } catch (error) {
-        return error;
+        throw error;
     }
 };
 
 export const getLeadById = async (id) => {
     try {
-        const response = await axiosInstance.get(`${ApiRoutes.Lead.getAllLeads}/${id}`);
+        const response = await axiosInstance.get(`${ApiRoutes.Lead.getById}/${id}`);
         return response;
     } catch (error) {
-        return error;
+        throw error;
     }
 };
 export const deleteLead = async (id) => {

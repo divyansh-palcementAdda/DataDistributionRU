@@ -69,7 +69,7 @@ const Settings = () => {
             <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden animate-fadeIn">
               <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-gray-800">User Management</h2>
-                <CustomButton variant="primary" onClick={openAddLeadModal} className="text-xs py-1.5 px-3">
+                <CustomButton variant="primary" onClick={() => openAddLeadModal()} className="text-xs py-1.5 px-3">
                   + Invite User
                 </CustomButton>
               </div>

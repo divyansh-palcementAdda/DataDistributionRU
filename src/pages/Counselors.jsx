@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAppContext } from '../AppContext';
-import CustomButton from '../component/reusable/CustomButton';
 import ReusableTable from '../component/reusable/table';
+import { getAllCounselors } from '../Services/Counselors/counselors';
 
 /* ── Sort direction toggle helper ── */
 const nextDir = (cur) => (cur === 'ASC' ? 'DESC' : 'ASC');
@@ -63,17 +63,30 @@ const Counselors = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      // Temporarily removed API call as requested.
-      // Returning empty data for now so the UI doesn't crash.
-      setData([]);
-      setTotalElements(0);
-      setTotalPages(0);
+      const res = await getAllCounselors({
+        roleName: 'Conseller',
+        roleNames: "Conseller",
+        page,
+        size,
+        sortBy,
+        sortDirection,
+        search,
+      });
+
+      const payload = res?.data?.data || res?.data || {};
+      const content = Array.isArray(payload)
+        ? payload
+        : payload.content || payload.users || payload.data || [];
+
+      setData(Array.isArray(content) ? content : []);
+      setTotalElements(payload.totalElements ?? content.length ?? 0);
+      setTotalPages(payload.totalPages ?? 0);
     } catch (err) {
       showToast('Error fetching users', 'error');
     } finally {
       setLoading(false);
     }
-  }, [page, size, sortBy, sortDirection, search]);
+  }, [page, size, sortBy, sortDirection, search, showToast]);
 
   useEffect(() => {
     fetchData();

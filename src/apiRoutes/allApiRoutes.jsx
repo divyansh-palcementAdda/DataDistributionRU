@@ -42,7 +42,8 @@ const ApiRoutes = {
     },
 
     Counselors: {
-        getAllCounselors: ""
+        // endpoint is role but work for conseller
+        getAllCounselors: "/api/users/by-role"
     },
 
     CoursesTypes: {

@@ -33,6 +33,13 @@ const ApiRoutes = {
         activate: "/api/roles/{id}/activate",
         deactivate: "/api/roles/{id}/deactivate",
     },
+    Permission: {
+        getAll: "/api/permissions",
+        create: "/api/permissions",
+        getDetailsById: "/api/permissions/{id}",
+        update: "/api/permissions/{id}",
+        delete: "/api/permissions/{id}",
+    },
 
     Counselors: {
         getAllCounselors: ""

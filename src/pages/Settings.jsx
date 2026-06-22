@@ -6,26 +6,38 @@ import ReusableTable from '../component/reusable/table';
 import Toggle from '../component/reusable/custumToggle';
 import { getAllUser } from '../Services/user/user';
 import { getAllRoles, deleteRole, toggleRoleStatus } from '../Services/role/roleService';
+import { getAllPermissions, deletePermission } from '../Services/permissions/permissions';
 import AddUserModal from '../component/reusable/user/addUser';
 import AddEditRoleModal from '../component/reusable/role/addandeditRolemodel';
+import AddEditPermissionModal from '../component/reusable/permissions/addandeditPermissionModel';
 import DeleteModal from '../component/reusable/deleteModel';
 import RoleViewModal from '../component/reusable/role/roleViewModel';
+import PermissionViewModal from '../component/reusable/permissions/permissionViewModel';
 
 const Settings = () => {
   const { showToast } = useAppContext();
   const [activeTab, setActiveTab] = useState('st-users');
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
+  const [permissions, setPermissions] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [loadingRoles, setLoadingRoles] = useState(false);
+  const [loadingPermissions, setLoadingPermissions] = useState(false);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState(null);
   const [isRoleViewModalOpen, setIsRoleViewModalOpen] = useState(false);
   const [selectedRoleViewId, setSelectedRoleViewId] = useState(null);
+  const [isPermissionModalOpen, setIsPermissionModalOpen] = useState(false);
+  const [selectedPermission, setSelectedPermission] = useState(null);
+  const [isPermissionViewModalOpen, setIsPermissionViewModalOpen] = useState(false);
+  const [selectedPermissionViewId, setSelectedPermissionViewId] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [roleToDelete, setRoleToDelete] = useState(null);
   const [isDeletingRole, setIsDeletingRole] = useState(false);
+  const [isDeletePermissionModalOpen, setIsDeletePermissionModalOpen] = useState(false);
+  const [permissionToDelete, setPermissionToDelete] = useState(null);
+  const [isDeletingPermission, setIsDeletingPermission] = useState(false);
   const [togglingRoleId, setTogglingRoleId] = useState(null);
 
   const fetchUsers = useCallback(async () => {
@@ -86,6 +98,35 @@ const Settings = () => {
     }
   }, [showToast]);
 
+  const fetchPermissions = useCallback(async () => {
+    try {
+      setLoadingPermissions(true);
+      const res = await getAllPermissions();
+      console.log('API Response for getAllPermissions:', res?.data);
+
+      let permissionsArray = [];
+      const responseData = res?.data;
+
+      if (responseData?.data?.content && Array.isArray(responseData.data.content)) {
+        permissionsArray = responseData.data.content;
+      } else if (responseData?.data && Array.isArray(responseData.data)) {
+        permissionsArray = responseData.data;
+      } else if (responseData?.content && Array.isArray(responseData.content)) {
+        permissionsArray = responseData.content;
+      } else if (Array.isArray(responseData)) {
+        permissionsArray = responseData;
+      }
+
+      setPermissions(permissionsArray);
+    } catch (error) {
+      console.error('Failed to fetch permissions', error);
+      showToast('Failed to fetch permissions', 'error');
+      setPermissions([]);
+    } finally {
+      setLoadingPermissions(false);
+    }
+  }, [showToast]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -99,23 +140,16 @@ const Settings = () => {
       if (activeTab === 'st-roles') {
         fetchRoles();
       }
+
+      if (activeTab === 'st-permissions') {
+        fetchPermissions();
+      }
     });
 
     return () => {
       cancelled = true;
     };
-  }, [activeTab, fetchUsers, fetchRoles]);
-
-  const permissions = [
-    'User Management',
-    'Lead Management',
-    'Reports',
-    'Settings',
-    'Assign Leads',
-    'View Leads',
-    'Update Lead Status',
-    'Follow Ups'
-  ];
+  }, [activeTab, fetchUsers, fetchRoles, fetchPermissions]);
 
   const notifs = [
     { label: 'New lead assigned', on: true },
@@ -217,6 +251,45 @@ const Settings = () => {
           </span>
         </div>
       )
+    }
+  ];
+
+  const permissionColumns = [
+    {
+      header: 'Permission Name',
+      key: 'name',
+      render: (value, permission) => (
+        <div className="flex items-center gap-2">
+          <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
+          <span className="font-medium text-gray-900">
+            {value || permission?.permissionName || 'Unnamed permission'}
+          </span>
+        </div>
+      )
+    },
+    {
+      header: 'Description',
+      key: 'description',
+      render: (value) => (
+        <span className="text-gray-500">{value || 'No description'}</span>
+      )
+    },
+    {
+      header: 'Status',
+      key: 'active',
+      render: (value, permission) => {
+        const statusValue = value ?? permission?.enabled;
+
+        if (typeof statusValue !== 'boolean') {
+          return <span className="text-gray-400">N/A</span>;
+        }
+
+        return (
+          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${statusValue ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+            {statusValue ? 'Active' : 'Inactive'}
+          </span>
+        );
+      }
     }
   ];
 
@@ -322,6 +395,78 @@ const Settings = () => {
     showToast(selectedRole ? 'Role updated successfully!' : 'Role added successfully!', 'success');
   };
 
+  const handleOpenAddPermissionModal = () => {
+    setSelectedPermission(null);
+    setIsPermissionModalOpen(true);
+  };
+
+  const handleOpenEditPermissionModal = (permission) => {
+    setSelectedPermission(permission);
+    setIsPermissionModalOpen(true);
+  };
+
+  const handleOpenViewPermissionModal = (permission) => {
+    const permissionId = permission?.id ?? permission?._id ?? permission?.permissionId;
+    setSelectedPermissionViewId(permissionId || null);
+    setIsPermissionViewModalOpen(true);
+  };
+
+  const handleCloseViewPermissionModal = () => {
+    setIsPermissionViewModalOpen(false);
+    setSelectedPermissionViewId(null);
+  };
+
+  const handleClosePermissionModal = () => {
+    setIsPermissionModalOpen(false);
+    setSelectedPermission(null);
+  };
+
+  const handleOpenDeletePermissionModal = (permission) => {
+    setPermissionToDelete(permission);
+    setIsDeletePermissionModalOpen(true);
+  };
+
+  const handleCloseDeletePermissionModal = () => {
+    setIsDeletePermissionModalOpen(false);
+    setPermissionToDelete(null);
+  };
+
+  const handleConfirmDeletePermission = async () => {
+    const permissionId = permissionToDelete?.id ?? permissionToDelete?._id ?? permissionToDelete?.permissionId;
+
+    if (!permissionId) {
+      showToast('Permission id not found', 'error');
+      return;
+    }
+
+    try {
+      setIsDeletingPermission(true);
+      const response = await deletePermission(permissionId);
+      const isSuccess = response?.status >= 200 && response?.status < 300;
+
+      if (!isSuccess) {
+        const message =
+          response?.response?.data?.message ||
+          response?.response?.data?.error ||
+          response?.message ||
+          'Failed to delete permission.';
+        showToast(message, 'error');
+        return;
+      }
+
+      await fetchPermissions();
+      showToast('Permission deleted successfully!', 'success');
+      handleCloseDeletePermissionModal();
+    } finally {
+      setIsDeletingPermission(false);
+    }
+  };
+
+  const handleSubmitPermission = async () => {
+    await fetchPermissions();
+    showToast(selectedPermission ? 'Permission updated successfully!' : 'Permission added successfully!', 'success');
+  };
+
   return (
     <div className="block" id="page-settings">
       {/* Page Header */}
@@ -421,21 +566,34 @@ const Settings = () => {
           )}
 
           {activeTab === 'st-permissions' && (
-            <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm animate-fadeIn">
-              <h2 className="text-sm font-semibold text-gray-800 mb-4">
-                Permissions
-              </h2>
-
-              <div className="flex flex-wrap gap-2">
-                {permissions.map((perm, index) => (
-                  <span
-                    key={index}
-                    className="bg-gray-50 text-gray-500 text-[10px] font-medium px-2 py-1 rounded-md border border-gray-100"
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden animate-fadeIn">
+              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-gray-800">Permissions</h2>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-gray-500">{permissions.length} total</span>
+                  <CustomButton
+                    variant="primary"
+                    onClick={handleOpenAddPermissionModal}
+                    className="text-xs py-1.5 px-3"
                   >
-                    ✓ {perm}
-                  </span>
-                ))}
+                    + Add Permission
+                  </CustomButton>
+                </div>
               </div>
+              {loadingPermissions ? (
+                <div className="py-8 text-center text-sm text-gray-500">Loading permissions...</div>
+              ) : (
+                <div className="p-4">
+                  <ReusableTable
+                    columns={permissionColumns}
+                    data={Array.isArray(permissions) ? permissions : []}
+                    emptyMessage="No permissions found."
+                    onView={handleOpenViewPermissionModal}
+                    onEdit={handleOpenEditPermissionModal}
+                    onDelete={handleOpenDeletePermissionModal}
+                  />
+                </div>
+              )}
             </div>
           )}
 
@@ -477,6 +635,13 @@ const Settings = () => {
         initialData={selectedRole}
       />
 
+      <AddEditPermissionModal
+        isOpen={isPermissionModalOpen}
+        onClose={handleClosePermissionModal}
+        onSubmit={handleSubmitPermission}
+        initialData={selectedPermission}
+      />
+
       <DeleteModal
         isOpen={isDeleteModalOpen}
         onClose={handleCloseDeleteRoleModal}
@@ -486,10 +651,25 @@ const Settings = () => {
         isLoading={isDeletingRole}
       />
 
+      <DeleteModal
+        isOpen={isDeletePermissionModalOpen}
+        onClose={handleCloseDeletePermissionModal}
+        onConfirm={handleConfirmDeletePermission}
+        title="Delete Permission"
+        message={`Are you sure you want to delete "${permissionToDelete?.name || permissionToDelete?.permissionName || 'this permission'}"? This action cannot be undone.`}
+        isLoading={isDeletingPermission}
+      />
+
       <RoleViewModal
         isOpen={isRoleViewModalOpen}
         onClose={handleCloseViewRoleModal}
         roleId={selectedRoleViewId}
+      />
+
+      <PermissionViewModal
+        isOpen={isPermissionViewModalOpen}
+        onClose={handleCloseViewPermissionModal}
+        permissionId={selectedPermissionViewId}
       />
     </div>
   );

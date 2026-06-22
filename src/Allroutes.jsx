@@ -22,6 +22,8 @@ import Reports from "./pages/Reports";
 import Courses from "./pages/Courses";
 import Settings from "./pages/Settings";
 import Leadsourse from "./pages/LeadSource";
+import CourseType from "./pages/CourseType";
+import CourseTypeDetails from "./pages/CourseTypeDetails";
 
 // Reusable Components / Standalone Pages
 import StudentForm from "./component/reusable/studentForm";
@@ -52,6 +54,8 @@ const Allroutes = () => {
         <Route path="/courses" element={<Courses />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/lead-source" element={<Leadsourse />} />
+        <Route path="/courses-types" element={<CourseType />} />
+        <Route path="/courses-types/:id" element={<CourseTypeDetails />} />
 
       </Route>
 

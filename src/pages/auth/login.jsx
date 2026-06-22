@@ -38,7 +38,7 @@ const Login = () => {
         toast.success("Login successful!");
         localStorage.setItem('accessToken', response.data.data.accessToken);
         localStorage.setItem('refreshToken', response.data.data.refreshToken);
-        
+
         // Fetch permissions using roleId
         const roleId = response.data.data.role?.id;
         if (roleId) {

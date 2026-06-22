@@ -30,6 +30,25 @@ const ApiRoutes = {
     Counselors: {
         getAllCounselors: ""
     },
+
+    CoursesTypes: {
+        create: "/api/course-types",
+        getAllCourse: "/api/course-types",
+        update: "/api/course-types/{id}",
+        delete: "/api/course-types/{id}",
+        toggle: "/api/course-types/{id}/toggle-active",
+        getDetailsById: "/api/course-types/{id}",
+        getActive: "/api/course-types/active"
+    },
+
+    Course: {
+        createCourse: '/api/courses',
+        getAllCourses: "/api/courses",
+        update: '/api/courses/{id}',
+        delete: '/api/courses/{id}',
+        toggle: '/api/courses/{id}/toggle-active',
+        details: '/api/courses/{id}'
+    }
 }
 
 export default ApiRoutes;   

@@ -1,57 +1,160 @@
-import React from 'react';
-import { useAppContext } from '../AppContext';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import CustomButton from '../component/reusable/CustomButton';
-import { courses } from '../mockData';
+import ReusableTable from '../component/reusable/table';
+import Toggle from '../component/reusable/custumToggle';
+import { getAllCourses, toggleCourseStatus, deleteCourse } from '../Services/course/course';
+import { toast } from 'react-toastify';
+import AddCourseModal from '../component/reusable/course/addCourseModel';
+import DeleteModal from '../component/reusable/deleteModel';
 
 const Courses = () => {
-  const { openAddLeadModal } = useAppContext();
+  const navigate = useNavigate();
+  const [courses, setCourses] = useState([]);
+
+  const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editData, setEditData] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const fetchCourses = async () => {
+    try {
+      setLoading(true);
+      const res = await getAllCourses({
+        page: currentPage - 1,
+        size: rowsPerPage,
+      });
+
+      if (res?.success && res?.data) {
+        setCourses(res.data.content || []);
+        setTotalPages(res.data.totalPages || 0);
+        setTotalElements(res.data.totalElements || 0);
+      } else {
+        setCourses(res?.content || res?.data || res || []);
+        setTotalPages(res?.totalPages || 0);
+        setTotalElements(res?.totalElements || 0);
+      }
+    } catch (error) {
+      toast.error(error.message || "Failed to fetch courses");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCourses();
+  }, [currentPage, rowsPerPage]);
+
+  const handleToggleStatus = async (id, currentStatus) => {
+    try {
+      await toggleCourseStatus(id);
+      toast.success("Status updated successfully");
+      fetchCourses();
+    } catch (error) {
+      toast.error(error.message || "Failed to update status");
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!itemToDelete) return;
+    try {
+      setIsDeleting(true);
+      await deleteCourse(itemToDelete.id);
+      toast.success("Course deleted successfully");
+      fetchCourses();
+      setIsDeleteModalOpen(false);
+      setItemToDelete(null);
+    } catch (error) {
+      toast.error(error.message || "Failed to delete course");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const columns = [
+    { key: "courseName", header: "Name" },
+    { key: "description", header: "Description" },
+    {
+      key: "status",
+      header: "Status",
+      render: (status, row) => (
+        <Toggle
+          checked={status === 'ACTIVE' || status === true}
+          onChange={() => handleToggleStatus(row.id, status)}
+        />
+      )
+    }
+  ];
 
   return (
-    <div className="block" id="page-courses">
+    <div className="block p-4 sm:p-6 p-0" id="page-courses">
       {/* Page Header */}
       <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Courses</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Courses</h1>
           <p className="text-sm text-gray-500 mt-1">Manage course catalog and enrollment data</p>
         </div>
-        <CustomButton variant="primary" onClick={openAddLeadModal} className="text-xs py-1.5 px-3">
+        <CustomButton variant="primary" onClick={() => { setEditData(null); setIsAddModalOpen(true); }} className="text-sm py-2 px-4 shadow-sm hover:shadow-md transition-shadow">
           + Add Course
         </CustomButton>
       </div>
 
-      {/* Courses Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="courses-grid">
-        {courses.map((c, i) => (
-          <div 
-            key={i} 
-            className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm transition-all hover:shadow-md border-t-[3px]" 
-            style={{ borderTopColor: c.color }}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="text-2xl">{c.icon}</div>
-              <span className="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded-md uppercase tracking-wider">{c.growth}</span>
-            </div>
-            <div className="font-bold text-gray-900 mb-1">{c.name}</div>
-            <div className="text-xs text-gray-500 mb-5">
-              Total Revenue: <strong className="text-gray-800">{c.revenue}</strong>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              <div className="bg-gray-50 p-2 rounded-lg text-center">
-                <div className="text-sm font-bold" style={{ color: c.color }}>{c.enrolled}</div>
-                <div className="text-[10px] text-gray-400 font-medium leading-none mt-1">Enrolled</div>
-              </div>
-              <div className="bg-gray-50 p-2 rounded-lg text-center">
-                <div className="text-sm font-bold text-blue-600">{c.active}</div>
-                <div className="text-[10px] text-gray-400 font-medium leading-none mt-1">Active</div>
-              </div>
-              <div className="bg-gray-50 p-2 rounded-lg text-center">
-                <div className="text-sm font-bold text-green-600">{c.completed}</div>
-                <div className="text-[10px] text-gray-400 font-medium leading-none mt-1">Done</div>
-              </div>
-            </div>
-          </div>
-        ))}
+      {/* Main Content Area */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-1">
+        <ReusableTable
+          columns={columns}
+          data={courses}
+          isServerSide={true}
+          totalElements={totalElements}
+          totalPages={totalPages}
+          currentPage={currentPage}
+          rowsPerPage={rowsPerPage}
+          onPageChange={setCurrentPage}
+          onRowsPerPageChange={setRowsPerPage}
+          emptyMessage={loading ? "Loading..." : "No courses found"}
+          onView={(row) => navigate(`/courses/${row.id}`)}
+          onEdit={(row) => {
+            setEditData(row);
+            setIsAddModalOpen(true);
+          }}
+          onDelete={(row) => {
+            setItemToDelete(row);
+            setIsDeleteModalOpen(true);
+          }}
+        />
       </div>
+
+      <AddCourseModal
+        isOpen={isAddModalOpen}
+        onClose={() => {
+          setIsAddModalOpen(false);
+          setEditData(null);
+        }}
+        initialData={editData}
+        onSubmit={() => {
+          setIsAddModalOpen(false);
+          setEditData(null);
+          fetchCourses();
+        }}
+      />
+
+      <DeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setItemToDelete(null);
+        }}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Course"
+        message={`Are you sure you want to delete the course "${itemToDelete?.name}"?`}
+        isLoading={isDeleting}
+      />
     </div>
   );
 };

@@ -22,6 +22,8 @@ const Courses = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
   const fetchCourses = async () => {
     try {
@@ -29,6 +31,7 @@ const Courses = () => {
       const res = await getAllCourses({
         page: currentPage - 1,
         size: rowsPerPage,
+        search: debouncedSearch,
       });
 
       if (res?.success && res?.data) {
@@ -48,8 +51,17 @@ const Courses = () => {
   };
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setCurrentPage(1);
+    }, 500); // 500ms delay
+
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
     fetchCourses();
-  }, [currentPage, rowsPerPage]);
+  }, [currentPage, rowsPerPage, debouncedSearch]);
 
   const handleToggleStatus = async (id, currentStatus) => {
     try {
@@ -59,6 +71,11 @@ const Courses = () => {
     } catch (error) {
       toast.error(error.message || "Failed to update status");
     }
+  };
+
+  const handleSearch = (e) => {
+    setSearch(e.target.value);
+    setCurrentPage(1);
   };
 
   const handleDeleteConfirm = async () => {
@@ -100,6 +117,17 @@ const Courses = () => {
           <h1 className="text-2xl font-bold text-gray-900">Courses</h1>
           <p className="text-sm text-gray-500 mt-1">Manage course catalog and enrollment data</p>
         </div>
+
+
+
+        <input
+          type="text"
+          placeholder="Search courses..."
+          value={search}
+          onChange={handleSearch}
+          className="border border-gray-300 rounded-lg px-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+
         <CustomButton variant="primary" onClick={() => { setEditData(null); setIsAddModalOpen(true); }} className="text-sm py-2 px-4 shadow-sm hover:shadow-md transition-shadow">
           + Add Course
         </CustomButton>
@@ -118,7 +146,7 @@ const Courses = () => {
           onPageChange={setCurrentPage}
           onRowsPerPageChange={setRowsPerPage}
           emptyMessage={loading ? "Loading..." : "No courses found"}
-          onView={(row) => navigate(`/courses/${row.id}`)}
+          onView={(row) => navigate(`/course-details/${row.id}`)}
           onEdit={(row) => {
             setEditData(row);
             setIsAddModalOpen(true);

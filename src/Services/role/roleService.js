@@ -9,3 +9,12 @@ export const getRolePermissions = async (roleId) => {
         return error;
     }
 };
+
+export const getAllRoles = async () => {
+    try {
+        const response = await axiosInstance.get(ApiRoutes.Role.getAllRoles);
+        return response;
+    } catch (error) {
+        return error;
+    }
+}

@@ -24,12 +24,16 @@ const CourseType = () => {
     const [itemToDelete, setItemToDelete] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
+    const [search, setSearch] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
+
     const fetchCourses = async () => {
         try {
             setLoading(true);
             const res = await getAllCourseType({
                 page: currentPage - 1,
                 size: rowsPerPage,
+                search: debouncedSearch,
             });
 
             if (res?.success && res?.data) {
@@ -49,8 +53,21 @@ const CourseType = () => {
     };
 
     useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(search);
+            setCurrentPage(1);
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [search]);
+
+    useEffect(() => {
         fetchCourses();
-    }, [currentPage, rowsPerPage]);
+    }, [currentPage, rowsPerPage, debouncedSearch]);
+
+    const handleSearch = (e) => {
+        setSearch(e.target.value);
+    };
 
     const handleToggleStatus = async (id, currentStatus) => {
         try {
@@ -102,6 +119,16 @@ const CourseType = () => {
                     <h1 className="text-2xl font-bold text-gray-900">Course Types</h1>
                     <p className="text-sm text-gray-500 mt-1">Manage your course types catalog and parameters</p>
                 </div>
+
+                <input
+                    type="text"
+                    placeholder="Search course type..."
+                    value={search}
+                    onChange={handleSearch}
+                    className="border border-gray-300 rounded-lg px-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+
+
                 <CustomButton variant="primary" onClick={() => { setEditData(null); setIsAddModalOpen(true); }} className="text-sm py-2 px-4 shadow-sm hover:shadow-md transition-shadow">
                     + Add Course Type
                 </CustomButton>

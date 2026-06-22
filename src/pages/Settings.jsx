@@ -4,17 +4,24 @@ import CustomButton from '../component/reusable/CustomButton';
 import CustomInput from '../component/reusable/CustomInput';
 import ReusableTable from '../component/reusable/table';
 import { getAllUser } from '../Services/user/user';
+import { getAllRoles } from '../Services/role/roleService';
 import AddUserModal from '../component/reusable/user/addUser';
 const Settings = () => {
   const { showToast, openAddLeadModal } = useAppContext();
   const [activeTab, setActiveTab] = useState('st-users');
   const [users, setUsers] = useState([]);
+  const [roles, setRoles] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
+  const [loadingRoles, setLoadingRoles] = useState(false);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
 
   useEffect(() => {
     if (activeTab === 'st-users') {
       fetchUsers();
+    }
+
+    if (activeTab === 'st-roles') {
+      fetchRoles();
     }
   }, [activeTab]);
 
@@ -23,10 +30,10 @@ const Settings = () => {
       setLoadingUsers(true);
       const res = await getAllUser();
       console.log('API Response for getAllUser:', res.data);
-      
+
       let usersArray = [];
       const responseData = res.data;
-      
+
       if (responseData?.data?.content && Array.isArray(responseData.data.content)) {
         usersArray = responseData.data.content;
       } else if (responseData?.data && Array.isArray(responseData.data)) {
@@ -47,10 +54,44 @@ const Settings = () => {
     }
   };
 
-  const roles = [
-    { name: 'Admin', perms: ['All access', 'User management', 'Reports', 'Settings', 'Lead management'], color: '#2563EB' },
-    { name: 'Manager', perms: ['View all leads', 'Counselor management', 'Reports', 'Assign leads'], color: '#7C3AED' },
-    { name: 'Counselor', perms: ['View assigned leads', 'Update lead status', 'Add follow-ups', 'View own reports'], color: '#16A34A' },
+  const fetchRoles = async () => {
+    try {
+      setLoadingRoles(true);
+      const res = await getAllRoles();
+      console.log('API Response for getAllRoles:', res?.data);
+
+      let rolesArray = [];
+      const responseData = res?.data;
+
+      if (responseData?.data?.content && Array.isArray(responseData.data.content)) {
+        rolesArray = responseData.data.content;
+      } else if (responseData?.data && Array.isArray(responseData.data)) {
+        rolesArray = responseData.data;
+      } else if (responseData?.content && Array.isArray(responseData.content)) {
+        rolesArray = responseData.content;
+      } else if (Array.isArray(responseData)) {
+        rolesArray = responseData;
+      }
+
+      setRoles(rolesArray);
+    } catch (error) {
+      console.error('Failed to fetch roles', error);
+      showToast('Failed to fetch roles', 'error');
+      setRoles([]);
+    } finally {
+      setLoadingRoles(false);
+    }
+  };
+
+  const permissions = [
+    'User Management',
+    'Lead Management',
+    'Reports',
+    'Settings',
+    'Assign Leads',
+    'View Leads',
+    'Update Lead Status',
+    'Follow Ups'
   ];
 
   const notifs = [
@@ -64,7 +105,8 @@ const Settings = () => {
 
   const menuItems = [
     { id: 'st-users', label: 'User Management' },
-    { id: 'st-roles', label: 'Roles & Permissions' },
+    { id: 'st-roles', label: 'Roles' },
+    { id: 'st-permissions', label: 'Permissions' },
     { id: 'st-notif', label: 'Notifications' },
     { id: 'st-crm', label: 'CRM Config' },
   ];
@@ -127,8 +169,8 @@ const Settings = () => {
             <div
               key={item.id}
               className={`px-4 py-2.5 rounded-lg text-sm font-medium cursor-pointer transition-all whitespace-nowrap ${activeTab === item.id
-                  ? 'bg-blue-50 text-blue-600 shadow-sm border border-blue-100'
-                  : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                ? 'bg-blue-50 text-blue-600 shadow-sm border border-blue-100'
+                : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
                 }`}
               onClick={() => setActiveTab(item.id)}
             >
@@ -157,30 +199,43 @@ const Settings = () => {
               </div>
             </div>
           )}
-
           {activeTab === 'st-roles' && (
             <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm animate-fadeIn">
-              <h2 className="text-sm font-semibold text-gray-800 mb-4">Roles & Permissions</h2>
-              <div className="flex flex-col gap-3">
-                {roles.map((r, i) => (
-                  <div key={i} className="border border-gray-100 rounded-xl p-4 hover:border-blue-200 transition-colors">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: r.color }}></div>
-                        <span className="font-bold text-gray-800 text-sm">{r.name}</span>
-                      </div>
-                      <button className="text-xs text-blue-600 font-medium hover:underline">Edit Permissions</button>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {r.perms.map((p, idx) => (
-                        <span key={idx} className="bg-gray-50 text-gray-500 text-[10px] font-medium px-2 py-1 rounded-md border border-gray-100">
-                          ✓ {p}
+              <h2 className="text-sm font-semibold text-gray-800 mb-4">Roles</h2>
+              {loadingRoles ? (
+                <div className="py-8 text-center text-sm text-gray-500">Loading roles...</div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  {roles.length > 0 ? roles.map((r) => (
+                    <div key={r.id} className="border border-gray-100 rounded-xl p-4 hover:border-blue-200 transition-colors">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-2 h-2 rounded-full ${r.active ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                          <span className="font-bold text-gray-800 text-sm">{r.name || 'Unnamed role'}</span>
+                        </div>
+                        <span className={`text-[10px] font-semibold px-2 py-1 rounded-full ${r.active ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                          {r.active ? 'Active' : 'Inactive'}
                         </span>
-                      ))}
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {r.description && (
+                          <span className="bg-gray-50 text-gray-600 text-[10px] font-medium px-2 py-1 rounded-md border border-gray-100">
+                            {r.description}
+                          </span>
+                        )}
+                        <span className="bg-gray-50 text-gray-600 text-[10px] font-medium px-2 py-1 rounded-md border border-gray-100">
+                          Users: {r.userCount ?? 0}
+                        </span>
+                        <span className="bg-gray-50 text-gray-600 text-[10px] font-medium px-2 py-1 rounded-md border border-gray-100">
+                          ID: {r.id}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  )) : (
+                    <div className="py-8 text-center text-sm text-gray-500">No roles found.</div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -200,6 +255,26 @@ const Settings = () => {
               </div>
             </div>
           )}
+
+          {activeTab === 'st-permissions' && (
+            <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm animate-fadeIn">
+              <h2 className="text-sm font-semibold text-gray-800 mb-4">
+                Permissions
+              </h2>
+
+              <div className="flex flex-wrap gap-2">
+                {permissions.map((perm, index) => (
+                  <span
+                    key={index}
+                    className="bg-gray-50 text-gray-500 text-[10px] font-medium px-2 py-1 rounded-md border border-gray-100"
+                  >
+                    ✓ {perm}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
 
           {activeTab === 'st-crm' && (
             <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm animate-fadeIn">
@@ -224,11 +299,11 @@ const Settings = () => {
           )}
         </div>
       </div>
-      
-      <AddUserModal 
-        isOpen={isAddUserModalOpen} 
-        onClose={() => setIsAddUserModalOpen(false)} 
-        onSuccess={fetchUsers} 
+
+      <AddUserModal
+        isOpen={isAddUserModalOpen}
+        onClose={() => setIsAddUserModalOpen(false)}
+        onSuccess={fetchUsers}
       />
     </div>
   );

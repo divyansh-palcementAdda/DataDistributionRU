@@ -25,6 +25,7 @@ const ApiRoutes = {
     },
     Role: {
         getPermissions: '/api/roles',
+        getAllRoles: "/api/roles"
     },
 
     Counselors: {

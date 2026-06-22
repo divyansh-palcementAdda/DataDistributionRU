@@ -1,31 +1,34 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAppContext } from '../AppContext';
 import CustomButton from '../component/reusable/CustomButton';
 import CustomInput from '../component/reusable/CustomInput';
 import ReusableTable from '../component/reusable/table';
+import Toggle from '../component/reusable/custumToggle';
 import { getAllUser } from '../Services/user/user';
-import { getAllRoles } from '../Services/role/roleService';
+import { getAllRoles, deleteRole, toggleRoleStatus } from '../Services/role/roleService';
 import AddUserModal from '../component/reusable/user/addUser';
+import AddEditRoleModal from '../component/reusable/role/addandeditRolemodel';
+import DeleteModal from '../component/reusable/deleteModel';
+import RoleViewModal from '../component/reusable/role/roleViewModel';
+
 const Settings = () => {
-  const { showToast, openAddLeadModal } = useAppContext();
+  const { showToast } = useAppContext();
   const [activeTab, setActiveTab] = useState('st-users');
   const [users, setUsers] = useState([]);
   const [roles, setRoles] = useState([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [loadingRoles, setLoadingRoles] = useState(false);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
+  const [selectedRole, setSelectedRole] = useState(null);
+  const [isRoleViewModalOpen, setIsRoleViewModalOpen] = useState(false);
+  const [selectedRoleViewId, setSelectedRoleViewId] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [roleToDelete, setRoleToDelete] = useState(null);
+  const [isDeletingRole, setIsDeletingRole] = useState(false);
+  const [togglingRoleId, setTogglingRoleId] = useState(null);
 
-  useEffect(() => {
-    if (activeTab === 'st-users') {
-      fetchUsers();
-    }
-
-    if (activeTab === 'st-roles') {
-      fetchRoles();
-    }
-  }, [activeTab]);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       setLoadingUsers(true);
       const res = await getAllUser();
@@ -52,9 +55,9 @@ const Settings = () => {
     } finally {
       setLoadingUsers(false);
     }
-  };
+  }, [showToast]);
 
-  const fetchRoles = async () => {
+  const fetchRoles = useCallback(async () => {
     try {
       setLoadingRoles(true);
       const res = await getAllRoles();
@@ -81,7 +84,27 @@ const Settings = () => {
     } finally {
       setLoadingRoles(false);
     }
-  };
+  }, [showToast]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    Promise.resolve().then(() => {
+      if (cancelled) return;
+
+      if (activeTab === 'st-users') {
+        fetchUsers();
+      }
+
+      if (activeTab === 'st-roles') {
+        fetchRoles();
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, fetchUsers, fetchRoles]);
 
   const permissions = [
     'User Management',
@@ -154,6 +177,151 @@ const Settings = () => {
     }
   ];
 
+  const roleColumns = [
+    {
+      header: 'Role Name',
+      key: 'name',
+      render: (value, role) => (
+        <div className="flex items-center gap-2">
+          <div className={`w-2.5 h-2.5 rounded-full ${role.active ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+          <span className="font-medium text-gray-900">{value || 'Unnamed role'}</span>
+        </div>
+      )
+    },
+    {
+      header: 'Description',
+      key: 'description',
+      render: (value) => (
+        <span className="text-gray-500">{value || 'No description'}</span>
+      )
+    },
+    {
+      header: 'Users',
+      key: 'userCount',
+      render: (value) => (
+        <span className="text-gray-700 font-medium">{value ?? 0}</span>
+      )
+    },
+    {
+      header: 'Status',
+      key: 'active',
+      render: (value, role) => (
+        <div className="flex items-center gap-3">
+          <Toggle
+            checked={value === true}
+            onChange={(checked) => handleToggleRoleStatus(role, checked)}
+            disabled={togglingRoleId === (role?.id ?? role?._id ?? role?.roleId)}
+          />
+          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${value ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+            {value ? 'Active' : 'Inactive'}
+          </span>
+        </div>
+      )
+    }
+  ];
+
+  const handleOpenAddRoleModal = () => {
+    setSelectedRole(null);
+    setIsRoleModalOpen(true);
+  };
+
+  const handleOpenEditRoleModal = (role) => {
+    setSelectedRole(role);
+    setIsRoleModalOpen(true);
+  };
+
+  const handleOpenViewRoleModal = (role) => {
+    const roleId = role?.id ?? role?._id ?? role?.roleId;
+    setSelectedRoleViewId(roleId || null);
+    setIsRoleViewModalOpen(true);
+  };
+
+  const handleCloseViewRoleModal = () => {
+    setIsRoleViewModalOpen(false);
+    setSelectedRoleViewId(null);
+  };
+
+  const handleCloseRoleModal = () => {
+    setIsRoleModalOpen(false);
+    setSelectedRole(null);
+  };
+
+  const handleOpenDeleteRoleModal = (role) => {
+    setRoleToDelete(role);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleCloseDeleteRoleModal = () => {
+    setIsDeleteModalOpen(false);
+    setRoleToDelete(null);
+  };
+
+  const handleConfirmDeleteRole = async () => {
+    const roleId = roleToDelete?.id ?? roleToDelete?._id ?? roleToDelete?.roleId;
+
+    if (!roleId) {
+      showToast('Role id not found', 'error');
+      return;
+    }
+
+    try {
+      setIsDeletingRole(true);
+      const response = await deleteRole(roleId);
+      const isSuccess = response?.status >= 200 && response?.status < 300;
+
+      if (!isSuccess) {
+        const message =
+          response?.response?.data?.message ||
+          response?.response?.data?.error ||
+          response?.message ||
+          'Failed to delete role.';
+        showToast(message, 'error');
+        return;
+      }
+
+      await fetchRoles();
+      showToast('Role deleted successfully!', 'success');
+      handleCloseDeleteRoleModal();
+    } finally {
+      setIsDeletingRole(false);
+    }
+  };
+
+  const handleToggleRoleStatus = async (role, nextChecked) => {
+    const roleId = role?.id ?? role?._id ?? role?.roleId;
+
+    if (!roleId) {
+      showToast('Role id not found', 'error');
+      return;
+    }
+
+    try {
+      setTogglingRoleId(roleId);
+      const response = await toggleRoleStatus(roleId, nextChecked);
+      const isSuccess = response?.status >= 200 && response?.status < 300;
+
+      if (!isSuccess) {
+        const message =
+          response?.response?.data?.message ||
+          response?.response?.data?.error ||
+          response?.message ||
+          'Failed to update role status.';
+        showToast(message, 'error');
+        return;
+      }
+
+      await fetchRoles();
+      showToast(`Role ${nextChecked ? 'activated' : 'deactivated'} successfully!`, 'success');
+    } finally {
+      setTogglingRoleId(null);
+    }
+  };
+
+  const handleSubmitRole = async () => {
+    await fetchRoles();
+    showToast(selectedRole ? 'Role updated successfully!' : 'Role added successfully!', 'success');
+  };
+
   return (
     <div className="block" id="page-settings">
       {/* Page Header */}
@@ -189,51 +357,47 @@ const Settings = () => {
                   + Invite User
                 </CustomButton>
               </div>
-              <div className="p-4">
-                <ReusableTable
-                  columns={userColumns}
-                  data={Array.isArray(users) ? users : []}
-                  onEdit={() => console.log('Edit User')}
-                  onDelete={() => showToast('User removed')}
-                />
-              </div>
+              {loadingUsers ? (
+                <div className="py-8 text-center text-sm text-gray-500">Loading users...</div>
+              ) : (
+                <div className="p-4">
+                  <ReusableTable
+                    columns={userColumns}
+                    data={Array.isArray(users) ? users : []}
+                    onEdit={() => console.log('Edit User')}
+                    onDelete={() => showToast('User removed')}
+                  />
+                </div>
+              )}
             </div>
           )}
           {activeTab === 'st-roles' && (
-            <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm animate-fadeIn">
-              <h2 className="text-sm font-semibold text-gray-800 mb-4">Roles</h2>
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden animate-fadeIn">
+              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-gray-800">Roles</h2>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-gray-500">{roles.length} total</span>
+                  <CustomButton
+                    variant="primary"
+                    onClick={handleOpenAddRoleModal}
+                    className="text-xs py-1.5 px-3"
+                  >
+                    + Add Role
+                  </CustomButton>
+                </div>
+              </div>
               {loadingRoles ? (
                 <div className="py-8 text-center text-sm text-gray-500">Loading roles...</div>
               ) : (
-                <div className="flex flex-col gap-3">
-                  {roles.length > 0 ? roles.map((r) => (
-                    <div key={r.id} className="border border-gray-100 rounded-xl p-4 hover:border-blue-200 transition-colors">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-2 h-2 rounded-full ${r.active ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                          <span className="font-bold text-gray-800 text-sm">{r.name || 'Unnamed role'}</span>
-                        </div>
-                        <span className={`text-[10px] font-semibold px-2 py-1 rounded-full ${r.active ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                          {r.active ? 'Active' : 'Inactive'}
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {r.description && (
-                          <span className="bg-gray-50 text-gray-600 text-[10px] font-medium px-2 py-1 rounded-md border border-gray-100">
-                            {r.description}
-                          </span>
-                        )}
-                        <span className="bg-gray-50 text-gray-600 text-[10px] font-medium px-2 py-1 rounded-md border border-gray-100">
-                          Users: {r.userCount ?? 0}
-                        </span>
-                        <span className="bg-gray-50 text-gray-600 text-[10px] font-medium px-2 py-1 rounded-md border border-gray-100">
-                          ID: {r.id}
-                        </span>
-                      </div>
-                    </div>
-                  )) : (
-                    <div className="py-8 text-center text-sm text-gray-500">No roles found.</div>
-                  )}
+                <div className="p-4">
+                  <ReusableTable
+                    columns={roleColumns}
+                    data={Array.isArray(roles) ? roles : []}
+                    emptyMessage="No roles found."
+                    onView={handleOpenViewRoleModal}
+                    onEdit={handleOpenEditRoleModal}
+                    onDelete={handleOpenDeleteRoleModal}
+                  />
                 </div>
               )}
             </div>
@@ -304,6 +468,28 @@ const Settings = () => {
         isOpen={isAddUserModalOpen}
         onClose={() => setIsAddUserModalOpen(false)}
         onSuccess={fetchUsers}
+      />
+
+      <AddEditRoleModal
+        isOpen={isRoleModalOpen}
+        onClose={handleCloseRoleModal}
+        onSubmit={handleSubmitRole}
+        initialData={selectedRole}
+      />
+
+      <DeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={handleCloseDeleteRoleModal}
+        onConfirm={handleConfirmDeleteRole}
+        title="Delete Role"
+        message={`Are you sure you want to delete "${roleToDelete?.name || 'this role'}"? This action cannot be undone.`}
+        isLoading={isDeletingRole}
+      />
+
+      <RoleViewModal
+        isOpen={isRoleViewModalOpen}
+        onClose={handleCloseViewRoleModal}
+        roleId={selectedRoleViewId}
       />
     </div>
   );

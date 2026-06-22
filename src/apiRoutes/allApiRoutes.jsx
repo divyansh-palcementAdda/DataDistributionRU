@@ -25,7 +25,13 @@ const ApiRoutes = {
     },
     Role: {
         getPermissions: '/api/roles',
-        getAllRoles: "/api/roles"
+        getAllRoles: "/api/roles",
+        cretae: '/api/roles',
+        upadte: '/api/roles/{id}',
+        delete: '/api/roles/{id}',
+        getDetailsById: "/api/roles/{id}",
+        activate: "/api/roles/{id}/activate",
+        deactivate: "/api/roles/{id}/deactivate",
     },
 
     Counselors: {

@@ -1,6 +1,10 @@
 import React from 'react';
 import { useAppContext } from '../AppContext';
 
+const BRAND_LOGO = 'https://ru-website-bucket.s3.ap-south-1.amazonaws.com/images/svg/logoblack.svg';
+const BRAND_NAME = 'Data Distribute System';
+const BRAND_SUBTITLE = 'Education Lead Management';
+
 const Sidebar = () => {
   const { currentPage, navTo, isSidebarOpen, toggleSidebar } = useAppContext();
 
@@ -23,10 +27,14 @@ const Sidebar = () => {
   return (
     <nav className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
       <div className="sidebar-logo">
-        <div className="logo-icon">T</div>
+        <img
+          src={BRAND_LOGO}
+          alt={`${BRAND_NAME} logo`}
+          className="sidebar-logo-img"
+        />
         <div>
-          <div className="logo-text">TechOnly CRM</div>
-          <div className="logo-sub">Education Management</div>
+          <div className="logo-text">{BRAND_NAME}</div>
+          <div className="logo-sub">{BRAND_SUBTITLE}</div>
         </div>
       </div>
       <div className="sidebar-section">

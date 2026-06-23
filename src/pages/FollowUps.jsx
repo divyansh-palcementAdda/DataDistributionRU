@@ -1,109 +1,376 @@
-import React, { useState } from 'react';
-import { useAppContext } from '../AppContext';
-import CustomButton from '../component/reusable/CustomButton';
-import { followups } from '../mockData';
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useAppContext } from "../AppContext";
+import ReusableTable from "../component/reusable/table";
+import { getAllFollowups } from "../Services/followUp/followService"
+
+const nextDir = (cur) => (cur === "ASC" ? "DESC" : "ASC");
+
+const SortIcon = ({ active, direction }) => (
+  <svg
+    width="12"
+    height="12"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={active ? "var(--primary)" : "var(--gray-400)"}
+    strokeWidth="2.5"
+    style={{
+      marginLeft: "4px",
+      flexShrink: 0,
+      transform:
+        active && direction === "DESC"
+          ? "rotate(180deg)"
+          : "none",
+    }}
+  >
+    <path
+      d="M12 5l7 7H5z"
+      fill={active ? "var(--primary)" : "var(--gray-400)"}
+      stroke="none"
+    />
+  </svg>
+);
 
 const FollowUps = () => {
   const { openAddLeadModal, showToast } = useAppContext();
-  const [activeTab, setActiveTab] = useState('fu-today');
 
-  // Data categorization based on status
-  const todayList = followups.filter(f => f.status === 'today');
-  const upcomingList = followups.filter(f => f.status === 'upcoming');
-  const missedList = followups.filter(f => f.status === 'missed');
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const FollowupCard = ({ followup }) => (
-    <div className={`p-4 rounded-xl border shadow-sm flex flex-wrap items-center justify-between gap-4 transition-all hover:shadow-md ${followup.urgent ? 'bg-orange-50 border-orange-100' : 'bg-white border-gray-200'}`}>
-      <div className="flex items-center gap-4">
-        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-xs ${followup.urgent ? 'bg-orange-500' : 'bg-purple-600'}`}>
-          {followup.name.split(' ').map(n => n[0]).join('')}
-        </div>
-        <div>
-          <h3 className="font-bold text-gray-900 text-sm">{followup.name}</h3>
-          <p className="text-[11px] text-gray-500 mt-0.5">{followup.course} • <span className="font-semibold text-blue-600">{followup.type}</span> • {followup.time}</p>
-        </div>
-      </div>
-      <div className="flex gap-2">
-        <button onClick={() => showToast('Rescheduled!')} className="px-3 py-1.5 rounded-lg text-[10px] font-bold text-gray-500 bg-gray-50 hover:bg-gray-100 border border-gray-100 transition-colors uppercase tracking-tight">Reschedule</button>
-        <button onClick={() => showToast('Action taken')} className={`px-3 py-1.5 rounded-lg text-[10px] font-bold text-white transition-colors uppercase tracking-tight shadow-sm ${followup.urgent ? 'bg-orange-600 hover:bg-orange-700' : 'bg-blue-600 hover:bg-blue-700'}`}>Take Action</button>
-      </div>
+  const [totalElements, setTotalElements] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(10);
+
+  const [sortBy, setSortBy] = useState("date");
+  const [sortDirection, setSortDirection] = useState("ASC");
+
+  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+
+  const [activeTab, setActiveTab] = useState("TODAY");
+
+  const debounceRef = useRef(null);
+
+  const handleSearchInput = (e) => {
+    const value = e.target.value;
+
+    setSearchInput(value);
+
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+
+    debounceRef.current = setTimeout(() => {
+      setSearch(value);
+      setPage(0);
+    }, 300);
+  };
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+
+    try {
+      const res = await getAllFollowups({
+        page,
+        size,
+        sortBy,
+        sortDirection,
+        search,
+        status: activeTab,
+      });
+
+      const payload = res?.data?.data || res?.data || {};
+
+      const content = Array.isArray(payload)
+        ? payload
+        : payload.content || payload.data || [];
+
+      setData(content);
+      setTotalElements(payload.totalElements || 0);
+      setTotalPages(payload.totalPages || 0);
+    } catch (err) {
+      showToast("Error fetching followups", "error");
+    } finally {
+      setLoading(false);
+    }
+  }, [
+    page,
+    size,
+    sortBy,
+    sortDirection,
+    search,
+    activeTab,
+    showToast,
+  ]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  const handleSort = (column) => {
+    if (sortBy === column) {
+      setSortDirection(nextDir(sortDirection));
+    } else {
+      setSortBy(column);
+      setSortDirection("ASC");
+    }
+
+    setPage(0);
+  };
+
+  const SortHeader = ({ keyName, label }) => (
+    <div
+      onClick={() => handleSort(keyName)}
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        cursor: "pointer",
+      }}
+    >
+      {label}
+      <SortIcon
+        active={sortBy === keyName}
+        direction={sortDirection}
+      />
     </div>
   );
 
-  return (
-    <div className="block" id="page-followups">
-      <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
+  const columns = [
+    {
+      key: "leadName",
+      header: (
+        <SortHeader
+          keyName="leadName"
+          label="Lead Name"
+        />
+      ),
+      render: (_, row) => (
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Follow-up Management</h1>
-          <p className="text-sm text-gray-500 mt-1">Track and manage all scheduled follow-ups</p>
+          <div className="font-semibold text-gray-900">
+            {row.leadName || row.name || "-"}
+          </div>
+          <div className="text-xs text-gray-400">
+            {row.mobileNo || row.phone || "-"}
+          </div>
         </div>
-        <CustomButton variant="primary" onClick={openAddLeadModal} className="text-xs py-1.5 px-3">
+      ),
+    },
+
+    {
+      key: "course",
+      header: "Course",
+      render: (value) => value || "-",
+    },
+
+    {
+      key: "type",
+      header: "Type",
+      render: (value) => value || "-",
+    },
+
+    {
+      key: "date",
+      header: (
+        <SortHeader
+          keyName="date"
+          label="Date"
+        />
+      ),
+      render: (value) => value || "-",
+    },
+
+    {
+      key: "time",
+      header: "Time",
+      render: (value) => value || "-",
+    },
+
+    {
+      key: "status",
+      header: "Status",
+      render: (value) => {
+        let className =
+          "bg-gray-100 text-gray-700";
+
+        if (value === "TODAY") {
+          className =
+            "bg-orange-100 text-orange-700";
+        }
+
+        if (value === "UPCOMING") {
+          className =
+            "bg-green-100 text-green-700";
+        }
+
+        if (value === "MISSED") {
+          className =
+            "bg-red-100 text-red-700";
+        }
+
+        return (
+          <span
+            className={`px-2 py-1 rounded-full text-xs font-medium ${className}`}
+          >
+            {value}
+          </span>
+        );
+      },
+    },
+
+    {
+      key: "actions",
+      header: "Actions",
+      render: (_, row) => (
+        <div className="flex gap-2">
+          <button
+            className="btn btn-sm btn-outline"
+            onClick={() =>
+              showToast("Rescheduled")
+            }
+          >
+            Reschedule
+          </button>
+
+          <button
+            className="btn btn-sm btn-primary"
+            onClick={() =>
+              showToast("Action Taken")
+            }
+          >
+            Action
+          </button>
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <div>
+      {/* Header */}
+      <div
+        className="page-header"
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginBottom: "20px",
+        }}
+      >
+        <div>
+          <h1
+            style={{
+              fontSize: "22px",
+              fontWeight: "700",
+            }}
+          >
+            Follow-up Management
+          </h1>
+
+          <p className="text-sm text-gray-500">
+            Track and manage follow-ups
+          </p>
+        </div>
+
+        {/* <button
+          className="btn btn-primary btn-sm"
+          onClick={openAddLeadModal}
+        >
           + Schedule Follow-up
-        </CustomButton>
+        </button> */}
       </div>
 
-      <div className="flex gap-1 bg-gray-100 p-1 rounded-lg mb-5 w-fit">
-        <div
-          className={`px-4 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-all duration-150 ${activeTab === 'fu-today' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
-          onClick={() => setActiveTab('fu-today')}
+      {/* Tabs */}
+      <div className="flex gap-2 mb-4">
+        <button
+          className={`btn btn-sm ${activeTab === "TODAY"
+            ? "btn-primary"
+            : "btn-outline"
+            }`}
+          onClick={() => {
+            setActiveTab("TODAY");
+            setPage(0);
+          }}
         >
-          Today ({todayList.length})
-        </div>
-        <div
-          className={`px-4 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-all duration-150 ${activeTab === 'fu-upcoming' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
-          onClick={() => setActiveTab('fu-upcoming')}
+          Today
+        </button>
+
+        <button
+          className={`btn btn-sm ${activeTab === "UPCOMING"
+            ? "btn-primary"
+            : "btn-outline"
+            }`}
+          onClick={() => {
+            setActiveTab("UPCOMING");
+            setPage(0);
+          }}
         >
-          Upcoming ({upcomingList.length})
-        </div>
-        <div
-          className={`px-4 py-1.5 rounded-md text-xs font-medium cursor-pointer transition-all duration-150 ${activeTab === 'fu-missed' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'}`}
-          onClick={() => setActiveTab('fu-missed')}
+          Upcoming
+        </button>
+
+        <button
+          className={`btn btn-sm ${activeTab === "MISSED"
+            ? "btn-primary"
+            : "btn-outline"
+            }`}
+          onClick={() => {
+            setActiveTab("MISSED");
+            setPage(0);
+          }}
         >
-          Missed ({missedList.length})
-        </div>
+          Missed
+        </button>
       </div>
 
-      {activeTab === 'fu-today' && (
-        <div id="fu-today">
-          <div className="grid grid-cols-1 gap-2.5" id="followup-today-list">
-            {todayList.length > 0 ? (
-              todayList.map((f, idx) => <FollowupCard key={idx} followup={f} />)
-            ) : (
-              <div className="bg-gray-50 border border-dashed border-gray-200 rounded-xl py-12 text-center text-gray-400 italic text-sm">
-                No follow-ups scheduled for today
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Search */}
+      <div
+        className="filter-bar"
+        style={{
+          display: "flex",
+          gap: "10px",
+          marginBottom: "16px",
+        }}
+      >
+        <input
+          type="text"
+          className="form-control"
+          placeholder="Search followup..."
+          value={searchInput}
+          onChange={handleSearchInput}
+          style={{ maxWidth: "250px" }}
+        />
+      </div>
 
-      {activeTab === 'fu-upcoming' && (
-        <div id="fu-upcoming">
-          <div className="grid grid-cols-1 gap-2.5">
-            {upcomingList.length > 0 ? (
-              upcomingList.map((f, idx) => <FollowupCard key={idx} followup={f} />)
-            ) : (
-              <div className="bg-gray-50 border border-dashed border-gray-200 rounded-xl py-12 text-center text-gray-400 italic text-sm">
-                No upcoming follow-ups
-              </div>
-            )}
+      {/* Table */}
+      <div className="card">
+        {loading ? (
+          <div
+            style={{
+              padding: "50px",
+              textAlign: "center",
+            }}
+          >
+            Loading followups...
           </div>
-        </div>
-      )}
-
-      {activeTab === 'fu-missed' && (
-        <div id="fu-missed" className="tab-pane">
-          <div className="grid grid-cols-1 gap-2.5" id="followup-missed-list">
-            {missedList.length > 0 ? (
-              missedList.map((f, idx) => <FollowupCard key={idx} followup={f} />)
-            ) : (
-              <div className="bg-green-50 border border-dashed border-green-100 rounded-xl py-12 text-center text-green-600 italic text-sm font-medium">
-                ✓ All follow-ups completed! No missed entries.
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+        ) : (
+          <ReusableTable
+            columns={columns}
+            data={data}
+            emptyMessage="No followups found."
+            isServerSide={true}
+            totalElements={totalElements}
+            totalPages={totalPages}
+            currentPage={page + 1}
+            rowsPerPage={size}
+            onPageChange={(newPage) =>
+              setPage(newPage - 1)
+            }
+            onRowsPerPageChange={(newSize) => {
+              setSize(newSize);
+              setPage(0);
+            }}
+          />
+        )}
+      </div>
     </div>
   );
 };

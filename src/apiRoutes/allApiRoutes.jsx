@@ -10,6 +10,8 @@ const ApiRoutes = {
         getById: '/api/leads',
         assignmentHistory: '/api/leads',
         sourceWiseStats: '/api/leads/stats/source-wise',
+        //schedule lead ......
+        leadSchedule: '/api/leads/{id}/followups'
     },
     Lead_Source: {
         create: '/api/lead-sources',
@@ -63,6 +65,11 @@ const ApiRoutes = {
         delete: '/api/courses/{id}',
         toggle: '/api/courses/{id}/toggle-active',
         details: '/api/courses/{id}'
+    },
+
+    FollowUp: {
+        getAllFollowUps: "/api/followups",
+
     }
 }
 

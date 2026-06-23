@@ -61,3 +61,16 @@ export const getLeadSourceWiseStats = async () => {
         throw error;
     }
 };
+
+//  for schedule lead its use at schedule btn in details page 
+export const createLeadSchedule = async (id, data) => {
+    try {
+        const response = await axiosInstance.post(
+            `${ApiRoutes.Lead.leadSchedule}/${id}`,
+            data
+        );
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};

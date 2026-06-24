@@ -5,6 +5,34 @@ import { getAllFollowups } from "../Services/followUp/followService"
 
 const nextDir = (cur) => (cur === "ASC" ? "DESC" : "ASC");
 
+const formatFollowUpDate = (value) => {
+  if (!value) return "-";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return value;
+
+  return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  })}`;
+};
+
+const getStatusClass = (value) => {
+  switch (value) {
+    case "PENDING":
+      return "bg-orange-100 text-orange-700";
+    case "COMPLETED":
+      return "bg-green-100 text-green-700";
+    case "MISSED":
+      return "bg-red-100 text-red-700";
+    case "RESCHEDULED":
+      return "bg-blue-100 text-blue-700";
+    default:
+      return "bg-gray-100 text-gray-700";
+  }
+};
+
 const SortIcon = ({ active, direction }) => (
   <svg
     width="12"
@@ -31,7 +59,7 @@ const SortIcon = ({ active, direction }) => (
 );
 
 const FollowUps = () => {
-  const { openAddLeadModal, showToast } = useAppContext();
+  const { showToast } = useAppContext();
 
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -42,7 +70,7 @@ const FollowUps = () => {
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
 
-  const [sortBy, setSortBy] = useState("date");
+  const [sortBy, setSortBy] = useState("followUpDate");
   const [sortDirection, setSortDirection] = useState("ASC");
 
   const [search, setSearch] = useState("");
@@ -77,18 +105,23 @@ const FollowUps = () => {
         sortBy,
         sortDirection,
         search,
-        status: activeTab,
+        status: activeTab === "ALL" ? "" : activeTab,
       });
 
-      const payload = res?.data?.data || res?.data || {};
+      const apiData = res?.data ?? res ?? {};
+      const payload = apiData?.data ?? apiData;
 
       const content = Array.isArray(payload)
         ? payload
-        : payload.content || payload.data || [];
+        : Array.isArray(payload?.content)
+          ? payload.content
+          : Array.isArray(payload?.data)
+            ? payload.data
+            : [];
 
       setData(content);
-      setTotalElements(payload.totalElements || 0);
-      setTotalPages(payload.totalPages || 0);
+      setTotalElements(payload?.totalElements || content.length || 0);
+      setTotalPages(payload?.totalPages || 1);
     } catch (err) {
       showToast("Error fetching followups", "error");
     } finally {
@@ -138,51 +171,39 @@ const FollowUps = () => {
 
   const columns = [
     {
-      key: "leadName",
+      key: "leadFullName",
       header: (
         <SortHeader
-          keyName="leadName"
+          keyName="leadFullName"
           label="Lead Name"
         />
       ),
       render: (_, row) => (
         <div>
           <div className="font-semibold text-gray-900">
-            {row.leadName || row.name || "-"}
+            {row.leadFullName || row.leadName || row.name || "-"}
           </div>
           <div className="text-xs text-gray-400">
-            {row.mobileNo || row.phone || "-"}
+            {row.leadCode || row.mobileNo || row.phone || "-"}
           </div>
         </div>
       ),
     },
 
     {
-      key: "course",
-      header: "Course",
-      render: (value) => value || "-",
-    },
-
-    {
-      key: "type",
-      header: "Type",
-      render: (value) => value || "-",
-    },
-
-    {
-      key: "date",
+      key: "followUpDate",
       header: (
         <SortHeader
-          keyName="date"
-          label="Date"
+          keyName="followUpDate"
+          label="Follow-up Date"
         />
       ),
-      render: (value) => value || "-",
+      render: (value) => formatFollowUpDate(value),
     },
 
     {
-      key: "time",
-      header: "Time",
+      key: "remarks",
+      header: "Remarks",
       render: (value) => value || "-",
     },
 
@@ -190,32 +211,23 @@ const FollowUps = () => {
       key: "status",
       header: "Status",
       render: (value) => {
-        let className =
-          "bg-gray-100 text-gray-700";
-
-        if (value === "TODAY") {
-          className =
-            "bg-orange-100 text-orange-700";
-        }
-
-        if (value === "UPCOMING") {
-          className =
-            "bg-green-100 text-green-700";
-        }
-
-        if (value === "MISSED") {
-          className =
-            "bg-red-100 text-red-700";
-        }
-
         return (
           <span
-            className={`px-2 py-1 rounded-full text-xs font-medium ${className}`}
+            className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusClass(value)}`}
           >
-            {value}
+            {value || "-"}
           </span>
         );
       },
+    },
+
+    {
+      key: "createdBy",
+      header: "Created By",
+      render: (_value, row) =>
+        row?.createdBy?.firstName || row?.createdBy?.lastName
+          ? `${row.createdBy.firstName || ""} ${row.createdBy.lastName || ""}`.trim()
+          : row?.createdBy?.username || "-",
     },
 
     {
@@ -282,42 +294,42 @@ const FollowUps = () => {
       {/* Tabs */}
       <div className="flex gap-2 mb-4">
         <button
-          className={`btn btn-sm ${activeTab === "TODAY"
+          className={`btn btn-sm ${activeTab === "PENDING"
             ? "btn-primary"
             : "btn-outline"
             }`}
           onClick={() => {
-            setActiveTab("TODAY");
+            setActiveTab("PENDING");
             setPage(0);
           }}
         >
-          Today
+          Pending
         </button>
 
         <button
-          className={`btn btn-sm ${activeTab === "UPCOMING"
+          className={`btn btn-sm ${activeTab === "COMPLETED"
             ? "btn-primary"
             : "btn-outline"
             }`}
           onClick={() => {
-            setActiveTab("UPCOMING");
+            setActiveTab("COMPLETED");
             setPage(0);
           }}
         >
-          Upcoming
+          Completed
         </button>
 
         <button
-          className={`btn btn-sm ${activeTab === "MISSED"
+          className={`btn btn-sm ${activeTab === "ALL"
             ? "btn-primary"
             : "btn-outline"
             }`}
           onClick={() => {
-            setActiveTab("MISSED");
+            setActiveTab("ALL");
             setPage(0);
           }}
         >
-          Missed
+          All
         </button>
       </div>
 

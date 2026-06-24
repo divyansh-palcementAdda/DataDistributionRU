@@ -32,10 +32,10 @@ const Sidebar = () => {
           alt={`${BRAND_NAME} logo`}
           className="sidebar-logo-img"
         />
-        <div>
+        {/* <div>
           <div className="logo-text">{BRAND_NAME}</div>
           <div className="logo-sub">{BRAND_SUBTITLE}</div>
-        </div>
+        </div> */}
       </div>
       <div className="sidebar-section">
         <div className="sidebar-label">Main</div>

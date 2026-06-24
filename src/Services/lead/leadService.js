@@ -65,10 +65,29 @@ export const getLeadSourceWiseStats = async () => {
 //  for schedule lead its use at schedule btn in details page 
 export const createLeadSchedule = async (id, data) => {
     try {
+        const url = ApiRoutes.Lead.leadSchedule.replace("{id}", id);
         const response = await axiosInstance.post(
-            `${ApiRoutes.Lead.leadSchedule}/${id}`,
+            url,
             data
         );
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
+// Mark a follow-up as completed
+export const completeLeadFollowUp = async (followUpId, remarks = "") => {
+    try {
+        const route =
+            ApiRoutes.Lead.completeFollowUp ||
+            ApiRoutes.Lead.markLead;
+
+        const url = route.replace("{followUpId}", followUpId);
+        const response = await axiosInstance.post(url, null, {
+            params: { remarks },
+        });
+
         return response;
     } catch (error) {
         throw error;

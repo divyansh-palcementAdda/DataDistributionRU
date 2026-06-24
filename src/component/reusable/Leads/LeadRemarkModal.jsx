@@ -1,8 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import CustomButton from '../CustomButton';
+import { completeLeadFollowUp } from '../../../Services/lead/leadService';
 
-const LeadRemarkModal = ({ isOpen, onClose, lead, onSave }) => {
+const LeadRemarkModal = ({ isOpen, onClose, lead, onSave, followUpId }) => {
   const [remark, setRemark] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const getLeadName = (item) =>
+    item?.fullName || item?.name || item?.leadName || 'Unknown Lead';
+
+  const getLeadPhone = (item) =>
+    item?.phoneNumber || item?.phone || item?.mobileNumber || 'N/A';
+
+  const getLeadCourse = (item) => {
+    if (!item) return 'N/A';
+
+    if (typeof item.courseInterested === 'string' && item.courseInterested.trim()) {
+      return item.courseInterested;
+    }
+
+    if (typeof item.course === 'string' && item.course.trim()) {
+      return item.course;
+    }
+
+    if (item.course && typeof item.course === 'object') {
+      return item.course.courseName || item.course.courseCode || 'N/A';
+    }
+
+    return 'N/A';
+  };
 
   useEffect(() => {
     if (lead && lead.remark) {
@@ -10,13 +37,52 @@ const LeadRemarkModal = ({ isOpen, onClose, lead, onSave }) => {
     } else {
       setRemark('');
     }
+    setErrorMessage('');
   }, [lead, isOpen]);
 
-  const handleSave = () => {
-    if (onSave) {
-      onSave(lead, remark);
+  const resolveFollowUpId = () =>
+    followUpId ||
+    lead?.followUpId ||
+    lead?.followupId ||
+    lead?.nextFollowUp?.id ||
+    lead?.followUp?.id ||
+    lead?.followup?.id ||
+    lead?.followUp?.followUpId ||
+    lead?.nextFollowUp?.followUpId;
+
+  const handleSave = async () => {
+    const resolvedFollowUpId = resolveFollowUpId();
+
+    setIsSaving(true);
+    setErrorMessage('');
+
+    try {
+      if (resolvedFollowUpId) {
+        const response = await completeLeadFollowUp(resolvedFollowUpId, remark);
+
+        if (!response?.data?.success) {
+          const message =
+            response?.data?.message ||
+            'Failed to complete follow-up.';
+          setErrorMessage(message);
+          return;
+        }
+      }
+
+      if (onSave) {
+        onSave(lead, remark);
+      }
+
+      onClose();
+    } catch (error) {
+      setErrorMessage(
+        error?.response?.data?.message ||
+          error?.message ||
+          'Failed to save remark.'
+      );
+    } finally {
+      setIsSaving(false);
     }
-    onClose();
   };
 
   if (!isOpen) return null;
@@ -36,8 +102,12 @@ const LeadRemarkModal = ({ isOpen, onClose, lead, onSave }) => {
         <div className="modal-body">
           {lead && (
             <div style={{ marginBottom: '16px', padding: '12px', backgroundColor: 'var(--gray-50)', borderRadius: '8px', border: '1px solid var(--gray-200)' }}>
-              <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--gray-800)' }}>{lead.name}</div>
-              <div style={{ fontSize: '11px', color: 'var(--gray-500)' }}>{lead.phone} | {lead.course}</div>
+              <div style={{ fontSize: '13px', fontWeight: '600', color: 'var(--gray-800)' }}>
+                {getLeadName(lead)}
+              </div>
+              <div style={{ fontSize: '11px', color: 'var(--gray-500)' }}>
+                {getLeadPhone(lead)} | {getLeadCourse(lead)}
+              </div>
             </div>
           )}
           <div className="form-group">
@@ -49,12 +119,19 @@ const LeadRemarkModal = ({ isOpen, onClose, lead, onSave }) => {
               value={remark}
               onChange={(e) => setRemark(e.target.value)}
               style={{ width: '100%', resize: 'vertical' }}
-            ></textarea>
+              ></textarea>
           </div>
+          {errorMessage && (
+            <div style={{ marginTop: '10px', fontSize: '12px', color: '#dc2626' }}>
+              {errorMessage}
+            </div>
+          )}
         </div>
         <div className="modal-footer">
-          <CustomButton variant="secondary" onClick={onClose}>Cancel</CustomButton>
-          <CustomButton variant="primary" onClick={handleSave}>Save Remark</CustomButton>
+          <CustomButton variant="secondary" onClick={onClose} disabled={isSaving}>Cancel</CustomButton>
+          <CustomButton variant="primary" onClick={handleSave} disabled={isSaving}>
+            {isSaving ? 'Saving...' : 'Save Remark'}
+          </CustomButton>
         </div>
       </div>
     </div>

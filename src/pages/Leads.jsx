@@ -374,6 +374,7 @@ const Leads = () => {
         isOpen={isRemarkModalOpen}
         onClose={closeRemarkModal}
         lead={selectedLeadForRemark}
+        followUpId={selectedLeadForRemark?.followUpId || selectedLeadForRemark?.nextFollowUpId || selectedLeadForRemark?.followupId}
         onSave={handleSaveRemark}
       />
       <DeleteModal

@@ -41,7 +41,7 @@ const Counselors = () => {
   const [size, setSize] = useState(10);
 
   /* ── Sort ── */
-  const [sortBy, setSortBy] = useState('firstName');
+  const [sortBy, setSortBy] = useState('');
   const [sortDirection, setSortDirection] = useState('ASC');
 
   /* ── Search (debounced) ── */

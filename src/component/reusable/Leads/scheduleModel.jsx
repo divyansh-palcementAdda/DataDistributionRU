@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { createLeadSchedule } from '../../../Services/lead/leadService'
 
 const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
     const [formData, setFormData] = useState({
@@ -17,8 +16,8 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
         }));
     };
 
-    const handleSave = () => {
-        onSubmit(formData);
+    const handleSave = async () => {
+        await onSubmit(formData);
 
         setFormData({
             followUpDate: "",

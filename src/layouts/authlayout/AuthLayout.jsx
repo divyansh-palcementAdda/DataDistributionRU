@@ -16,7 +16,7 @@ const AuthLayout = () => {
             className="w-50 h-28 mb-6 object-contain"
           />
           <h1 className="text-3xl font-bold text-white">
-            Data Distribute System
+            Data Distribution System
           </h1>
         </div>
       </div>

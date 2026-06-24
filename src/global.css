@@ -120,7 +120,7 @@ body.dark .cal-day {
 }
 
 .sidebar-logo {
-  padding: 20px 20px 16px;
+  padding: 10px 10px 10px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -128,15 +128,15 @@ body.dark .cal-day {
 }
 
 .sidebar-logo-img {
-  width: 40px;
-  height: 40px;
+  width: 280px;
+  height: 80px;
   object-fit: contain;
   flex-shrink: 0;
 }
 
 .logo-text {
   font-weight: 700;
-  font-size: 12px;
+  font-size: 5px;
   color: var(--gray-900);
 }
 

@@ -48,7 +48,7 @@ const FollowUps = () => {
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
 
-  const [activeTab, setActiveTab] = useState("TODAY");
+  const [activeTab, setActiveTab] = useState("PENDING");
 
   const debounceRef = useRef(null);
 

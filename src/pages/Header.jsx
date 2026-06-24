@@ -20,14 +20,7 @@ const Header = () => {
 
   return (
     <nav className="header">
-      {/* Search */}
-      <div className="search-bar">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="11" cy="11" r="8"/>
-          <path d="M21 21l-4.35-4.35"/>
-        </svg>
-        <input type="text" placeholder="Search leads, counselors, courses…" />
-      </div>
+       <h1 style={{ fontSize: '22px', fontWeight: '700', color: 'var(--gray-900)' }}>Data Distribution System</h1>
 
       {/* Right side */}
       <div className="header-right">

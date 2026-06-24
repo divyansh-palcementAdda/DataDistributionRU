@@ -11,7 +11,10 @@ const ApiRoutes = {
         assignmentHistory: '/api/leads',
         sourceWiseStats: '/api/leads/stats/source-wise',
         //schedule lead ......
-        leadSchedule: '/api/leads/{id}/followups'
+        leadSchedule: '/api/leads/{id}/followups',
+        // mark a lead .
+        markLead: '/api/leads/followups/{followUpId}/complete',
+        completeFollowUp: '/api/leads/followups/{followUpId}/complete',
     },
     Lead_Source: {
         create: '/api/lead-sources',

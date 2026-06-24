@@ -3,12 +3,14 @@ import { useParams } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
 import CustomButton from '../component/reusable/CustomButton';
 import LeadRemarkModal from "../component/reusable/Leads/LeadRemarkModal";
-import { getLeadById, getLeadAssignmentHistory } from '../Services/lead/leadService';
+import ScheduleModal from "../component/reusable/Leads/scheduleModel";
+import { createLeadSchedule, getLeadById, getLeadAssignmentHistory } from '../Services/lead/leadService';
 
 const LeadDetail = () => {
   const { id } = useParams();
-  const { navTo, showToast, openAddLeadModal } = useAppContext();
+  const { navTo, showToast } = useAppContext();
   const [isRemarkModalOpen, setIsRemarkModalOpen] = useState(false);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [leadDetails, setLeadDetails] = useState(null);
   const [loading, setLoading] = useState(false);
   const [assignmentHistory, setAssignmentHistory] = useState([]);
@@ -50,8 +52,21 @@ const LeadDetail = () => {
 
   const mockLead = { name: 'Priya Kumar', phone: '+91 98765 43210', course: 'Full Stack Dev', remark: 'Lead is very interested in Full Stack. Has budget clarity. Needs EMI option info. Decision maker herself. Likely to register by end of June.' };
 
-  const currentLead = leadDetails || mockLead;
   const initials = leadDetails?.fullName ? leadDetails.fullName.substring(0, 2).toUpperCase() : 'PK';
+
+  const handleScheduleSubmit = async (formData) => {
+    try {
+      const response = await createLeadSchedule(id, formData);
+      if (response?.data?.success) {
+        showToast('Follow-up scheduled successfully');
+      } else {
+        showToast(response?.data?.message || 'Unable to schedule follow-up');
+      }
+    } catch (error) {
+      console.error('Failed to schedule follow-up', error);
+      showToast('Failed to schedule follow-up');
+    }
+  };
 
   if (loading) {
     return <div className="p-6">Loading lead details...</div>;
@@ -76,7 +91,7 @@ const LeadDetail = () => {
           </div>
         </div>
         <div className="flex gap-2">
-          <CustomButton variant="primary" onClick={() => showToast('Scheduled successfully')} className="text-xs py-1.5 px-3 flex items-center gap-1.5">
+          <CustomButton variant="primary" onClick={() => setIsScheduleModalOpen(true)} className="text-xs py-1.5 px-3 flex items-center gap-1.5">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="3" y="4" width="18" height="18" rx="2" />
               <path d="M16 2v4M8 2v4M3 10h18" />
@@ -280,7 +295,13 @@ const LeadDetail = () => {
               <div className="text-xs font-bold text-orange-800">{leadDetails?.nextFollowUpDate ? new Date(leadDetails.nextFollowUpDate).toLocaleDateString() : 'June 15, 2025'}</div>
               <div className="text-[10px] text-orange-600 mt-0.5 font-medium">{leadDetails?.nextFollowUpDate ? new Date(leadDetails.nextFollowUpDate).toLocaleTimeString() : '10:00 AM · Call'}</div>
             </div>
-            <CustomButton variant="secondary" className="w-full text-[11px] py-1.5" onClick={openAddLeadModal}>Reschedule</CustomButton>
+            <CustomButton
+              variant="secondary"
+              className="w-full text-[11px] py-1.5"
+              onClick={() => setIsScheduleModalOpen(true)}
+            >
+              Reschedule
+            </CustomButton>
           </div>
         </div>
       </div>
@@ -289,7 +310,14 @@ const LeadDetail = () => {
         isOpen={isRemarkModalOpen}
         onClose={() => setIsRemarkModalOpen(false)}
         lead={mockLead}
+        followUpId={leadDetails?.followUpId || leadDetails?.nextFollowUpId || leadDetails?.followupId}
         onSave={(lead, remark) => showToast('Remark saved')}
+      />
+
+      <ScheduleModal
+        isOpen={isScheduleModalOpen}
+        onClose={() => setIsScheduleModalOpen(false)}
+        onSubmit={handleScheduleSubmit}
       />
     </div>
   );

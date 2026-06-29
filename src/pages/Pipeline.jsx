@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../AppContext';
 import CustomButton from '../component/reusable/CustomButton';
 import { leads as initialLeads, kanbanCols, counselors, statusConfig } from '../mockData';
+import StatsCard from '../component/reusable/StatsCard';
 import {
   FiPhoneCall,
   FiUsers,
@@ -15,16 +16,16 @@ const Pipeline = () => {
   const { openAddLeadModal, navTo, showToast } = useAppContext();
   const [leads, setLeads] = useState(initialLeads);
   const [activeStatus, setActiveStatus] = useState(kanbanCols[0].key);
-
- const statusIcons = {
-  raw: <FiUsers size={16} />,
-  connected: <FiPhoneCall size={16} />,
-  interested: <FiCheckCircle size={16} />,
-  registered: <FiUserCheck size={16} />,
-  notinterested: <FiUserX size={16} />,
-  bad: <FiXCircle size={16} />
-};
-
+ 
+  const CARD_COLORS = [
+    { bg: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
+    { bg: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
+    { bg: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' },
+    { bg: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)' },
+    { bg: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)' },
+    { bg: 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)' },
+  ];
+ 
   const filteredLeads = useMemo(() => {
     return leads.filter(l => l.status === activeStatus);
   }, [leads, activeStatus]);
@@ -71,61 +72,24 @@ const Pipeline = () => {
       {/* ── Status Cards as Tabs ── */}
       <div className="stat-grid" style={{ marginBottom: '24px' }}>
         {kanbanCols.map((col) => {
-          const colLeads = leads.filter((l) => l.status === col.key);
           const isActive = activeStatus === col.key;
+          const colLeads = leads.filter(l => l.status === col.key);
+          const totalLeads = leads.length;
+          const percentage = totalLeads > 0 ? Math.round((colLeads.length / totalLeads) * 100) : 0;
+          const palette = CARD_COLORS[kanbanCols.findIndex(c => c.key === col.key) % CARD_COLORS.length];
           return (
             <div
               key={col.key}
               onClick={() => setActiveStatus(col.key)}
-              className={`
-    relative overflow-hidden rounded-2xl bg-white p-5 shadow-sm
-    border transition-all duration-300 cursor-pointer
-    hover:shadow-lg hover:-translate-y-1
-    ${isActive
-                  ? "border-blue-500 ring-2 ring-blue-100"
-                  : "border-gray-100"}
-  `}
+              className={isActive ? "ring-2 ring-blue-400 rounded-2xl" : ""}
             >
-             <div className="flex items-start justify-between mb-4">
-
-  <div>
-    <p className="text-xs uppercase tracking-wider text-gray-500 font-medium">
-      {col.label}
-    </p>
-
-    <h2 className="text-3xl font-bold text-gray-900 mt-2">
-      {colLeads.length}
-    </h2>
-  </div>
-
-  <div
-    className="w-10 h-10 rounded-xl flex items-center justify-center"
-    style={{
-      backgroundColor: `${col.color}20`,
-      color: col.color
-    }}
-  >
-    {statusIcons[col.key]}
-  </div>
-
-</div>
-
-<div className="flex items-center justify-between">
-  <span className="text-sm text-gray-400">
-    Total Leads
-  </span>
-
-  {isActive && (
-    <span className="text-xs font-semibold text-blue-600">
-      Active
-    </span>
-  )}
-</div>
-
-              {/* <div className="stat-value">{colLeads.length}</div>
-              <div className="stat-icon" style={{ background: col.color, opacity: 0.1 }}>
-                <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: col.color }}></div>
-              </div> */}
+              <StatsCard
+                title={col.label}
+                value={colLeads.length}
+                percentage={percentage}
+                palette={palette}
+                unit="leads"
+              />
             </div>
           );
         })}

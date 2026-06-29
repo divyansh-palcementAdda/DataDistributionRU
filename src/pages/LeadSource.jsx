@@ -6,6 +6,7 @@ import ViewLeadSourceModal from '../component/reusable/Leads/viewLeadSourseModel
 import { getAllLeadSource, getLeadSourceById, deleteLeadSource, toggleLeadSource } from '../Services/leadsource/leadSourceService';
 import { getLeadSourceWiseStats } from '../Services/lead/leadService';
 import CustomToggle from '../component/reusable/custumToggle';
+import StatsCard from '../component/reusable/StatsCard';
 import DeleteModal from '../component/reusable/deleteModel';
 
 /* ── Sort direction toggle helper ── */
@@ -328,71 +329,15 @@ const LeadSource = () => {
                     {statsData.map((stat, idx) => {
                         const palette = CARD_COLORS[idx % CARD_COLORS.length];
                         return (
-                            <div key={stat.sourceId} style={{
-                                background: palette.bg,
-                                borderRadius: '14px',
-                                padding: '16px 18px',
-                                color: '#fff',
-                                boxShadow: '0 4px 15px rgba(0,0,0,0.12)',
-                                position: 'relative',
-                                overflow: 'hidden',
-                                transition: 'transform 0.2s, box-shadow 0.2s',
-                                cursor: 'default',
-                            }}
-                                onMouseEnter={e => {
-                                    e.currentTarget.style.transform = 'translateY(-3px)';
-                                    e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.18)';
-                                }}
-                                onMouseLeave={e => {
-                                    e.currentTarget.style.transform = 'translateY(0)';
-                                    e.currentTarget.style.boxShadow = '0 4px 15px rgba(0,0,0,0.12)';
-                                }}
-                            >
-                                {/* decorative circle */}
-                                <div style={{
-                                    position: 'absolute', top: '-18px', right: '-18px',
-                                    width: '80px', height: '80px', borderRadius: '50%',
-                                    background: 'rgba(255,255,255,0.15)',
-                                }} />
-                                <div style={{
-                                    position: 'absolute', bottom: '-22px', right: '18px',
-                                    width: '55px', height: '55px', borderRadius: '50%',
-                                    background: 'rgba(255,255,255,0.10)',
-                                }} />
-
-                                {/* source name */}
-                                <div style={{
-                                    fontSize: '11px', fontWeight: '600', textTransform: 'uppercase',
-                                    letterSpacing: '0.8px', opacity: 0.85, marginBottom: '8px',
-                                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                                }}>
-                                    {stat.sourceName}
-                                </div>
-
-                                {/* count */}
-                                <div style={{ fontSize: '28px', fontWeight: '800', lineHeight: 1, marginBottom: '10px' }}>
-                                    {stat.count}
-                                    <span style={{ fontSize: '12px', fontWeight: '500', opacity: 0.8, marginLeft: '4px' }}>leads</span>
-                                </div>
-
-                                {/* progress bar */}
-                                <div style={{
-                                    background: 'rgba(255,255,255,0.25)',
-                                    borderRadius: '999px', height: '5px', overflow: 'hidden',
-                                }}>
-                                    <div style={{
-                                        width: `${stat.percentage}%`,
-                                        height: '100%',
-                                        background: '#fff',
-                                        borderRadius: '999px',
-                                        transition: 'width 0.6s ease',
-                                    }} />
-                                </div>
-                                <div style={{ fontSize: '11px', opacity: 0.85, marginTop: '5px', fontWeight: '600' }}>
-                                    {stat.percentage}% of total
-                                </div>
-                            </div>
-                        );
+                            <StatsCard
+                                key={stat.sourceId}
+                                title={stat.sourceName}
+                                value={stat.count}
+                                unit="leads"
+                                percentage={stat.percentage}
+                                palette={palette}
+                            />
+                        )
                     })}
                 </div>
             ) : null}

@@ -104,6 +104,7 @@ body.dark .cal-day {
 =========================== */
 .sidebar {
   width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
   background: #fff;
   border-right: 1px solid var(--gray-200);
   display: flex;
@@ -797,61 +798,19 @@ select.form-control {
     left: 0;
     top: 0;
     bottom: 0;
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    background: white;
     transform: translateX(-100%);
+    z-index: 1000;
   }
 
   .sidebar.open {
     transform: translateX(0);
   }
 
-  .mobile-nav {
-    display: flex;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: #fff;
-    border-top: 1px solid var(--gray-200);
-    padding: 8px 0;
-    z-index: 100;
-    justify-content: space-around;
-  }
-
-  .mobile-nav-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    padding: 6px 12px;
-    cursor: pointer;
-    color: var(--gray-400);
-    transition: color .15s;
-  }
-
-  .mobile-nav-item.active {
-    color: var(--primary);
-  }
-
-  .mobile-nav-item span {
-    font-size: 10px;
-    font-weight: 500;
-  }
-
-  .page-content {
-    padding: 16px;
-    padding-bottom: 80px;
-  }
-
-  .stat-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  body {
-    overflow: auto;
-  }
-
-  .header {
-    padding: 0 12px;
+  .main-content {
+    width: 100%;
   }
 }
 

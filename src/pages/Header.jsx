@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAppContext } from '../AppContext';
 
 const Header = () => {
-  const { toggleSidebar, toggleDarkMode } = useAppContext();
+  const { toggleSidebar, toggleDarkMode, isSidebarOpen } = useAppContext();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const notifRef = useRef(null);
@@ -20,7 +20,46 @@ const Header = () => {
 
   return (
     <nav className="header">
-       <h1 style={{ fontSize: '22px', fontWeight: '700', color: 'var(--gray-900)' }}>Data Distribution System</h1>
+      <div className="flex items-center gap-3">
+
+    <button
+      onClick={toggleSidebar}
+      className="md:hidden flex items-center justify-center p-2 rounded-lg border"
+    >
+      {isSidebarOpen ? (
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          viewBox="0 0 24 24"
+        >
+          <path d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      ) : (
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          viewBox="0 0 24 24"
+        >
+          <path d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      )}
+    </button>
+
+    <h1
+      style={{
+        fontSize: '22px',
+        fontWeight: '700',
+        color: 'var(--gray-900)'
+      }}
+    >
+      Data Distribution System
+    </h1>
+
+  </div>
 
       {/* Right side */}
       <div className="header-right">

@@ -25,6 +25,14 @@ const Sidebar = () => {
   ];
 
   return (
+    <>
+   
+       {isSidebarOpen && (
+      <div
+        className="fixed inset-0 bg-black/40 z-40 md:hidden"
+        onClick={toggleSidebar}
+      />
+    )}
     <nav className={`sidebar ${isSidebarOpen ? 'open' : ''}`}>
       <div className="sidebar-logo">
         <img
@@ -72,6 +80,7 @@ const Sidebar = () => {
         </div>
       </div>
     </nav>
+     </>
   );
 };
 

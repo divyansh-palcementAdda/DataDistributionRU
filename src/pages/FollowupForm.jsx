@@ -182,10 +182,10 @@ const FollowupForm = () => {
         <div className="block p-4 sm:p-6">
             <div className="page-header" style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px" }}>
                 <div>
-                    <h1 style={{ fontSize: "22px", fontWeight: "700" }}>Follow-up Management</h1>
+                    <h1 style={{ fontSize: "22px", fontWeight: "700" }}>Follow-up Form Management</h1>
                     <p className="text-sm text-gray-500">Track and manage follow-ups</p>
                 </div>
-                <button className="btn btn-primary btn-sm" onClick={() => setIsFollowupModalOpen(true)}>+ Log Follow-up</button>
+                <button className="btn btn-primary btn-sm" style={{ height: 28, paddingTop: 0, paddingBottom: 0 }} onClick={() => setIsFollowupModalOpen(true)}>+ Log Follow-up</button>
             </div>
 
             <div className="flex gap-2 mb-4">

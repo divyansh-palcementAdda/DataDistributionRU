@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState,useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 
@@ -15,6 +15,21 @@ export const AppProvider = ({ children }) => {
 
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
   const toggleDarkMode = () => setIsDarkMode((prev) => !prev);
+
+useEffect(() => {
+  const handleResize = () => {
+    if (window.innerWidth >= 768) {
+      setIsSidebarOpen(false);
+    }
+  };
+
+  window.addEventListener("resize", handleResize);
+
+  return () => {
+    window.removeEventListener("resize", handleResize);
+  };
+}, []);
+
   
   const openAddLeadModal = (leadData = null) => {
     setEditLeadData(leadData);

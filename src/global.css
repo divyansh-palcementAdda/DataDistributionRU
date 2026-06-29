@@ -387,9 +387,9 @@ body.dark .cal-day {
 =========================== */
 .stat-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 14px;
-  margin-bottom: 24px;
+ 
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
 }
 
 .stat-card {
@@ -786,6 +786,10 @@ select.form-control {
 }
 
 .lead-card {
+  animation: fadeIn .2s ease;
+}
+
+.page-content {
   animation: fadeIn .2s ease;
 }
 

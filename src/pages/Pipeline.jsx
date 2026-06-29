@@ -2,11 +2,28 @@ import React, { useState, useMemo } from 'react';
 import { useAppContext } from '../AppContext';
 import CustomButton from '../component/reusable/CustomButton';
 import { leads as initialLeads, kanbanCols, counselors, statusConfig } from '../mockData';
+import {
+  FiPhoneCall,
+  FiUsers,
+  FiCheckCircle,
+  FiUserCheck,
+  FiXCircle,
+  FiUserX ,
+} from "react-icons/fi";
 
 const Pipeline = () => {
   const { openAddLeadModal, navTo, showToast } = useAppContext();
   const [leads, setLeads] = useState(initialLeads);
   const [activeStatus, setActiveStatus] = useState(kanbanCols[0].key);
+
+ const statusIcons = {
+  raw: <FiUsers size={16} />,
+  connected: <FiPhoneCall size={16} />,
+  interested: <FiCheckCircle size={16} />,
+  registered: <FiUserCheck size={16} />,
+  notinterested: <FiUserX size={16} />,
+  bad: <FiXCircle size={16} />
+};
 
   const filteredLeads = useMemo(() => {
     return leads.filter(l => l.status === activeStatus);
@@ -59,22 +76,56 @@ const Pipeline = () => {
           return (
             <div
               key={col.key}
-              className={`stat-card ${isActive ? 'blue' : 'gray'}`}
               onClick={() => setActiveStatus(col.key)}
-              style={{ 
-                cursor: 'pointer',
-                border: isActive ? '2px solid var(--primary)' : '1px solid transparent',
-                transform: isActive ? 'scale(1.02)' : 'scale(1)',
-                transition: 'all 0.2s ease'
-              }}
+              className={`
+    relative overflow-hidden rounded-2xl bg-white p-5 shadow-sm
+    border transition-all duration-300 cursor-pointer
+    hover:shadow-lg hover:-translate-y-1
+    ${isActive
+                  ? "border-blue-500 ring-2 ring-blue-100"
+                  : "border-gray-100"}
+  `}
             >
-              <div className="stat-label" style={{ color: isActive ? 'var(--primary)' : 'var(--gray-500)' }}>
-                {col.label}
-              </div>
-              <div className="stat-value">{colLeads.length}</div>
+             <div className="flex items-start justify-between mb-4">
+
+  <div>
+    <p className="text-xs uppercase tracking-wider text-gray-500 font-medium">
+      {col.label}
+    </p>
+
+    <h2 className="text-3xl font-bold text-gray-900 mt-2">
+      {colLeads.length}
+    </h2>
+  </div>
+
+  <div
+    className="w-10 h-10 rounded-xl flex items-center justify-center"
+    style={{
+      backgroundColor: `${col.color}20`,
+      color: col.color
+    }}
+  >
+    {statusIcons[col.key]}
+  </div>
+
+</div>
+
+<div className="flex items-center justify-between">
+  <span className="text-sm text-gray-400">
+    Total Leads
+  </span>
+
+  {isActive && (
+    <span className="text-xs font-semibold text-blue-600">
+      Active
+    </span>
+  )}
+</div>
+
+              {/* <div className="stat-value">{colLeads.length}</div>
               <div className="stat-icon" style={{ background: col.color, opacity: 0.1 }}>
                 <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: col.color }}></div>
-              </div>
+              </div> */}
             </div>
           );
         })}

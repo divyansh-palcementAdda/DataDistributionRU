@@ -49,16 +49,15 @@ const Header = () => {
       )}
     </button>
 
-    <h1
-      style={{
-        fontSize: '22px',
-        fontWeight: '700',
-        color: 'var(--gray-900)'
-      }}
-    >
-      Data Distribution System
-    </h1>
+  <h1 className="font-bold text-gray-900">
+  <span className="md:hidden text-lg">
+    DDS
+  </span>
 
+  <span className="hidden md:inline text-2xl">
+    Data Distribution System
+  </span>
+</h1>
   </div>
 
       {/* Right side */}

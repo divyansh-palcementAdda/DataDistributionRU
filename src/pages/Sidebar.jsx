@@ -14,6 +14,19 @@ const Sidebar = () => {
     { id: 'lead-source', label: 'Lead Source', icon: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2v20M2 12h20"/></svg>' },
     { id: 'pipeline', label: 'Pipeline', icon: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8V6a2 2 0 00-2-2H4a2 2 0 00-2 2v7a2 2 0 002 2h8"/><path d="M10 19l-2-2 2-2"/><rect x="13" y="13" width="9" height="9" rx="1"/></svg>' },
     { id: 'followups', label: 'Follow Ups', icon: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01"/></svg>', badge: '12' },
+
+   { id: 'followup-form',
+    label: 'Followup Form',
+    icon: `
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="1.8">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <path d="M14 2v6h6"/>
+        <path d="M8 13h8"/>
+        <path d="M8 17h5"/>
+      </svg>
+    `
+  },
     { id: 'counselors', label: 'Counselors', icon: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M16 3h.01M8 3h.01"/></svg>' },
     { id: 'reports', label: 'Reports', icon: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>' },
   ];

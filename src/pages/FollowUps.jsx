@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useAppContext } from "../AppContext";
 import ReusableTable from "../component/reusable/table";
-import { getAllFollowups } from "../Services/followUp/followService"
+import { getAllFollowups } from "../Services/followUp/followService";
+import FollowupFormModal from "../component/reusable/FollowupFormModal";
 
 const nextDir = (cur) => (cur === "ASC" ? "DESC" : "ASC");
 
@@ -76,6 +77,7 @@ const FollowUps = () => {
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
 
+  const [isFollowupModalOpen, setIsFollowupModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("PENDING");
 
   const debounceRef = useRef(null);
@@ -283,12 +285,12 @@ const FollowUps = () => {
           </p>
         </div>
 
-        {/* <button
+        <button
           className="btn btn-primary btn-sm"
-          onClick={openAddLeadModal}
+          onClick={() => setIsFollowupModalOpen(true)}
         >
-          + Schedule Follow-up
-        </button> */}
+          + Log Follow-up
+        </button>
       </div>
 
       {/* Tabs */}
@@ -383,6 +385,15 @@ const FollowUps = () => {
           />
         )}
       </div>
+
+      <FollowupFormModal
+        isOpen={isFollowupModalOpen}
+        onClose={() => setIsFollowupModalOpen(false)}
+        onSubmit={() => {
+          setIsFollowupModalOpen(false);
+          fetchData();
+        }}
+      />
     </div>
   );
 };

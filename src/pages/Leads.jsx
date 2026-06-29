@@ -119,6 +119,7 @@ const Leads = () => {
   const [selectedLeadForRemark, setSelectedLeadForRemark] = useState(null);
 
   const openRemarkModal = (lead) => {
+      console.log("Lead Data:", lead);
     setSelectedLeadForRemark(lead);
     setIsRemarkModalOpen(true);
   };
@@ -128,8 +129,10 @@ const Leads = () => {
     setSelectedLeadForRemark(null);
   };
 
-  const handleSaveRemark = (lead, remark) => {
-    console.log('Saved remark for', lead.name, ':', remark);
+  const handleSaveRemark = async (lead, remark) => {
+    showToast(`Remark saved for ${lead.fullName || lead.name}`);
+    // After saving the remark, refetch the leads to show updated data
+    await fetchLeads();
   };
 
   return (

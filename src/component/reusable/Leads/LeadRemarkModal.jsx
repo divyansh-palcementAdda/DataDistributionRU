@@ -51,7 +51,9 @@ const LeadRemarkModal = ({ isOpen, onClose, lead, onSave, followUpId }) => {
     lead?.nextFollowUp?.followUpId;
 
   const handleSave = async () => {
+    console.log("Save button clicked");
     const resolvedFollowUpId = resolveFollowUpId();
+    console.log("Resolved FollowUp ID:", resolvedFollowUpId);
 
     setIsSaving(true);
     setErrorMessage('');

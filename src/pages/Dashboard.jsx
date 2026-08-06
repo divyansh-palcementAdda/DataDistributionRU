@@ -166,6 +166,157 @@ const statCards = [
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EA580C" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /><path d="M8 14h.01M12 14h.01M16 14h.01" /></svg>
     ),
   },
+  {
+    color: 'green',
+    label: 'A Grade Lead Data',
+    value: '0',
+    change: '+15.0% this month',
+    changeColor: 'var(--success)',
+    up: true,
+    iconBg: 'var(--success-light)',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+      </svg>
+    ),
+  },
+  {
+    color: 'blue',
+    label: 'B Grade Lead Data',
+    value: '0',
+    change: '+8.5% this month',
+    changeColor: 'var(--success)',
+    up: true,
+    iconBg: 'var(--primary-light)',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+      </svg>
+    ),
+  },
+  {
+    color: 'purple',
+    label: 'Bulk Upload',
+    value: '0',
+    change: '+25.0% this month',
+    changeColor: 'var(--success)',
+    up: true,
+    iconBg: '#F3E8FF',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9333EA" strokeWidth="2">
+        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+        <polyline points="17 8 12 3 7 8" />
+        <line x1="12" y1="3" x2="12" y2="15" />
+      </svg>
+    ),
+  },
+  {
+    color: 'teal',
+    label: 'Single Upload',
+    value: '0',
+    change: '+12.0% this month',
+    changeColor: 'var(--success)',
+    up: true,
+    iconBg: '#CCFBF1',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0D9488" strokeWidth="2">
+        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+        <polyline points="17 8 12 3 7 8" />
+        <line x1="12" y1="3" x2="12" y2="15" />
+      </svg>
+    ),
+  },
+  {
+    color: 'indigo',
+    label: 'UG Lead',
+    value: '0',
+    change: '+20.0% this month',
+    changeColor: 'var(--success)',
+    up: true,
+    iconBg: '#E0E7FF',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2">
+        <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+        <path d="M6 12v5c3 3 9 3 12 0v-5" />
+      </svg>
+    ),
+  },
+  {
+    color: 'pink',
+    label: 'PG Lead',
+    value: '0',
+    change: '+18.0% this month',
+    changeColor: 'var(--success)',
+    up: true,
+    iconBg: '#FCE7F3',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#DB2777" strokeWidth="2">
+        <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+        <path d="M6 12v5c3 3 9 3 12 0v-5" />
+      </svg>
+    ),
+  },
+  {
+    color: 'yellow',
+    label: 'CBSE',
+    value: '0',
+    change: '+10.0% this month',
+    changeColor: 'var(--success)',
+    up: true,
+    iconBg: '#FEF9C3',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#CA8A04" strokeWidth="2">
+        <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />
+      </svg>
+    ),
+  },
+  {
+    color: 'cyan',
+    label: 'MP Board',
+    value: '0',
+    change: '+8.0% this month',
+    changeColor: 'var(--success)',
+    up: true,
+    iconBg: '#CFFAFE',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0891B2" strokeWidth="2">
+        <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />
+      </svg>
+    ),
+  },
+  {
+    color: 'gray',
+    label: 'Other Board',
+    value: '0',
+    change: '+5.0% this month',
+    changeColor: 'var(--success)',
+    up: true,
+    iconBg: 'var(--gray-100)',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gray-500)" strokeWidth="2">
+        <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />
+      </svg>
+    ),
+  },
+  {
+    color: 'emerald',
+    label: 'Consultancy Data',
+    value: '0',
+    change: '+22.0% this month',
+    changeColor: 'var(--success)',
+    up: true,
+    iconBg: '#D1FAE5',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2">
+        <path d="M3 21h18" />
+        <path d="M5 21V7l8-4 8 4v14" />
+        <path d="M8 21v-4a2 2 0 012-2h4a2 2 0 012 2v4" />
+      </svg>
+    ),
+  },
 ];
 
 /* ── Arrow icons ── */
@@ -252,6 +403,16 @@ const Dashboard = () => {
     const badData = leads.filter(l => l.status === 'bad' || l.status === 'baddata').length;
     const finallyNotConnected = leads.filter(l => l.status === 'finallynotconnected').length;
     const totalFollowups = followups.length;
+    const aGradeLeads = leads.filter(l => l.grade === 'A').length;
+    const bGradeLeads = leads.filter(l => l.grade === 'B').length;
+    const bulkUpload = leads.filter(l => l.uploadType === 'bulk').length;
+    const singleUpload = leads.filter(l => l.uploadType === 'single').length;
+    const ugLeads = leads.filter(l => l.leadType === 'UG').length;
+    const pgLeads = leads.filter(l => l.leadType === 'PG').length;
+    const cbseLeads = leads.filter(l => l.board === 'CBSE').length;
+    const mpBoardLeads = leads.filter(l => l.board === 'MP Board').length;
+    const otherBoardLeads = leads.filter(l => l.board === 'Other').length;
+    const consultancyData = leads.filter(l => l.source === 'consultancy').length;
 
     return statCards.map(card => {
       switch (card.label) {
@@ -265,6 +426,16 @@ const Dashboard = () => {
         case 'Bad Data': return { ...card, value: badData.toLocaleString() };
         case 'Finally Not Connected': return { ...card, value: finallyNotConnected.toLocaleString() };
         case 'Total Follow-ups': return { ...card, value: totalFollowups.toLocaleString() };
+        case 'A Grade Lead Data': return { ...card, value: aGradeLeads.toLocaleString() };
+        case 'B Grade Lead Data': return { ...card, value: bGradeLeads.toLocaleString() };
+        case 'Bulk Upload': return { ...card, value: bulkUpload.toLocaleString() };
+        case 'Single Upload': return { ...card, value: singleUpload.toLocaleString() };
+        case 'UG Lead': return { ...card, value: ugLeads.toLocaleString() };
+        case 'PG Lead': return { ...card, value: pgLeads.toLocaleString() };
+        case 'CBSE': return { ...card, value: cbseLeads.toLocaleString() };
+        case 'MP Board': return { ...card, value: mpBoardLeads.toLocaleString() };
+        case 'Other Board': return { ...card, value: otherBoardLeads.toLocaleString() };
+        case 'Consultancy Data': return { ...card, value: consultancyData.toLocaleString() };
         default: return card;
       }
     });

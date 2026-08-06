@@ -86,7 +86,7 @@ const ReusableTable = ({
                                             className="px-4 py-3 text-sm text-gray-700"
                                         >
                                             {column.render
-                                                ? column.render(row[column.key], row)
+                                                ? column.render(row[column.key], row, index)
                                                 : row[column.key]}
                                         </td>
                                     ))}
@@ -149,7 +149,7 @@ const ReusableTable = ({
 
                                     <span className="text-sm text-gray-800 text-right">
                                         {column.render
-                                            ? column.render(row[column.key], row)
+                                            ? column.render(row[column.key], row, index)
                                             : row[column.key]}
                                     </span>
                                 </div>

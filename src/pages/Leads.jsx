@@ -1,10 +1,11 @@
 import { useState, useMemo, useEffect } from 'react';
-import { FiEye, FiEdit, FiTrash2, FiMessageSquare } from 'react-icons/fi';
+import { FiEye, FiEdit, FiTrash2, FiMessageSquare, FiPhone } from 'react-icons/fi';
 import { statusConfig } from '../mockData';
 import { getAllLeads, deleteLead } from '../Services/lead/leadService';
 import { useAppContext } from '../AppContext';
 import ReusableTable from '../component/reusable/table';
 import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
+import FollowUpActionModal from '../component/reusable/Leads/FollowUpActionModal';
 import DeleteModal from "../component/reusable/deleteModel"
 
 
@@ -43,6 +44,10 @@ const Leads = () => {
   const [leadToDelete, setLeadToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Follow up action modal state
+  const [isFollowUpModalOpen, setIsFollowUpModalOpen] = useState(false);
+  const [selectedLeadForFollowUp, setSelectedLeadForFollowUp] = useState(null);
+
   const openDeleteModal = (lead) => {
     console.log("openDeleteModal called with lead:", lead);
     setLeadToDelete(lead);
@@ -73,6 +78,22 @@ const Leads = () => {
     } finally {
       setIsDeleting(false);
     }
+  };
+
+  const openFollowUpModal = (lead) => {
+    setSelectedLeadForFollowUp(lead);
+    setIsFollowUpModalOpen(true);
+  };
+
+  const closeFollowUpModal = () => {
+    setIsFollowUpModalOpen(false);
+    setSelectedLeadForFollowUp(null);
+  };
+
+  const handleFollowUpAction = (lead, action) => {
+    showToast(`Action "${action}" selected for ${lead.fullName || lead.name}`);
+    closeFollowUpModal();
+    // You can add API calls here to update the lead status based on the action
   };
 
   // API State
@@ -266,6 +287,15 @@ const Leads = () => {
           <ReusableTable
             columns={[
               {
+                key: 'sno',
+                header: 'S.NO',
+                render: (value, row, index) => (
+                  <span style={{ fontWeight: 500, color: 'var(--gray-700)' }}>
+                    {page * size + index + 1}
+                  </span>
+                ),
+              },
+              {
                 key: 'leadCode',
                 header: 'Lead Code',
                 render: (value) => <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{value}</span>,
@@ -314,6 +344,51 @@ const Leads = () => {
                 render: (value, row) =>
                   row.createdBy ? `${row.createdBy.firstName} ${row.createdBy.lastName}` : 'N/A',
               },
+              {
+                key: 'category',
+                header: 'Category',
+                render: (value, row) => {
+                  const categories = ['A Grade', 'B Grade', 'C Grade'];
+                  const index = leadsData.indexOf(row) % categories.length;
+                  return row.category || categories[index];
+                },
+              },
+              {
+                key: 'uploadType',
+                header: 'Upload Type',
+                render: (value, row) => {
+                  const types = ['Bulk', 'Single'];
+                  const index = leadsData.indexOf(row) % types.length;
+                  return row.uploadType || types[index];
+                },
+              },
+              {
+                key: 'dataType',
+                header: 'Data Type',
+                render: (value, row) => {
+                  const types = ['UG', 'PG'];
+                  const index = leadsData.indexOf(row) % types.length;
+                  return row.dataType || types[index];
+                },
+              },
+              {
+                key: 'dataAttributeCategory',
+                header: 'Data Attribute Category',
+                render: (value, row) => {
+                  const categories = ['CBSE', 'MP Board', 'Other'];
+                  const index = leadsData.indexOf(row) % categories.length;
+                  return row.dataAttributeCategory || categories[index];
+                },
+              },
+              {
+                key: 'consultancy',
+                header: 'Consultancy',
+                render: (value, row) => {
+                  const consultancies = ['ABC Consultancy', 'XYZ Education', 'Global Ed'];
+                  const index = leadsData.indexOf(row) % consultancies.length;
+                  return row.consultancy || consultancies[index];
+                },
+              },
             ]}
             data={leadsData}
             isServerSide={true}
@@ -328,6 +403,14 @@ const Leads = () => {
             }}
             actions={(row) => (
               <div className="flex justify-center items-center gap-3" style={{ display: 'flex', gap: '12px' }}>
+                <button
+                  className="text-green-500 hover:text-green-700 transition"
+                  title="Follow Up"
+                  onClick={() => openFollowUpModal(row)}
+                  style={{ color: '#22c55e', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                >
+                  <FiPhone size={18} />
+                </button>
                 <button
                   className="text-blue-500 hover:text-blue-700 transition"
                   title="Remark"
@@ -387,6 +470,13 @@ const Leads = () => {
         isLoading={isDeleting}
         title="Delete Lead"
         message={`Are you sure you want to delete lead "${leadToDelete?.fullName}"? This action cannot be undone.`}
+      />
+      {/* Follow Up Action Modal */}
+      <FollowUpActionModal
+        isOpen={isFollowUpModalOpen}
+        onClose={closeFollowUpModal}
+        lead={selectedLeadForFollowUp}
+        onActionSelect={handleFollowUpAction}
       />
     </div>
   );

@@ -18,6 +18,8 @@ import Pipeline from "./pages/Pipeline";
 import LeadDetail from "./pages/LeadDetail";
 import FollowUps from "./pages/FollowUps";
 import Counselors from "./pages/Counselors";
+import Consultancy from "./pages/Consultancy";
+import ConsultancyDetails from "./pages/ConsultancyDetails";
 import Reports from "./pages/Reports";
 import Courses from "./pages/Courses";
 import Settings from "./pages/Settings";
@@ -52,6 +54,8 @@ const Allroutes = () => {
         <Route path="/lead-detail/:id" element={<LeadDetail />} />
         <Route path="/followups" element={<FollowUps />} />
         <Route path="/counselors" element={<Counselors />} />
+        <Route path="/consultancy" element={<Consultancy />} />
+        <Route path="/consultancy/:id" element={<ConsultancyDetails />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/courses" element={<Courses />} />
         <Route path="/settings" element={<Settings />} />

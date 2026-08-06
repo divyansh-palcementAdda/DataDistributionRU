@@ -286,10 +286,10 @@ const FollowUps = () => {
         </div>
 
         <button
-          className="btn btn-primary btn-sm"
+          className="btn btn-primary btn-sm py-2 px-2"
           onClick={() => setIsFollowupModalOpen(true)}
         >
-          + Log Follow-up
+          + Follow-up
         </button>
       </div>
 

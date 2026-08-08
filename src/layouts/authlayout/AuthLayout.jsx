@@ -13,7 +13,7 @@ const AuthLayout = () => {
           <img
             src="https://ru-website-bucket.s3.ap-south-1.amazonaws.com/images/svg/logoblack.svg"
             alt="Data Distribute System logo"
-            className="w-50 h-28 mb-6 object-contain"
+            className="w-50 h-32 mb-6 object-contain"
           />
           <h1 className="text-3xl font-bold text-white">
             Data Distribution System

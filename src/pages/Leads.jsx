@@ -307,12 +307,10 @@ const Leads = () => {
   const fetchCourses = async () => {
     try {
       const res = await getAllCourses({ page: 0, size: 100 });
-      console.log('Courses API Response:', res);
       if (res?.success) {
         const courses = res.data.content;
-        console.log('Courses content:', courses);
         const courseNames = courses.map(course => course.courseName);
-        console.log('Course names:', courseNames);
+       
         setCoursesData(['All Courses', ...courseNames]);
       } else {
         console.log('API response success check failed');

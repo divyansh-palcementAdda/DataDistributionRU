@@ -14,5 +14,9 @@ export const getAllUser = (params = {}) => {
 };
 
 export const addUser = (data) => {
-    return axiosInstance.post(ApiRoutes.Users.create, data);
-};
+    return axiosInstance.post(ApiRoutes.Users.create, data, {
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        }
+    });
+};

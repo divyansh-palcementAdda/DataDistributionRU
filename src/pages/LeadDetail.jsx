@@ -3,6 +3,8 @@ import { useParams } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
 import CustomButton from '../component/reusable/CustomButton';
 import ScheduleModal from "../component/reusable/Leads/scheduleModel";
+import CallModal from '../component/reusable/CallModal';
+import WhatsAppModal from '../component/reusable/WhatsAppModal';
 import ReusableTable from '../component/reusable/table';
 import { createLeadSchedule, getLeadById } from '../Services/lead/leadService';
 
@@ -10,6 +12,8 @@ const LeadDetail = () => {
   const { id } = useParams();
   const { navTo, showToast } = useAppContext();
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [isCallModalOpen, setIsCallModalOpen] = useState(false);
+  const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
   const [leadDetails, setLeadDetails] = useState(null);
   const [loading, setLoading] = useState(false);
   const [statusHistory, setStatusHistory] = useState([]);
@@ -202,8 +206,8 @@ const LeadDetail = () => {
                 </div>
               </div>
               <div className="flex gap-1.5">
-                <CustomButton variant="primary" onClick={() => showToast('Calling Priya Kumar…')} className="bg-green-600 hover:bg-green-700 py-1.5 px-3 text-xs">Call</CustomButton>
-                <CustomButton variant="secondary" onClick={() => showToast('Opening WhatsApp…')} className="py-1.5 px-3 text-xs">WhatsApp</CustomButton>
+                <CustomButton variant="primary" onClick={() => setIsCallModalOpen(true)} className="bg-green-600 hover:bg-green-700 py-1.5 px-3 text-xs">Call</CustomButton>
+                <CustomButton variant="secondary" onClick={() => setIsWhatsAppModalOpen(true)} className="py-1.5 px-3 text-xs">WhatsApp</CustomButton>
               </div>
             </div>
 
@@ -267,6 +271,18 @@ const LeadDetail = () => {
         isOpen={isScheduleModalOpen}
         onClose={() => setIsScheduleModalOpen(false)}
         onSubmit={handleScheduleSubmit}
+      />
+
+      <CallModal
+        isOpen={isCallModalOpen}
+        onClose={() => setIsCallModalOpen(false)}
+        studentData={leadDetails}
+      />
+
+      <WhatsAppModal
+        isOpen={isWhatsAppModalOpen}
+        onClose={() => setIsWhatsAppModalOpen(false)}
+        studentData={leadDetails}
       />
     </div>
   );

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useAppContext } from '../AppContext';
 import ReusableTable from '../component/reusable/table';
 import { getAllCounselors } from '../Services/Counselors/counselors';
+import AddUserModal from '../component/reusable/user/addUser';
 
 /* ── Sort direction toggle helper ── */
 const nextDir = (cur) => (cur === 'ASC' ? 'DESC' : 'ASC');
@@ -28,7 +29,7 @@ const SORTABLE_COLS = [
 ];
 
 const Counselors = () => {
-  const { openAddLeadModal, showToast } = useAppContext();
+  const { showToast } = useAppContext();
 
   /* ── API state ── */
   const [data, setData] = useState([]);
@@ -48,6 +49,9 @@ const Counselors = () => {
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const debounceRef = useRef(null);
+
+  /* ── Modal state ── */
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
 
   const handleSearchInput = (e) => {
     const val = e.target.value;
@@ -101,6 +105,18 @@ const Counselors = () => {
       setSortDirection('ASC');
     }
     setPage(0);
+  };
+
+  const handleOpenAddUserModal = () => {
+    setIsAddUserModalOpen(true);
+  };
+
+  const handleCloseAddUserModal = () => {
+    setIsAddUserModalOpen(false);
+  };
+
+  const handleUserAdded = () => {
+    fetchData();
   };
 
   /* ── Column header renderer ── */
@@ -210,7 +226,7 @@ const Counselors = () => {
           <button
             className="btn btn-primary btn-sm"
             style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-            onClick={openAddLeadModal}
+            onClick={handleOpenAddUserModal}
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="12" y1="5" x2="12" y2="19" />
@@ -292,6 +308,13 @@ const Counselors = () => {
           />
         )}
       </div>
+
+      {/* Add User Modal */}
+      <AddUserModal
+        isOpen={isAddUserModalOpen}
+        onClose={handleCloseAddUserModal}
+        onSuccess={handleUserAdded}
+      />
     </div>
   );
 };

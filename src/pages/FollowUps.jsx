@@ -1,10 +1,8 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useAppContext } from "../AppContext";
 import ReusableTable from "../component/reusable/table";
 import { getAllFollowups } from "../Services/followUp/followService";
 import FollowupFormModal from "../component/reusable/FollowupFormModal";
-
-const nextDir = (cur) => (cur === "ASC" ? "DESC" : "ASC");
 
 const formatFollowUpDate = (value) => {
   if (!value) return "-";
@@ -34,28 +32,124 @@ const getStatusClass = (value) => {
   }
 };
 
-const SortIcon = ({ active, direction }) => (
-  <svg
-    width="12"
-    height="12"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke={active ? "var(--primary)" : "var(--gray-400)"}
-    strokeWidth="2.5"
-    style={{
-      marginLeft: "4px",
-      flexShrink: 0,
-      transform:
-        active && direction === "DESC"
-          ? "rotate(180deg)"
-          : "none",
-    }}
-  >
-    <path
-      d="M12 5l7 7H5z"
-      fill={active ? "var(--primary)" : "var(--gray-400)"}
-      stroke="none"
-    />
+/* ── Stat Cards data ── */
+const followupStatCards = [
+  {
+    color: 'orange',
+    label: 'Form Follow up',
+    value: '0',
+    change: '+7.0% this month',
+    changeColor: 'var(--warning)',
+    up: true,
+    iconBg: '#FFF7ED',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EA580C" strokeWidth="2">
+        <rect x="3" y="4" width="18" height="18" rx="2" />
+        <path d="M16 2v4M8 2v4M3 10h18" />
+        <path d="M8 14h.01M12 14h.01M16 14h.01" />
+      </svg>
+    ),
+  },
+  {
+    color: 'blue',
+    label: 'Counselling Follow-up',
+    value: '0',
+    change: '+5.2% this month',
+    changeColor: 'var(--success)',
+    up: true,
+    iconBg: 'var(--primary-light)',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+      </svg>
+    ),
+  },
+  {
+    color: 'green',
+    label: 'Registered',
+    value: '0',
+    change: '+18.6% this month',
+    changeColor: 'var(--success)',
+    up: true,
+    iconBg: 'var(--success-light)',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2">
+        <polyline points="20 6 9 17 4 12" />
+      </svg>
+    ),
+  },
+  {
+    color: 'red',
+    label: 'Form Not Interested',
+    value: '0',
+    change: '-2.5% this month',
+    changeColor: 'var(--danger)',
+    up: false,
+    iconBg: 'var(--danger-light)',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="8" y1="12" x2="16" y2="12" />
+      </svg>
+    ),
+  },
+  {
+    color: 'orange',
+    label: 'Continue Form Follow-up',
+    value: '0',
+    change: '+8.2% this month',
+    changeColor: 'var(--warning)',
+    up: true,
+    iconBg: '#FFF7ED',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EA580C" strokeWidth="2">
+        <path d="M17 14V2H7v12l5 5 5-5z" />
+        <path d="M9 18l-6 6" />
+        <path d="M15 18l6 6" />
+      </svg>
+    ),
+  },
+  {
+    color: 'purple',
+    label: 'Interested Form Follow-up',
+    value: '0',
+    change: '+3.0% this month',
+    changeColor: 'var(--success)',
+    up: true,
+    iconBg: '#F3E8FF',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2">
+        <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+        <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
+      </svg>
+    ),
+  },
+  {
+    color: 'red',
+    label: 'Finally Not Interested',
+    value: '0',
+    change: '+1.5% this month',
+    changeColor: 'var(--danger)',
+    up: false,
+    iconBg: 'var(--danger-light)',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2">
+        <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+        <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
+      </svg>
+    ),
+  },
+];
+
+/* ── Arrow icons ── */
+const ArrowUp = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+    <polyline points="18 15 12 9 6 15" />
+  </svg>
+);
+const ArrowDown = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+    <polyline points="6 9 12 15 18 9" />
   </svg>
 );
 
@@ -72,7 +166,7 @@ const FollowUps = () => {
   const [size, setSize] = useState(10);
 
   const [sortBy, setSortBy] = useState("followUpDate");
-  const [sortDirection, setSortDirection] = useState("ASC");
+  const [sortDirection, setSortDirection] = useState("asc");
 
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
@@ -81,6 +175,30 @@ const FollowUps = () => {
   const [activeTab, setActiveTab] = useState("PENDING");
 
   const debounceRef = useRef(null);
+
+  // Calculate stat cards based on followup data
+  const calculatedStatCards = useMemo(() => {
+    const formFollowUp = data.filter(d => d.status === 'formfollowup' || d.status === 'FORMFOLLOWUP' || d.followUpType === 'formfollowup').length;
+    const counsellingFollowUp = data.filter(d => d.status === 'counsellingfollowup' || d.status === 'COUNSELLINGFOLLOWUP' || d.followUpType === 'counsellingfollowup').length;
+    const registered = data.filter(d => d.status === 'registered' || d.status === 'REGISTERED' || d.followUpType === 'registered').length;
+    const formNotInterested = data.filter(d => d.status === 'formnotinterested' || d.status === 'FORMNOTINTERESTED' || d.followUpType === 'formnotinterested').length;
+    const continueFormFollowUp = data.filter(d => d.status === 'continueformfollowup' || d.status === 'CONTINUEFORMFOLLOWUP' || d.followUpType === 'continueformfollowup').length;
+    const interestedFollowUpNotInterested = data.filter(d => d.status === 'interestedfollowupnotinterested' || d.status === 'INTERESTEDFOLLOWUPNOTINTERESTED' || d.followUpType === 'interestedfollowupnotinterested').length;
+    const finallyNotInterested = data.filter(d => d.status === 'finallynotinterested' || d.status === 'FINALLYNOTINTERESTED' || d.followUpType === 'finallynotinterested').length;
+
+    return followupStatCards.map(card => {
+      switch (card.label) {
+        case 'Form Follow up': return { ...card, value: formFollowUp.toLocaleString() };
+        case 'Counselling Follow-up': return { ...card, value: counsellingFollowUp.toLocaleString() };
+        case 'Registered': return { ...card, value: registered.toLocaleString() };
+        case 'Form Not Interested': return { ...card, value: formNotInterested.toLocaleString() };
+        case 'Continue Form Follow-up': return { ...card, value: continueFormFollowUp.toLocaleString() };
+        case 'Interested Form Follow-up': return { ...card, value: interestedFollowUpNotInterested.toLocaleString() };
+        case 'Finally Not Interested': return { ...card, value: finallyNotInterested.toLocaleString() };
+        default: return card;
+      }
+    });
+  }, [data]);
 
   const handleSearchInput = (e) => {
     const value = e.target.value;
@@ -97,6 +215,12 @@ const FollowUps = () => {
     }, 300);
   };
 
+  const handleSort = (column, direction) => {
+    setSortBy(column);
+    setSortDirection(direction);
+    setPage(0);
+  };
+
   const fetchData = useCallback(async () => {
     setLoading(true);
 
@@ -105,7 +229,7 @@ const FollowUps = () => {
         page,
         size,
         sortBy,
-        sortDirection,
+        sortDirection: sortDirection.toUpperCase(),
         search,
         status: activeTab === "ALL" ? "" : activeTab,
       });
@@ -143,43 +267,16 @@ const FollowUps = () => {
     fetchData();
   }, [fetchData]);
 
-  const handleSort = (column) => {
-    if (sortBy === column) {
-      setSortDirection(nextDir(sortDirection));
-    } else {
-      setSortBy(column);
-      setSortDirection("ASC");
-    }
-
-    setPage(0);
-  };
-
-  const SortHeader = ({ keyName, label }) => (
-    <div
-      onClick={() => handleSort(keyName)}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        cursor: "pointer",
-      }}
-    >
-      {label}
-      <SortIcon
-        active={sortBy === keyName}
-        direction={sortDirection}
-      />
-    </div>
-  );
-
   const columns = [
     {
+      key: "sno",
+      sortable: false,
+      header: "S.no",
+      render: (_, __, index) => index + 1 + (page * size),
+    },
+    {
       key: "leadFullName",
-      header: (
-        <SortHeader
-          keyName="leadFullName"
-          label="Lead Name"
-        />
-      ),
+      header: "Lead Name",
       render: (_, row) => (
         <div>
           <div className="font-semibold text-gray-900">
@@ -194,12 +291,7 @@ const FollowUps = () => {
 
     {
       key: "followUpDate",
-      header: (
-        <SortHeader
-          keyName="followUpDate"
-          label="Follow-up Date"
-        />
-      ),
+      header: "Follow-up Date",
       render: (value) => formatFollowUpDate(value),
     },
 
@@ -284,55 +376,23 @@ const FollowUps = () => {
             Track and manage follow-ups
           </p>
         </div>
-
-        <button
-          className="btn btn-primary btn-sm py-2 px-2"
-          onClick={() => setIsFollowupModalOpen(true)}
-        >
-          + Follow-up
-        </button>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 mb-4">
-        <button
-          className={`btn btn-sm ${activeTab === "PENDING"
-            ? "btn-primary"
-            : "btn-outline"
-            }`}
-          onClick={() => {
-            setActiveTab("PENDING");
-            setPage(0);
-          }}
-        >
-          Pending
-        </button>
-
-        <button
-          className={`btn btn-sm ${activeTab === "COMPLETED"
-            ? "btn-primary"
-            : "btn-outline"
-            }`}
-          onClick={() => {
-            setActiveTab("COMPLETED");
-            setPage(0);
-          }}
-        >
-          Completed
-        </button>
-
-        <button
-          className={`btn btn-sm ${activeTab === "ALL"
-            ? "btn-primary"
-            : "btn-outline"
-            }`}
-          onClick={() => {
-            setActiveTab("ALL");
-            setPage(0);
-          }}
-        >
-          All
-        </button>
+      {/* ── Stat Cards ── */}
+      <div className="stat-grid mb-5">
+        {calculatedStatCards.map((card) => (
+          <div key={card.label} className={`stat-card ${card.color}`}>
+            <div className="stat-label">{card.label}</div>
+            <div className="stat-value">{card.value}</div>
+            <div className="stat-change" style={{ color: card.changeColor }}>
+              {card.up ? <ArrowUp /> : <ArrowDown />}
+              {card.change}
+            </div>
+            <div className="stat-icon" style={{ background: card.iconBg }}>
+              {card.icon}
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Search */}
@@ -382,6 +442,9 @@ const FollowUps = () => {
               setSize(newSize);
               setPage(0);
             }}
+            sortBy={sortBy}
+            sortDirection={sortDirection}
+            onSort={handleSort}
           />
         )}
       </div>

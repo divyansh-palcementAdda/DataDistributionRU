@@ -30,7 +30,6 @@ import CourseDetails from "./pages/CourseDetails";
 // Reusable Components / Standalone Pages
 import StudentForm from "./component/reusable/studentForm";
 import QRCodePage from "./component/reusable/qrCode";
-import FollowupForm from './pages/FollowupForm';
 
 const Allroutes = () => {
   return (
@@ -61,9 +60,6 @@ const Allroutes = () => {
         <Route path="/courses-types" element={<CourseType />} />
         <Route path="/courses-types/:id" element={<CourseTypeDetails />} />
         <Route path="/course-details/:id" element={<CourseDetails />} />
-
-         <Route path="/followup-form" element={<FollowupForm />} />
-
       </Route>
 
       {/* Standalone Route for Student Form from QR */}

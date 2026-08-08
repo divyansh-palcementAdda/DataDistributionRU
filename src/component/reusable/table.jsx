@@ -16,6 +16,9 @@ const ReusableTable = ({
     rowsPerPage: serverRowsPerPage = 10,
     onPageChange,
     onRowsPerPageChange,
+    sortBy,
+    sortDirection,
+    onSort,
 }) => {
     const [clientPage, setClientPage] = useState(1);
     const [clientRows, setClientRows] = useState(10);
@@ -49,6 +52,27 @@ const ReusableTable = ({
         }
     };
 
+    const handleSort = (columnKey) => {
+        if (!onSort) return;
+        
+        let newDirection = 'asc';
+        if (sortBy === columnKey) {
+            newDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+        }
+        
+        onSort(columnKey, newDirection);
+    };
+
+    const getSortIcon = (columnKey) => {
+        if (sortBy !== columnKey) {
+            return <span style={{ fontSize: '12px', color: '#6B7280', opacity: 0.7 }}>↕</span>;
+        }
+        
+        return <span style={{ fontSize: '14px', fontWeight: 'bold', color: '#1F2937' }}>
+            {sortDirection === 'asc' ? '↑' : '↓'}
+        </span>;
+    };
+
     return (
         <div className="w-full overflow-hidden rounded-xl border border-gray-200 bg-white">
             {/* Desktop Table */}
@@ -59,9 +83,14 @@ const ReusableTable = ({
                             {columns.map((column) => (
                                 <th
                                     key={column.key}
-                                    className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600"
+                                    className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600 ${column.sortable !== false ? 'cursor-pointer hover:bg-gray-100 transition' : ''}`}
+                                    onClick={() => column.sortable !== false && handleSort(column.key)}
+                                    style={{ userSelect: 'none' }}
                                 >
-                                    {column.header}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        {column.header}
+                                        {column.sortable !== false && getSortIcon(column.key)}
+                                    </div>
                                 </th>
                             ))}
 
@@ -86,7 +115,7 @@ const ReusableTable = ({
                                             className="px-4 py-3 text-sm text-gray-700"
                                         >
                                             {column.render
-                                                ? column.render(row[column.key], row)
+                                                ? column.render(row[column.key], row, index)
                                                 : row[column.key]}
                                         </td>
                                     ))}
@@ -149,7 +178,7 @@ const ReusableTable = ({
 
                                     <span className="text-sm text-gray-800 text-right">
                                         {column.render
-                                            ? column.render(row[column.key], row)
+                                            ? column.render(row[column.key], row, index)
                                             : row[column.key]}
                                     </span>
                                 </div>

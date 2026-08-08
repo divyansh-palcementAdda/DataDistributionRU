@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { leads, counselors, followups, funnelData, statusConfig } from '../mockData';
+import { leads, counselors, followups, funnelData, statusConfig } from '../../mockData';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -9,9 +9,9 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { useAppContext } from '../AppContext';
+import { useAppContext } from '../../AppContext';
 import { Bar, Doughnut } from 'react-chartjs-2';
-import ReusableTable from '../component/reusable/table';
+import ReusableTable from '../../component/reusable/table';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend);
 
@@ -280,26 +280,7 @@ const Dashboard = () => {
             Good morning, Arjun! Here&apos;s what&apos;s happening today.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="3" y="4" width="18" height="18" rx="2" />
-              <path d="M16 2v4M8 2v4M3 10h18" />
-            </svg>
-            Jun 2025
-          </button>
-          <button
-            className="btn btn-primary btn-sm"
-            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-            onClick={openAddLeadModal}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            Add Lead
-          </button>
-        </div>
+     
       </div>
 
       {/* ── Stat Cards ── */}

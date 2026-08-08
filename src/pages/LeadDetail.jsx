@@ -2,19 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
 import CustomButton from '../component/reusable/CustomButton';
-import LeadRemarkModal from "../component/reusable/Leads/LeadRemarkModal";
 import ScheduleModal from "../component/reusable/Leads/scheduleModel";
-import { createLeadSchedule, getLeadById, getLeadAssignmentHistory } from '../Services/lead/leadService';
+import ReusableTable from '../component/reusable/table';
+import { createLeadSchedule, getLeadById } from '../Services/lead/leadService';
 
 const LeadDetail = () => {
   const { id } = useParams();
   const { navTo, showToast } = useAppContext();
-  const [isRemarkModalOpen, setIsRemarkModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [leadDetails, setLeadDetails] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [assignmentHistory, setAssignmentHistory] = useState([]);
-  const [historyLoading, setHistoryLoading] = useState(false);
+  const [statusHistory, setStatusHistory] = useState([]);
+  const [statusHistoryLoading, setStatusHistoryLoading] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -32,27 +31,111 @@ const LeadDetail = () => {
         }
       };
       fetchLead();
-
-      const fetchHistory = async () => {
-        setHistoryLoading(true);
-        try {
-          const res = await getLeadAssignmentHistory(id);
-          if (res?.data?.success) {
-            setAssignmentHistory(res.data.data || []);
-          }
-        } catch (err) {
-          console.error('Failed to fetch assignment history', err);
-        } finally {
-          setHistoryLoading(false);
-        }
-      };
-      fetchHistory();
     }
   }, [id]);
 
-  const mockLead = { name: 'Priya Kumar', phone: '+91 98765 43210', course: 'Full Stack Dev', remark: 'Lead is very interested in Full Stack. Has budget clarity. Needs EMI option info. Decision maker herself. Likely to register by end of June.' };
+  useEffect(() => {
+    // Static data for lead status history (since API is not available yet)
+    const staticStatusHistory = [
+      {
+        status: 'Connected',
+        changedAt: '2025-06-15T10:30:00',
+        changedBy: { firstName: 'Rahul', lastName: 'Sharma', username: 'rahul.s' },
+        remarks: 'Initial contact made via phone call'
+      },
+      {
+        status: 'Interested',
+        changedAt: '2025-06-16T14:45:00',
+        changedBy: { firstName: 'Rahul', lastName: 'Sharma', username: 'rahul.s' },
+        remarks: 'Showed interest in Full Stack Development course'
+      },
+      {
+        status: 'Follow Up',
+        changedAt: '2025-06-18T11:00:00',
+        changedBy: { firstName: 'Priya', lastName: 'Singh', username: 'priya.s' },
+        remarks: 'Scheduled follow-up for course details discussion'
+      },
+      {
+        status: 'Not Connected',
+        changedAt: '2025-06-20T16:30:00',
+        changedBy: { firstName: 'Amit', lastName: 'Kumar', username: 'amit.k' },
+        remarks: 'Call not answered, left voicemail'
+      },
+      {
+        status: 'Hot Lead',
+        changedAt: '2025-06-22T09:15:00',
+        changedBy: { firstName: 'Rahul', lastName: 'Sharma', username: 'rahul.s' },
+        remarks: 'Lead responded positively, ready for enrollment'
+      }
+    ];
+    setStatusHistory(staticStatusHistory);
+    setStatusHistoryLoading(false);
+  }, [id]);
 
   const initials = leadDetails?.fullName ? leadDetails.fullName.substring(0, 2).toUpperCase() : 'PK';
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getStatusColor = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'connected':
+        return 'bg-green-100 text-green-700';
+      case 'not connected':
+        return 'bg-red-100 text-red-700';
+      case 'interested':
+        return 'bg-blue-100 text-blue-700';
+      case 'follow up':
+        return 'bg-orange-100 text-orange-700';
+      case 'hot lead':
+        return 'bg-purple-100 text-purple-700';
+      default:
+        return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  const statusHistoryColumns = [
+    {
+      key: 'sno',
+      header: 'S.No',
+      render: (_, __, index) => index + 1
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (value) => (
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(value)}`}>
+          {value || '-'}
+        </span>
+      )
+    },
+    {
+      key: 'changedAt',
+      header: 'Changed At',
+      render: (value) => formatDate(value)
+    },
+    {
+      key: 'changedBy',
+      header: 'Changed By',
+      render: (value, row) => row?.changedBy?.firstName && row?.changedBy?.lastName
+        ? `${row.changedBy.firstName} ${row.changedBy.lastName}`
+        : row?.changedBy?.username || '-'
+    },
+    {
+      key: 'remarks',
+      header: 'Remarks',
+      render: (value) => value || '-'
+    }
+  ];
 
   const handleScheduleSubmit = async (formData) => {
     try {
@@ -101,10 +184,10 @@ const LeadDetail = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-5">
+      <div className="grid grid-cols-1 gap-5">
         <div className="flex flex-col gap-4">
           {/* Lead Info Card */}
-          <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+          <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm w-full">
             <div className="flex flex-col sm:flex-row items-start gap-5 mb-6">
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
                 {initials}
@@ -139,180 +222,46 @@ const LeadDetail = () => {
                 </div>
               ))}
             </div>
-          </div>
 
-          {/* Course Info */}
-          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-            <h3 className="text-sm font-bold text-gray-800 mb-4">Course Information</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Interested Course</div>
-                <div className="text-xs font-bold text-blue-600">{leadDetails?.courseInterested || 'Full Stack Development'}</div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Batch Preference</div>
-                <div className="text-xs font-semibold text-gray-800">Weekend Batch</div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Budget</div>
-                <div className="text-xs font-semibold text-gray-800">₹45,000 – ₹60,000</div>
-              </div>
-              <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Start Date Pref.</div>
-                <div className="text-xs font-semibold text-gray-800">July 2025</div>
+            {/* Course Info */}
+            <div className="mt-5 pt-5 border-t border-gray-100">
+              <h3 className="text-sm font-bold text-gray-800 mb-4">Course Information</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Interested Course</div>
+                  <div className="text-xs font-bold text-blue-600">{leadDetails?.courseInterested || 'Full Stack Development'}</div>
+                </div>
+                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Batch Preference</div>
+                  <div className="text-xs font-semibold text-gray-800">Weekend Batch</div>
+                </div>
+                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Budget</div>
+                  <div className="text-xs font-semibold text-gray-800">₹45,000 – ₹60,000</div>
+                </div>
+                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Start Date Pref.</div>
+                  <div className="text-xs font-semibold text-gray-800">July 2025</div>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Communication History */}
-          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-            <h3 className="text-sm font-bold text-gray-800 mb-4">Communication History</h3>
-            <div className="space-y-3" id="timeline-list">
-              {historyLoading ? (
-                <div className="text-xs text-gray-400 italic text-center py-6">Loading history...</div>
-              ) : assignmentHistory.length === 0 ? (
-                <div className="text-xs text-gray-400 italic text-center py-6">No assignment history found</div>
+            {/* Lead Status History */}
+            <div className="mt-5 pt-5 border-t border-gray-100">
+              <h3 className="text-sm font-bold text-gray-800 mb-4">Lead Status History</h3>
+              {statusHistoryLoading ? (
+                <div className="text-center py-4 text-gray-500 text-sm">Loading status history...</div>
               ) : (
-                assignmentHistory.map((item, idx) => {
-                  const isFirst = idx === 0;
-                  const assignedAt = item.assignedAt ? new Date(item.assignedAt) : null;
-                  return (
-                    <div key={item.id || idx} className="relative flex gap-3">
-                      {/* Timeline line */}
-                      {idx < assignmentHistory.length - 1 && (
-                        <div className="absolute left-[15px] top-8 bottom-0 w-px bg-gray-100" />
-                      )}
-                      {/* Dot */}
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 z-10 ${
-                        isFirst ? 'bg-blue-100' : 'bg-gray-100'
-                      }`}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={isFirst ? '#2563eb' : '#9ca3af'} strokeWidth="2">
-                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                          <circle cx="12" cy="7" r="4" />
-                        </svg>
-                      </div>
-                      {/* Content */}
-                      <div className="flex-1 bg-gray-50 border border-gray-100 rounded-lg p-3">
-                        <div className="flex flex-wrap items-start justify-between gap-1 mb-1">
-                          <span className="text-xs font-bold text-gray-800">
-                            {item.assignedTo?.fullName || item.assignedTo?.name || 'Unknown User'}
-                          </span>
-                          {assignedAt && (
-                            <span className="text-[10px] text-gray-400">
-                              {assignedAt.toLocaleDateString()} · {assignedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          )}
-                        </div>
-                        {item.assignedBy && (
-                          <p className="text-[11px] text-gray-500">
-                            Assigned by <span className="font-semibold text-gray-700">{item.assignedBy?.fullName || item.assignedBy?.name || 'System'}</span>
-                          </p>
-                        )}
-                        {item.remarks && (
-                          <p className="text-[11px] text-gray-600 mt-1 italic">"{item.remarks}"</p>
-                        )}
-                        {isFirst && (
-                          <span className="inline-block mt-1.5 bg-blue-50 text-blue-600 text-[9px] font-bold px-2 py-0.5 rounded-full border border-blue-100 uppercase tracking-wide">Current</span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })
+                <ReusableTable
+                  columns={statusHistoryColumns}
+                  data={statusHistory}
+                  emptyMessage="No status history available"
+                />
               )}
             </div>
           </div>
-
-          {/* Remarks */}
-          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="text-sm font-bold text-gray-800">Remarks & Notes</h3>
-              <CustomButton variant="secondary" className="text-[10px] py-1 px-2" onClick={() => setIsRemarkModalOpen(true)}>
-                Edit Remark
-              </CustomButton>
-            </div>
-            <div className="p-3 text-xs border border-gray-200 rounded-lg bg-gray-50 text-gray-700">
-              {leadDetails?.remarks || 'Lead is very interested in Full Stack. Has budget clarity. Needs EMI option info. Decision maker herself. Likely to register by end of June.'}
-            </div>
-          </div>
-        </div>
-
-        {/* Right Sidebar */}
-        <div className="flex flex-col gap-4">
-          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm text-center">
-            <div className="relative inline-flex items-center justify-center mb-2">
-              <svg className="w-20 h-20 transform -rotate-90">
-                <circle cx="40" cy="40" r="36" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-gray-100" />
-                <circle cx="40" cy="40" r="36" stroke="currentColor" strokeWidth="6" fill="transparent" className="text-orange-500" strokeDasharray={226.2} strokeDashoffset={226.2 - (226.2 * 87) / 100} />
-              </svg>
-              <span className="absolute text-xl font-black text-orange-600">87</span>
-            </div>
-            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-4">Lead Score</div>
-
-            <div className="space-y-3 px-1">
-              {[
-                { label: 'Engagement', val: 90, color: 'bg-green-500' },
-                { label: 'Budget Fit', val: 80, color: 'bg-blue-500' },
-                { label: 'Intent', val: 85, color: 'bg-orange-500' }
-              ].map((s, i) => (
-                <div key={i}>
-                  <div className="flex justify-between text-[10px] font-bold text-gray-600 mb-1">
-                    <span>{s.label}</span>
-                    <span>{s.val}%</span>
-                  </div>
-                  <div className="h-1 w-full bg-gray-100 rounded-full overflow-hidden">
-                    <div className={`h-full ${s.color}`} style={{ width: `${s.val}%` }}></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-            <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Assigned Counselor</h3>
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-white text-xs font-bold">RS</div>
-              <div>
-                <div className="text-xs font-bold text-gray-800">Rahul Singh</div>
-                <div className="text-[10px] text-gray-400">Senior Counselor</div>
-              </div>
-            </div>
-            <CustomButton variant="secondary" className="w-full text-[11px] py-1.5" onClick={() => showToast('Reassigned successfully')}>Reassign</CustomButton>
-          </div>
-
-          <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-            <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Quick Actions</h3>
-            <div className="flex flex-col gap-2">
-              <button onClick={() => showToast('Marked as Registered!')} className="w-full py-1.5 rounded-lg text-[11px] font-bold bg-green-50 text-green-600 hover:bg-green-100 transition-colors border border-green-100">✓ Mark Registered</button>
-              <button onClick={() => showToast('Marked as Hot Lead!')} className="w-full py-1.5 rounded-lg text-[11px] font-bold bg-orange-50 text-orange-600 hover:bg-orange-100 transition-colors border border-orange-100">🔥 Mark Hot Lead</button>
-              <button onClick={() => showToast('Marked as Cold Lead')} className="w-full py-1.5 rounded-lg text-[11px] font-bold bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors border border-gray-100">❄️ Mark Cold Lead</button>
-              <button onClick={() => showToast('Marked as Bad Lead')} className="w-full py-1.5 rounded-lg text-[11px] font-bold bg-red-50 text-red-600 hover:bg-red-100 transition-colors border border-red-100">✗ Mark Bad Lead</button>
-            </div>
-          </div>
-
-          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-            <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-3">Next Follow-up</h3>
-            <div className="bg-orange-50 border border-orange-100 rounded-lg p-3 mb-3">
-              <div className="text-xs font-bold text-orange-800">{leadDetails?.nextFollowUpDate ? new Date(leadDetails.nextFollowUpDate).toLocaleDateString() : 'June 15, 2025'}</div>
-              <div className="text-[10px] text-orange-600 mt-0.5 font-medium">{leadDetails?.nextFollowUpDate ? new Date(leadDetails.nextFollowUpDate).toLocaleTimeString() : '10:00 AM · Call'}</div>
-            </div>
-            <CustomButton
-              variant="secondary"
-              className="w-full text-[11px] py-1.5"
-              onClick={() => setIsScheduleModalOpen(true)}
-            >
-              Reschedule
-            </CustomButton>
-          </div>
         </div>
       </div>
-
-      <LeadRemarkModal
-        isOpen={isRemarkModalOpen}
-        onClose={() => setIsRemarkModalOpen(false)}
-        lead={mockLead}
-        followUpId={leadDetails?.followUpId || leadDetails?.nextFollowUpId || leadDetails?.followupId}
-        onSave={(lead, remark) => showToast('Remark saved')}
-      />
 
       <ScheduleModal
         isOpen={isScheduleModalOpen}

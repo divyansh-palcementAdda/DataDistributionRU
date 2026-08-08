@@ -12,9 +12,10 @@ import OtpVerify from "./pages/auth/otpVerify";
 import ResetPassword from "./pages/auth/resetPassword";
 
 // Main Pages (src/ mein exist karte hain)
-import Dashboard from "./pages/Dashboard";
+import Dashboard from "./pages/Dashboards/adminDashboard";
+import HeadDashboard from "./pages/Dashboards/headDashboard";
+import CallersDashboard from "./pages/Dashboards/callersDashboard";
 import Leads from "./pages/Leads";
-import Pipeline from "./pages/Pipeline";
 import LeadDetail from "./pages/LeadDetail";
 import FollowUps from "./pages/FollowUps";
 import Counselors from "./pages/Counselors";
@@ -46,8 +47,9 @@ const Allroutes = () => {
       {/* Main app routes — wrapped in MainLayout */}
       <Route element={<MainLayout />}>
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/head-dashboard" element={<HeadDashboard />} />
+        <Route path="/callers-dashboard" element={<CallersDashboard />} />
         <Route path="/leads" element={<Leads />} />
-        <Route path="/pipeline" element={<Pipeline />} />
         <Route path="/lead-detail" element={<LeadDetail />} />
         <Route path="/lead-detail/:id" element={<LeadDetail />} />
         <Route path="/followups" element={<FollowUps />} />

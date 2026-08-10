@@ -448,6 +448,10 @@ body.dark .cal-day {
   background: var(--gray-400);
 }
 
+.stat-card.indigo::before {
+  background: #4F46E5;
+}
+
 .stat-label {
   font-size: 11px;
   font-weight: 600;

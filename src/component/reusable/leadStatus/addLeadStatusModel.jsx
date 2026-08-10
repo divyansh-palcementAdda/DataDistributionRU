@@ -15,7 +15,6 @@ const AddLeadStatusModal = ({
     const [formData, setFormData] = useState({
         statusName: "",
         description: "",
-        color: "#3B82F6",
         status: "ACTIVE",
     });
 
@@ -28,14 +27,12 @@ const AddLeadStatusModal = ({
                 setFormData({
                     statusName: initialData.statusName || "",
                     description: initialData.description || "",
-                    color: initialData.color || "#3B82F6",
                     status: initialData.status || "ACTIVE",
                 });
             } else {
                 setFormData({
                     statusName: "",
                     description: "",
-                    color: "#3B82F6",
                     status: "ACTIVE",
                 });
             }
@@ -60,13 +57,6 @@ const AddLeadStatusModal = ({
                 [name]: null,
             }));
         }
-    };
-
-    const handleColorChange = (e) => {
-        setFormData((prev) => ({
-            ...prev,
-            color: e.target.value,
-        }));
     };
 
     const handleStatusToggle = () => {
@@ -165,29 +155,6 @@ const AddLeadStatusModal = ({
                             placeholder="Enter status name (e.g., Connected, Not Connected)"
                             error={errors.statusName}
                         />
-
-                        <div className="flex flex-col gap-1">
-                            <label className="text-sm font-semibold text-gray-700">
-                                Color
-                            </label>
-
-                            <div className="flex items-center gap-3">
-                                <input
-                                    type="color"
-                                    name="color"
-                                    value={formData.color}
-                                    onChange={handleColorChange}
-                                    className="w-12 h-10 rounded cursor-pointer border border-gray-300"
-                                />
-                                <input
-                                    type="text"
-                                    value={formData.color}
-                                    onChange={handleColorChange}
-                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    placeholder="#3B82F6"
-                                />
-                            </div>
-                        </div>
 
                         <div className="md:col-span-2">
                             <CustomInput

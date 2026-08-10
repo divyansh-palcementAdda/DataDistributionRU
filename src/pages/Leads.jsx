@@ -174,6 +174,60 @@ const leadStatCards = [
       </svg>
     ),
   },
+  {
+    color: 'indigo',
+    label: 'First Call',
+    value: '0',
+    iconBg: '#E0E7FF',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2">
+        <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 8.9" />
+        <path d="M16 3.13a4 4 0 010 7.75" />
+      </svg>
+    ),
+  },
+  {
+    color: 'indigo',
+    label: 'Second Call',
+    value: '0',
+    iconBg: '#E0E7FF',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2">
+        <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 8.9" />
+        <path d="M16 3.13a4 4 0 010 7.75" />
+        <path d="M20 8v6M23 11h-6" />
+      </svg>
+    ),
+  },
+  {
+    color: 'indigo',
+    label: 'Third Call',
+    value: '0',
+    iconBg: '#E0E7FF',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2">
+        <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 8.9" />
+        <path d="M16 3.13a4 4 0 010 7.75" />
+        <path d="M20 8v6M23 11h-6" />
+        <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+      </svg>
+    ),
+  },
+  {
+    color: 'indigo',
+    label: 'Fourth Call',
+    value: '0',
+    iconBg: '#E0E7FF',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2">
+        <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 8.9" />
+        <path d="M16 3.13a4 4 0 010 7.75" />
+        <path d="M20 8v6M23 11h-6" />
+        <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+        <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
+      </svg>
+    ),
+  },
 ];
 
 /* ── Arrow icons ── */
@@ -250,6 +304,10 @@ const Leads = () => {
     const notInterestedLeads = leadsData.filter(l => l.currentStatus === 'notinterested' || l.currentStatus === 'NOTINTERESTED').length;
     const finallyNotInterested = leadsData.filter(l => l.currentStatus === 'finallynotinterested' || l.currentStatus === 'FINALLYNOTINTERESTED').length;
     const badLeads = leadsData.filter(l => l.currentStatus === 'bad' || l.currentStatus === 'BAD').length;
+    const firstCall = leadsData.filter(l => l.currentStatus === 'firstcall' || l.currentStatus === 'FIRSTCALL').length;
+    const secondCall = leadsData.filter(l => l.currentStatus === 'secondcall' || l.currentStatus === 'SECONDCALL').length;
+    const thirdCall = leadsData.filter(l => l.currentStatus === 'thirdcall' || l.currentStatus === 'THIRDCALL').length;
+    const fourthCall = leadsData.filter(l => l.currentStatus === 'fourthcall' || l.currentStatus === 'FOURTHCALL').length;
 
     return leadStatCards.map(card => {
       switch (card.label) {
@@ -265,6 +323,10 @@ const Leads = () => {
         case 'Not Interested': return { ...card, value: notInterestedLeads.toLocaleString() };
         case 'Finally Not Interested': return { ...card, value: finallyNotInterested.toLocaleString() };
         case 'Bad Lead': return { ...card, value: badLeads.toLocaleString() };
+        case 'First Call': return { ...card, value: firstCall.toLocaleString() };
+        case 'Second Call': return { ...card, value: secondCall.toLocaleString() };
+        case 'Third Call': return { ...card, value: thirdCall.toLocaleString() };
+        case 'Fourth Call': return { ...card, value: fourthCall.toLocaleString() };
         default: return card;
       }
     });

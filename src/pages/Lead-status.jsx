@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FiEye, FiEdit, FiTrash2 } from 'react-icons/fi';
 import CustomButton from '../component/reusable/CustomButton';
 import ReusableTable from '../component/reusable/table';
 import Toggle from '../component/reusable/custumToggle';
@@ -10,7 +11,72 @@ import DeleteModal from '../component/reusable/deleteModel';
 
 const LeadStatus = () => {
   const navigate = useNavigate();
-  const [leadStatuses, setLeadStatuses] = useState([]);
+  const [leadStatuses, setLeadStatuses] = useState([
+    {
+      id: 1,
+      statusName: "Connected",
+      totalCount: 45,
+      leadSourceName: "Website",
+      color: "#10B981",
+      status: "ACTIVE"
+    },
+    {
+      id: 2,
+      statusName: "Not Connected",
+      totalCount: 32,
+      leadSourceName: "Referral",
+      color: "#EF4444",
+      status: "ACTIVE"
+    },
+    {
+      id: 3,
+      statusName: "Interested",
+      totalCount: 28,
+      leadSourceName: "LinkedIn",
+      color: "#3B82F6",
+      status: "ACTIVE"
+    },
+    {
+      id: 4,
+      statusName: "Not Interested",
+      totalCount: 15,
+      leadSourceName: "Cold Call",
+      color: "#F59E0B",
+      status: "INACTIVE"
+    },
+    {
+      id: 5,
+      statusName: "Follow-up Required",
+      totalCount: 23,
+      leadSourceName: "Email Campaign",
+      color: "#8B5CF6",
+      status: "ACTIVE"
+    },
+    {
+      id: 6,
+      statusName: "Converted",
+      totalCount: 18,
+      leadSourceName: "Website",
+      color: "#10B981",
+      status: "ACTIVE"
+    },
+    {
+      id: 7,
+      statusName: "Lost",
+      totalCount: 12,
+      leadSourceName: "Referral",
+      color: "#6B7280",
+      status: "INACTIVE"
+    },
+    {
+      id: 8,
+      statusName: "Qualified",
+      totalCount: 35,
+      leadSourceName: "LinkedIn",
+      color: "#06B6D4",
+      status: "ACTIVE"
+    }
+  ]);
 
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -95,33 +161,16 @@ const LeadStatus = () => {
   };
 
   const columns = [
-    { 
-      key: "statusName", 
-      header: "Status Name",
-      render: (value, row) => (
-        <div className="flex items-center gap-2">
-          <div 
-            className="w-4 h-4 rounded-full" 
-            style={{ backgroundColor: row.color || '#3B82F6' }}
-          />
-          <span className="font-medium">{value}</span>
-        </div>
-      )
-    },
-    { key: "description", header: "Description" },
     {
-      key: "color",
-      header: "Color",
-      render: (color) => (
-        <div className="flex items-center gap-2">
-          <div 
-            className="w-6 h-6 rounded border border-gray-200" 
-            style={{ backgroundColor: color }}
-          />
-          <span className="text-xs text-gray-500">{color}</span>
-        </div>
+      key: "sNo",
+      header: "S.No",
+      render: (value, row, index) => (
+        <span className="font-medium">{(currentPage - 1) * rowsPerPage + index + 1}</span>
       )
     },
+    { key: "statusName", header: "Status Name" },
+    { key: "totalCount", header: "Total Count" },
+    { key: "leadSourceName", header: "Lead source Name" },
     {
       key: "status",
       header: "Status",
@@ -140,7 +189,7 @@ const LeadStatus = () => {
       <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Lead Status</h1>
-          <p className="text-sm text-gray-500 mt-1">Manage lead status configurations (Connected, Not Connected, Interested, Not Interested, etc.)</p>
+          <p className="text-sm text-gray-500 mt-1">Manage lead status configurations</p>
         </div>
 
 
@@ -171,15 +220,37 @@ const LeadStatus = () => {
           onPageChange={setCurrentPage}
           onRowsPerPageChange={setRowsPerPage}
           emptyMessage={loading ? "Loading..." : "No lead statuses found"}
-          onView={(row) => navigate(`/lead-status-details/${row.id}`)}
-          onEdit={(row) => {
-            setEditData(row);
-            setIsAddModalOpen(true);
-          }}
-          onDelete={(row) => {
-            setItemToDelete(row);
-            setIsDeleteModalOpen(true);
-          }}
+          actions={(row) => (
+            <div className="flex justify-center items-center gap-3">
+              <button
+                className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer"
+                title="View"
+                onClick={() => navigate(`/lead-status-details/${row.id}`)}
+              >
+                <FiEye size={18} />
+              </button>
+              <button
+                className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer"
+                title="Edit"
+                onClick={() => {
+                  setEditData(row);
+                  setIsAddModalOpen(true);
+                }}
+              >
+                <FiEdit size={18} />
+              </button>
+              <button
+                className="text-gray-500 hover:text-red-600 transition bg-transparent border-none cursor-pointer"
+                title="Delete"
+                onClick={() => {
+                  setItemToDelete(row);
+                  setIsDeleteModalOpen(true);
+                }}
+              >
+                <FiTrash2 size={18} />
+              </button>
+            </div>
+          )}
         />
       </div>
 

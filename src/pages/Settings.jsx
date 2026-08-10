@@ -499,7 +499,7 @@ const Settings = () => {
               <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-gray-800">User Management</h2>
                 <CustomButton variant="primary" onClick={() => setIsAddUserModalOpen(true)} className="text-xs py-1.5 px-3">
-                  + Invite User
+                  + Add User
                 </CustomButton>
               </div>
               {loadingUsers ? (

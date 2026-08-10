@@ -236,6 +236,15 @@ const LeadSource = () => {
     /* ── Table columns ── */
     const columns = [
         {
+            key: 'sno',
+            header: 'S.No',
+            render: (value, row, index) => (
+                <span style={{ fontWeight: 600, color: 'var(--gray-800)' }}>
+                    {page * size + index + 1}
+                </span>
+            ),
+        },
+        {
             key: 'name',
             header: <SortHeader col={{ key: 'name', label: 'Name' }} />,
             render: (value) => (

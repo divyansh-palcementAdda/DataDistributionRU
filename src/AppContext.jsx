@@ -41,11 +41,16 @@ useEffect(() => {
     setEditLeadData(null);
   };
 
-  const navTo = (page) => { 
-    setCurrentPage(page); 
-    setIsSidebarOpen(false); 
+  const navTo = (page) => {
+    setCurrentPage(page);
+    setIsSidebarOpen(false);
     // Navigate to the route path. Assumes page names match routes.
     navigate(`/${page}`);
+  };
+
+  const logout = () => {
+    localStorage.clear();
+    navigate('/');
   };
 
   const showToast = (msg, type = 'success') => {
@@ -76,6 +81,7 @@ useEffect(() => {
         currentPage,
         navTo,
         showToast,
+        logout,
       }}
     >
       {children}

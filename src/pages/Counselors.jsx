@@ -155,6 +155,14 @@ const Counselors = () => {
   /* ── Table columns ── */
   const columns = [
     {
+      key: 'sno',
+      header: 'S.No',
+      sortable: false,
+      render: (_, __, index) => (
+        <span className="text-gray-600 text-sm font-medium">{index + 1 + (page * size)}</span>
+      ),
+    },
+    {
       key: 'user',
       header: <SortHeader col={{ key: 'firstName', label: 'Counselor Name' }} />,
       render: (_, row) => {

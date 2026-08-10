@@ -21,9 +21,6 @@ const statCards = [
     color: 'blue',
     label: 'RAW Data',
     value: '0',
-    change: '+12.5% this month',
-    changeColor: 'var(--success)',
-    up: true,
     iconBg: 'var(--primary-light)',
     iconStroke: 'var(--primary)',
     icon: (
@@ -38,9 +35,6 @@ const statCards = [
     color: 'blue',
     label: 'Connected',
     value: '0',
-    change: '+8.2% this month',
-    changeColor: 'var(--success)',
-    up: true,
     iconBg: 'var(--primary-light)',
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2">
@@ -52,9 +46,6 @@ const statCards = [
     color: 'gray',
     label: 'Not Connected',
     value: '0',
-    change: '+5.0% this month',
-    changeColor: 'var(--primary)',
-    up: true,
     iconBg: 'var(--gray-100)',
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gray-500)" strokeWidth="2">
@@ -67,9 +58,6 @@ const statCards = [
     color: 'green',
     label: 'Interested',
     value: '0',
-    change: '+10.0% this month',
-    changeColor: 'var(--success)',
-    up: true,
     iconBg: 'var(--success-light)',
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2">
@@ -83,9 +71,6 @@ const statCards = [
     color: 'red',
     label: 'Not Interested',
     value: '0',
-    change: '-2.5% this month',
-    changeColor: 'var(--danger)',
-    up: false,
     iconBg: 'var(--danger-light)',
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2">
@@ -98,9 +83,6 @@ const statCards = [
     color: 'orange',
     label: 'Interested in Another Course',
     value: '0',
-    change: '+2.0% this month',
-    changeColor: 'var(--warning)',
-    up: true,
     iconBg: '#FFF7ED',
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EA580C" strokeWidth="2">
@@ -113,9 +95,6 @@ const statCards = [
     color: 'green',
     label: 'Registered',
     value: '0',
-    change: '+18.6% this month',
-    changeColor: 'var(--success)',
-    up: true,
     iconBg: 'var(--success-light)',
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2">
@@ -127,9 +106,6 @@ const statCards = [
     color: 'red',
     label: 'Bad Data',
     value: '0',
-    change: '+2.1% this month',
-    changeColor: 'var(--danger)',
-    up: false,
     iconBg: 'var(--danger-light)',
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2">
@@ -143,9 +119,6 @@ const statCards = [
     color: 'red',
     label: 'Finally Not Connected',
     value: '0',
-    change: '+1.5% this month',
-    changeColor: 'var(--danger)',
-    up: false,
     iconBg: 'var(--danger-light)',
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2">
@@ -158,9 +131,6 @@ const statCards = [
     color: 'orange',
     label: 'Total Follow-ups',
     value: '0',
-    change: '+7.0% this month',
-    changeColor: 'var(--warning)',
-    up: true,
     iconBg: '#FFF7ED',
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EA580C" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /><path d="M8 14h.01M12 14h.01M16 14h.01" /></svg>
@@ -289,10 +259,6 @@ const Dashboard = () => {
           <div key={card.label} className={`stat-card ${card.color}`}>
             <div className="stat-label">{card.label}</div>
             <div className="stat-value">{card.value}</div>
-            <div className="stat-change" style={{ color: card.changeColor }}>
-              {card.up ? <ArrowUp /> : <ArrowDown />}
-              {card.change}
-            </div>
             <div className="stat-icon" style={{ background: card.iconBg }}>
               {card.icon}
             </div>

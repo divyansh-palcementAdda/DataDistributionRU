@@ -38,9 +38,6 @@ const followupStatCards = [
     color: 'orange',
     label: 'Form Follow up',
     value: '0',
-    change: '+7.0% this month',
-    changeColor: 'var(--warning)',
-    up: true,
     iconBg: '#FFF7ED',
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EA580C" strokeWidth="2">
@@ -54,9 +51,7 @@ const followupStatCards = [
     color: 'blue',
     label: 'Counselling Follow-up',
     value: '0',
-    change: '+5.2% this month',
-    changeColor: 'var(--success)',
-    up: true,
+
     iconBg: 'var(--primary-light)',
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2">
@@ -68,9 +63,6 @@ const followupStatCards = [
     color: 'green',
     label: 'Registered',
     value: '0',
-    change: '+18.6% this month',
-    changeColor: 'var(--success)',
-    up: true,
     iconBg: 'var(--success-light)',
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2">
@@ -82,9 +74,6 @@ const followupStatCards = [
     color: 'red',
     label: 'Form Not Interested',
     value: '0',
-    change: '-2.5% this month',
-    changeColor: 'var(--danger)',
-    up: false,
     iconBg: 'var(--danger-light)',
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2">
@@ -97,9 +86,6 @@ const followupStatCards = [
     color: 'orange',
     label: 'Continue Form Follow-up',
     value: '0',
-    change: '+8.2% this month',
-    changeColor: 'var(--warning)',
-    up: true,
     iconBg: '#FFF7ED',
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EA580C" strokeWidth="2">
@@ -113,9 +99,6 @@ const followupStatCards = [
     color: 'purple',
     label: 'Interested Form Follow-up',
     value: '0',
-    change: '+3.0% this month',
-    changeColor: 'var(--success)',
-    up: true,
     iconBg: '#F3E8FF',
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2">
@@ -128,14 +111,55 @@ const followupStatCards = [
     color: 'red',
     label: 'Finally Not Interested',
     value: '0',
-    change: '+1.5% this month',
-    changeColor: 'var(--danger)',
-    up: false,
     iconBg: 'var(--danger-light)',
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2">
         <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
         <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
+      </svg>
+    ),
+  },
+  {
+    color: 'blue',
+    label: 'First Call',
+    value: '0',
+    iconBg: 'var(--primary-light)',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2">
+        <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" />
+      </svg>
+    ),
+  },
+  {
+    color: 'green',
+    label: 'Second Call',
+    value: '0',
+    iconBg: 'var(--success-light)',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2">
+        <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" />
+      </svg>
+    ),
+  },
+  {
+    color: 'orange',
+    label: 'Third Call',
+    value: '0',
+    iconBg: '#FFF7ED',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EA580C" strokeWidth="2">
+        <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" />
+      </svg>
+    ),
+  },
+  {
+    color: 'purple',
+    label: 'Fourth Call',
+    value: '0',
+    iconBg: '#F3E8FF',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2">
+        <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" />
       </svg>
     ),
   },
@@ -185,6 +209,10 @@ const FollowUps = () => {
     const continueFormFollowUp = data.filter(d => d.status === 'continueformfollowup' || d.status === 'CONTINUEFORMFOLLOWUP' || d.followUpType === 'continueformfollowup').length;
     const interestedFollowUpNotInterested = data.filter(d => d.status === 'interestedfollowupnotinterested' || d.status === 'INTERESTEDFOLLOWUPNOTINTERESTED' || d.followUpType === 'interestedfollowupnotinterested').length;
     const finallyNotInterested = data.filter(d => d.status === 'finallynotinterested' || d.status === 'FINALLYNOTINTERESTED' || d.followUpType === 'finallynotinterested').length;
+    const firstCall = data.filter(d => d.status === 'firstcall' || d.status === 'FIRSTCALL' || d.followUpType === 'firstcall').length;
+    const secondCall = data.filter(d => d.status === 'secondcall' || d.status === 'SECONDCALL' || d.followUpType === 'secondcall').length;
+    const thirdCall = data.filter(d => d.status === 'thirdcall' || d.status === 'THIRDCALL' || d.followUpType === 'thirdcall').length;
+    const fourthCall = data.filter(d => d.status === 'fourthcall' || d.status === 'FOURTHCALL' || d.followUpType === 'fourthcall').length;
 
     return followupStatCards.map(card => {
       switch (card.label) {
@@ -195,6 +223,10 @@ const FollowUps = () => {
         case 'Continue Form Follow-up': return { ...card, value: continueFormFollowUp.toLocaleString() };
         case 'Interested Form Follow-up': return { ...card, value: interestedFollowUpNotInterested.toLocaleString() };
         case 'Finally Not Interested': return { ...card, value: finallyNotInterested.toLocaleString() };
+        case 'First Call': return { ...card, value: firstCall.toLocaleString() };
+        case 'Second Call': return { ...card, value: secondCall.toLocaleString() };
+        case 'Third Call': return { ...card, value: thirdCall.toLocaleString() };
+        case 'Fourth Call': return { ...card, value: fourthCall.toLocaleString() };
         default: return card;
       }
     });
@@ -384,10 +416,7 @@ const FollowUps = () => {
           <div key={card.label} className={`stat-card ${card.color}`}>
             <div className="stat-label">{card.label}</div>
             <div className="stat-value">{card.value}</div>
-            <div className="stat-change" style={{ color: card.changeColor }}>
-              {card.up ? <ArrowUp /> : <ArrowDown />}
-              {card.change}
-            </div>
+          
             <div className="stat-icon" style={{ background: card.iconBg }}>
               {card.icon}
             </div>

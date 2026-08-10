@@ -192,14 +192,14 @@ const Reports = () => {
       </div>
 
       {/* Counselor Performance Chart */}
-      <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+      {/* <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-gray-100">
           <h2 className="text-sm font-semibold text-gray-800">Counselor Performance — June 2025</h2>
         </div>
         <div className="p-5 relative h-56">
           <Bar data={counselorPerfChartData} options={counselorPerfChartOptions} />
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };

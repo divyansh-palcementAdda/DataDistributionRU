@@ -7,6 +7,7 @@ import { useAppContext } from '../AppContext';
 import ReusableTable from '../component/reusable/table';
 import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import DeleteModal from "../component/reusable/deleteModel"
+import AssignLeadModal from '../component/reusable/Leads/AssignLeadModal';
 
 
 const STATUSES = [
@@ -25,9 +26,6 @@ const leadStatCards = [
     color: 'blue',
     label: 'Raw Lead',
     value: '0',
-    change: '+12.5% this month',
-    changeColor: 'var(--success)',
-    up: true,
     iconBg: 'var(--primary-light)',
     iconStroke: 'var(--primary)',
     icon: (
@@ -42,9 +40,6 @@ const leadStatCards = [
     color: 'blue',
     label: 'Connected',
     value: '0',
-    change: '+8.2% this month',
-    changeColor: 'var(--success)',
-    up: true,
     iconBg: 'var(--primary-light)',
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2">
@@ -56,9 +51,6 @@ const leadStatCards = [
     color: 'gray',
     label: 'Not Connected',
     value: '0',
-    change: '+5.0% this month',
-    changeColor: 'var(--primary)',
-    up: true,
     iconBg: 'var(--gray-100)',
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gray-500)" strokeWidth="2">
@@ -71,9 +63,6 @@ const leadStatCards = [
     color: 'green',
     label: 'Interested',
     value: '0',
-    change: '+10.0% this month',
-    changeColor: 'var(--success)',
-    up: true,
     iconBg: 'var(--success-light)',
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2">
@@ -87,9 +76,6 @@ const leadStatCards = [
     color: 'green',
     label: 'Registered',
     value: '0',
-    change: '+18.6% this month',
-    changeColor: 'var(--success)',
-    up: true,
     iconBg: 'var(--success-light)',
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2">
@@ -101,9 +87,6 @@ const leadStatCards = [
     color: 'purple',
     label: 'My Assigned Leads',
     value: '0',
-    change: '+15.0% this month',
-    changeColor: 'var(--success)',
-    up: true,
     iconBg: '#F3E8FF',
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2">
@@ -113,12 +96,38 @@ const leadStatCards = [
     ),
   },
   {
+    color: 'teal',
+    label: 'Assigned',
+    value: '0',
+    iconBg: '#E0F2F1',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#009688" strokeWidth="2">
+        <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+        <circle cx="8.5" cy="7" r="4" />
+        <path d="M20 8v6M23 11h-6" />
+      </svg>
+    ),
+  },
+  {
+    color: 'gray',
+    label: 'Unassigned',
+    value: '0',
+    iconBg: '#F5F5F5',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9E9E9E" strokeWidth="2">
+        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+        <line x1="16" y1="5" x2="16" y2="5.01" />
+        <line x1="18" y1="5" x2="18" y2="5.01" />
+        <line x1="20" y1="5" x2="20" y2="5.01" />
+      </svg>
+    ),
+  },
+  {
     color: 'orange',
     label: 'Form Follow up',
     value: '0',
-    change: '+7.0% this month',
-    changeColor: 'var(--warning)',
-    up: true,
     iconBg: '#FFF7ED',
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EA580C" strokeWidth="2">
@@ -132,9 +141,6 @@ const leadStatCards = [
     color: 'red',
     label: 'Not Interested',
     value: '0',
-    change: '-2.5% this month',
-    changeColor: 'var(--danger)',
-    up: false,
     iconBg: 'var(--danger-light)',
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2">
@@ -147,9 +153,6 @@ const leadStatCards = [
     color: 'red',
     label: 'Finally Not Interested',
     value: '0',
-    change: '+1.5% this month',
-    changeColor: 'var(--danger)',
-    up: false,
     iconBg: 'var(--danger-light)',
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2">
@@ -162,9 +165,6 @@ const leadStatCards = [
     color: 'red',
     label: 'Bad Lead',
     value: '0',
-    change: '+2.1% this month',
-    changeColor: 'var(--danger)',
-    up: false,
     iconBg: 'var(--danger-light)',
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2">
@@ -199,6 +199,27 @@ const Leads = () => {
   const [filterCounselor, setFilterCounselor] = useState('All Counselors');
   const [filterCourse, setFilterCourse] = useState('All Courses');
   const [selectedIds, setSelectedIds] = useState([]);
+  const [selectAll, setSelectAll] = useState(false);
+
+  const handleSelectAll = (checked) => {
+    setSelectAll(checked);
+    if (checked) {
+      const allIds = leadsData.map(lead => lead.id || lead.leadId);
+      setSelectedIds(allIds);
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleSelectRow = (id, checked) => {
+    if (checked) {
+      setSelectedIds([...selectedIds, id]);
+    } else {
+      setSelectedIds(selectedIds.filter(selectedId => selectedId !== id));
+    }
+    setSelectAll(false);
+  };
+
   // Delete modal state
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [leadToDelete, setLeadToDelete] = useState(null);
@@ -223,6 +244,8 @@ const Leads = () => {
     const interestedLeads = leadsData.filter(l => l.currentStatus === 'interested' || l.currentStatus === 'INTERESTED').length;
     const registeredLeads = leadsData.filter(l => l.currentStatus === 'registered' || l.currentStatus === 'REGISTERED').length;
     const myAssignedLeads = leadsData.filter(l => l.assignedTo && l.assignedTo !== '').length;
+    const assignedLeads = leadsData.filter(l => l.assignedTo && l.assignedTo !== '').length;
+    const unassignedLeads = leadsData.filter(l => !l.assignedTo || l.assignedTo === '').length;
     const formFollowUp = leadsData.filter(l => l.currentStatus === 'formfollowup' || l.currentStatus === 'FORMFOLLOWUP').length;
     const notInterestedLeads = leadsData.filter(l => l.currentStatus === 'notinterested' || l.currentStatus === 'NOTINTERESTED').length;
     const finallyNotInterested = leadsData.filter(l => l.currentStatus === 'finallynotinterested' || l.currentStatus === 'FINALLYNOTINTERESTED').length;
@@ -236,6 +259,8 @@ const Leads = () => {
         case 'Interested': return { ...card, value: interestedLeads.toLocaleString() };
         case 'Registered': return { ...card, value: registeredLeads.toLocaleString() };
         case 'My Assigned Leads': return { ...card, value: myAssignedLeads.toLocaleString() };
+        case 'Assigned': return { ...card, value: assignedLeads.toLocaleString() };
+        case 'Unassigned': return { ...card, value: unassignedLeads.toLocaleString() };
         case 'Form Follow up': return { ...card, value: formFollowUp.toLocaleString() };
         case 'Not Interested': return { ...card, value: notInterestedLeads.toLocaleString() };
         case 'Finally Not Interested': return { ...card, value: finallyNotInterested.toLocaleString() };
@@ -333,6 +358,14 @@ const Leads = () => {
 
   const [isRemarkModalOpen, setIsRemarkModalOpen] = useState(false);
   const [selectedLeadForRemark, setSelectedLeadForRemark] = useState(null);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [selectedLeadForAssign, setSelectedLeadForAssign] = useState(null);
+  const [usersData, setUsersData] = useState([
+    { id: 1, firstName: 'Rahul', lastName: 'Singh' },
+    { id: 2, firstName: 'Neha', lastName: 'Joshi' },
+    { id: 3, firstName: 'Priya', lastName: 'Patel' },
+    { id: 4, firstName: 'Vikram', lastName: 'Das' },
+  ]);
 
   const openRemarkModal = (lead) => {
       console.log("Lead Data:", lead);
@@ -348,6 +381,28 @@ const Leads = () => {
   const handleSaveRemark = async (lead, remark) => {
     showToast(`Remark saved for ${lead.fullName || lead.name}`);
     // After saving the remark, refetch the leads to show updated data
+    await fetchLeads();
+  };
+
+  const openAssignModal = (leadOrIds) => {
+    setSelectedLeadForAssign(leadOrIds);
+    setIsAssignModalOpen(true);
+  };
+
+  const closeAssignModal = () => {
+    setIsAssignModalOpen(false);
+    setSelectedLeadForAssign(null);
+  };
+
+  const handleAssignLead = async (leadOrIds, userId) => {
+    // TODO: Implement the actual API call to assign the lead(s)
+    if (Array.isArray(leadOrIds)) {
+      console.log('Assigning multiple leads:', leadOrIds, 'to user:', userId);
+      showToast(`${leadOrIds.length} leads assigned successfully`);
+    } else {
+      console.log('Assigning lead:', leadOrIds.id || leadOrIds.leadId, 'to user:', userId);
+      showToast('Lead assigned successfully');
+    }
     await fetchLeads();
   };
 
@@ -427,10 +482,6 @@ const Leads = () => {
           <div key={card.label} className={`stat-card ${card.color}`}>
             <div className="stat-label">{card.label}</div>
             <div className="stat-value">{card.value}</div>
-            <div className="stat-change" style={{ color: card.changeColor }}>
-              {card.up ? <ArrowUp /> : <ArrowDown />}
-              {card.change}
-            </div>
             <div className="stat-icon" style={{ background: card.iconBg }}>
               {card.icon}
             </div>
@@ -456,6 +507,31 @@ const Leads = () => {
             <option key={c}>{c}</option>
           ))}
         </select>
+        {/* Assign Lead */}
+        <button
+          className="btn btn-secondary btn-sm flex items-center gap-1.5"
+          onClick={() => {
+            if (selectedIds.length > 0) {
+              openAssignModal(selectedIds);
+            } else {
+              showToast('Please select leads to assign', 'warning');
+            }
+          }}
+        >
+          <svg
+            width="13"
+            height="13"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+          </svg>
+          Assign Lead
+        </button>
         <button
           className="btn btn-ghost btn-sm flex items-center gap-1.5"
         >
@@ -480,6 +556,26 @@ const Leads = () => {
         <div className="table-wrap">
           <ReusableTable
             columns={[
+              {
+                key: 'select',
+                header: (
+                  <input
+                    type="checkbox"
+                    checked={selectAll}
+                    onChange={(e) => handleSelectAll(e.target.checked)}
+                    className="cursor-pointer"
+                  />
+                ),
+                sortable: false,
+                render: (value, row) => (
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.includes(row.id || row.leadId)}
+                    onChange={(e) => handleSelectRow(row.id || row.leadId, e.target.checked)}
+                    className="cursor-pointer"
+                  />
+                ),
+              },
               {
                 key: 'sno',
                 header: 'S.No',
@@ -608,6 +704,13 @@ const Leads = () => {
         isLoading={isDeleting}
         title="Delete Lead"
         message={`Are you sure you want to delete lead "${leadToDelete?.fullName}"? This action cannot be undone.`}
+      />
+      <AssignLeadModal
+        isOpen={isAssignModalOpen}
+        onClose={closeAssignModal}
+        onAssign={handleAssignLead}
+        currentLead={selectedLeadForAssign}
+        users={usersData}
       />
     </div>
   );

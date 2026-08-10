@@ -21,9 +21,6 @@ const statCards = [
     color: 'blue',
     label: 'Assigned to Me',
     value: '0',
-    change: 'Total leads',
-    changeColor: 'var(--primary)',
-    up: true,
     iconBg: 'var(--primary-light)',
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2">
@@ -37,9 +34,6 @@ const statCards = [
     color: 'green',
     label: 'Connected',
     value: '0',
-    change: 'Successfully connected',
-    changeColor: 'var(--success)',
-    up: true,
     iconBg: 'var(--success-light)',
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2">
@@ -51,9 +45,6 @@ const statCards = [
     color: 'orange',
     label: 'Hot Leads',
     value: '0',
-    change: 'High priority',
-    changeColor: 'var(--warning)',
-    up: true,
     iconBg: '#FFF7ED',
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EA580C" strokeWidth="2">
@@ -66,9 +57,6 @@ const statCards = [
     color: 'green',
     label: 'Registered',
     value: '0',
-    change: 'Converted',
-    changeColor: 'var(--success)',
-    up: true,
     iconBg: 'var(--success-light)',
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2">
@@ -80,9 +68,6 @@ const statCards = [
     color: 'orange',
     label: 'Pending Follow-ups',
     value: '0',
-    change: 'Need attention',
-    changeColor: 'var(--warning)',
-    up: true,
     iconBg: '#FFF7ED',
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EA580C" strokeWidth="2">
@@ -258,10 +243,6 @@ const CallersDashboard = () => {
           <div key={card.label} className={`stat-card ${card.color}`}>
             <div className="stat-label">{card.label}</div>
             <div className="stat-value">{card.value}</div>
-            <div className="stat-change" style={{ color: card.changeColor }}>
-              {card.up ? <ArrowUp /> : <ArrowDown />}
-              {card.change}
-            </div>
             <div className="stat-icon" style={{ background: card.iconBg }}>
               {card.icon}
             </div>

@@ -3,6 +3,11 @@ import { useAppContext } from '../AppContext';
 
 const Header = () => {
   const { toggleSidebar, toggleDarkMode, isSidebarOpen } = useAppContext();
+
+  const handleLogout = () => {
+    localStorage.clear();
+    window.location.href = '/';
+  };
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const notifRef = useRef(null);
@@ -150,7 +155,7 @@ const Header = () => {
                 </svg>
                 <div className="notif-text">Settings</div>
               </div>
-              <div className="dropdown-item" onClick={() => console.log('Sign out')}>
+              <div className="dropdown-item" onClick={handleLogout}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
                 </svg>

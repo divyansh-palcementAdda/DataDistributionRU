@@ -227,7 +227,7 @@ const Counselors = () => {
       >
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: '700', color: 'var(--gray-900)' }}>
-            Counselors / Users
+            Counselors
           </h1>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>

@@ -26,6 +26,8 @@ import Leadsourse from "./pages/LeadSource";
 import CourseType from "./pages/CourseType";
 import CourseTypeDetails from "./pages/CourseTypeDetails";
 import CourseDetails from "./pages/CourseDetails";
+import LeadStatus from "./pages/Lead-status";
+import LeadStatusDetails from "./pages/LeadStatusDetails";
 
 // Reusable Components / Standalone Pages
 import StudentForm from "./component/reusable/studentForm";
@@ -60,6 +62,8 @@ const Allroutes = () => {
         <Route path="/courses-types" element={<CourseType />} />
         <Route path="/courses-types/:id" element={<CourseTypeDetails />} />
         <Route path="/course-details/:id" element={<CourseDetails />} />
+        <Route path="/lead-status" element={<LeadStatus />} />
+        <Route path="/lead-status-details/:id" element={<LeadStatusDetails />} />
       </Route>
 
       {/* Standalone Route for Student Form from QR */}

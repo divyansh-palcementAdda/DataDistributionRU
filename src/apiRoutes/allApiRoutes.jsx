@@ -70,6 +70,16 @@ const ApiRoutes = {
         details: '/api/courses/{id}'
     },
 
+    LeadStatus: {
+        create: '/api/lead-status',
+        getAll: '/api/lead-status',
+        update: '/api/lead-status/{id}',
+        delete: '/api/lead-status/{id}',
+        toggle: '/api/lead-status/{id}/toggle-active',
+        getDetailsById: '/api/lead-status/{id}',
+        getActive: '/api/lead-status/active'
+    },
+
     FollowUp: {
         getAllFollowUps: "/api/followups",
 

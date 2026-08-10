@@ -628,8 +628,10 @@ select.form-control {
   display: none;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 110;
   padding: 20px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 
 .modal-overlay.open {
@@ -643,6 +645,8 @@ select.form-control {
   width: 100%;
   max-width: 540px;
   max-height: 90vh;
+  position: relative;
+  z-index: 111;
   overflow-y: auto;
 }
 

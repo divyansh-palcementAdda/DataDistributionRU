@@ -12,8 +12,8 @@ const DeleteModal = ({
     if (!isOpen) return null;
 
     return (
-        <div className="modal-overlay open">
-            <div className="modal" style={{ maxWidth: '400px' }}>
+        <div className="modal-overlay open z-[110]">
+            <div className="modal relative z-[111]" style={{ maxWidth: '400px' }}>
                 <div className="modal-header border-b border-gray-100 pb-3 mb-3">
                     <div className="modal-title text-red-600 flex items-center gap-2 font-semibold">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

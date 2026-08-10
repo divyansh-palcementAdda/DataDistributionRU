@@ -289,15 +289,6 @@ const FollowUps = () => {
           >
             Reschedule
           </button>
-
-          <button
-            className="btn btn-sm btn-primary"
-            onClick={() =>
-              showToast("Action Taken")
-            }
-          >
-            Action
-          </button>
         </div>
       ),
     },

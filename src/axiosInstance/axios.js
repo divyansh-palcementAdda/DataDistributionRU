@@ -318,6 +318,16 @@ axiosInstance.interceptors.response.use(
     }
 
     // ==================================================
+    // 403 ERROR - ACCESS DENIED
+    // ==================================================
+
+    if (error.response.status === 403) {
+      // Dispatch custom event to show Access Denied modal
+      window.dispatchEvent(new CustomEvent('accessDenied'));
+      return Promise.reject(error);
+    }
+
+    // ==================================================
     // 401 ERROR
     // ==================================================
 

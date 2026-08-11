@@ -10,6 +10,7 @@ export const AppProvider = ({ children }) => {
   const [isAddLeadModalOpen, setIsAddLeadModalOpen] = useState(false);
   const [editLeadData, setEditLeadData] = useState(null);
   const [currentPage, setCurrentPage] = useState('dashboard');
+  const [isAccessDeniedModalOpen, setIsAccessDeniedModalOpen] = useState(false);
 
   const navigate = useNavigate();
 
@@ -39,6 +40,19 @@ useEffect(() => {
   const closeAddLeadModal = () => {
     setIsAddLeadModalOpen(false);
     setEditLeadData(null);
+  };
+
+  const openAccessDeniedModal = () => {
+    setIsAccessDeniedModalOpen(true);
+  };
+
+  const closeAccessDeniedModal = () => {
+    setIsAccessDeniedModalOpen(false);
+  };
+
+  const handleAccessDeniedBackToDashboard = () => {
+    setIsAccessDeniedModalOpen(false);
+    navTo('dashboard');
   };
 
   const navTo = (page) => {
@@ -82,6 +96,10 @@ useEffect(() => {
         navTo,
         showToast,
         logout,
+        isAccessDeniedModalOpen,
+        openAccessDeniedModal,
+        closeAccessDeniedModal,
+        handleAccessDeniedBackToDashboard,
       }}
     >
       {children}

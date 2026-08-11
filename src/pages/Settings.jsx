@@ -5,7 +5,7 @@ import CustomInput from '../component/reusable/CustomInput';
 import ReusableTable from '../component/reusable/table';
 import Toggle from '../component/reusable/custumToggle';
 import { getAllUser } from '../Services/user/user';
-import { getAllRoles, deleteRole, toggleRoleStatus, getRolePermissions } from '../Services/role/roleService';
+import { getAllRoles, deleteRole, toggleRoleStatus, getRolePermissions, assignPermissionsToRole } from '../Services/role/roleService';
 import { getAllPermissions, deletePermission } from '../Services/permissions/permissions';
 import AddUserModal from '../component/reusable/user/addUser';
 import AddEditRoleModal from '../component/reusable/role/addandeditRolemodel';
@@ -42,6 +42,8 @@ const Settings = () => {
   const [selectedRoleForPermissions, setSelectedRoleForPermissions] = useState(null);
   const [rolePermissions, setRolePermissions] = useState([]);
   const [loadingRolePermissions, setLoadingRolePermissions] = useState(false);
+  const [selectedPermissionIds, setSelectedPermissionIds] = useState([]);
+  const [isSavingPermissions, setIsSavingPermissions] = useState(false);
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -133,6 +135,7 @@ const Settings = () => {
   const fetchRolePermissions = useCallback(async (roleId) => {
     if (!roleId) {
       setRolePermissions([]);
+      setSelectedPermissionIds([]);
       return;
     }
 
@@ -155,10 +158,15 @@ const Settings = () => {
       }
 
       setRolePermissions(permissionsArray);
+
+      // Extract permission IDs from the response
+      const ids = permissionsArray.map(p => p?.id ?? p?._id ?? p?.permissionId).filter(Boolean);
+      setSelectedPermissionIds(ids);
     } catch (error) {
       console.error('Failed to fetch role permissions', error);
       showToast('Failed to fetch role permissions', 'error');
       setRolePermissions([]);
+      setSelectedPermissionIds([]);
     } finally {
       setLoadingRolePermissions(false);
     }
@@ -184,6 +192,7 @@ const Settings = () => {
 
       if (activeTab === 'st-roles-permissions') {
         fetchRoles();
+        fetchPermissions();
       }
     });
 
@@ -516,6 +525,55 @@ const Settings = () => {
     showToast(selectedPermission ? 'Permission updated successfully!' : 'Permission added successfully!', 'success');
   };
 
+  const handleSaveRolePermissions = async () => {
+    if (!selectedRoleForPermissions) {
+      showToast('Please select a role first', 'error');
+      return;
+    }
+
+    const roleId = selectedRoleForPermissions?.id ?? selectedRoleForPermissions?._id ?? selectedRoleForPermissions?.roleId;
+
+    if (!roleId) {
+      showToast('Role id not found', 'error');
+      return;
+    }
+
+    try {
+      setIsSavingPermissions(true);
+      const response = await assignPermissionsToRole(roleId, selectedPermissionIds);
+      const isSuccess = response?.status >= 200 && response?.status < 300;
+
+      if (!isSuccess) {
+        const message =
+          response?.response?.data?.message ||
+          response?.response?.data?.error ||
+          response?.message ||
+          'Failed to assign permissions.';
+        showToast(message, 'error');
+        return;
+      }
+
+      // Refresh the permissions for this role
+      await fetchRolePermissions(roleId);
+      showToast('Permissions assigned successfully!', 'success');
+    } catch (error) {
+      console.error('Failed to assign permissions', error);
+      showToast('Failed to assign permissions', 'error');
+    } finally {
+      setIsSavingPermissions(false);
+    }
+  };
+
+  const handleTogglePermission = (permissionId) => {
+    setSelectedPermissionIds(prev => {
+      if (prev.includes(permissionId)) {
+        return prev.filter(id => id !== permissionId);
+      } else {
+        return [...prev, permissionId];
+      }
+    });
+  };
+
   return (
     <div className="block" id="page-settings">
       {/* Page Header */}
@@ -648,8 +706,18 @@ const Settings = () => {
 
           {activeTab === 'st-roles-permissions' && (
             <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden animate-fadeIn">
-              <div className="px-5 py-4 border-b border-gray-100">
+              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-gray-800">Roles & Permissions</h2>
+                {selectedRoleForPermissions && (
+                  <CustomButton
+                    variant="primary"
+                    onClick={handleSaveRolePermissions}
+                    disabled={isSavingPermissions}
+                    className="text-xs py-1.5 px-3"
+                  >
+                    {isSavingPermissions ? 'Saving...' : 'Save Permissions'}
+                  </CustomButton>
+                )}
               </div>
               <div className="flex h-[500px]">
                 {/* Left Side - All Roles */}
@@ -696,45 +764,66 @@ const Settings = () => {
                   )}
                 </div>
 
-                {/* Right Side - Permissions for Selected Role */}
+                {/* Right Side - All Permissions with Checkboxes */}
                 <div className="w-1/2">
                   <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
                     <h3 className="text-xs font-semibold text-gray-700">
-                      {selectedRoleForPermissions ? `Permissions: ${selectedRoleForPermissions.name}` : 'Select a role to view permissions'}
+                      {selectedRoleForPermissions ? `Assign Permissions to: ${selectedRoleForPermissions.name}` : 'Select a role to assign permissions'}
                     </h3>
                   </div>
                   {!selectedRoleForPermissions ? (
                     <div className="py-8 text-center text-sm text-gray-500">
-                      Please select a role from the left side to view its permissions
+                      Please select a role from the left side to assign permissions
                     </div>
-                  ) : loadingRolePermissions ? (
+                  ) : loadingPermissions ? (
                     <div className="py-8 text-center text-sm text-gray-500">Loading permissions...</div>
                   ) : (
                     <div className="p-4 overflow-y-auto max-h-[450px]">
-                      {Array.isArray(rolePermissions) && rolePermissions.length > 0 ? (
+                      {Array.isArray(permissions) && permissions.length > 0 ? (
                         <div className="space-y-2">
-                          {rolePermissions.map((permission) => {
+                          {permissions.map((permission) => {
                             const permissionId = permission?.id ?? permission?._id ?? permission?.permissionId;
+                            const isSelected = selectedPermissionIds.includes(permissionId);
                             return (
                               <div
                                 key={permissionId}
-                                className="p-3 rounded-lg bg-white border border-gray-200"
+                                onClick={() => handleTogglePermission(permissionId)}
+                                className={`p-3 rounded-lg cursor-pointer transition-all border ${
+                                  isSelected
+                                    ? 'bg-blue-50 border-blue-200 shadow-sm'
+                                    : 'bg-white border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                                }`}
                               >
-                                <div className="flex items-center gap-2">
-                                  <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
-                                  <span className="font-medium text-gray-900 text-sm">
-                                    {permission.name || permission?.permissionName || 'Unnamed permission'}
-                                  </span>
+                                <div className="flex items-center gap-3">
+                                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                                    isSelected
+                                      ? 'bg-blue-600 border-blue-600'
+                                      : 'border-gray-300'
+                                  }`}>
+                                    {isSelected && (
+                                      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                      </svg>
+                                    )}
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
+                                      <span className="font-medium text-gray-900 text-sm">
+                                        {permission.name || permission?.permissionName || 'Unnamed permission'}
+                                      </span>
+                                    </div>
+                                    {permission.description && (
+                                      <p className="text-xs text-gray-500 mt-1 ml-4">{permission.description}</p>
+                                    )}
+                                  </div>
                                 </div>
-                                {permission.description && (
-                                  <p className="text-xs text-gray-500 mt-1 ml-4">{permission.description}</p>
-                                )}
                               </div>
                             );
                           })}
                         </div>
                       ) : (
-                        <div className="text-center text-sm text-gray-500 py-8">No permissions found for this role</div>
+                        <div className="text-center text-sm text-gray-500 py-8">No permissions found</div>
                       )}
                     </div>
                   )}

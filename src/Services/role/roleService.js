@@ -74,3 +74,15 @@ export const toggleRoleStatus = async (id, isActive) => {
         return error;
     }
 };
+
+export const assignPermissionsToRole = async (roleId, permissionIds) => {
+    try {
+        const response = await axiosInstance.post(
+            `${ApiRoutes.Role.getPermissions}/${roleId}/permissions`,
+            { permissionIds }
+        );
+        return response;
+    } catch (error) {
+        return error;
+    }
+};

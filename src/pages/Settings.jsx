@@ -182,14 +182,6 @@ const Settings = () => {
         fetchUsers();
       }
 
-      if (activeTab === 'st-roles') {
-        fetchRoles();
-      }
-
-      if (activeTab === 'st-permissions') {
-        fetchPermissions();
-      }
-
       if (activeTab === 'st-roles-permissions') {
         fetchRoles();
         fetchPermissions();
@@ -219,8 +211,6 @@ const Settings = () => {
 
   const menuItems = [
     { id: 'st-users', label: 'User Management' },
-    { id: 'st-roles', label: 'Roles' },
-    { id: 'st-permissions', label: 'Permissions' },
     { id: 'st-notif', label: 'Notifications' },
     { id: 'st-crm', label: 'CRM Config' },
     {id: 'st-roles-permissions', label:"Roles & Permissions"}
@@ -574,6 +564,51 @@ const Settings = () => {
     });
   };
 
+  // Function to categorize permissions based on their name prefix
+  const categorizePermissions = (permissions) => {
+    const categories = {
+      COURSE: { label: 'Course Management', permissions: [] },
+      COURSE_TYPE: { label: 'Course Type Management', permissions: [] },
+      LEAD: { label: 'Lead Management', permissions: [] },
+      LEADSOURCE: { label: 'Lead Source Management', permissions: [] },
+      USER: { label: 'User Management', permissions: [] },
+      ROLE: { label: 'Role Management', permissions: [] },
+      AUTH: { label: 'Authentication Management', permissions: [] },
+      PERMISSION: { label: 'Permission Management', permissions: [] },
+      FOLLOWUP: { label: 'Follow-up Management', permissions: [] },
+      FEEDBACK: { label: 'Feedback Management', permissions: [] },
+      OTHER: { label: 'Other Permissions', permissions: [] }
+    };
+
+    permissions.forEach(permission => {
+      const name = permission.name || permission?.permissionName || '';
+      let categorized = false;
+
+      // Check each category prefix
+      for (const [key, category] of Object.entries(categories)) {
+        if (key !== 'OTHER' && name.startsWith(key)) {
+          category.permissions.push(permission);
+          categorized = true;
+          break;
+        }
+      }
+
+      // If not categorized, add to OTHER
+      if (!categorized) {
+        categories.OTHER.permissions.push(permission);
+      }
+    });
+
+    // Filter out empty categories
+    return Object.entries(categories)
+      .filter(([_, category]) => category.permissions.length > 0)
+      .map(([key, category]) => ({
+        key,
+        label: category.label,
+        permissions: category.permissions
+      }));
+  };
+
   return (
     <div className="block" id="page-settings">
       {/* Page Header */}
@@ -623,38 +658,6 @@ const Settings = () => {
               )}
             </div>
           )}
-          {activeTab === 'st-roles' && (
-            <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden animate-fadeIn">
-              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-gray-800">Roles</h2>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-gray-500">{roles.length} total</span>
-                  <CustomButton
-                    variant="primary"
-                    onClick={handleOpenAddRoleModal}
-                    className="text-xs py-1.5 px-3"
-                  >
-                    + Add Role
-                  </CustomButton>
-                </div>
-              </div>
-              {loadingRoles ? (
-                <div className="py-8 text-center text-sm text-gray-500">Loading roles...</div>
-              ) : (
-                <div className="p-4">
-                  <ReusableTable
-                    columns={roleColumns}
-                    data={Array.isArray(roles) ? roles : []}
-                    emptyMessage="No roles found."
-                    onView={handleOpenViewRoleModal}
-                    onEdit={handleOpenEditRoleModal}
-                    onDelete={handleOpenDeleteRoleModal}
-                  />
-                </div>
-              )}
-            </div>
-          )}
-
           {activeTab === 'st-notif' && (
             <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm animate-fadeIn">
               <h2 className="text-sm font-semibold text-gray-800 mb-4">Notification Settings</h2>
@@ -669,38 +672,6 @@ const Settings = () => {
                   </div>
                 ))}
               </div>
-            </div>
-          )}
-
-          {activeTab === 'st-permissions' && (
-            <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden animate-fadeIn">
-              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-                <h2 className="text-sm font-semibold text-gray-800">Permissions</h2>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-gray-500">{permissions.length} total</span>
-                  <CustomButton
-                    variant="primary"
-                    onClick={handleOpenAddPermissionModal}
-                    className="text-xs py-1.5 px-3"
-                  >
-                    + Add Permission
-                  </CustomButton>
-                </div>
-              </div>
-              {loadingPermissions ? (
-                <div className="py-8 text-center text-sm text-gray-500">Loading permissions...</div>
-              ) : (
-                <div className="p-4">
-                  <ReusableTable
-                    columns={permissionColumns}
-                    data={Array.isArray(permissions) ? permissions : []}
-                    emptyMessage="No permissions found."
-                    onView={handleOpenViewPermissionModal}
-                    onEdit={handleOpenEditPermissionModal}
-                    onDelete={handleOpenDeletePermissionModal}
-                  />
-                </div>
-              )}
             </div>
           )}
 
@@ -722,8 +693,15 @@ const Settings = () => {
               <div className="flex h-[500px]">
                 {/* Left Side - All Roles */}
                 <div className="w-1/2 border-r border-gray-200">
-                  <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
+                  <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
                     <h3 className="text-xs font-semibold text-gray-700">All Roles</h3>
+                    <CustomButton
+                      variant="primary"
+                      onClick={handleOpenAddRoleModal}
+                      className="text-xs py-1 px-2"
+                    >
+                      + Add
+                    </CustomButton>
                   </div>
                   {loadingRoles ? (
                     <div className="py-8 text-center text-sm text-gray-500">Loading roles...</div>
@@ -739,16 +717,46 @@ const Settings = () => {
                             return (
                               <div
                                 key={roleId}
-                                onClick={() => setSelectedRoleForPermissions(role)}
-                                className={`p-3 rounded-lg cursor-pointer transition-all border ${
+                                className={`p-3 rounded-lg transition-all border ${
                                   isSelected
                                     ? 'bg-blue-50 border-blue-200 shadow-sm'
                                     : 'bg-white border-gray-200 hover:border-blue-300 hover:bg-gray-50'
                                 }`}
                               >
-                                <div className="flex items-center gap-2">
-                                  <div className={`w-2.5 h-2.5 rounded-full ${role.active ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                                  <span className="font-medium text-gray-900 text-sm">{role.name || 'Unnamed role'}</span>
+                                <div className="flex items-center justify-between">
+                                  <div
+                                    className="flex items-center gap-2 flex-1 cursor-pointer"
+                                    onClick={() => setSelectedRoleForPermissions(role)}
+                                  >
+                                    <div className={`w-2.5 h-2.5 rounded-full ${role.active ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                                    <span className="font-medium text-gray-900 text-sm">{role.name || 'Unnamed role'}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleOpenEditRoleModal(role);
+                                      }}
+                                      className="p-1.5 rounded hover:bg-blue-100 text-gray-500 hover:text-blue-600 transition-colors"
+                                      title="Edit Role"
+                                    >
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                      </svg>
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleOpenDeleteRoleModal(role);
+                                      }}
+                                      className="p-1.5 rounded hover:bg-red-100 text-gray-500 hover:text-red-600 transition-colors"
+                                      title="Delete Role"
+                                    >
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                      </svg>
+                                    </button>
+                                  </div>
                                 </div>
                                 {role.description && (
                                   <p className="text-xs text-gray-500 mt-1 ml-4">{role.description}</p>
@@ -780,47 +788,56 @@ const Settings = () => {
                   ) : (
                     <div className="p-4 overflow-y-auto max-h-[450px]">
                       {Array.isArray(permissions) && permissions.length > 0 ? (
-                        <div className="space-y-2">
-                          {permissions.map((permission) => {
-                            const permissionId = permission?.id ?? permission?._id ?? permission?.permissionId;
-                            const isSelected = selectedPermissionIds.includes(permissionId);
-                            return (
-                              <div
-                                key={permissionId}
-                                onClick={() => handleTogglePermission(permissionId)}
-                                className={`p-3 rounded-lg cursor-pointer transition-all border ${
-                                  isSelected
-                                    ? 'bg-blue-50 border-blue-200 shadow-sm'
-                                    : 'bg-white border-gray-200 hover:border-blue-300 hover:bg-gray-50'
-                                }`}
-                              >
-                                <div className="flex items-center gap-3">
-                                  <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
-                                    isSelected
-                                      ? 'bg-blue-600 border-blue-600'
-                                      : 'border-gray-300'
-                                  }`}>
-                                    {isSelected && (
-                                      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                      </svg>
-                                    )}
-                                  </div>
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-2">
-                                      <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
-                                      <span className="font-medium text-gray-900 text-sm">
-                                        {permission.name || permission?.permissionName || 'Unnamed permission'}
-                                      </span>
+                        <div className="space-y-4">
+                          {categorizePermissions(permissions).map((category) => (
+                            <div key={category.key} className="space-y-2">
+                              <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wide bg-gray-100 px-3 py-2 rounded-md">
+                                {category.label}
+                              </h4>
+                              <div className="space-y-2">
+                                {category.permissions.map((permission) => {
+                                  const permissionId = permission?.id ?? permission?._id ?? permission?.permissionId;
+                                  const isSelected = selectedPermissionIds.includes(permissionId);
+                                  return (
+                                    <div
+                                      key={permissionId}
+                                      onClick={() => handleTogglePermission(permissionId)}
+                                      className={`p-3 rounded-lg cursor-pointer transition-all border ${
+                                        isSelected
+                                          ? 'bg-blue-50 border-blue-200 shadow-sm'
+                                          : 'bg-white border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                                      }`}
+                                    >
+                                      <div className="flex items-center gap-3">
+                                        <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
+                                          isSelected
+                                            ? 'bg-blue-600 border-blue-600'
+                                            : 'border-gray-300'
+                                        }`}>
+                                          {isSelected && (
+                                            <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                            </svg>
+                                          )}
+                                        </div>
+                                        <div className="flex-1">
+                                          <div className="flex items-center gap-2">
+                                            <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
+                                            <span className="font-medium text-gray-900 text-sm">
+                                              {permission.name || permission?.permissionName || 'Unnamed permission'}
+                                            </span>
+                                          </div>
+                                          {permission.description && (
+                                            <p className="text-xs text-gray-500 mt-1 ml-4">{permission.description}</p>
+                                          )}
+                                        </div>
+                                      </div>
                                     </div>
-                                    {permission.description && (
-                                      <p className="text-xs text-gray-500 mt-1 ml-4">{permission.description}</p>
-                                    )}
-                                  </div>
-                                </div>
+                                  );
+                                })}
                               </div>
-                            );
-                          })}
+                            </div>
+                          ))}
                         </div>
                       ) : (
                         <div className="text-center text-sm text-gray-500 py-8">No permissions found</div>

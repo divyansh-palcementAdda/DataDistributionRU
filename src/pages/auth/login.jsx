@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { login } from "../../Services/auth/login";
 import { getRolePermissions } from "../../Services/role/roleService";
 import { toast } from "react-toastify";
+import Cookies from "js-cookie";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -36,8 +37,8 @@ const Login = () => {
         // Success
         setLoading(false);
         toast.success("Login successful!");
-        localStorage.setItem('accessToken', response.data.data.accessToken);
-        localStorage.setItem('refreshToken', response.data.data.refreshToken);
+        Cookies.set('accessToken', response.data.data.accessToken);
+        Cookies.set('refreshToken', response.data.data.refreshToken);
 
         // Fetch permissions using roleId
         const roleId = response.data.data.role?.id;

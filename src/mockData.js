@@ -43,9 +43,9 @@ export const statusConfig = {
   raw: { label: 'Raw Lead', cls: 'badge-raw', color: '#64748B' },
   connected: { label: 'Connected', cls: 'badge-connected', color: '#2563EB' },
   interested: { label: 'Interested', cls: 'badge-interested', color: '#0891B2' },
-  hot: { label: 'Hot Lead', cls: 'badge-hot', color: '#EA580C' },
+  // hot: { label: 'Hot Lead', cls: 'badge-hot', color: '#EA580C' },
   registered: { label: 'Registered', cls: 'badge-registered', color: '#16A34A' },
-  cold: { label: 'Cold Lead', cls: 'badge-cold', color: '#0369A1' },
+  // cold: { label: 'Cold Lead', cls: 'badge-cold', color: '#0369A1' },
   notinterested: { label: 'Not Interested', cls: 'badge-notinterested', color: '#BE123C' },
   bad: { label: 'Bad Lead', cls: 'badge-bad', color: '#991B1B' },
 };

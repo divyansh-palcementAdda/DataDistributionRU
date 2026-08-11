@@ -5,7 +5,7 @@ import CustomInput from '../component/reusable/CustomInput';
 import ReusableTable from '../component/reusable/table';
 import Toggle from '../component/reusable/custumToggle';
 import { getAllUser } from '../Services/user/user';
-import { getAllRoles, deleteRole, toggleRoleStatus } from '../Services/role/roleService';
+import { getAllRoles, deleteRole, toggleRoleStatus, getRolePermissions } from '../Services/role/roleService';
 import { getAllPermissions, deletePermission } from '../Services/permissions/permissions';
 import AddUserModal from '../component/reusable/user/addUser';
 import AddEditRoleModal from '../component/reusable/role/addandeditRolemodel';
@@ -39,6 +39,9 @@ const Settings = () => {
   const [permissionToDelete, setPermissionToDelete] = useState(null);
   const [isDeletingPermission, setIsDeletingPermission] = useState(false);
   const [togglingRoleId, setTogglingRoleId] = useState(null);
+  const [selectedRoleForPermissions, setSelectedRoleForPermissions] = useState(null);
+  const [rolePermissions, setRolePermissions] = useState([]);
+  const [loadingRolePermissions, setLoadingRolePermissions] = useState(false);
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -127,6 +130,40 @@ const Settings = () => {
     }
   }, [showToast]);
 
+  const fetchRolePermissions = useCallback(async (roleId) => {
+    if (!roleId) {
+      setRolePermissions([]);
+      return;
+    }
+
+    try {
+      setLoadingRolePermissions(true);
+      const res = await getRolePermissions(roleId);
+      console.log('API Response for getRolePermissions:', res?.data);
+
+      let permissionsArray = [];
+      const responseData = res?.data;
+
+      if (responseData?.data?.content && Array.isArray(responseData.data.content)) {
+        permissionsArray = responseData.data.content;
+      } else if (responseData?.data && Array.isArray(responseData.data)) {
+        permissionsArray = responseData.data;
+      } else if (responseData?.content && Array.isArray(responseData.content)) {
+        permissionsArray = responseData.content;
+      } else if (Array.isArray(responseData)) {
+        permissionsArray = responseData;
+      }
+
+      setRolePermissions(permissionsArray);
+    } catch (error) {
+      console.error('Failed to fetch role permissions', error);
+      showToast('Failed to fetch role permissions', 'error');
+      setRolePermissions([]);
+    } finally {
+      setLoadingRolePermissions(false);
+    }
+  }, [showToast]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -144,12 +181,23 @@ const Settings = () => {
       if (activeTab === 'st-permissions') {
         fetchPermissions();
       }
+
+      if (activeTab === 'st-roles-permissions') {
+        fetchRoles();
+      }
     });
 
     return () => {
       cancelled = true;
     };
   }, [activeTab, fetchUsers, fetchRoles, fetchPermissions]);
+
+  useEffect(() => {
+    if (activeTab === 'st-roles-permissions' && selectedRoleForPermissions) {
+      const roleId = selectedRoleForPermissions?.id ?? selectedRoleForPermissions?._id ?? selectedRoleForPermissions?.roleId;
+      fetchRolePermissions(roleId);
+    }
+  }, [selectedRoleForPermissions, activeTab, fetchRolePermissions]);
 
   const notifs = [
     { label: 'New lead assigned', on: true },
@@ -166,6 +214,7 @@ const Settings = () => {
     { id: 'st-permissions', label: 'Permissions' },
     { id: 'st-notif', label: 'Notifications' },
     { id: 'st-crm', label: 'CRM Config' },
+    {id: 'st-roles-permissions', label:"Roles & Permissions"}
   ];
 
   const userColumns = [
@@ -594,6 +643,103 @@ const Settings = () => {
                   />
                 </div>
               )}
+            </div>
+          )}
+
+          {activeTab === 'st-roles-permissions' && (
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden animate-fadeIn">
+              <div className="px-5 py-4 border-b border-gray-100">
+                <h2 className="text-sm font-semibold text-gray-800">Roles & Permissions</h2>
+              </div>
+              <div className="flex h-[500px]">
+                {/* Left Side - All Roles */}
+                <div className="w-1/2 border-r border-gray-200">
+                  <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
+                    <h3 className="text-xs font-semibold text-gray-700">All Roles</h3>
+                  </div>
+                  {loadingRoles ? (
+                    <div className="py-8 text-center text-sm text-gray-500">Loading roles...</div>
+                  ) : (
+                    <div className="p-4 overflow-y-auto max-h-[450px]">
+                      {Array.isArray(roles) && roles.length > 0 ? (
+                        <div className="space-y-2">
+                          {roles.map((role) => {
+                            const roleId = role?.id ?? role?._id ?? role?.roleId;
+                            const isSelected = selectedRoleForPermissions?.id === roleId ||
+                                             selectedRoleForPermissions?._id === roleId ||
+                                             selectedRoleForPermissions?.roleId === roleId;
+                            return (
+                              <div
+                                key={roleId}
+                                onClick={() => setSelectedRoleForPermissions(role)}
+                                className={`p-3 rounded-lg cursor-pointer transition-all border ${
+                                  isSelected
+                                    ? 'bg-blue-50 border-blue-200 shadow-sm'
+                                    : 'bg-white border-gray-200 hover:border-blue-300 hover:bg-gray-50'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <div className={`w-2.5 h-2.5 rounded-full ${role.active ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                                  <span className="font-medium text-gray-900 text-sm">{role.name || 'Unnamed role'}</span>
+                                </div>
+                                {role.description && (
+                                  <p className="text-xs text-gray-500 mt-1 ml-4">{role.description}</p>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="text-center text-sm text-gray-500 py-8">No roles found</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Right Side - Permissions for Selected Role */}
+                <div className="w-1/2">
+                  <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
+                    <h3 className="text-xs font-semibold text-gray-700">
+                      {selectedRoleForPermissions ? `Permissions: ${selectedRoleForPermissions.name}` : 'Select a role to view permissions'}
+                    </h3>
+                  </div>
+                  {!selectedRoleForPermissions ? (
+                    <div className="py-8 text-center text-sm text-gray-500">
+                      Please select a role from the left side to view its permissions
+                    </div>
+                  ) : loadingRolePermissions ? (
+                    <div className="py-8 text-center text-sm text-gray-500">Loading permissions...</div>
+                  ) : (
+                    <div className="p-4 overflow-y-auto max-h-[450px]">
+                      {Array.isArray(rolePermissions) && rolePermissions.length > 0 ? (
+                        <div className="space-y-2">
+                          {rolePermissions.map((permission) => {
+                            const permissionId = permission?.id ?? permission?._id ?? permission?.permissionId;
+                            return (
+                              <div
+                                key={permissionId}
+                                className="p-3 rounded-lg bg-white border border-gray-200"
+                              >
+                                <div className="flex items-center gap-2">
+                                  <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
+                                  <span className="font-medium text-gray-900 text-sm">
+                                    {permission.name || permission?.permissionName || 'Unnamed permission'}
+                                  </span>
+                                </div>
+                                {permission.description && (
+                                  <p className="text-xs text-gray-500 mt-1 ml-4">{permission.description}</p>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="text-center text-sm text-gray-500 py-8">No permissions found for this role</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 

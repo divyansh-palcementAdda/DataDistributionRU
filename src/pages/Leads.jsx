@@ -176,7 +176,7 @@ const leadStatCards = [
   },
   {
     color: 'indigo',
-    label: 'First Call',
+    label: 'First Not Connected',
     value: '0',
     iconBg: '#E0E7FF',
     icon: (
@@ -188,7 +188,7 @@ const leadStatCards = [
   },
   {
     color: 'indigo',
-    label: 'Second Call',
+    label: 'Second Not Connected',
     value: '0',
     iconBg: '#E0E7FF',
     icon: (
@@ -201,7 +201,7 @@ const leadStatCards = [
   },
   {
     color: 'indigo',
-    label: 'Third Call',
+    label: 'Third Not Connected',
     value: '0',
     iconBg: '#E0E7FF',
     icon: (
@@ -215,7 +215,7 @@ const leadStatCards = [
   },
   {
     color: 'indigo',
-    label: 'Fourth Call',
+    label: 'Fourth Not Connected',
     value: '0',
     iconBg: '#E0E7FF',
     icon: (
@@ -323,10 +323,10 @@ const Leads = () => {
         case 'Not Interested': return { ...card, value: notInterestedLeads.toLocaleString() };
         case 'Finally Not Interested': return { ...card, value: finallyNotInterested.toLocaleString() };
         case 'Bad Lead': return { ...card, value: badLeads.toLocaleString() };
-        case 'First Call': return { ...card, value: firstCall.toLocaleString() };
-        case 'Second Call': return { ...card, value: secondCall.toLocaleString() };
-        case 'Third Call': return { ...card, value: thirdCall.toLocaleString() };
-        case 'Fourth Call': return { ...card, value: fourthCall.toLocaleString() };
+        case 'First Not Connected': return { ...card, value: firstCall.toLocaleString() };
+        case 'Second Not Connected': return { ...card, value: secondCall.toLocaleString() };
+        case 'Third Not Connected': return { ...card, value: thirdCall.toLocaleString() };
+        case 'Fourth Not Connected': return { ...card, value: fourthCall.toLocaleString() };
         default: return card;
       }
     });

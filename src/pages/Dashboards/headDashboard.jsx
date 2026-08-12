@@ -19,7 +19,7 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Le
 const statCards = [
   {
     color: 'blue',
-    label: 'Assigned to Me',
+    label: 'Allotted to Me',
     value: '0',
     iconBg: 'var(--primary-light)',
     icon: (
@@ -32,7 +32,7 @@ const statCards = [
   },
   {
     color: 'green',
-    label: 'Assigned to Callers',
+    label: 'Allotted to Callers',
     value: '0',
     iconBg: 'var(--success-light)',
     icon: (
@@ -45,7 +45,7 @@ const statCards = [
   },
   {
     color: 'orange',
-    label: 'Unassigned',
+    label: 'Not Allotted',
     value: '0',
     iconBg: '#FFF7ED',
     icon: (
@@ -78,40 +78,40 @@ const ArrowUp = () => (
 const HeadDashboard = () => {
   const { navTo } = useAppContext();
   const [selectedLeads, setSelectedLeads] = useState([]);
-  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [allotModalOpen, setAllotModalOpen] = useState(false);
   const [selectedCaller, setSelectedCaller] = useState('');
 
-  // Mock: Leads assigned to Head (simulated by filtering leads without caller assignment)
-  const headAssignedLeads = useMemo(() => {
+  // Mock: Leads allotted to Head (simulated by filtering leads without caller allotment)
+  const headAllottedLeads = useMemo(() => {
     return leads.filter(lead => !lead.counselor || lead.counselor === 'Head');
   }, [leads]);
 
-  // Mock: Leads assigned to callers
-  const callerAssignedLeads = useMemo(() => {
+  // Mock: Leads allotted to callers
+  const callerAllottedLeads = useMemo(() => {
     return leads.filter(lead => lead.counselor && lead.counselor !== 'Head');
   }, [leads]);
 
   const calculatedStatCards = useMemo(() => {
-    const assignedToMe = headAssignedLeads.length;
-    const assignedToCallers = callerAssignedLeads.length;
-    const unassigned = leads.filter(l => !l.counselor).length;
+    const allottedToMe = headAllottedLeads.length;
+    const allottedToCallers = callerAllottedLeads.length;
+    const notAllotted = leads.filter(l => !l.counselor).length;
     const registered = leads.filter(l => l.status === 'registered').length;
 
     return statCards.map(card => {
       switch (card.label) {
-        case 'Assigned to Me': return { ...card, value: assignedToMe.toLocaleString() };
-        case 'Assigned to Callers': return { ...card, value: assignedToCallers.toLocaleString() };
-        case 'Unassigned': return { ...card, value: unassigned.toLocaleString() };
+        case 'Allotted to Me': return { ...card, value: allottedToMe.toLocaleString() };
+        case 'Allotted to Callers': return { ...card, value: allottedToCallers.toLocaleString() };
+        case 'Not Allotted': return { ...card, value: notAllotted.toLocaleString() };
         case 'Registered': return { ...card, value: registered.toLocaleString() };
         default: return card;
       }
     });
-  }, [headAssignedLeads, callerAssignedLeads, leads]);
+  }, [headAllottedLeads, callerAllottedLeads, leads]);
 
   // Status distribution chart for Head's leads
   const statusChartData = useMemo(() => {
     const statusCounts = {};
-    headAssignedLeads.forEach(lead => {
+    headAllottedLeads.forEach(lead => {
       const status = lead.status || 'raw';
       statusCounts[status] = (statusCounts[status] || 0) + 1;
     });
@@ -129,7 +129,7 @@ const HeadDashboard = () => {
         hoverOffset: 6,
       }],
     };
-  }, [headAssignedLeads]);
+  }, [headAllottedLeads]);
 
   const statusChartOptions = {
     responsive: true,
@@ -143,7 +143,7 @@ const HeadDashboard = () => {
     },
   };
 
-  // Table columns for Head's assigned leads
+  // Table columns for Head's allotted leads
   const leadColumns = [
     { key: 'name', header: 'Lead Name' },
     { key: 'phone', header: 'Phone' },
@@ -175,8 +175,8 @@ const HeadDashboard = () => {
   const callerColumns = [
     { key: 'name', header: 'Caller Name' },
     { 
-      key: 'assigned', 
-      header: 'Assigned',
+      key: 'allotted', 
+      header: 'Allotted',
       render: (value) => value.toLocaleString()
     },
     { 
@@ -196,17 +196,17 @@ const HeadDashboard = () => {
     },
   ];
 
-  const handleAssignToCaller = () => {
+  const handleAllotToCaller = () => {
     if (selectedLeads.length === 0 || !selectedCaller) {
       alert('Please select leads and a caller');
       return;
     }
-    // Here you would make an API call to assign leads
-    console.log('Assigning leads', selectedLeads, 'to caller', selectedCaller);
-    alert(`Assigned ${selectedLeads.length} leads to ${selectedCaller}`);
+    // Here you would make an API call to allot leads
+    console.log('Alloting leads', selectedLeads, 'to caller', selectedCaller);
+    alert(`Allotted ${selectedLeads.length} leads to ${selectedCaller}`);
     setSelectedLeads([]);
     setSelectedCaller('');
-    setAssignModalOpen(false);
+    setAllotModalOpen(false);
   };
 
   return (
@@ -216,14 +216,14 @@ const HeadDashboard = () => {
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: '700', color: 'var(--gray-900)' }}>Head Dashboard</h1>
           <p style={{ fontSize: '13px', color: 'var(--gray-500)', marginTop: '4px' }}>
-            Manage your assigned leads and distribute to callers
+            Manage your allotted leads and distribute to callers
           </p>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
           <button
             className="btn btn-primary btn-sm"
             style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-            onClick={() => setAssignModalOpen(true)}
+            onClick={() => setAllotModalOpen(true)}
             disabled={selectedLeads.length === 0}
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -231,7 +231,7 @@ const HeadDashboard = () => {
               <circle cx="9" cy="7" r="4" />
               <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
             </svg>
-            Assign to Caller ({selectedLeads.length})
+            Allot to Caller ({selectedLeads.length})
           </button>
         </div>
       </div>
@@ -256,7 +256,7 @@ const HeadDashboard = () => {
           <div className="card-header">
             <div>
               <div className="card-title">Your Leads Status</div>
-              <div className="card-sub">Distribution of your assigned leads</div>
+              <div className="card-sub">Distribution of your allotted leads</div>
             </div>
           </div>
           <div style={{ height: '220px' }}>
@@ -272,7 +272,7 @@ const HeadDashboard = () => {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {counselors.slice(0, 5).map((c) => {
-              const convPct = Math.round((c.registered / c.assigned) * 100);
+              const convPct = Math.round((c.registered / c.allotted) * 100);
               return (
                 <div key={c.name} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <div
@@ -297,21 +297,21 @@ const HeadDashboard = () => {
         </div>
       </div>
 
-      {/* ── Leads Assigned to Head Table ── */}
+      {/* ── Leads Allotted to Head Table ── */}
       <div className="card" style={{ marginBottom: '20px' }}>
         <div className="card-header">
-          <div className="card-title">Leads Assigned to You</div>
-          <span className="badge badge-primary">{headAssignedLeads.length} leads</span>
+          <div className="card-title">Leads Allotted to You</div>
+          <span className="badge badge-primary">{headAllottedLeads.length} leads</span>
         </div>
         <ReusableTable
           columns={leadColumns}
-          data={headAssignedLeads}
+          data={headAllottedLeads}
           onView={(lead) => navTo('lead-detail', { id: lead.id })}
         />
       </div>
 
-      {/* ── Assignment Modal ── */}
-      {assignModalOpen && (
+      {/* ── Allotment Modal ── */}
+      {allotModalOpen && (
         <div style={{
           position: 'fixed',
           top: 0,
@@ -326,17 +326,17 @@ const HeadDashboard = () => {
         }}>
           <div className="card" style={{ width: '400px', maxWidth: '90%' }}>
             <div className="card-header">
-              <div className="card-title">Assign Leads to Caller</div>
+              <div className="card-title">Allot Leads to Caller</div>
               <button 
                 className="btn btn-ghost btn-sm"
-                onClick={() => setAssignModalOpen(false)}
+                onClick={() => setAllotModalOpen(false)}
               >
                 ✕
               </button>
             </div>
             <div style={{ padding: '16px' }}>
               <p style={{ fontSize: '13px', color: 'var(--gray-600)', marginBottom: '16px' }}>
-                Assigning {selectedLeads.length} lead(s) to a caller
+                Allotting {selectedLeads.length} lead(s) to a caller
               </p>
               <div style={{ marginBottom: '16px' }}>
                 <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--gray-700)', display: 'block', marginBottom: '6px' }}>
@@ -362,16 +362,16 @@ const HeadDashboard = () => {
               <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                 <button
                   className="btn btn-secondary btn-sm"
-                  onClick={() => setAssignModalOpen(false)}
+                  onClick={() => setAllotModalOpen(false)}
                 >
                   Cancel
                 </button>
                 <button
                   className="btn btn-primary btn-sm"
-                  onClick={handleAssignToCaller}
+                  onClick={handleAllotToCaller}
                   disabled={!selectedCaller}
                 >
-                  Assign
+                  Allot
                 </button>
               </div>
             </div>

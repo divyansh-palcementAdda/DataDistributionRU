@@ -5,7 +5,7 @@ import CustomInput from '../component/reusable/CustomInput';
 import ReusableTable from '../component/reusable/table';
 import Toggle from '../component/reusable/custumToggle';
 import { getAllUser } from '../Services/user/user';
-import { getAllRoles, deleteRole, toggleRoleStatus, getRolePermissions, assignPermissionsToRole } from '../Services/role/roleService';
+import { getAllRoles, deleteRole, toggleRoleStatus, getRolePermissions, allotPermissionsToRole } from '../Services/role/roleService';
 import { getAllPermissions, deletePermission } from '../Services/permissions/permissions';
 import AddUserModal from '../component/reusable/user/addUser';
 import AddEditRoleModal from '../component/reusable/role/addandeditRolemodel';
@@ -201,7 +201,7 @@ const Settings = () => {
   }, [selectedRoleForPermissions, activeTab, fetchRolePermissions]);
 
   const notifs = [
-    { label: 'New lead assigned', on: true },
+    { label: 'New lead allotted', on: true },
     { label: 'Follow-up due reminder', on: true },
     { label: 'Lead status changes', on: true },
     { label: 'Registration completed', on: true },
@@ -530,7 +530,7 @@ const Settings = () => {
 
     try {
       setIsSavingPermissions(true);
-      const response = await assignPermissionsToRole(roleId, selectedPermissionIds);
+      const response = await allotPermissionsToRole(roleId, selectedPermissionIds);
       const isSuccess = response?.status >= 200 && response?.status < 300;
 
       if (!isSuccess) {
@@ -538,17 +538,17 @@ const Settings = () => {
           response?.response?.data?.message ||
           response?.response?.data?.error ||
           response?.message ||
-          'Failed to assign permissions.';
+          'Failed to allot permissions.';
         showToast(message, 'error');
         return;
       }
 
       // Refresh the permissions for this role
       await fetchRolePermissions(roleId);
-      showToast('Permissions assigned successfully!', 'success');
+      showToast('Permissions allotted successfully!', 'success');
     } catch (error) {
-      console.error('Failed to assign permissions', error);
-      showToast('Failed to assign permissions', 'error');
+      console.error('Failed to allot permissions', error);
+      showToast('Failed to allot permissions', 'error');
     } finally {
       setIsSavingPermissions(false);
     }
@@ -776,12 +776,12 @@ const Settings = () => {
                 <div className="w-1/2">
                   <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
                     <h3 className="text-xs font-semibold text-gray-700">
-                      {selectedRoleForPermissions ? `Assign Permissions to: ${selectedRoleForPermissions.name}` : 'Select a role to assign permissions'}
+                      {selectedRoleForPermissions ? `Allot Permissions to: ${selectedRoleForPermissions.name}` : 'Select a role to allot permissions'}
                     </h3>
                   </div>
                   {!selectedRoleForPermissions ? (
                     <div className="py-8 text-center text-sm text-gray-500">
-                      Please select a role from the left side to assign permissions
+                      Please select a role from the left side to allot permissions
                     </div>
                   ) : loadingPermissions ? (
                     <div className="py-8 text-center text-sm text-gray-500">Loading permissions...</div>
@@ -856,7 +856,7 @@ const Settings = () => {
               <div className="flex flex-col gap-4">
                 <CustomInput label="Organization Name" defaultValue="TechOnly Education Pvt. Ltd." />
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-semibold text-gray-700 ml-1">Default Lead Assignment</label>
+                  <label className="text-sm font-semibold text-gray-700 ml-1">Default Lead Allotment</label>
                   <select className="px-4 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500">
                     <option>Round Robin</option>
                     <option>Manual</option>

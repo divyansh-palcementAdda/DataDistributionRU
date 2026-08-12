@@ -8,7 +8,7 @@ const ApiRoutes = {
         update: '/api/leads',
         delete: '/api/leads',
         getById: '/api/leads',
-        assignmentHistory: '/api/leads',
+        allotmentHistory: '/api/leads',
         sourceWiseStats: '/api/leads/stats/source-wise',
         //schedule lead ......
         leadSchedule: '/api/leads/{id}/followups',

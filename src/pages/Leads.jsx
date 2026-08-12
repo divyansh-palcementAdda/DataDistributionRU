@@ -85,7 +85,7 @@ const leadStatCards = [
   },
   {
     color: 'purple',
-    label: 'My Assigned Leads',
+    label: 'My Allotted Leads',
     value: '0',
     iconBg: '#F3E8FF',
     icon: (
@@ -97,7 +97,7 @@ const leadStatCards = [
   },
   {
     color: 'teal',
-    label: 'Assigned',
+    label: 'Allotted',
     value: '0',
     iconBg: '#E0F2F1',
     icon: (
@@ -110,7 +110,7 @@ const leadStatCards = [
   },
   {
     color: 'gray',
-    label: 'Unassigned',
+    label: 'Not Allotted',
     value: '0',
     iconBg: '#F5F5F5',
     icon: (
@@ -297,9 +297,9 @@ const Leads = () => {
     const notConnectedLeads = leadsData.filter(l => l.currentStatus === 'notconnected' || l.currentStatus === 'NOTCONNECTED').length;
     const interestedLeads = leadsData.filter(l => l.currentStatus === 'interested' || l.currentStatus === 'INTERESTED').length;
     const registeredLeads = leadsData.filter(l => l.currentStatus === 'registered' || l.currentStatus === 'REGISTERED').length;
-    const myAssignedLeads = leadsData.filter(l => l.assignedTo && l.assignedTo !== '').length;
-    const assignedLeads = leadsData.filter(l => l.assignedTo && l.assignedTo !== '').length;
-    const unassignedLeads = leadsData.filter(l => !l.assignedTo || l.assignedTo === '').length;
+    const myAllottedLeads = leadsData.filter(l => l.assignedTo && l.assignedTo !== '').length;
+    const allottedLeads = leadsData.filter(l => l.assignedTo && l.assignedTo !== '').length;
+    const notAllotted = leadsData.filter(l => !l.assignedTo || l.assignedTo === '').length;
     const formFollowUp = leadsData.filter(l => l.currentStatus === 'formfollowup' || l.currentStatus === 'FORMFOLLOWUP').length;
     const notInterestedLeads = leadsData.filter(l => l.currentStatus === 'notinterested' || l.currentStatus === 'NOTINTERESTED').length;
     const finallyNotInterested = leadsData.filter(l => l.currentStatus === 'finallynotinterested' || l.currentStatus === 'FINALLYNOTINTERESTED').length;
@@ -316,9 +316,9 @@ const Leads = () => {
         case 'Not Connected': return { ...card, value: notConnectedLeads.toLocaleString() };
         case 'Interested': return { ...card, value: interestedLeads.toLocaleString() };
         case 'Registered': return { ...card, value: registeredLeads.toLocaleString() };
-        case 'My Assigned Leads': return { ...card, value: myAssignedLeads.toLocaleString() };
-        case 'Assigned': return { ...card, value: assignedLeads.toLocaleString() };
-        case 'Unassigned': return { ...card, value: unassignedLeads.toLocaleString() };
+        case 'My Allotted Leads': return { ...card, value: myAllottedLeads.toLocaleString() };
+        case 'Allotted': return { ...card, value: allottedLeads.toLocaleString() };
+        case 'Not Allotted': return { ...card, value: notAllotted.toLocaleString() };
         case 'Form Follow up': return { ...card, value: formFollowUp.toLocaleString() };
         case 'Not Interested': return { ...card, value: notInterestedLeads.toLocaleString() };
         case 'Finally Not Interested': return { ...card, value: finallyNotInterested.toLocaleString() };
@@ -420,8 +420,8 @@ const Leads = () => {
 
   const [isRemarkModalOpen, setIsRemarkModalOpen] = useState(false);
   const [selectedLeadForRemark, setSelectedLeadForRemark] = useState(null);
-  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
-  const [selectedLeadForAssign, setSelectedLeadForAssign] = useState(null);
+  const [isAllotModalOpen, setIsAllotModalOpen] = useState(false);
+  const [selectedLeadForAllot, setSelectedLeadForAllot] = useState(null);
   const [usersData, setUsersData] = useState([
     { id: 1, firstName: 'Rahul', lastName: 'Singh' },
     { id: 2, firstName: 'Neha', lastName: 'Joshi' },
@@ -446,24 +446,24 @@ const Leads = () => {
     await fetchLeads();
   };
 
-  const openAssignModal = (leadOrIds) => {
-    setSelectedLeadForAssign(leadOrIds);
-    setIsAssignModalOpen(true);
+  const openAllotModal = (leadOrIds) => {
+    setSelectedLeadForAllot(leadOrIds);
+    setIsAllotModalOpen(true);
   };
 
-  const closeAssignModal = () => {
-    setIsAssignModalOpen(false);
-    setSelectedLeadForAssign(null);
+  const closeAllotModal = () => {
+    setIsAllotModalOpen(false);
+    setSelectedLeadForAllot(null);
   };
 
-  const handleAssignLead = async (leadOrIds, userId) => {
-    // TODO: Implement the actual API call to assign the lead(s)
+  const handleAllotLead = async (leadOrIds, userId) => {
+    // TODO: Implement the actual API call to allot the lead(s)
     if (Array.isArray(leadOrIds)) {
-      console.log('Assigning multiple leads:', leadOrIds, 'to user:', userId);
-      showToast(`${leadOrIds.length} leads assigned successfully`);
+      console.log('Alloting multiple leads:', leadOrIds, 'to user:', userId);
+      showToast(`${leadOrIds.length} leads allotted successfully`);
     } else {
-      console.log('Assigning lead:', leadOrIds.id || leadOrIds.leadId, 'to user:', userId);
-      showToast('Lead assigned successfully');
+      console.log('Alloting lead:', leadOrIds.id || leadOrIds.leadId, 'to user:', userId);
+      showToast('Lead allotted successfully');
     }
     await fetchLeads();
   };
@@ -569,14 +569,14 @@ const Leads = () => {
             <option key={c}>{c}</option>
           ))}
         </select>
-        {/* Assign Lead */}
+        {/* Allot Lead */}
         <button
           className="btn btn-secondary btn-sm flex items-center gap-1.5"
           onClick={() => {
             if (selectedIds.length > 0) {
-              openAssignModal(selectedIds);
+              openAllotModal(selectedIds);
             } else {
-              showToast('Please select leads to assign', 'warning');
+              showToast('Please select leads to allot', 'warning');
             }
           }}
         >
@@ -592,7 +592,7 @@ const Leads = () => {
             <circle cx="9" cy="7" r="4" />
             <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
           </svg>
-          Assign Lead
+          Allot Lead
         </button>
         <button
           className="btn btn-ghost btn-sm flex items-center gap-1.5"
@@ -680,7 +680,7 @@ const Leads = () => {
                 key: 'assignedTo',
                 header: 'Counselor',
                 render: (value, row) =>
-                  row.assignedTo ? `${row.assignedTo.firstName} ${row.assignedTo.lastName}` : 'Unassigned',
+                  row.assignedTo ? `${row.assignedTo.firstName} ${row.assignedTo.lastName}` : 'Not Allotted',
               },
               {
                 key: 'nextFollowUpDate',
@@ -768,10 +768,10 @@ const Leads = () => {
         message={`Are you sure you want to delete lead "${leadToDelete?.fullName}"? This action cannot be undone.`}
       />
       <AssignLeadModal
-        isOpen={isAssignModalOpen}
-        onClose={closeAssignModal}
-        onAssign={handleAssignLead}
-        currentLead={selectedLeadForAssign}
+        isOpen={isAllotModalOpen}
+        onClose={closeAllotModal}
+        onAssign={handleAllotLead}
+        currentLead={selectedLeadForAllot}
         users={usersData}
       />
     </div>

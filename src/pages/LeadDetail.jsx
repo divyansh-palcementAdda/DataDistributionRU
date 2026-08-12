@@ -68,7 +68,7 @@ const LeadDetail = () => {
         remarks: 'Call not answered, left voicemail'
       },
       {
-        status: 'Hot Lead',
+        status: 'Interested',
         changedAt: '2025-06-22T09:15:00',
         changedBy: { firstName: 'Rahul', lastName: 'Sharma', username: 'rahul.s' },
         remarks: 'Lead responded positively, ready for enrollment'
@@ -125,8 +125,6 @@ const LeadDetail = () => {
         return 'bg-blue-100 text-blue-700';
       case 'follow up':
         return 'bg-orange-100 text-orange-700';
-      case 'hot lead':
-        return 'bg-purple-100 text-purple-700';
       default:
         return 'bg-gray-100 text-gray-700';
     }
@@ -225,7 +223,7 @@ const LeadDetail = () => {
                 <h2 className="text-lg font-bold text-gray-900 mb-1">{leadDetails?.fullName || 'Priya Kumar'}</h2>
                 <p className="text-sm text-gray-500 mb-3">{leadDetails ? `${leadDetails.phoneNumber} · ${leadDetails.email}` : '+91 98765 43210 · priya.kumar@gmail.com'}</p>
                 <div className="flex flex-wrap gap-2">
-                  <span className="bg-orange-50 text-orange-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-orange-100 uppercase tracking-wide">🔥 {leadDetails?.currentStatus || 'Hot Lead'}</span>
+                  <span className="bg-orange-50 text-orange-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-orange-100 uppercase tracking-wide">{leadDetails?.currentStatus || 'Interested'}</span>
                   <span className="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-100 uppercase tracking-wide">{leadDetails?.courseInterested || 'Full Stack Dev'}</span>
                   <span className="bg-gray-50 text-gray-500 text-[10px] font-medium px-2 py-0.5 rounded-full border border-gray-100">Source: {leadDetails?.source?.name || 'Google Ads'}</span>
                 </div>

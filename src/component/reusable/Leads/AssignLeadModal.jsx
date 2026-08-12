@@ -3,7 +3,7 @@ import CustomButton from '../CustomButton';
 
 const AssignLeadModal = ({ isOpen, onClose, onAssign, currentLead, users }) => {
   const [selectedUser, setSelectedUser] = useState('');
-  const [isAssigning, setIsAssigning] = useState(false);
+  const [isAlloting, setIsAlloting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
   const currentUser = {
@@ -21,13 +21,13 @@ const AssignLeadModal = ({ isOpen, onClose, onAssign, currentLead, users }) => {
     }
   }, [isOpen]);
 
-  const handleAssign = async () => {
+  const handleAllot = async () => {
     if (!selectedUser) {
-      setErrorMessage('Please select a user to assign the lead to.');
+      setErrorMessage('Please select a user to allot the lead to.');
       return;
     }
 
-    setIsAssigning(true);
+    setIsAlloting(true);
     setErrorMessage('');
 
     try {
@@ -37,10 +37,10 @@ const AssignLeadModal = ({ isOpen, onClose, onAssign, currentLead, users }) => {
       setErrorMessage(
         error?.response?.data?.message ||
           error?.message ||
-          'Failed to assign lead.'
+          'Failed to allot lead.'
       );
     } finally {
-      setIsAssigning(false);
+      setIsAlloting(false);
     }
   };
 
@@ -50,8 +50,8 @@ const AssignLeadModal = ({ isOpen, onClose, onAssign, currentLead, users }) => {
     <div className="modal-overlay open">
       <div className="modal" style={{ maxWidth: '450px' }}>
         <div className="modal-header">
-          <div className="modal-title">Assign Lead{leadCount > 1 ? 's' : ''}</div>
-          <CustomButton variant="ghost" className="btn-icon" onClick={onClose} disabled={isAssigning}>
+          <div className="modal-title">Allot Lead{leadCount > 1 ? 's' : ''}</div>
+          <CustomButton variant="ghost" className="btn-icon" onClick={onClose} disabled={isAlloting}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
@@ -87,7 +87,7 @@ const AssignLeadModal = ({ isOpen, onClose, onAssign, currentLead, users }) => {
               className="form-control"
               value={selectedUser}
               onChange={(e) => setSelectedUser(e.target.value)}
-              disabled={isAssigning}
+              disabled={isAlloting}
             >
               <option value="">Select a user...</option>
               {users && users.map((user) => (
@@ -105,9 +105,9 @@ const AssignLeadModal = ({ isOpen, onClose, onAssign, currentLead, users }) => {
           )}
         </div>
         <div className="modal-footer">
-          <CustomButton variant="secondary" onClick={onClose} disabled={isAssigning}>Cancel</CustomButton>
-          <CustomButton variant="primary" onClick={handleAssign} disabled={isAssigning}>
-            {isAssigning ? 'Assigning...' : `Assign Lead${leadCount > 1 ? 's' : ''}`}
+          <CustomButton variant="secondary" onClick={onClose} disabled={isAlloting}>Cancel</CustomButton>
+          <CustomButton variant="primary" onClick={handleAllot} disabled={isAlloting}>
+            {isAlloting ? 'Alloting...' : `Allot Lead${leadCount > 1 ? 's' : ''}`}
           </CustomButton>
         </div>
       </div>

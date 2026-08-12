@@ -19,7 +19,7 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Le
 const statCards = [
   {
     color: 'blue',
-    label: 'Assigned to Me',
+    label: 'Allotted to Me',
     value: '0',
     iconBg: 'var(--primary-light)',
     icon: (
@@ -38,18 +38,6 @@ const statCards = [
     icon: (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2">
         <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 8.9" />
-      </svg>
-    ),
-  },
-  {
-    color: 'orange',
-    label: 'Hot Leads',
-    value: '0',
-    iconBg: '#FFF7ED',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EA580C" strokeWidth="2">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
-        <path d="M12 8v4l3 3" />
       </svg>
     ),
   },
@@ -92,7 +80,7 @@ const CallersDashboard = () => {
   // Mock: Get current caller name (in real app, this would come from auth/context)
   const currentCaller = 'Rahul Singh'; // Simulating logged-in caller
 
-  // Filter leads assigned to this caller
+  // Filter leads allotted to this caller
   const myLeads = useMemo(() => {
     return leads.filter(lead => lead.counselor === currentCaller);
   }, [leads, currentCaller]);
@@ -103,17 +91,15 @@ const CallersDashboard = () => {
   }, [followups, currentCaller]);
 
   const calculatedStatCards = useMemo(() => {
-    const assigned = myLeads.length;
+    const allotted = myLeads.length;
     const connected = myLeads.filter(l => l.status === 'connected').length;
-    const hotLeads = myLeads.filter(l => l.status === 'hot').length;
     const registered = myLeads.filter(l => l.status === 'registered').length;
     const pendingFollowups = myFollowups.filter(f => f.status === 'today').length;
 
     return statCards.map(card => {
       switch (card.label) {
-        case 'Assigned to Me': return { ...card, value: assigned.toLocaleString() };
+        case 'Allotted to Me': return { ...card, value: allotted.toLocaleString() };
         case 'Connected': return { ...card, value: connected.toLocaleString() };
-        case 'Hot Leads': return { ...card, value: hotLeads.toLocaleString() };
         case 'Registered': return { ...card, value: registered.toLocaleString() };
         case 'Pending Follow-ups': return { ...card, value: pendingFollowups.toLocaleString() };
         default: return card;
@@ -223,7 +209,7 @@ const CallersDashboard = () => {
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: '700', color: 'var(--gray-900)' }}>Caller Dashboard</h1>
           <p style={{ fontSize: '13px', color: 'var(--gray-500)', marginTop: '4px' }}>
-            Welcome back, {currentCaller}! Here&apos;s your assignment overview.
+            Welcome back, {currentCaller}! Here&apos;s your allotment overview.
           </p>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
@@ -257,7 +243,7 @@ const CallersDashboard = () => {
           <div className="card-header">
             <div>
               <div className="card-title">My Leads Status</div>
-              <div className="card-sub">Distribution of your assigned leads</div>
+              <div className="card-sub">Distribution of your allotted leads</div>
             </div>
           </div>
           <div style={{ height: '220px' }}>
@@ -314,10 +300,10 @@ const CallersDashboard = () => {
         />
       </div>
 
-      {/* ── My Assigned Leads Table ── */}
+      {/* ── My Allotted Leads Table ── */}
       <div className="card">
         <div className="card-header">
-          <div className="card-title">My Assigned Leads</div>
+          <div className="card-title">My Allotted Leads</div>
           <span className="badge badge-primary">{myLeads.length} leads</span>
         </div>
         <ReusableTable

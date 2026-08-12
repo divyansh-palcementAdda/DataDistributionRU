@@ -40,7 +40,7 @@ const LeadStatus = () => {
       id: 4,
       statusName: "Not Interested",
       totalCount: 15,
-      leadSourceName: "Cold Call",
+      leadSourceName: "Phone Call",
       color: "#F59E0B",
       status: "INACTIVE"
     },

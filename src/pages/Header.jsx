@@ -117,14 +117,14 @@ const Header = () => {
               <div className="dropdown-item">
                 <div className="notif-dot2" style={{ background: '#F59E0B' }}></div>
                 <div>
-                  <div className="notif-text">Amit Verma marked as Hot Lead</div>
+                  <div className="notif-text">Amit Verma marked as Interested</div>
                   <div className="notif-time">1 hour ago · Neha Joshi</div>
                 </div>
               </div>
               <div className="dropdown-item">
                 <div style={{ width: '8px', flexShrink: 0 }}></div>
                 <div>
-                  <div className="notif-text">New lead assigned: Kiran Patel</div>
+                  <div className="notif-text">New lead allotted: Kiran Patel</div>
                   <div className="notif-time">2 hours ago</div>
                 </div>
               </div>

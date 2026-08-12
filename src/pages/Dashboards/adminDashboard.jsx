@@ -136,6 +136,102 @@ const statCards = [
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EA580C" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /><path d="M8 14h.01M12 14h.01M16 14h.01" /></svg>
     ),
   },
+  {
+    color: 'teal',
+    label: 'Allotted',
+    value: '0',
+    iconBg: '#E0F2F1',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#009688" strokeWidth="2">
+        <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+        <circle cx="8.5" cy="7" r="4" />
+        <path d="M20 8v6M23 11h-6" />
+      </svg>
+    ),
+  },
+  {
+    color: 'gray',
+    label: 'Not Allotted',
+    value: '0',
+    iconBg: '#F5F5F5',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9E9E9E" strokeWidth="2">
+        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+        <circle cx="9" cy="7" r="4" />
+        <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+        <line x1="16" y1="5" x2="16" y2="5.01" />
+        <line x1="18" y1="5" x2="18" y2="5.01" />
+        <line x1="20" y1="5" x2="20" y2="5.01" />
+      </svg>
+    ),
+  },
+  {
+    color: 'orange',
+    label: 'Form Follow up',
+    value: '0',
+    iconBg: '#FFF7ED',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EA580C" strokeWidth="2">
+        <rect x="3" y="4" width="18" height="18" rx="2" />
+        <path d="M16 2v4M8 2v4M3 10h18" />
+        <path d="M8 14h.01M12 14h.01M16 14h.01" />
+      </svg>
+    ),
+  },
+  {
+    color: 'indigo',
+    label: 'First Not Connected',
+    value: '0',
+    iconBg: '#E0E7FF',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2">
+        <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 8.9" />
+        <path d="M16 3.13a4 4 0 010 7.75" />
+      </svg>
+    ),
+  },
+  {
+    color: 'indigo',
+    label: 'Second Not Connected',
+    value: '0',
+    iconBg: '#E0E7FF',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2">
+        <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 8.9" />
+        <path d="M16 3.13a4 4 0 010 7.75" />
+        <path d="M20 8v6M23 11h-6" />
+      </svg>
+    ),
+  },
+  {
+    color: 'indigo',
+    label: 'Third Not Connected',
+    value: '0',
+    iconBg: '#E0E7FF',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2">
+        <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 8.9" />
+        <path d="M16 3.13a4 4 0 010 7.75" />
+        <path d="M20 8v6M23 11h-6" />
+        <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+      </svg>
+    ),
+  },
+  {
+    color: 'indigo',
+    label: 'Fourth Not Connected',
+    value: '0',
+    iconBg: '#E0E7FF',
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2">
+        <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 8.9" />
+        <path d="M16 3.13a4 4 0 010 7.75" />
+        <path d="M20 8v6M23 11h-6" />
+        <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
+        <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
+      </svg>
+    ),
+  },
 ];
 
 /* ── Arrow icons ── */
@@ -176,13 +272,13 @@ const monthlyChartOptions = {
 
 /* ── Status Doughnut Chart data ── */
 const statusChartData = {
-  labels: ['Raw', 'Connected', 'Interested', 'Hot', 'Registered', 'Cold', 'Not Interested', 'Bad'],
+  labels: ['Raw', 'Connected', 'Interested', 'Registered', 'Not Interested', 'Bad'],
   datasets: [
     {
-      data: [425, 1624, 876, 387, 342, 512, 134, 147],
+      data: [425, 1624, 876, 342, 134, 147],
       backgroundColor: [
-        '#64748B', '#2563EB', '#0891B2', '#EA580C',
-        '#22C55E', '#0369A1', '#BE123C', '#991B1B',
+        '#64748B', '#2563EB', '#0891B2',
+        '#22C55E', '#BE123C', '#991B1B',
       ],
       borderWidth: 0,
       hoverOffset: 6,
@@ -222,6 +318,13 @@ const Dashboard = () => {
     const badData = leads.filter(l => l.status === 'bad' || l.status === 'baddata').length;
     const finallyNotConnected = leads.filter(l => l.status === 'finallynotconnected').length;
     const totalFollowups = followups.length;
+    const allottedLeads = leads.filter(l => l.assignedTo && l.assignedTo !== '').length;
+    const notAllotted = leads.filter(l => !l.assignedTo || l.assignedTo === '').length;
+    const formFollowUp = leads.filter(l => l.status === 'formfollowup' || l.status === 'FORMFOLLOWUP').length;
+    const firstCall = leads.filter(l => l.status === 'firstcall' || l.status === 'FIRSTCALL').length;
+    const secondCall = leads.filter(l => l.status === 'secondcall' || l.status === 'SECONDCALL').length;
+    const thirdCall = leads.filter(l => l.status === 'thirdcall' || l.status === 'THIRDCALL').length;
+    const fourthCall = leads.filter(l => l.status === 'fourthcall' || l.status === 'FOURTHCALL').length;
 
     return statCards.map(card => {
       switch (card.label) {
@@ -235,6 +338,13 @@ const Dashboard = () => {
         case 'Bad Data': return { ...card, value: badData.toLocaleString() };
         case 'Finally Not Connected': return { ...card, value: finallyNotConnected.toLocaleString() };
         case 'Total Follow-ups': return { ...card, value: totalFollowups.toLocaleString() };
+        case 'Allotted': return { ...card, value: allottedLeads.toLocaleString() };
+        case 'Not Allotted': return { ...card, value: notAllotted.toLocaleString() };
+        case 'Form Follow up': return { ...card, value: formFollowUp.toLocaleString() };
+        case 'First Not Connected': return { ...card, value: firstCall.toLocaleString() };
+        case 'Second Not Connected': return { ...card, value: secondCall.toLocaleString() };
+        case 'Third Not Connected': return { ...card, value: thirdCall.toLocaleString() };
+        case 'Fourth Not Connected': return { ...card, value: fourthCall.toLocaleString() };
         default: return card;
       }
     });
@@ -306,7 +416,7 @@ const Dashboard = () => {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {counselors.slice(0, 5).map((c) => {
-              const convPct = Math.round((c.registered / c.assigned) * 100);
+              const convPct = Math.round((c.registered / c.allotted) * 100);
               return (
                 <div key={c.name} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <div

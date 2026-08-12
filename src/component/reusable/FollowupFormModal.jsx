@@ -121,7 +121,6 @@ const FollowupFormModal = ({ isOpen, onClose, onSubmit, initialData = null }) =>
                             <RadioPill name="status" value="Not Connected" label="Not Connected" checked={formData.status === "Not Connected"} onChange={() => handleRadioChange('status', 'Not Connected')} />
                             <RadioPill name="status" value="Interested" label="Interested" checked={formData.status === "Interested"} onChange={() => handleRadioChange('status', 'Interested')} />
                             <RadioPill name="status" value="Not Interested" label="Not Interested" checked={formData.status === "Not Interested"} onChange={() => handleRadioChange('status', 'Not Interested')} />
-                            <RadioPill name="status" value="Hot Lead" label="Hot Lead" checked={formData.status === "Hot Lead"} onChange={() => handleRadioChange('status', 'Hot Lead')} />
                             <RadioPill name="status" value="Registered" label="Registered" checked={formData.status === "Registered"} onChange={() => handleRadioChange('status', 'Registered')} />
                         </div>
                     </div>

@@ -75,7 +75,7 @@ export const toggleRoleStatus = async (id, isActive) => {
     }
 };
 
-export const assignPermissionsToRole = async (roleId, permissionIds) => {
+export const allotPermissionsToRole = async (roleId, permissionIds) => {
     try {
         const response = await axiosInstance.post(
             `${ApiRoutes.Role.getPermissions}/${roleId}/permissions`,

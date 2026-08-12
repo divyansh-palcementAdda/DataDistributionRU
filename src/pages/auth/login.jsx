@@ -40,6 +40,11 @@ const Login = () => {
         Cookies.set('accessToken', response.data.data.accessToken);
         Cookies.set('refreshToken', response.data.data.refreshToken);
 
+        // Store role information
+        const roleName = response.data.data.role?.name;
+        localStorage.setItem('userRole', roleName);
+        localStorage.setItem('userInfo', JSON.stringify(response.data.data.user));
+
         // Fetch permissions using roleId
         const roleId = response.data.data.role?.id;
         if (roleId) {
@@ -53,7 +58,14 @@ const Login = () => {
           }
         }
 
-        navigate("/dashboard");
+        // Role-based routing
+        if (roleName === 'SUPER_ADMIN' || roleName === 'ADMIN') {
+          navigate("/dashboard");
+        } else if (roleName === 'COUNSELORS' || roleName === 'HEAD') {
+          navigate("/callers-dashboard");
+        } else {
+          navigate("/dashboard");
+        }
       } else {
         // Error handling
         setLoading(false);

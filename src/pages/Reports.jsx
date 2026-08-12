@@ -65,8 +65,8 @@ const counselorPerfChartData = {
   labels: counselors.map(c => c.name.split(' ')[0]),
   datasets: [
     {
-      label: 'Assigned',
-      data: counselors.map(c => c.assigned),
+      label: 'Allotted',
+      data: counselors.map(c => c.allotted),
       backgroundColor: 'rgba(37,99,235,.2)',
       borderColor: '#2563EB',
       borderWidth: 1.5,

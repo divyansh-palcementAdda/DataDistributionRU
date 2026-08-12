@@ -8,6 +8,7 @@ import ReusableTable from '../component/reusable/table';
 import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import DeleteModal from "../component/reusable/deleteModel"
 import AssignLeadModal from '../component/reusable/Leads/AssignLeadModal';
+import LeadCards from '../component/reusable/DashBoards/leadCards';
 
 
 const STATUSES = [
@@ -19,228 +20,6 @@ const STATUSES = [
   { value: 'notinterested', label: 'Not Interested' },
   { value: 'bad', label: 'Bad Lead' },
 ];
-
-/* ── Stat Cards data ── */
-const leadStatCards = [
-  {
-    color: 'blue',
-    label: 'Raw Lead',
-    value: '0',
-    iconBg: 'var(--primary-light)',
-    iconStroke: 'var(--primary)',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2">
-        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
-      </svg>
-    ),
-  },
-  {
-    color: 'blue',
-    label: 'Connected',
-    value: '0',
-    iconBg: 'var(--primary-light)',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2">
-        <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 8.9" />
-      </svg>
-    ),
-  },
-  {
-    color: 'gray',
-    label: 'Not Connected',
-    value: '0',
-    iconBg: 'var(--gray-100)',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gray-500)" strokeWidth="2">
-        <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
-        <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
-      </svg>
-    ),
-  },
-  {
-    color: 'green',
-    label: 'Interested',
-    value: '0',
-    iconBg: 'var(--success-light)',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2">
-        <path d="M17 14V2H7v12l5 5 5-5z" />
-        <path d="M9 18l-6 6" />
-        <path d="M15 18l6 6" />
-      </svg>
-    ),
-  },
-  {
-    color: 'green',
-    label: 'Registered',
-    value: '0',
-    iconBg: 'var(--success-light)',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2">
-        <polyline points="20 6 9 17 4 12" />
-      </svg>
-    ),
-  },
-  {
-    color: 'purple',
-    label: 'My Allotted Leads',
-    value: '0',
-    iconBg: '#F3E8FF',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2">
-        <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
-        <circle cx="12" cy="7" r="4" />
-      </svg>
-    ),
-  },
-  {
-    color: 'teal',
-    label: 'Allotted',
-    value: '0',
-    iconBg: '#E0F2F1',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#009688" strokeWidth="2">
-        <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-        <circle cx="8.5" cy="7" r="4" />
-        <path d="M20 8v6M23 11h-6" />
-      </svg>
-    ),
-  },
-  {
-    color: 'gray',
-    label: 'Not Allotted',
-    value: '0',
-    iconBg: '#F5F5F5',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9E9E9E" strokeWidth="2">
-        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
-        <line x1="16" y1="5" x2="16" y2="5.01" />
-        <line x1="18" y1="5" x2="18" y2="5.01" />
-        <line x1="20" y1="5" x2="20" y2="5.01" />
-      </svg>
-    ),
-  },
-  {
-    color: 'orange',
-    label: 'Form Follow up',
-    value: '0',
-    iconBg: '#FFF7ED',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EA580C" strokeWidth="2">
-        <rect x="3" y="4" width="18" height="18" rx="2" />
-        <path d="M16 2v4M8 2v4M3 10h18" />
-        <path d="M8 14h.01M12 14h.01M16 14h.01" />
-      </svg>
-    ),
-  },
-  {
-    color: 'red',
-    label: 'Not Interested',
-    value: '0',
-    iconBg: 'var(--danger-light)',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2">
-        <circle cx="12" cy="12" r="10" />
-        <line x1="8" y1="12" x2="16" y2="12" />
-      </svg>
-    ),
-  },
-  {
-    color: 'red',
-    label: 'Finally Not Interested',
-    value: '0',
-    iconBg: 'var(--danger-light)',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2">
-        <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
-        <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
-      </svg>
-    ),
-  },
-  {
-    color: 'red',
-    label: 'Bad Lead',
-    value: '0',
-    iconBg: 'var(--danger-light)',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" strokeWidth="2">
-        <circle cx="12" cy="12" r="10" />
-        <line x1="15" y1="9" x2="9" y2="15" />
-        <line x1="9" y1="9" x2="15" y2="15" />
-      </svg>
-    ),
-  },
-  {
-    color: 'indigo',
-    label: 'First Not Connected',
-    value: '0',
-    iconBg: '#E0E7FF',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2">
-        <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 8.9" />
-        <path d="M16 3.13a4 4 0 010 7.75" />
-      </svg>
-    ),
-  },
-  {
-    color: 'indigo',
-    label: 'Second Not Connected',
-    value: '0',
-    iconBg: '#E0E7FF',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2">
-        <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 8.9" />
-        <path d="M16 3.13a4 4 0 010 7.75" />
-        <path d="M20 8v6M23 11h-6" />
-      </svg>
-    ),
-  },
-  {
-    color: 'indigo',
-    label: 'Third Not Connected',
-    value: '0',
-    iconBg: '#E0E7FF',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2">
-        <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 8.9" />
-        <path d="M16 3.13a4 4 0 010 7.75" />
-        <path d="M20 8v6M23 11h-6" />
-        <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
-      </svg>
-    ),
-  },
-  {
-    color: 'indigo',
-    label: 'Fourth Not Connected',
-    value: '0',
-    iconBg: '#E0E7FF',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2">
-        <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81a19.79 19.79 0 01-3.07-8.67A2 2 0 012 1h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.91 8.9" />
-        <path d="M16 3.13a4 4 0 010 7.75" />
-        <path d="M20 8v6M23 11h-6" />
-        <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
-        <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
-      </svg>
-    ),
-  },
-];
-
-/* ── Arrow icons ── */
-const ArrowUp = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-    <polyline points="18 15 12 9 6 15" />
-  </svg>
-);
-const ArrowDown = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-    <polyline points="6 9 12 15 18 9" />
-  </svg>
-);
 
 const COUNSELORS = ['All Counselors', 'Rahul Singh', 'Neha Joshi', 'Priya Patel', 'Vikram Das'];
 const COURSES = ['All Courses'];
@@ -290,8 +69,8 @@ const Leads = () => {
   const [sortDirection, setSortDirection] = useState('desc');
   const [coursesData, setCoursesData] = useState([]);
 
-  // Calculate stat cards based on leads data
-  const calculatedStatCards = useMemo(() => {
+  // Calculate stat cards data for LeadCards component
+  const leadCardsData = useMemo(() => {
     const rawLeads = leadsData.filter(l => l.currentStatus === 'raw' || l.currentStatus === 'RAW').length;
     const connectedLeads = leadsData.filter(l => l.currentStatus === 'connected' || l.currentStatus === 'CONNECTED').length;
     const notConnectedLeads = leadsData.filter(l => l.currentStatus === 'notconnected' || l.currentStatus === 'NOTCONNECTED').length;
@@ -309,27 +88,33 @@ const Leads = () => {
     const thirdCall = leadsData.filter(l => l.currentStatus === 'thirdcall' || l.currentStatus === 'THIRDCALL').length;
     const fourthCall = leadsData.filter(l => l.currentStatus === 'fourthcall' || l.currentStatus === 'FOURTHCALL').length;
 
-    return leadStatCards.map(card => {
-      switch (card.label) {
-        case 'Raw Lead': return { ...card, value: rawLeads.toLocaleString() };
-        case 'Connected': return { ...card, value: connectedLeads.toLocaleString() };
-        case 'Not Connected': return { ...card, value: notConnectedLeads.toLocaleString() };
-        case 'Interested': return { ...card, value: interestedLeads.toLocaleString() };
-        case 'Registered': return { ...card, value: registeredLeads.toLocaleString() };
-        case 'My Allotted Leads': return { ...card, value: myAllottedLeads.toLocaleString() };
-        case 'Allotted': return { ...card, value: allottedLeads.toLocaleString() };
-        case 'Not Allotted': return { ...card, value: notAllotted.toLocaleString() };
-        case 'Form Follow up': return { ...card, value: formFollowUp.toLocaleString() };
-        case 'Not Interested': return { ...card, value: notInterestedLeads.toLocaleString() };
-        case 'Finally Not Interested': return { ...card, value: finallyNotInterested.toLocaleString() };
-        case 'Bad Lead': return { ...card, value: badLeads.toLocaleString() };
-        case 'First Not Connected': return { ...card, value: firstCall.toLocaleString() };
-        case 'Second Not Connected': return { ...card, value: secondCall.toLocaleString() };
-        case 'Third Not Connected': return { ...card, value: thirdCall.toLocaleString() };
-        case 'Fourth Not Connected': return { ...card, value: fourthCall.toLocaleString() };
-        default: return card;
-      }
-    });
+    return {
+      rowData: rawLeads,
+      totalAllotted: allottedLeads,
+      totalUnallotted: notAllotted,
+      totalAvailed: registeredLeads,
+      connected: connectedLeads,
+      interested: interestedLeads,
+      notInterested: notInterestedLeads,
+      formFollowUp: formFollowUp,
+      counselingFollowUp: 0,
+      registered: registeredLeads,
+      formNotInterested: 0,
+      continueFormFollowUp: 0,
+      counselingFollowUp2: 0,
+      continuesCounselingFollowUp: 0,
+      interestedFollowUp: 0,
+      counselingToFormFollowUp: 0,
+      notInterestedAfterCounseling: 0,
+      goesToFormFollowUpAfterCounseling: 0,
+      badData: badLeads,
+      notConnected: notConnectedLeads,
+      firstNotConnected: firstCall,
+      secondNotConnected: secondCall,
+      thirdNotConnected: thirdCall,
+      fourthNotConnected: fourthCall,
+      finallyNotConnected: finallyNotInterested,
+    };
   }, [leadsData]);
 
   const openDeleteModal = (lead) => {
@@ -539,17 +324,7 @@ const Leads = () => {
       </div>
 
       {/* ── Stat Cards ── */}
-      <div className="stat-grid mb-5">
-        {calculatedStatCards.map((card) => (
-          <div key={card.label} className={`stat-card ${card.color}`}>
-            <div className="stat-label">{card.label}</div>
-            <div className="stat-value">{card.value}</div>
-            <div className="stat-icon" style={{ background: card.iconBg }}>
-              {card.icon}
-            </div>
-          </div>
-        ))}
-      </div>
+      <LeadCards data={leadCardsData} />
 
       {/* ── Filter Bar ── */}
       <div className="flex gap-2 flex-wrap mb-4">

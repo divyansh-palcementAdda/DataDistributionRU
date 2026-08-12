@@ -84,33 +84,39 @@ const CategorywiseCard = ({ data = {} }) => {
               e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.08)';
             }}
           >
-            <div
-              style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: '12px',
-                background: card.iconBg,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: '12px',
-              }}
-            >
-              <div style={{ color: card.iconStroke }}>
-                {card.icon}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              marginBottom: '12px',
+            }}>
+              <div
+                style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '10px',
+                  background: card.iconBg,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <div style={{ color: card.iconStroke }}>
+                  {card.icon}
+                </div>
+              </div>
+              <div style={{
+                fontSize: '14px',
+                fontWeight: '600',
+                color: '#1e293b',
+                lineHeight: '1.3',
+              }}>
+                {card.label}
               </div>
             </div>
             <div style={{
-              fontSize: '13px',
-              fontWeight: '500',
-              color: '#64748b',
-              marginBottom: '8px',
-              lineHeight: '1.4',
-            }}>
-              {card.label}
-            </div>
-            <div style={{
-              fontSize: '24px',
+              fontSize: '28px',
               fontWeight: '700',
               color: '#1e293b',
             }}>

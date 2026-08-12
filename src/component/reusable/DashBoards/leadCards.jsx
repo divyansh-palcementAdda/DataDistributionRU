@@ -11,6 +11,19 @@ const LeadCards = ({ data = {} }) => {
   // Card data configuration with icons and colors
   const cardConfig = [
     {
+      key: 'priorityBasedData',
+      label: 'Priority Based Data',
+      color: 'gold',
+      iconBg: 'linear-gradient(135deg, #FFD700 0%, #FFA500 100%)',
+      iconStroke: '#ffffff',
+      isHighlighted: true,
+      icon: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+        </svg>
+      ),
+    },
+    {
       key: 'rowData',
       label: 'Row Data',
       color: 'blue',
@@ -377,52 +390,68 @@ const LeadCards = ({ data = {} }) => {
           <div
             key={card.key}
             style={{
-              background: '#ffffff',
+              background: card.isHighlighted ? 'linear-gradient(135deg, #FFF9E6 0%, #FFFFFF 100%)' : '#ffffff',
               borderRadius: '12px',
-              padding: '16px',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-              border: '1px solid #e5e7eb',
+              padding: card.isHighlighted ? '20px' : '16px',
+              boxShadow: card.isHighlighted 
+                ? '0 4px 20px rgba(255, 215, 0, 0.3), 0 0 0 2px rgba(255, 215, 0, 0.5)' 
+                : '0 2px 8px rgba(0, 0, 0, 0.08)',
+              border: card.isHighlighted 
+                ? '2px solid #FFD700' 
+                : '1px solid #e5e7eb',
               transition: 'all 0.3s ease',
               cursor: 'pointer',
+              position: 'relative',
+              overflow: 'hidden',
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.12)';
+              e.currentTarget.style.boxShadow = card.isHighlighted 
+                ? '0 8px 30px rgba(255, 215, 0, 0.4), 0 0 0 3px rgba(255, 215, 0, 0.6)' 
+                : '0 8px 24px rgba(0, 0, 0, 0.12)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.08)';
+              e.currentTarget.style.boxShadow = card.isHighlighted 
+                ? '0 4px 20px rgba(255, 215, 0, 0.3), 0 0 0 2px rgba(255, 215, 0, 0.5)' 
+                : '0 2px 8px rgba(0, 0, 0, 0.08)';
             }}
           >
-            <div
-              style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: '12px',
-                background: card.iconBg,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: '12px',
-              }}
-            >
-              <div style={{ color: card.iconStroke }}>
-                {card.icon}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: card.isHighlighted ? '16px' : '12px',
+              marginBottom: card.isHighlighted ? '16px' : '12px',
+            }}>
+              <div
+                style={{
+                  width: card.isHighlighted ? '48px' : '40px',
+                  height: card.isHighlighted ? '48px' : '40px',
+                  borderRadius: card.isHighlighted ? '12px' : '10px',
+                  background: card.iconBg,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <div style={{ color: card.iconStroke }}>
+                  {card.icon}
+                </div>
+              </div>
+              <div style={{
+                fontSize: card.isHighlighted ? '16px' : '14px',
+                fontWeight: card.isHighlighted ? '700' : '600',
+                color: card.isHighlighted ? '#FF8C00' : '#1e293b',
+                lineHeight: '1.3',
+              }}>
+                {card.label}
               </div>
             </div>
             <div style={{
-              fontSize: '13px',
-              fontWeight: '500',
-              color: '#64748b',
-              marginBottom: '8px',
-              lineHeight: '1.4',
-            }}>
-              {card.label}
-            </div>
-            <div style={{
-              fontSize: '24px',
-              fontWeight: '700',
-              color: '#1e293b',
+              fontSize: card.isHighlighted ? '32px' : '28px',
+              fontWeight: card.isHighlighted ? '800' : '700',
+              color: card.isHighlighted ? '#FF8C00' : '#1e293b',
             }}>
               {data[card.key] !== undefined ? data[card.key].toLocaleString() : '0'}
             </div>

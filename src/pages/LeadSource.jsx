@@ -316,41 +316,7 @@ const LeadSource = () => {
                 </div>
             </div>
 
-            {/* ── Source-wise Stats Cards ── */}
-            {statsLoading ? (
-                <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
-                    {[1, 2, 3].map((i) => (
-                        <div key={i} style={{
-                            flex: '1 1 180px', minWidth: '160px', height: '110px',
-                            borderRadius: '12px', background: 'var(--gray-100)',
-                            animation: 'pulse 1.5s ease-in-out infinite',
-                        }} />
-                    ))}
-                    <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }`}</style>
-                </div>
-            ) : statsData.length > 0 ? (
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
-                    gap: '14px',
-                    marginBottom: '22px',
-                }}>
-                    {statsData.map((stat, idx) => {
-                        const palette = CARD_COLORS[idx % CARD_COLORS.length];
-                        return (
-                            <StatsCard
-                                key={stat.sourceId}
-                                title={stat.sourceName}
-                                value={stat.count}
-                                unit="leads"
-                                percentage={stat.percentage}
-                                palette={palette}
-                            />
-                        )
-                    })}
-                </div>
-            ) : null}
-
+          
             {/* ── Search & Sort Bar ── */}
             <div
                 className="filter-bar"

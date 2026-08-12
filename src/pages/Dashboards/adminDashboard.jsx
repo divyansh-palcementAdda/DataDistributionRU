@@ -363,6 +363,192 @@ const Dashboard = () => {
      
       </div>
 
+      {/* ── Full Width Metrics Card ── */}
+      <div style={{ 
+        background: 'linear-gradient(135deg, #ff2c47, #ff7a0b)',
+        borderRadius: '16px',
+        padding: '16px 20px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '8px',
+        boxShadow: '0 8px 18px #f603',
+        border: '1px solid rgba(255, 255, 255, .1)',
+        transition: '.3s ease',
+        width: '100%',
+        maxWidth: '100%',
+        minWidth: '0',
+        boxSizing: 'border-box',
+        overflow: 'hidden',
+        flex: '1 1 auto',
+        marginBottom: '20px'
+      }}>
+        <div style={{ 
+          display: 'flex', 
+          gap: '16px',
+          width: '100%',
+          justifyContent: 'center',
+          flexWrap: 'wrap'
+        }}>
+          {/* Card 1: Total Counsellors Logged Today */}
+          <div style={{ 
+            background: '#ffffff2e',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            borderRadius: '10px',
+            padding: '10px 12px',
+            minWidth: '140px',
+            flex: '1',
+            maxWidth: '180px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            transition: '.3s ease',
+            minWidth: '0',
+            boxSizing: 'border-box',
+            flexDirection: 'column'
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
+              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+            </svg>
+            <div style={{ fontSize: '11px', color: '#ffffff', fontWeight: 500, textAlign: 'center' }}>
+              Total Counsellors Logged Today
+            </div>
+            <div style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
+              {counselors.filter(c => c.pending > 0).length}
+            </div>
+          </div>
+
+          {/* Card 2: Total Follow-up Scheduled Today */}
+          <div style={{ 
+            background: '#ffffff2e',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            borderRadius: '10px',
+            padding: '10px 12px',
+            minWidth: '140px',
+            flex: '1',
+            maxWidth: '180px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            transition: '.3s ease',
+            minWidth: '0',
+            boxSizing: 'border-box',
+            flexDirection: 'column'
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
+              <rect x="3" y="4" width="18" height="18" rx="2" />
+              <path d="M16 2v4M8 2v4M3 10h18" />
+              <path d="M8 14h.01M12 14h.01M16 14h.01" />
+            </svg>
+            <div style={{ fontSize: '11px', color: '#ffffff', fontWeight: 500, textAlign: 'center' }}>
+              Total Follow-up Scheduled Today
+            </div>
+            <div style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
+              {todayFollowups.length}
+            </div>
+          </div>
+
+          {/* Card 3: Total Counsellors Currently Working */}
+          <div style={{ 
+            background: '#ffffff2e',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            borderRadius: '10px',
+            padding: '10px 12px',
+            minWidth: '140px',
+            flex: '1',
+            maxWidth: '180px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            transition: '.3s ease',
+            minWidth: '0',
+            boxSizing: 'border-box',
+            flexDirection: 'column'
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
+              <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" />
+            </svg>
+            <div style={{ fontSize: '11px', color: '#ffffff', fontWeight: 500, textAlign: 'center' }}>
+              Total Counsellors Currently Working
+            </div>
+            <div style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
+              {counselors.filter(c => c.followupsDone > 0).length}
+            </div>
+          </div>
+
+          {/* Card 4: Conversation Ratio */}
+          <div style={{ 
+            background: '#ffffff2e',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            borderRadius: '10px',
+            padding: '10px 12px',
+            minWidth: '140px',
+            flex: '1',
+            maxWidth: '180px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            transition: '.3s ease',
+            minWidth: '0',
+            boxSizing: 'border-box',
+            flexDirection: 'column'
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
+              <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" />
+            </svg>
+            <div style={{ fontSize: '11px', color: '#ffffff', fontWeight: 500, textAlign: 'center' }}>
+              Conversation Ratio
+            </div>
+            <div style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
+              {leads.length > 0 ? Math.round((leads.filter(l => l.status === 'connected').length / leads.length) * 100) : 0}%
+            </div>
+          </div>
+
+          {/* Card 5: Total Data in System */}
+          <div style={{ 
+            background: '#ffffff2e',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            borderRadius: '10px',
+            padding: '10px 12px',
+            minWidth: '140px',
+            flex: '1',
+            maxWidth: '180px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            transition: '.3s ease',
+            minWidth: '0',
+            boxSizing: 'border-box',
+            flexDirection: 'column'
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
+              <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+              <line x1="12" y1="22.08" x2="12" y2="12" />
+            </svg>
+            <div style={{ fontSize: '11px', color: '#ffffff', fontWeight: 500, textAlign: 'center' }}>
+              Total Data in System
+            </div>
+            <div style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
+              {leads.length}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* ── Stat Cards ── */}
       <div className="stat-grid">
         {calculatedStatCards.map((card) => (

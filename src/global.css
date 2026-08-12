@@ -187,8 +187,8 @@ body.dark .cal-day {
 }
 
 .nav-item.active {
-  background: var(--primary-light);
-  color: var(--primary);
+  background: linear-gradient(135deg, #435fff, #a571ff);
+  color: #fff;
   font-weight: 600;
 }
 
@@ -848,12 +848,12 @@ select.form-control {
 }
 
 .btn-primary {
-  background: var(--primary);
+  background: linear-gradient(135deg, #435fff, #a571ff);
   color: #fff;
 }
 
 .btn-primary:hover {
-  background: var(--primary-dark);
+  background: linear-gradient(135deg, #3455dd, #8a5ce0);
 }
 
 .btn-secondary {

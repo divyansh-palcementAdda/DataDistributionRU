@@ -436,7 +436,11 @@ const Leads = () => {
                   </div>
                 ),
               },
-              { key: 'courseInterested', header: 'Course' },
+              { 
+                key: 'courseInterested', 
+                header: 'Course',
+                render: (value) => value?.courseName || value || 'N/A',
+              },
               {
                 key: 'source',
                 header: 'Source',

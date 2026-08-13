@@ -4,7 +4,7 @@ import CustomButton from '../component/reusable/CustomButton';
 import CustomInput from '../component/reusable/CustomInput';
 import ReusableTable from '../component/reusable/table';
 import Toggle from '../component/reusable/custumToggle';
-import { getAllUser } from '../Services/user/user';
+import { getAllUser, deleteUser } from '../Services/user/user';
 import { getAllRoles, deleteRole, toggleRoleStatus, getRolePermissions, allotPermissionsToRole } from '../Services/role/roleService';
 import { getAllPermissions, deletePermission } from '../Services/permissions/permissions';
 import AddUserModal from '../component/reusable/user/addUser';
@@ -24,6 +24,10 @@ const Settings = () => {
   const [loadingRoles, setLoadingRoles] = useState(false);
   const [loadingPermissions, setLoadingPermissions] = useState(false);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [isDeleteUserModalOpen, setIsDeleteUserModalOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
+  const [isDeletingUser, setIsDeletingUser] = useState(false);
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState(null);
   const [isRoleViewModalOpen, setIsRoleViewModalOpen] = useState(false);
@@ -341,6 +345,62 @@ const Settings = () => {
     }
   ];
 
+  const handleOpenAddUserModal = () => {
+    setSelectedUser(null);
+    setIsAddUserModalOpen(true);
+  };
+
+  const handleOpenEditUserModal = (user) => {
+    setSelectedUser(user);
+    setIsAddUserModalOpen(true);
+  };
+
+  const handleCloseUserModal = () => {
+    setIsAddUserModalOpen(false);
+    setSelectedUser(null);
+  };
+
+  const handleOpenDeleteUserModal = (user) => {
+    setUserToDelete(user);
+    setIsDeleteUserModalOpen(true);
+  };
+
+  const handleCloseDeleteUserModal = () => {
+    setIsDeleteUserModalOpen(false);
+    setUserToDelete(null);
+  };
+
+  const handleConfirmDeleteUser = async () => {
+    const userId = userToDelete?.id ?? userToDelete?._id ?? userToDelete?.userId;
+
+    if (!userId) {
+      showToast('User id not found', 'error');
+      return;
+    }
+
+    try {
+      setIsDeletingUser(true);
+      const response = await deleteUser(userId);
+      const isSuccess = response?.status >= 200 && response?.status < 300;
+
+      if (!isSuccess) {
+        const message =
+          response?.response?.data?.message ||
+          response?.response?.data?.error ||
+          response?.message ||
+          'Failed to delete user.';
+        showToast(message, 'error');
+        return;
+      }
+
+      await fetchUsers();
+      showToast('User deleted successfully!', 'success');
+      handleCloseDeleteUserModal();
+    } finally {
+      setIsDeletingUser(false);
+    }
+  };
+
   const handleOpenAddRoleModal = () => {
     setSelectedRole(null);
     setIsRoleModalOpen(true);
@@ -640,7 +700,7 @@ const Settings = () => {
             <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden animate-fadeIn">
               <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-gray-800">User Management</h2>
-                <CustomButton variant="primary" onClick={() => setIsAddUserModalOpen(true)} className="text-xs py-1.5 px-3">
+                <CustomButton variant="primary" onClick={handleOpenAddUserModal} className="text-xs py-1.5 px-3">
                   + Add User
                 </CustomButton>
               </div>
@@ -651,8 +711,8 @@ const Settings = () => {
                   <ReusableTable
                     columns={userColumns}
                     data={Array.isArray(users) ? users : []}
-                    onEdit={() => console.log('Edit User')}
-                    onDelete={() => showToast('User removed')}
+                    onEdit={handleOpenEditUserModal}
+                    onDelete={handleOpenDeleteUserModal}
                   />
                 </div>
               )}
@@ -876,8 +936,18 @@ const Settings = () => {
 
       <AddUserModal
         isOpen={isAddUserModalOpen}
-        onClose={() => setIsAddUserModalOpen(false)}
+        onClose={handleCloseUserModal}
         onSuccess={fetchUsers}
+        initialData={selectedUser}
+      />
+
+      <DeleteModal
+        isOpen={isDeleteUserModalOpen}
+        onClose={handleCloseDeleteUserModal}
+        onConfirm={handleConfirmDeleteUser}
+        title="Delete User"
+        message={`Are you sure you want to delete "${userToDelete?.name || userToDelete?.firstName || 'this user'}"? This action cannot be undone.`}
+        isLoading={isDeletingUser}
       />
 
       <AddEditRoleModal

@@ -392,7 +392,7 @@ const LeadCards = ({ data = {} }) => {
             style={{
               background: card.isHighlighted ? 'linear-gradient(135deg, #FFF9E6 0%, #FFFFFF 100%)' : '#ffffff',
               borderRadius: '12px',
-              padding: card.isHighlighted ? '20px' : '16px',
+              padding: card.isHighlighted ? '12px' : '12px',
               boxShadow: card.isHighlighted 
                 ? '0 4px 20px rgba(255, 215, 0, 0.3), 0 0 0 2px rgba(255, 215, 0, 0.5)' 
                 : '0 2px 8px rgba(0, 0, 0, 0.08)',
@@ -403,6 +403,7 @@ const LeadCards = ({ data = {} }) => {
               cursor: 'pointer',
               position: 'relative',
               overflow: 'hidden',
+              height: '100px',
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'translateY(-4px)';
@@ -420,14 +421,14 @@ const LeadCards = ({ data = {} }) => {
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              gap: card.isHighlighted ? '16px' : '12px',
-              marginBottom: card.isHighlighted ? '16px' : '12px',
+              gap: card.isHighlighted ? '12px' : '12px',
+              marginBottom: card.isHighlighted ? '6px' : '8px',
             }}>
               <div
                 style={{
-                  width: card.isHighlighted ? '48px' : '40px',
-                  height: card.isHighlighted ? '48px' : '40px',
-                  borderRadius: card.isHighlighted ? '12px' : '10px',
+                  width: card.isHighlighted ? '40px' : '40px',
+                  height: card.isHighlighted ? '40px' : '40px',
+                  borderRadius: card.isHighlighted ? '10px' : '10px',
                   background: card.iconBg,
                   display: 'flex',
                   alignItems: 'center',
@@ -440,7 +441,7 @@ const LeadCards = ({ data = {} }) => {
                 </div>
               </div>
               <div style={{
-                fontSize: card.isHighlighted ? '16px' : '14px',
+                fontSize: card.isHighlighted ? '14px' : '14px',
                 fontWeight: card.isHighlighted ? '700' : '600',
                 color: card.isHighlighted ? '#FF8C00' : '#1e293b',
                 lineHeight: '1.3',
@@ -449,8 +450,8 @@ const LeadCards = ({ data = {} }) => {
               </div>
             </div>
             <div style={{
-              fontSize: card.isHighlighted ? '32px' : '28px',
-              fontWeight: card.isHighlighted ? '800' : '700',
+              fontSize: card.isHighlighted ? '26px' : '24px',
+              fontWeight: card.isHighlighted ? '700' : '700',
               color: card.isHighlighted ? '#FF8C00' : '#1e293b',
             }}>
               {data[card.key] !== undefined ? data[card.key].toLocaleString() : '0'}

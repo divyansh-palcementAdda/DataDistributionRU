@@ -74,11 +74,12 @@ const BoardWiseCard = ({ data = {} }) => {
             style={{
               background: '#ffffff',
               borderRadius: '12px',
-              padding: '16px',
+              padding: '12px',
               boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
               border: '1px solid #e5e7eb',
               transition: 'all 0.3s ease',
               cursor: 'pointer',
+              height: '100px',
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'translateY(-4px)';
@@ -93,7 +94,7 @@ const BoardWiseCard = ({ data = {} }) => {
               display: 'flex',
               alignItems: 'center',
               gap: '12px',
-              marginBottom: '12px',
+              marginBottom: '8px',
             }}>
               <div
                 style={{

@@ -11,6 +11,7 @@ const AddLeadSourceModal = ({ isOpen, onClose, editData }) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
+    code: '',
     description: '',
     active: true,
   });
@@ -27,6 +28,7 @@ const AddLeadSourceModal = ({ isOpen, onClose, editData }) => {
   const resetForm = () => {
     setFormData({
       name: '',
+      code: '',
       description: '',
       active: true,
     });
@@ -37,6 +39,7 @@ const AddLeadSourceModal = ({ isOpen, onClose, editData }) => {
       if (editData) {
         setFormData({
           name: editData.name || '',
+          code: editData.code || '',
           description: editData.description || '',
           active: editData.active ?? true,
         });
@@ -49,6 +52,10 @@ const AddLeadSourceModal = ({ isOpen, onClose, editData }) => {
   const handleSubmit = async () => {
     if (!formData.name) {
       showToast('Name is required!', 'error');
+      return;
+    }
+    if (!formData.code) {
+      showToast('Code is required!', 'error');
       return;
     }
 
@@ -102,6 +109,13 @@ const AddLeadSourceModal = ({ isOpen, onClose, editData }) => {
               placeholder="e.g. WhatsApp"
               value={formData.name}
               onChange={handleChange('name')}
+            />
+            
+            <CustomInput
+              label="Code *"
+              placeholder="e.g. WA"
+              value={formData.code}
+              onChange={handleChange('code')}
             />
             
             <div className="form-group mt-3">

@@ -28,6 +28,10 @@ import CourseTypeDetails from "./pages/CourseTypeDetails";
 import CourseDetails from "./pages/CourseDetails";
 import LeadStatus from "./pages/Lead-status";
 import LeadStatusDetails from "./pages/LeadStatusDetails";
+import Grades from "./pages/Grades";
+import GradesDetails from "./pages/gradesDetails";
+import Boards from "./pages/Boards";
+import BoardDetails from "./pages/boardsDetails";
 
 // Reusable Components / Standalone Pages
 import StudentForm from "./component/reusable/studentForm";
@@ -59,11 +63,15 @@ const Allroutes = () => {
         <Route path="/courses" element={<Courses />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/lead-source" element={<Leadsourse />} />
-        <Route path="/courses-types" element={<CourseType />} />
-        <Route path="/courses-types/:id" element={<CourseTypeDetails />} />
+        <Route path="/course-types" element={<CourseType />} />
+        <Route path="/course-types/:id" element={<CourseTypeDetails />} />
         <Route path="/course-details/:id" element={<CourseDetails />} />
         <Route path="/lead-status" element={<LeadStatus />} />
         <Route path="/lead-status-details/:id" element={<LeadStatusDetails />} />
+        <Route path="/grades" element={<Grades />} />
+        <Route path="/grade-details/:id" element={<GradesDetails />} />
+        <Route path="/boards" element={<Boards />} />
+        <Route path="/board-details/:id" element={<BoardDetails />} />
       </Route>
 
       {/* Standalone Route for Student Form from QR */}

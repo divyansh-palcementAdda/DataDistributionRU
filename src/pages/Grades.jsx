@@ -3,14 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import CustomButton from '../component/reusable/CustomButton';
 import ReusableTable from '../component/reusable/table';
 import Toggle from '../component/reusable/custumToggle';
-import { getAllCourses, toggleCourseStatus, deleteCourse } from '../Services/course/course';
 import { toast } from 'react-toastify';
-import AddCourseModal from '../component/reusable/course/addCourseModel';
+import AddGradeModal from '../component/reusable/grade/addGradeModel';
 import DeleteModal from '../component/reusable/deleteModel';
+import gradsService from '../Services/Grads/gradsService';
 
-const Courses = () => {
+const Grades = () => {
   const navigate = useNavigate();
-  const [courses, setCourses] = useState([]);
+  const [grades, setGrades] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -27,10 +27,18 @@ const Courses = () => {
   const [sortBy, setSortBy] = useState("");
   const [sortDirection, setSortDirection] = useState("asc");
 
-  const fetchCourses = async () => {
+  const fetchGrades = async () => {
     try {
       setLoading(true);
-      const res = await getAllCourses({
+      console.log("Fetching grades with params:", {
+        page: currentPage - 1,
+        size: rowsPerPage,
+        search: debouncedSearch,
+        sortBy,
+        sortDirection,
+      });
+      
+      const res = await gradsService.getAllGrades({
         page: currentPage - 1,
         size: rowsPerPage,
         search: debouncedSearch,
@@ -38,17 +46,24 @@ const Courses = () => {
         sortDirection,
       });
 
-      if (res?.success && res?.data) {
-        setCourses(res.data.content || []);
-        setTotalPages(res.data.totalPages || 0);
-        setTotalElements(res.data.totalElements || 0);
-      } else {
-        setCourses(res?.content || res?.data || res || []);
-        setTotalPages(res?.totalPages || 0);
-        setTotalElements(res?.totalElements || 0);
-      }
+      console.log("API response:", res);
+
+      // Map API response to UI format
+      const mappedGrades = (res.data?.content || []).map(grade => ({
+        id: grade.id,
+        gradeName: grade.name,
+        gradeCode: grade.code,
+        description: grade.description,
+        status: grade.active ? "ACTIVE" : "INACTIVE",
+        displayOrder: grade.displayOrder
+      }));
+
+      setGrades(mappedGrades);
+      setTotalPages(res.data?.totalPages || 0);
+      setTotalElements(res.data?.totalElements || 0);
     } catch (error) {
-      toast.error(error.message || "Failed to fetch courses");
+      console.error("Error fetching grades:", error);
+      toast.error(error.message || "Failed to fetch grades");
     } finally {
       setLoading(false);
     }
@@ -58,20 +73,20 @@ const Courses = () => {
     const timer = setTimeout(() => {
       setDebouncedSearch(search);
       setCurrentPage(1);
-    }, 500); // 500ms delay
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [search]);
 
   useEffect(() => {
-    fetchCourses();
+    fetchGrades();
   }, [currentPage, rowsPerPage, debouncedSearch, sortBy, sortDirection]);
 
   const handleToggleStatus = async (id, currentStatus) => {
     try {
-      await toggleCourseStatus(id);
+      await gradsService.toggleGradeStatus(id);
       toast.success("Status updated successfully");
-      fetchCourses();
+      fetchGrades();
     } catch (error) {
       toast.error(error.message || "Failed to update status");
     }
@@ -86,13 +101,13 @@ const Courses = () => {
     if (!itemToDelete) return;
     try {
       setIsDeleting(true);
-      await deleteCourse(itemToDelete.id);
-      toast.success("Course deleted successfully");
-      fetchCourses();
+      await gradsService.deleteGrade(itemToDelete.id);
+      toast.success("Grade deleted successfully");
+      fetchGrades();
       setIsDeleteModalOpen(false);
       setItemToDelete(null);
     } catch (error) {
-      toast.error(error.message || "Failed to delete course");
+      toast.error(error.message || "Failed to delete grade");
     } finally {
       setIsDeleting(false);
     }
@@ -111,7 +126,8 @@ const Courses = () => {
       sortable: false,
       render: (_, row, index) => (currentPage - 1) * rowsPerPage + index + 1
     },
-    { key: "courseName", header: "Name" },
+    { key: "gradeName", header: "Name" },
+    { key: "gradeCode", header: "Code" },
     { key: "description", header: "Description" },
     {
       key: "status",
@@ -126,26 +142,24 @@ const Courses = () => {
   ];
 
   return (
-    <div className="block p-4 sm:p-6 p-0" id="page-courses">
+    <div className="block p-4 sm:p-6 p-0" id="page-grades">
       {/* Page Header */}
       <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Courses</h1>
-          <p className="text-sm text-gray-500 mt-1">Manage course catalog and enrollment data</p>
+          <h1 className="text-2xl font-bold text-gray-900">Grades</h1>
+          <p className="text-sm text-gray-500 mt-1">Manage grade levels and academic standards</p>
         </div>
-
-
 
         <input
           type="text"
-          placeholder="Search courses..."
+          placeholder="Search grades..."
           value={search}
           onChange={handleSearch}
           className="border border-gray-300 rounded-lg px-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
 
         <CustomButton variant="primary" onClick={() => { setEditData(null); setIsAddModalOpen(true); }} className="text-sm py-2 px-4 shadow-sm hover:shadow-md transition-shadow">
-          + Add Course
+          + Add Grade
         </CustomButton>
       </div>
 
@@ -153,7 +167,7 @@ const Courses = () => {
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-1">
         <ReusableTable
           columns={columns}
-          data={courses}
+          data={grades}
           isServerSide={true}
           totalElements={totalElements}
           totalPages={totalPages}
@@ -164,8 +178,8 @@ const Courses = () => {
           sortBy={sortBy}
           sortDirection={sortDirection}
           onSort={handleSort}
-          emptyMessage={loading ? "Loading..." : "No courses found"}
-          onView={(row) => navigate(`/course-details/${row.id}`)}
+          emptyMessage={loading ? "Loading..." : "No grades found"}
+          onView={(row) => navigate(`/grade-details/${row.id}`)}
           onEdit={(row) => {
             setEditData(row);
             setIsAddModalOpen(true);
@@ -177,7 +191,7 @@ const Courses = () => {
         />
       </div>
 
-      <AddCourseModal
+      <AddGradeModal
         isOpen={isAddModalOpen}
         onClose={() => {
           setIsAddModalOpen(false);
@@ -187,7 +201,7 @@ const Courses = () => {
         onSubmit={() => {
           setIsAddModalOpen(false);
           setEditData(null);
-          fetchCourses();
+          fetchGrades();
         }}
       />
 
@@ -198,12 +212,12 @@ const Courses = () => {
           setItemToDelete(null);
         }}
         onConfirm={handleDeleteConfirm}
-        title="Delete Course"
-        message={`Are you sure you want to delete the course "${itemToDelete?.name}"?`}
+        title="Delete Grade"
+        message={`Are you sure you want to delete the grade "${itemToDelete?.gradeName || itemToDelete?.name}"?`}
         isLoading={isDeleting}
       />
     </div>
   );
 };
 
-export default Courses;
+export default Grades;

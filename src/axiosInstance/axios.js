@@ -283,6 +283,7 @@ axiosInstance.interceptors.request.use(
         `${tokenType} ${accessToken}`;
     }
 
+    console.log("Making request:", config.method?.toUpperCase(), config.url, config.params);
     return config;
   },
 

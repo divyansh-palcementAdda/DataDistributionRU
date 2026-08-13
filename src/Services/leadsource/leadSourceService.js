@@ -16,7 +16,8 @@ export const getAllLeadSource = (params = {}) => {
 
 export const getLeadSourceById = (id) => {
     try {
-        const response = axiosInstance.get(`${ApiRoutes.Lead_Source.getAll}/${id}`);
+        const url = ApiRoutes.Lead_Source.getDetailsById.replace('{id}', id);
+        const response = axiosInstance.get(url);
         return response;
     } catch (error) {
         throw error;
@@ -34,7 +35,8 @@ export const createLeadSource = (data) => {
 
 export const updateLeadSource = (id, data) => {
     try {
-        const response = axiosInstance.put(`${ApiRoutes.Lead_Source.update}/${id}`, data);
+        const url = ApiRoutes.Lead_Source.update.replace('{id}', id);
+        const response = axiosInstance.put(url, data);
         return response;
     } catch (error) {
         throw error;
@@ -43,7 +45,8 @@ export const updateLeadSource = (id, data) => {
 
 export const deleteLeadSource = (id) => {
     try {
-        const response = axiosInstance.delete(`${ApiRoutes.Lead_Source.delete}/${id}`);
+        const url = ApiRoutes.Lead_Source.delete.replace('{id}', id);
+        const response = axiosInstance.delete(url);
         return response;
     } catch (error) {
         throw error;

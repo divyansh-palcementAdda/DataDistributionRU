@@ -2,15 +2,16 @@ import React, { useState, useEffect } from 'react';
 import CustomButton from '../CustomButton';
 import CustomInput from '../CustomInput';
 import Toggle from '../custumToggle';
-import { addUser } from '../../../Services/user/user';
+import { addUser, updateUser } from '../../../Services/user/user';
 import { getAllRoles } from '../../../Services/role/roleService';
 import { useAppContext } from '../../../AppContext';
 
-const AddUserModal = ({ isOpen, onClose, onSuccess }) => {
+const AddUserModal = ({ isOpen, onClose, onSuccess, initialData }) => {
     const { showToast } = useAppContext();
     const [isLoading, setIsLoading] = useState(false);
     const [roles, setRoles] = useState([]);
     const [showPassword, setShowPassword] = useState(false);
+    const isEditMode = !!initialData;
     
     const [formData, setFormData] = useState({
         firstName: '',
@@ -25,6 +26,40 @@ const AddUserModal = ({ isOpen, onClose, onSuccess }) => {
         locked: false,
         emailVerified: false
     });
+
+    // Populate form data when initialData changes (edit mode)
+    useEffect(() => {
+        if (initialData) {
+            setFormData({
+                firstName: initialData.firstName || '',
+                lastName: initialData.lastName || '',
+                email: initialData.email || '',
+                phone: initialData.phone || '',
+                username: initialData.username || '',
+                password: '', // Don't pre-fill password in edit mode
+                department: initialData.department || '',
+                roles: initialData.roles || ['USER'],
+                active: initialData.active !== undefined ? initialData.active : true,
+                locked: initialData.locked !== undefined ? initialData.locked : false,
+                emailVerified: initialData.emailVerified !== undefined ? initialData.emailVerified : false
+            });
+        } else {
+            // Reset form when opening in add mode
+            setFormData({
+                firstName: '',
+                lastName: '',
+                email: '',
+                phone: '',
+                username: '',
+                password: '',
+                department: '',
+                roles: ['USER'],
+                active: true,
+                locked: false,
+                emailVerified: false
+            });
+        }
+    }, [initialData]);
 
     const handleChange = (field, value) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -74,7 +109,6 @@ const AddUserModal = ({ isOpen, onClose, onSuccess }) => {
                 email: formData.email,
                 phone: formData.phone,
                 username: formData.username,
-                password: formData.password,
                 department: formData.department,
                 active: formData.active,
                 locked: formData.locked,
@@ -82,14 +116,33 @@ const AddUserModal = ({ isOpen, onClose, onSuccess }) => {
                 roles: formData.roles,
                 profileImage: null
             };
+
+            // Only include password if it's provided (for edit mode)
+            if (formData.password) {
+                jsonData.password = formData.password;
+            }
             
-            await addUser(jsonData);
-            showToast('User added successfully!', 'success');
+            if (isEditMode) {
+                // Update existing user
+                const userId = initialData?.id ?? initialData?._id ?? initialData?.userId;
+                if (!userId) {
+                    showToast('User ID not found', 'error');
+                    return;
+                }
+                await updateUser(userId, jsonData);
+                showToast('User updated successfully!', 'success');
+            } else {
+                // Add new user
+                jsonData.password = formData.password; // Password is required for new users
+                await addUser(jsonData);
+                showToast('User added successfully!', 'success');
+            }
+            
             if (onSuccess) onSuccess();
             onClose();
         } catch (error) {
-            console.error('Failed to add user', error);
-            showToast(error.response?.data?.message || 'Failed to add user', 'error');
+            console.error('Failed to save user', error);
+            showToast(error.response?.data?.message || `Failed to ${isEditMode ? 'update' : 'add'} user`, 'error');
         } finally {
             setIsLoading(false);
         }
@@ -101,7 +154,7 @@ const AddUserModal = ({ isOpen, onClose, onSuccess }) => {
         <div className="modal-overlay open">
             <div className="modal" style={{ maxWidth: '600px', maxHeight: '90vh', overflowY: 'auto' }}>
                 <div className="modal-header border-b border-gray-100 pb-3 mb-4">
-                    <h2 className="text-xl font-bold text-gray-800">Add New User</h2>
+                    <h2 className="text-xl font-bold text-gray-800">{isEditMode ? 'Edit User' : 'Add New User'}</h2>
                     <CustomButton variant="ghost" className="btn-icon" onClick={onClose} disabled={isLoading}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <line x1="18" y1="6" x2="6" y2="18" />
@@ -150,13 +203,16 @@ const AddUserModal = ({ isOpen, onClose, onSuccess }) => {
                                 required 
                             />
                             <div className="flex flex-col gap-1.5">
-                                <label className="text-sm font-semibold text-gray-700 ml-1">Password</label>
+                                <label className="text-sm font-semibold text-gray-700 ml-1">
+                                    Password {isEditMode && <span className="text-gray-400 font-normal">(leave blank to keep current)</span>}
+                                </label>
                                 <div className="relative">
                                     <input 
                                         type={showPassword ? "text" : "password"}
                                         value={formData.password}
                                         onChange={(e) => handleChange('password', e.target.value)}
-                                        required
+                                        required={!isEditMode}
+                                        placeholder={isEditMode ? "Enter new password" : ""}
                                         className="px-4 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500 w-full pr-10"
                                     />
                                     <button
@@ -234,7 +290,7 @@ const AddUserModal = ({ isOpen, onClose, onSuccess }) => {
                         Cancel
                     </CustomButton>
                     <CustomButton type="submit" form="addUserForm" variant="primary" disabled={isLoading}>
-                        {isLoading ? 'Saving...' : 'Save User'}
+                        {isLoading ? 'Saving...' : (isEditMode ? 'Update User' : 'Save User')}
                     </CustomButton>
                 </div>
             </div>

@@ -20,3 +20,15 @@ export const addUser = (data) => {
         }
     });
 };
+
+export const updateUser = (id, data) => {
+    return axiosInstance.put(ApiRoutes.Users.update.replace('{id}', id), data, {
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    });
+};
+
+export const deleteUser = (id) => {
+    return axiosInstance.delete(ApiRoutes.Users.delete.replace('{id}', id));
+};

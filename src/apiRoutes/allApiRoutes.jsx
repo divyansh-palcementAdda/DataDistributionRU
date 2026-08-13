@@ -19,14 +19,16 @@ const ApiRoutes = {
     Lead_Source: {
         create: '/api/lead-sources',
         getAll: '/api/lead-sources',
-        view: '/api/lead-sources',
-        update: '/api/lead-sources',
-        delete: '/api/lead-sources',
+        getDetailsById: '/api/lead-sources/{id}',
+        update: '/api/lead-sources/{id}',
+        delete: '/api/lead-sources/{id}',
         toggle: '/api/lead-sources/{id}/toggle-active'
     },
     Users: {
         getAllUser: "/api/users",
         create: "/api/users",
+        update: "/api/users/{id}",
+        delete: "/api/users/{id}",
     },
     Role: {
         getPermissions: '/api/roles',

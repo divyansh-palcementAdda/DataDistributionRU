@@ -11,72 +11,7 @@ import DeleteModal from '../component/reusable/deleteModel';
 
 const LeadStatus = () => {
   const navigate = useNavigate();
-  const [leadStatuses, setLeadStatuses] = useState([
-    {
-      id: 1,
-      statusName: "Connected",
-      totalCount: 45,
-      leadSourceName: "Website",
-      color: "#10B981",
-      status: "ACTIVE"
-    },
-    {
-      id: 2,
-      statusName: "Not Connected",
-      totalCount: 32,
-      leadSourceName: "Referral",
-      color: "#EF4444",
-      status: "ACTIVE"
-    },
-    {
-      id: 3,
-      statusName: "Interested",
-      totalCount: 28,
-      leadSourceName: "LinkedIn",
-      color: "#3B82F6",
-      status: "ACTIVE"
-    },
-    {
-      id: 4,
-      statusName: "Not Interested",
-      totalCount: 15,
-      leadSourceName: "Phone Call",
-      color: "#F59E0B",
-      status: "INACTIVE"
-    },
-    {
-      id: 5,
-      statusName: "Follow-up Required",
-      totalCount: 23,
-      leadSourceName: "Email Campaign",
-      color: "#8B5CF6",
-      status: "ACTIVE"
-    },
-    {
-      id: 6,
-      statusName: "Converted",
-      totalCount: 18,
-      leadSourceName: "Website",
-      color: "#10B981",
-      status: "ACTIVE"
-    },
-    {
-      id: 7,
-      statusName: "Lost",
-      totalCount: 12,
-      leadSourceName: "Referral",
-      color: "#6B7280",
-      status: "INACTIVE"
-    },
-    {
-      id: 8,
-      statusName: "Qualified",
-      totalCount: 35,
-      leadSourceName: "LinkedIn",
-      color: "#06B6D4",
-      status: "ACTIVE"
-    }
-  ]);
+  const [leadStatuses, setLeadStatuses] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -90,6 +25,8 @@ const LeadStatus = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [sortBy, setSortBy] = useState("displayOrder");
+  const [sortDirection, setSortDirection] = useState("ASC");
 
   const fetchLeadStatuses = async () => {
     try {
@@ -98,6 +35,8 @@ const LeadStatus = () => {
         page: currentPage - 1,
         size: rowsPerPage,
         search: debouncedSearch,
+        sortBy: sortBy,
+        sortDirection: sortDirection,
       });
 
       if (res?.success && res?.data) {
@@ -127,7 +66,7 @@ const LeadStatus = () => {
 
   useEffect(() => {
     fetchLeadStatuses();
-  }, [currentPage, rowsPerPage, debouncedSearch]);
+  }, [currentPage, rowsPerPage, debouncedSearch, sortBy, sortDirection]);
 
   const handleToggleStatus = async (id, currentStatus) => {
     try {
@@ -141,6 +80,12 @@ const LeadStatus = () => {
 
   const handleSearch = (e) => {
     setSearch(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handleSort = (columnKey, direction) => {
+    setSortBy(columnKey);
+    setSortDirection(direction.toUpperCase());
     setCurrentPage(1);
   };
 
@@ -164,20 +109,42 @@ const LeadStatus = () => {
     {
       key: "sNo",
       header: "S.No",
+      sortable: false,
       render: (value, row, index) => (
         <span className="font-medium">{(currentPage - 1) * rowsPerPage + index + 1}</span>
       )
     },
-    { key: "statusName", header: "Status Name" },
-    { key: "totalCount", header: "Total Count" },
-    { key: "leadSourceName", header: "Lead source Name" },
+    { key: "name", header: "Status Name" },
+    { key: "code", header: "Code" },
+    { key: "description", header: "Description" },
     {
-      key: "status",
+      key: "sentimentCategory",
+      header: "Sentiment",
+      render: (sentiment) => {
+        const sentimentColors = {
+          POSITIVE: "bg-green-100 text-green-800",
+          NEGATIVE: "bg-red-100 text-red-800",
+          NEUTRAL: "bg-gray-100 text-gray-800"
+        };
+        return (
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${sentimentColors[sentiment] || sentimentColors.NEUTRAL}`}>
+            {sentiment}
+          </span>
+        );
+      }
+    },
+    {
+      key: "displayOrder",
+      header: "Display Order",
+      render: (order) => <span className="font-medium">{order}</span>
+    },
+    {
+      key: "active",
       header: "Status",
-      render: (status, row) => (
+      render: (active, row) => (
         <Toggle
-          checked={status === 'ACTIVE' || status === true}
-          onChange={() => handleToggleStatus(row.id, status)}
+          checked={active === true || row.status === 'ACTIVE'}
+          onChange={() => handleToggleStatus(row.id, row.status)}
         />
       )
     }
@@ -219,6 +186,9 @@ const LeadStatus = () => {
           rowsPerPage={rowsPerPage}
           onPageChange={setCurrentPage}
           onRowsPerPageChange={setRowsPerPage}
+          sortBy={sortBy}
+          sortDirection={sortDirection.toLowerCase()}
+          onSort={handleSort}
           emptyMessage={loading ? "Loading..." : "No lead statuses found"}
           actions={(row) => (
             <div className="flex justify-center items-center gap-3">
@@ -276,7 +246,7 @@ const LeadStatus = () => {
         }}
         onConfirm={handleDeleteConfirm}
         title="Delete Lead Status"
-        message={`Are you sure you want to delete the lead status "${itemToDelete?.statusName}"?`}
+        message={`Are you sure you want to delete the lead status "${itemToDelete?.name}"?`}
         isLoading={isDeleting}
       />
     </div>

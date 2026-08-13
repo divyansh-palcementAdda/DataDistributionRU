@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import CustomButton from "../CustomButton.jsx";
-import CustomInput from "../CustomInput.jsx";
-import Toggle from "../custumToggle.jsx";
+import CustomButton from "../CustomButton";
+import CustomInput from "../CustomInput";
+import Toggle from "../custumToggle";
 import { toast } from "react-toastify";
-import { createLeadStatus, updateLeadStatus } from "../../../Services/leadStatus/leadStatusService.js";
+import gradsService from "../../../Services/Grads/gradsService";
 
-const AddLeadStatusModal = ({
+const AddGradeModal = ({
     isOpen,
     onClose,
     onSubmit,
@@ -17,8 +17,7 @@ const AddLeadStatusModal = ({
         code: "",
         description: "",
         active: true,
-        displayOrder: 1,
-        sentimentCategory: "NEUTRAL",
+        displayOrder: 1073741824,
     });
 
     const [errors, setErrors] = useState({});
@@ -28,12 +27,11 @@ const AddLeadStatusModal = ({
         if (isOpen) {
             if (initialData) {
                 setFormData({
-                    name: initialData.name || "",
-                    code: initialData.code || "",
+                    name: initialData.name || initialData.gradeName || "",
+                    code: initialData.code || initialData.gradeCode || "",
                     description: initialData.description || "",
-                    active: initialData.active !== undefined ? initialData.active : true,
-                    displayOrder: initialData.displayOrder || 1,
-                    sentimentCategory: initialData.sentimentCategory || "NEUTRAL",
+                    active: initialData.active !== undefined ? initialData.active : (initialData.status === "ACTIVE" || initialData.status === true),
+                    displayOrder: initialData.displayOrder || 1073741824,
                 });
             } else {
                 setFormData({
@@ -41,8 +39,7 @@ const AddLeadStatusModal = ({
                     code: "",
                     description: "",
                     active: true,
-                    displayOrder: 1,
-                    sentimentCategory: "NEUTRAL",
+                    displayOrder: 1073741824,
                 });
             }
 
@@ -53,11 +50,11 @@ const AddLeadStatusModal = ({
     if (!isOpen) return null;
 
     const handleChange = (e) => {
-        const { name, value, type, checked } = e.target;
+        const { name, value } = e.target;
 
         setFormData((prev) => ({
             ...prev,
-            [name]: type === 'checkbox' ? checked : value,
+            [name]: value,
         }));
 
         if (errors[name]) {
@@ -68,22 +65,17 @@ const AddLeadStatusModal = ({
         }
     };
 
-
-
     const validate = () => {
         const newErrors = {};
 
         if (!formData.name.trim())
-            newErrors.name = "Status name is required";
+            newErrors.name = "Grade name is required";
 
         if (!formData.code.trim())
-            newErrors.code = "Code is required";
+            newErrors.code = "Grade code is required";
 
         if (!formData.description.trim())
             newErrors.description = "Description is required";
-
-        if (!formData.displayOrder || formData.displayOrder < 1)
-            newErrors.displayOrder = "Display order must be at least 1";
 
         setErrors(newErrors);
 
@@ -102,16 +94,15 @@ const AddLeadStatusModal = ({
                     code: formData.code,
                     description: formData.description,
                     active: formData.active,
-                    displayOrder: parseInt(formData.displayOrder),
-                    sentimentCategory: formData.sentimentCategory,
+                    displayOrder: formData.displayOrder,
                 };
 
                 if (initialData?.id) {
-                    await updateLeadStatus(initialData.id, payload);
-                    toast.success("Lead status updated successfully!");
+                    await gradsService.updateGrade(initialData.id, payload);
+                    toast.success("Grade updated successfully!");
                 } else {
-                    await createLeadStatus(payload);
-                    toast.success("Lead status created successfully!");
+                    await gradsService.createGrade(payload);
+                    toast.success("Grade created successfully!");
                 }
 
                 onSubmit(payload);
@@ -136,13 +127,13 @@ const AddLeadStatusModal = ({
                             fill="none"
                             stroke="currentColor"
                             strokeWidth="2"
-                            className="text-blue-600"
+                            className="text-emerald-600"
                             viewBox="0 0 24 24"
                         >
                             <path d="M12 6v12M6 12h12" />
                         </svg>
 
-                        {initialData ? "Edit Lead Status" : "Add New Lead Status"}
+                        {initialData ? "Edit Grade" : "Add New Grade"}
                     </div>
 
                     <button
@@ -156,87 +147,87 @@ const AddLeadStatusModal = ({
 
                 {/* Body */}
                 <form
-                    id="leadStatusForm"
+                    id="gradeForm"
                     onSubmit={handleSubmit}
                     className="p-6 space-y-4 overflow-y-auto flex-grow"
                 >
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
                         <CustomInput
-                            label="Status Name"
+                            label="Grade Name"
                             name="name"
                             value={formData.name}
                             onChange={handleChange}
-                            placeholder="Enter status name (e.g., Connected, Not Connected)"
+                            placeholder="Enter grade name"
                             error={errors.name}
                         />
 
                         <CustomInput
-                            label="Code"
+                            label="Grade Code"
                             name="code"
                             value={formData.code}
                             onChange={handleChange}
-                            placeholder="Enter code (e.g., CONNECTED, NOT_CONNECTED)"
+                            placeholder="Enter grade code"
                             error={errors.code}
                         />
+                    </div>
 
-                        <div className="md:col-span-2">
-                            <CustomInput
-                                label="Description"
-                                name="description"
-                                value={formData.description}
-                                onChange={handleChange}
-                                placeholder="Enter description for this lead status"
-                                error={errors.description}
-                            />
-                        </div>
+                    {/* Description */}
+                    <div className="flex flex-col gap-1">
+                        <label className="text-sm font-semibold text-gray-700">
+                            Description
+                        </label>
 
-                        <CustomInput
-                            label="Display Order"
-                            name="displayOrder"
-                            type="number"
-                            value={formData.displayOrder}
+                        <textarea
+                            rows={4}
+                            name="description"
+                            value={formData.description}
                             onChange={handleChange}
-                            placeholder="Enter display order"
-                            error={errors.displayOrder}
+                            placeholder="Enter description"
+                            className={`px-4 py-2 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500 ${errors.description
+                                ? "border-red-500 bg-red-50"
+                                : "border-gray-300"
+                                }`}
                         />
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Sentiment Category
-                            </label>
-                            <select
-                                name="sentimentCategory"
-                                value={formData.sentimentCategory}
-                                onChange={handleChange}
-                                className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                                <option value="NEUTRAL">Neutral</option>
-                                <option value="POSITIVE">Positive</option>
-                                <option value="NEGATIVE">Negative</option>
-                            </select>
-                        </div>
+                        {errors.description && (
+                            <span className="text-xs text-red-500">
+                                {errors.description}
+                            </span>
+                        )}
+                    </div>
 
-                        <div className="md:col-span-2 flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                            <div>
-                                <div className="text-sm font-semibold text-gray-700">
-                                    Active Status
-                                </div>
-                                <div className="text-xs text-gray-500">
-                                    {formData.active ? "Active - This status is available for use" : "Inactive - This status is disabled"}
-                                </div>
-                            </div>
+                    {/* Status */}
+                    <div className="flex flex-col gap-2">
+                        <label className="text-sm font-semibold text-gray-700">
+                            Status
+                        </label>
+
+                        <div className="flex items-center gap-3">
                             <Toggle
                                 checked={formData.active}
-                                onChange={() => setFormData(prev => ({ ...prev, active: !prev.active }))}
+                                onChange={() =>
+                                    setFormData((prev) => ({
+                                        ...prev,
+                                        active: !prev.active,
+                                    }))
+                                }
                             />
-                        </div>
 
+                            <span
+                                className={`text-sm font-medium ${formData.active
+                                    ? "text-green-600"
+                                    : "text-gray-500"
+                                    }`}
+                            >
+                                {formData.active ? "Active" : "Inactive"}
+                            </span>
+                        </div>
                     </div>
                 </form>
 
                 {/* Footer */}
-                <div className="flex justify-end gap-3 px-6 py-4 border-t border-gray-100 flex-shrink-0">
+                <div className="border-t border-gray-100 px-6 py-4 flex justify-end gap-3 flex-shrink-0">
                     <CustomButton
                         variant="secondary"
                         onClick={onClose}
@@ -244,13 +235,16 @@ const AddLeadStatusModal = ({
                     >
                         Cancel
                     </CustomButton>
+
                     <CustomButton
                         type="submit"
-                        form="leadStatusForm"
+                        form="gradeForm"
                         variant="primary"
                         disabled={isLoading || isSubmitting}
                     >
-                        {isSubmitting ? "Saving..." : initialData ? "Update Status" : "Create Status"}
+                        {isSubmitting || isLoading
+                            ? "Saving..."
+                            : "Save Grade"}
                     </CustomButton>
                 </div>
             </div>
@@ -258,4 +252,4 @@ const AddLeadStatusModal = ({
     );
 };
 
-export default AddLeadStatusModal;
+export default AddGradeModal;

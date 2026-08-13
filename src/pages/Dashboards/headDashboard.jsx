@@ -147,7 +147,11 @@ const HeadDashboard = () => {
   const leadColumns = [
     { key: 'name', header: 'Lead Name' },
     { key: 'phone', header: 'Phone' },
-    { key: 'course', header: 'Course' },
+    { 
+      key: 'course', 
+      header: 'Course',
+      render: (value) => value?.courseName || value || '—'
+    },
     { 
       key: 'status', 
       header: 'Status',
@@ -167,7 +171,11 @@ const HeadDashboard = () => {
         );
       }
     },
-    { key: 'source', header: 'Source' },
+    { 
+      key: 'source', 
+      header: 'Source',
+      render: (value) => value?.name || '—'
+    },
     { key: 'city', header: 'City' },
   ];
 

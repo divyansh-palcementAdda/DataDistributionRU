@@ -1,47 +1,54 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
-import { getLeadStatusById } from '../Services/leadStatus/leadStatusService';
+import gradsService from '../Services/Grads/gradsService';
 
-const LeadStatusDetails = () => {
+const GradesDetails = () => {
     const { navTo } = useAppContext();
     const [details, setDetails] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const { id } = useParams();
 
-
     useEffect(() => {
         if (id) {
-            const fetchLeadStatusDetails = async () => {
+            const fetchGradeDetails = async () => {
                 setLoading(true);
 
                 try {
-                    const res = await getLeadStatusById(id);
+                    const res = await gradsService.getGradeById(id);
 
-                    if (res?.success) {
-                        setDetails(res.data);
-                    } else {
-                        setError(res?.message || "Failed to load lead status details");
-                    }
+                    // Map API response to UI format
+                    const mappedData = {
+                        id: res.data.id,
+                        gradeName: res.data.name,
+                        gradeCode: res.data.code,
+                        description: res.data.description,
+                        status: res.data.active ? "ACTIVE" : "INACTIVE",
+                        displayOrder: res.data.displayOrder,
+                        createdAt: res.data.createdAt,
+                        updatedAt: res.data.updatedAt
+                    };
+
+                    setDetails(mappedData);
                 } catch (err) {
-                    console.error("Failed to fetch lead status details", err);
+                    console.error("Failed to fetch grade details", err);
                     setError(err.message || "An error occurred");
                 } finally {
                     setLoading(false);
                 }
             };
 
-            fetchLeadStatusDetails();
+            fetchGradeDetails();
         }
     }, [id]);
 
     const goBack = () => {
-        navTo('lead-status');
+        navTo('grades');
     };
 
     return (
-        <div className="block p-4 sm:p-6" id="page-lead-status-detail">
+        <div className="block p-4 sm:p-6" id="page-grade-detail">
             {/* Page Header */}
             <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
                 <div className="flex items-center gap-3">
@@ -63,31 +70,41 @@ const LeadStatusDetails = () => {
 
                     <div>
                         <h1 className="text-xl font-bold text-gray-900 leading-tight">
-                            Lead Status Details
+                            Grade Details
                         </h1>
                         <p className="text-sm text-gray-500 mt-1">
-                            View comprehensive details for this lead status
+                            View comprehensive details for this grade
                         </p>
                     </div>
                 </div>
             </div>
 
             {/* Main Card */}
-            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm max-w-5xl">
+            {loading ? (
+                <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm max-w-5xl">
+                    <div className="flex items-center justify-center py-12">
+                        <div className="text-gray-500">Loading grade details...</div>
+                    </div>
+                </div>
+            ) : error ? (
+                <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm max-w-5xl">
+                    <div className="flex items-center justify-center py-12">
+                        <div className="text-red-500">{error}</div>
+                    </div>
+                </div>
+            ) : (
+                <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm max-w-5xl">
                 {/* Header Section */}
                 <div className="flex flex-col sm:flex-row items-start gap-5 mb-8 pb-6 border-b border-gray-100">
-                    <div
-                        className="w-16 h-16 rounded-xl flex items-center justify-center text-white text-2xl font-bold shadow-md flex-shrink-0"
-                        style={{ backgroundColor: '#3B82F6' }}
-                    >
-                        {details?.name
-                            ? details.name.substring(0, 2).toUpperCase()
-                            : "LS"}
+                    <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white text-2xl font-bold shadow-md flex-shrink-0">
+                        {details?.gradeName
+                            ? details.gradeName.substring(0, 2).toUpperCase()
+                            : "GR"}
                     </div>
 
                     <div className="flex-1">
                         <h2 className="text-2xl font-extrabold text-gray-900 mb-2">
-                            {details?.name || "N/A"}
+                            {details?.gradeName || "N/A"}
                         </h2>
 
                         <div className="flex flex-wrap gap-2 items-center">
@@ -110,43 +127,13 @@ const LeadStatusDetails = () => {
                 {/* Details Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                    {/* Name */}
+                    {/* Grade Code */}
                     <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
                         <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">
-                            Name
+                            Grade Code
                         </div>
                         <div className="text-sm font-semibold text-gray-800">
-                            {details?.name || "N/A"}
-                        </div>
-                    </div>
-
-                    {/* Code */}
-                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
-                        <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">
-                            Code
-                        </div>
-                        <div className="text-sm font-semibold text-gray-800">
-                            {details?.code || "N/A"}
-                        </div>
-                    </div>
-
-                    {/* Active */}
-                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
-                        <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">
-                            Active
-                        </div>
-                        <div className="text-sm font-semibold text-gray-800">
-                            {details?.active ? "Yes" : "No"}
-                        </div>
-                    </div>
-
-                    {/* Status */}
-                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
-                        <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">
-                            Status
-                        </div>
-                        <div className="text-sm font-semibold text-gray-800">
-                            {details?.status || "N/A"}
+                            {details?.gradeCode || "N/A"}
                         </div>
                     </div>
 
@@ -157,16 +144,6 @@ const LeadStatusDetails = () => {
                         </div>
                         <div className="text-sm font-semibold text-gray-800">
                             {details?.displayOrder || "N/A"}
-                        </div>
-                    </div>
-
-                    {/* Sentiment Category */}
-                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
-                        <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">
-                            Sentiment Category
-                        </div>
-                        <div className="text-sm font-semibold text-gray-800">
-                            {details?.sentimentCategory || "N/A"}
                         </div>
                     </div>
 
@@ -205,8 +182,9 @@ const LeadStatusDetails = () => {
                     </div>
                 </div>
             </div>
+            )}
         </div>
     );
 };
 
-export default LeadStatusDetails;
+export default GradesDetails;

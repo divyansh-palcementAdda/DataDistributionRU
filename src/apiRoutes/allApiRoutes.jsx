@@ -73,18 +73,36 @@ const ApiRoutes = {
     },
 
     LeadStatus: {
-        create: '/api/lead-status',
-        getAll: '/api/lead-status',
-        update: '/api/lead-status/{id}',
-        delete: '/api/lead-status/{id}',
-        toggle: '/api/lead-status/{id}/toggle-active',
-        getDetailsById: '/api/lead-status/{id}',
+        create: '/api/lead-statuses',
+        getAll: '/api/lead-statuses',
+        update: '/api/lead-statuses/{id}',
+        delete: '/api/lead-statuses/{id}',
+        toggle: '/api/lead-statuses/{id}/toggle-active',
+        getDetailsById: '/api/lead-statuses/{id}',
         getActive: '/api/lead-status/active'
     },
 
     FollowUp: {
         getAllFollowUps: "/api/followups",
 
+    },
+
+    Grads: {
+        create: '/api/grades',
+        getAll: '/api/grades',
+        getById: '/api/grades/{id}',
+        update: '/api/grades/{id}',
+        delete: '/api/grades/{id}',
+        toggle: '/api/grades/{id}/toggle-active'
+    },
+
+    Boards:{
+        create: '/api/boards',
+        getAll: '/api/boards',
+        getById: '/api/boards/{id}',
+        update: '/api/boards/{id}',
+        delete: '/api/boards/{id}',
+        toggle: '/api/boards/{id}/toggle-active'
     }
 }
 

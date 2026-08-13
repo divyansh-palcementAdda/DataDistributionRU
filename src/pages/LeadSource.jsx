@@ -9,23 +9,7 @@ import CustomToggle from '../component/reusable/custumToggle';
 import StatsCard from '../component/reusable/StatsCard';
 import DeleteModal from '../component/reusable/deleteModel';
 
-/* ── Sort direction toggle helper ── */
-const nextDir = (cur) => (cur === 'ASC' ? 'DESC' : 'ASC');
 
-/* ── Sort icon ── */
-const SortIcon = ({ active, direction }) => (
-    <svg
-        width="12"
-        height="12"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke={active ? 'var(--primary)' : 'var(--gray-400)'}
-        strokeWidth="2.5"
-        style={{ marginLeft: '4px', flexShrink: 0, transition: 'transform 0.2s', transform: active && direction === 'DESC' ? 'rotate(180deg)' : 'none' }}
-    >
-        <path d="M12 5l7 7H5z" fill={active ? 'var(--primary)' : 'var(--gray-400)'} stroke="none" />
-    </svg>
-);
 
 
 
@@ -39,12 +23,7 @@ const fmtDate = (iso) => {
     });
 };
 
-const SORTABLE_COLS = [
-    { key: 'name', label: 'Name' },
-    { key: 'description', label: 'Description' },
-    { key: 'active', label: 'Status' },
-    { key: 'createdAt', label: 'Created At' },
-];
+
 
 
 
@@ -84,6 +63,14 @@ const LeadSource = () => {
         }, 300);
     };
 
+    /* ── Filter by status ── */
+    const [statusFilter, setStatusFilter] = useState('all');
+
+    const handleStatusFilterChange = (e) => {
+        setStatusFilter(e.target.value);
+        setPage(0);
+    };
+
     /* ── Modal ── */
     const [isAddLeadSourceModalOpen, setIsAddLeadSourceModalOpen] = useState(false);
     const [editModalData, setEditModalData] = useState(null);
@@ -115,6 +102,7 @@ const LeadSource = () => {
         try {
             const params = { page, size, sortBy, sortDirection };
             if (search.trim()) params.search = search.trim();
+            if (statusFilter !== 'all') params.active = statusFilter === 'active';
             const res = await getAllLeadSource(params);
             const payload = res?.data;
             if (payload?.success) {
@@ -129,7 +117,7 @@ const LeadSource = () => {
         } finally {
             setLoading(false);
         }
-    }, [page, size, sortBy, sortDirection, search]);
+    }, [page, size, sortBy, sortDirection, search, statusFilter]);
 
     useEffect(() => {
         fetchData();
@@ -140,17 +128,11 @@ const LeadSource = () => {
     }, [fetchStats]);
 
     /* ── Handlers ── */
-    const handleSort = (col) => {
-        if (sortBy === col) {
-            setSortDirection(nextDir(sortDirection));
-        } else {
-            setSortBy(col);
-            setSortDirection('ASC');
-        }
+    const handleSort = (columnKey, direction) => {
+        setSortBy(columnKey);
+        setSortDirection(direction.toUpperCase());
         setPage(0);
     };
-
-
 
     const handleModalClose = (didChange) => {
         setIsAddLeadSourceModalOpen(false);
@@ -216,28 +198,12 @@ const LeadSource = () => {
         }
     };
 
-    /* ── Column header renderer ── */
-    const SortHeader = ({ col }) => (
-        <div
-            onClick={() => handleSort(col.key)}
-            style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                cursor: 'pointer',
-                userSelect: 'none',
-                color: sortBy === col.key ? 'var(--primary)' : 'inherit',
-            }}
-        >
-            {col.label}
-            <SortIcon active={sortBy === col.key} direction={sortDirection} />
-        </div>
-    );
-
     /* ── Table columns ── */
     const columns = [
         {
             key: 'sno',
             header: 'S.No',
+            sortable: false,
             render: (value, row, index) => (
                 <span style={{ fontWeight: 600, color: 'var(--gray-800)' }}>
                     {page * size + index + 1}
@@ -246,14 +212,16 @@ const LeadSource = () => {
         },
         {
             key: 'name',
-            header: <SortHeader col={{ key: 'name', label: 'Name' }} />,
+            header: 'Name',
+            sortable: true,
             render: (value) => (
                 <span style={{ fontWeight: 600, color: 'var(--gray-800)' }}>{value}</span>
             ),
         },
         {
             key: 'description',
-            header: <SortHeader col={{ key: 'description', label: 'Description' }} />,
+            header: 'Description',
+            sortable: true,
             render: (value) => (
                 <span style={{ color: 'var(--gray-500)', fontSize: '13px' }}>
                     {value || '—'}
@@ -262,12 +230,14 @@ const LeadSource = () => {
         },
         {
             key: 'active',
-            header: <SortHeader col={{ key: 'active', label: 'Status' }} />,
+            header: 'Status',
+            sortable: true,
             render: (value, row) => <CustomToggle checked={value} onChange={() => handleToggle(row)} />,
         },
         {
             key: 'createdAt',
-            header: <SortHeader col={{ key: 'createdAt', label: 'Created At' }} />,
+            header: 'Created At',
+            sortable: true,
             render: (value) => (
                 <span style={{ fontSize: '12px', color: 'var(--gray-500)' }}>{fmtDate(value)}</span>
             ),
@@ -342,16 +312,16 @@ const LeadSource = () => {
                     />
                 </div>
 
-                {/* Sort By dropdown */}
+                {/* Status Filter dropdown */}
                 <select
                     className="form-control"
                     style={{ maxWidth: '150px', fontSize: '13px' }}
-                    value={sortBy}
-                    onChange={(e) => { setSortBy(e.target.value); setPage(0); }}
+                    value={statusFilter}
+                    onChange={handleStatusFilterChange}
                 >
-                    {SORTABLE_COLS.map((c) => (
-                        <option key={c.key} value={c.key}>{c.label}</option>
-                    ))}
+                    <option value="all">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
                 </select>
             </div>
 
@@ -388,6 +358,9 @@ const LeadSource = () => {
                             setSize(newSize);
                             setPage(0);
                         }}
+                        sortBy={sortBy}
+                        sortDirection={sortDirection.toLowerCase()}
+                        onSort={handleSort}
                     />
                 )}
             </div>

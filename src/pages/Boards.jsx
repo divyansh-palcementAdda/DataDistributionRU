@@ -3,14 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import CustomButton from '../component/reusable/CustomButton';
 import ReusableTable from '../component/reusable/table';
 import Toggle from '../component/reusable/custumToggle';
-import { getAllCourses, toggleCourseStatus, deleteCourse } from '../Services/course/course';
 import { toast } from 'react-toastify';
-import AddCourseModal from '../component/reusable/course/addCourseModel';
+import AddBoardModal from '../component/reusable/board/addBoardModel';
 import DeleteModal from '../component/reusable/deleteModel';
+import { getAllBoards, deleteBoard, toggleBoardStatus } from '../Services/Boards/boardsService';
 
-const Courses = () => {
+const Boards = () => {
   const navigate = useNavigate();
-  const [courses, setCourses] = useState([]);
+  const [boards, setBoards] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -27,10 +27,10 @@ const Courses = () => {
   const [sortBy, setSortBy] = useState("");
   const [sortDirection, setSortDirection] = useState("asc");
 
-  const fetchCourses = async () => {
+  const fetchBoards = async () => {
     try {
       setLoading(true);
-      const res = await getAllCourses({
+      const res = await getAllBoards({
         page: currentPage - 1,
         size: rowsPerPage,
         search: debouncedSearch,
@@ -38,17 +38,11 @@ const Courses = () => {
         sortDirection,
       });
 
-      if (res?.success && res?.data) {
-        setCourses(res.data.content || []);
-        setTotalPages(res.data.totalPages || 0);
-        setTotalElements(res.data.totalElements || 0);
-      } else {
-        setCourses(res?.content || res?.data || res || []);
-        setTotalPages(res?.totalPages || 0);
-        setTotalElements(res?.totalElements || 0);
-      }
+      setBoards(res.data?.content || []);
+      setTotalPages(res.data?.totalPages || 0);
+      setTotalElements(res.data?.totalElements || 0);
     } catch (error) {
-      toast.error(error.message || "Failed to fetch courses");
+      toast.error(error.message || "Failed to fetch boards");
     } finally {
       setLoading(false);
     }
@@ -58,20 +52,24 @@ const Courses = () => {
     const timer = setTimeout(() => {
       setDebouncedSearch(search);
       setCurrentPage(1);
-    }, 500); // 500ms delay
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [search]);
 
   useEffect(() => {
-    fetchCourses();
+    fetchBoards();
   }, [currentPage, rowsPerPage, debouncedSearch, sortBy, sortDirection]);
 
   const handleToggleStatus = async (id, currentStatus) => {
     try {
-      await toggleCourseStatus(id);
-      toast.success("Status updated successfully");
-      fetchCourses();
+      const response = await toggleBoardStatus(id);
+      if (response.success) {
+        toast.success("Status updated successfully");
+        fetchBoards();
+      } else {
+        toast.error(response.message || "Failed to update status");
+      }
     } catch (error) {
       toast.error(error.message || "Failed to update status");
     }
@@ -86,13 +84,17 @@ const Courses = () => {
     if (!itemToDelete) return;
     try {
       setIsDeleting(true);
-      await deleteCourse(itemToDelete.id);
-      toast.success("Course deleted successfully");
-      fetchCourses();
-      setIsDeleteModalOpen(false);
-      setItemToDelete(null);
+      const response = await deleteBoard(itemToDelete.id);
+      if (response.success) {
+        toast.success("Board deleted successfully");
+        fetchBoards();
+        setIsDeleteModalOpen(false);
+        setItemToDelete(null);
+      } else {
+        toast.error(response.message || "Failed to delete board");
+      }
     } catch (error) {
-      toast.error(error.message || "Failed to delete course");
+      toast.error(error.message || "Failed to delete board");
     } finally {
       setIsDeleting(false);
     }
@@ -111,14 +113,14 @@ const Courses = () => {
       sortable: false,
       render: (_, row, index) => (currentPage - 1) * rowsPerPage + index + 1
     },
-    { key: "courseName", header: "Name" },
+    { key: "name", header: "Name" },
     { key: "description", header: "Description" },
     {
       key: "status",
       header: "Status",
       render: (status, row) => (
         <Toggle
-          checked={status === 'ACTIVE' || status === true}
+          checked={row.active === true || status === 'ACTIVE'}
           onChange={() => handleToggleStatus(row.id, status)}
         />
       )
@@ -126,26 +128,24 @@ const Courses = () => {
   ];
 
   return (
-    <div className="block p-4 sm:p-6 p-0" id="page-courses">
+    <div className="block p-4 sm:p-6 p-0" id="page-boards">
       {/* Page Header */}
       <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Courses</h1>
-          <p className="text-sm text-gray-500 mt-1">Manage course catalog and enrollment data</p>
+          <h1 className="text-2xl font-bold text-gray-900">Boards</h1>
+          <p className="text-sm text-gray-500 mt-1">Manage education boards and affiliations</p>
         </div>
-
-
 
         <input
           type="text"
-          placeholder="Search courses..."
+          placeholder="Search boards..."
           value={search}
           onChange={handleSearch}
           className="border border-gray-300 rounded-lg px-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
 
         <CustomButton variant="primary" onClick={() => { setEditData(null); setIsAddModalOpen(true); }} className="text-sm py-2 px-4 shadow-sm hover:shadow-md transition-shadow">
-          + Add Course
+          + Add Board
         </CustomButton>
       </div>
 
@@ -153,7 +153,7 @@ const Courses = () => {
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-1">
         <ReusableTable
           columns={columns}
-          data={courses}
+          data={boards}
           isServerSide={true}
           totalElements={totalElements}
           totalPages={totalPages}
@@ -164,8 +164,8 @@ const Courses = () => {
           sortBy={sortBy}
           sortDirection={sortDirection}
           onSort={handleSort}
-          emptyMessage={loading ? "Loading..." : "No courses found"}
-          onView={(row) => navigate(`/course-details/${row.id}`)}
+          emptyMessage={loading ? "Loading..." : "No boards found"}
+          onView={(row) => navigate(`/board-details/${row.id}`)}
           onEdit={(row) => {
             setEditData(row);
             setIsAddModalOpen(true);
@@ -177,7 +177,7 @@ const Courses = () => {
         />
       </div>
 
-      <AddCourseModal
+      <AddBoardModal
         isOpen={isAddModalOpen}
         onClose={() => {
           setIsAddModalOpen(false);
@@ -187,7 +187,7 @@ const Courses = () => {
         onSubmit={() => {
           setIsAddModalOpen(false);
           setEditData(null);
-          fetchCourses();
+          fetchBoards();
         }}
       />
 
@@ -198,12 +198,12 @@ const Courses = () => {
           setItemToDelete(null);
         }}
         onConfirm={handleDeleteConfirm}
-        title="Delete Course"
-        message={`Are you sure you want to delete the course "${itemToDelete?.name}"?`}
+        title="Delete Board"
+        message={`Are you sure you want to delete the board "${itemToDelete?.name}"?`}
         isLoading={isDeleting}
       />
     </div>
   );
 };
 
-export default Courses;
+export default Boards;

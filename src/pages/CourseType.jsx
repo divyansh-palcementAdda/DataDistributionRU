@@ -26,6 +26,8 @@ const CourseType = () => {
 
     const [search, setSearch] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
+    const [sortBy, setSortBy] = useState("");
+    const [sortDirection, setSortDirection] = useState("asc");
 
     const fetchCourses = async () => {
         try {
@@ -34,6 +36,8 @@ const CourseType = () => {
                 page: currentPage - 1,
                 size: rowsPerPage,
                 search: debouncedSearch,
+                sortBy,
+                sortDirection,
             });
 
             if (res?.success && res?.data) {
@@ -63,7 +67,7 @@ const CourseType = () => {
 
     useEffect(() => {
         fetchCourses();
-    }, [currentPage, rowsPerPage, debouncedSearch]);
+    }, [currentPage, rowsPerPage, debouncedSearch, sortBy, sortDirection]);
 
     const handleSearch = (e) => {
         setSearch(e.target.value);
@@ -96,7 +100,19 @@ const CourseType = () => {
         }
     };
 
+    const handleSort = (columnKey, direction) => {
+        setSortBy(columnKey);
+        setSortDirection(direction);
+        setCurrentPage(1);
+    };
+
     const columns = [
+        {
+            key: "sno",
+            header: "S.no",
+            sortable: false,
+            render: (_, row, index) => (currentPage - 1) * rowsPerPage + index + 1
+        },
         { key: "name", header: "Name" },
         { key: "description", header: "Description" },
         {
@@ -146,8 +162,11 @@ const CourseType = () => {
                     rowsPerPage={rowsPerPage}
                     onPageChange={setCurrentPage}
                     onRowsPerPageChange={setRowsPerPage}
+                    sortBy={sortBy}
+                    sortDirection={sortDirection}
+                    onSort={handleSort}
                     emptyMessage={loading ? "Loading..." : "No course types found"}
-                    onView={(row) => navigate(`/courses-types/${row.id}`)}
+                    onView={(row) => navigate(`/course-types/${row.id}`)}
                     onEdit={(row) => {
                         setEditData(row);
 

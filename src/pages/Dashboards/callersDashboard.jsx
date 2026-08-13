@@ -146,7 +146,11 @@ const CallersDashboard = () => {
   const leadColumns = [
     { key: 'name', header: 'Lead Name' },
     { key: 'phone', header: 'Phone' },
-    { key: 'course', header: 'Course' },
+    { 
+      key: 'course', 
+      header: 'Course',
+      render: (value) => value?.courseName || value || '—'
+    },
     { 
       key: 'status', 
       header: 'Status',
@@ -166,7 +170,11 @@ const CallersDashboard = () => {
         );
       }
     },
-    { key: 'source', header: 'Source' },
+    { 
+      key: 'source', 
+      header: 'Source',
+      render: (value) => value?.name || '—'
+    },
     { 
       key: 'followup', 
       header: 'Follow-up',
@@ -177,7 +185,11 @@ const CallersDashboard = () => {
   // Table columns for follow-ups
   const followupColumns = [
     { key: 'name', header: 'Lead Name' },
-    { key: 'course', header: 'Course' },
+    { 
+      key: 'course', 
+      header: 'Course',
+      render: (value) => value?.courseName || value || '—'
+    },
     { key: 'time', header: 'Scheduled Time' },
     { key: 'type', header: 'Type' },
     { 

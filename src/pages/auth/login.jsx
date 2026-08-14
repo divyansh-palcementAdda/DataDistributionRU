@@ -4,9 +4,12 @@ import { login } from "../../Services/auth/login";
 import { getRolePermissions } from "../../Services/role/roleService";
 import { toast } from "react-toastify";
 import Cookies from "js-cookie";
+import { useAppContext } from "../../AppContext";
+import { usePermissions } from "../../PermissionContext";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { setPermissionsData } = usePermissions();
   const [form, setForm] = useState({ email: "", password: "" });
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -40,6 +43,8 @@ const Login = () => {
         Cookies.set('accessToken', response.data.data.accessToken);
         Cookies.set('refreshToken', response.data.data.refreshToken);
 
+        console.log('Login response data:', response.data.data);
+
         // Store role information
         const roleName = response.data.data.role?.name;
         localStorage.setItem('userRole', roleName);
@@ -47,15 +52,28 @@ const Login = () => {
 
         // Fetch permissions using roleId
         const roleId = response.data.data.role?.id;
+        console.log('Role ID:', roleId);
         if (roleId) {
           try {
             const permissionsResponse = await getRolePermissions(roleId);
+            console.log('Permissions API Response:', permissionsResponse);
             if (permissionsResponse && permissionsResponse.status === 200) {
-              localStorage.setItem('permissions', JSON.stringify(permissionsResponse.data.data || permissionsResponse.data));
+              const permissionsData = permissionsResponse.data.data || permissionsResponse.data;
+              console.log('Permissions Data:', permissionsData);
+              if (Array.isArray(permissionsData)) {
+                console.log('Setting permissions after login:', permissionsData);
+                setPermissionsData(permissionsData);
+              } else {
+                console.log('Permissions data is not an array:', permissionsData);
+              }
+            } else {
+              console.log('Permissions API status not 200:', permissionsResponse?.status);
             }
           } catch (err) {
             console.error("Failed to fetch permissions:", err);
           }
+        } else {
+          console.log('No role ID found');
         }
 
         // Role-based routing

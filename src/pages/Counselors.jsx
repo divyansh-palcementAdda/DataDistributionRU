@@ -68,8 +68,8 @@ const Counselors = () => {
     setLoading(true);
     try {
       const res = await getAllCounselors({
-        roleName: 'COUNSLER',
-        roleNames: "COUNSLER",
+        roleName: 'COUNSELOR',
+        roleNames: "COUNSELOR",
         page,
         size,
         sortBy,

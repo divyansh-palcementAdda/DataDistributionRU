@@ -67,6 +67,7 @@ const logoutUser = async () => {
 
   try {
     const accessToken = Cookies.get("accessToken");
+    const refreshToken = Cookies.get("refreshToken");
     const tokenType =
       Cookies.get("tokenType") || "Bearer";
 
@@ -74,7 +75,7 @@ const logoutUser = async () => {
     if (accessToken) {
       await axios.post(
         `${BASE_URL}api/auth/logout`,
-        {},
+        { refreshToken },
         {
           headers: {
             Authorization: `${tokenType} ${accessToken}`,

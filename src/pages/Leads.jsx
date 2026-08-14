@@ -4,6 +4,7 @@ import { statusConfig } from '../mockData';
 import { getAllLeads, deleteLead } from '../Services/lead/leadService';
 import { getAllCourses } from '../Services/course/course';
 import { useAppContext } from '../AppContext';
+import { usePermissions } from '../PermissionContext';
 import ReusableTable from '../component/reusable/table';
 import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import DeleteModal from "../component/reusable/deleteModel"
@@ -26,6 +27,7 @@ const COURSES = ['All Courses'];
 
 const Leads = () => {
   const { openAddLeadModal, navTo, showToast } = useAppContext();
+  const { canCreate, canUpdate, canDelete, canRead, hasPermission } = usePermissions();
 
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -287,39 +289,43 @@ const Leads = () => {
         </div>
         <div className="flex gap-2">
           {/* Export */}
-          <button
-            className="btn btn-secondary btn-sm flex items-center gap-1.5"
-          >
-            <svg
-              width="13"
-              height="13"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
+          {canRead('LEAD') && (
+            <button
+              className="btn btn-secondary btn-sm flex items-center gap-1.5"
             >
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
-            </svg>
-            Export
-          </button>
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+              </svg>
+              Export
+            </button>
+          )}
           {/* Add Lead */}
-          <button
-            className="btn btn-primary btn-sm flex items-center gap-1.5"
-            onClick={() => openAddLeadModal()}
-          >
-            <svg
-              width="13"
-              height="13"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
+          {canCreate('LEAD') && (
+            <button
+              className="btn btn-primary btn-sm flex items-center gap-1.5"
+              onClick={() => openAddLeadModal()}
             >
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            Add Lead
-          </button>
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Add Lead
+            </button>
+          )}
         </div>
       </div>
 
@@ -578,30 +584,36 @@ const Leads = () => {
                   >
                     <FiMessageSquare size={18} />
                   </button>
-                  <button
-                    className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer"
-                    title="View"
-                    onClick={() => navTo(`lead-detail/${safeRow?.id ?? safeRow?.leadId}`)}
-                  >
-                    <FiEye size={18} />
-                  </button>
-                  <button
-                    className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer"
-                    title="Edit"
-                    onClick={() => openAddLeadModal(safeRow)}
-                  >
-                    <FiEdit size={18} />
-                  </button>
-                  <button
-                    className="text-red-500 hover:text-red-700 transition bg-transparent border-none cursor-pointer"
-                    title="Delete"
-                    onClick={() => {
-                      console.log("Inline delete button clicked for row:", safeRow);
-                      openDeleteModal(safeRow);
-                    }}
-                  >
-                    <FiTrash2 size={18} />
-                  </button>
+                  {canRead('LEAD') && (
+                    <button
+                      className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer"
+                      title="View"
+                      onClick={() => navTo(`lead-detail/${safeRow?.id ?? safeRow?.leadId}`)}
+                    >
+                      <FiEye size={18} />
+                    </button>
+                  )}
+                  {canUpdate('LEAD') && (
+                    <button
+                      className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer"
+                      title="Edit"
+                      onClick={() => openAddLeadModal(safeRow)}
+                    >
+                      <FiEdit size={18} />
+                    </button>
+                  )}
+                  {canDelete('LEAD') && (
+                    <button
+                      className="text-red-500 hover:text-red-700 transition bg-transparent border-none cursor-pointer"
+                      title="Delete"
+                      onClick={() => {
+                        console.log("Inline delete button clicked for row:", safeRow);
+                        openDeleteModal(safeRow);
+                      }}
+                    >
+                      <FiTrash2 size={18} />
+                    </button>
+                  )}
                 </div>
               );
             }}

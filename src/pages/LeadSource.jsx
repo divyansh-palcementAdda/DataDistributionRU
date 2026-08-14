@@ -268,7 +268,7 @@ const LeadSource = () => {
             >
                 <div>
                     <h1 style={{ fontSize: '22px', fontWeight: '700', color: 'var(--gray-900)' }}>
-                        Lead Sources
+                        Data Source
                     </h1>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>

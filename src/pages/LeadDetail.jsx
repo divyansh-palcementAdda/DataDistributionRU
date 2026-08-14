@@ -41,42 +41,20 @@ const LeadDetail = () => {
   }, [id]);
 
   useEffect(() => {
-    // Static data for lead status history (since API is not available yet)
-    const staticStatusHistory = [
-      {
-        status: 'Connected',
-        changedAt: '2025-06-15T10:30:00',
-        changedBy: { firstName: 'Rahul', lastName: 'Sharma', username: 'rahul.s' },
-        remarks: 'Initial contact made via phone call'
-      },
-      {
-        status: 'Interested',
-        changedAt: '2025-06-16T14:45:00',
-        changedBy: { firstName: 'Rahul', lastName: 'Sharma', username: 'rahul.s' },
-        remarks: 'Showed interest in Full Stack Development course'
-      },
-      {
-        status: 'Follow Up',
-        changedAt: '2025-06-18T11:00:00',
-        changedBy: { firstName: 'Priya', lastName: 'Singh', username: 'priya.s' },
-        remarks: 'Scheduled follow-up for course details discussion'
-      },
-      {
-        status: 'Not Connected',
-        changedAt: '2025-06-20T16:30:00',
-        changedBy: { firstName: 'Amit', lastName: 'Kumar', username: 'amit.k' },
-        remarks: 'Call not answered, left voicemail'
-      },
-      {
-        status: 'Interested',
-        changedAt: '2025-06-22T09:15:00',
-        changedBy: { firstName: 'Rahul', lastName: 'Sharma', username: 'rahul.s' },
-        remarks: 'Lead responded positively, ready for enrollment'
-      }
-    ];
-    setStatusHistory(staticStatusHistory);
+    // Show only current status from API
+    if (leadDetails?.currentStatus) {
+      const currentStatusEntry = {
+        status: leadDetails.currentStatus,
+        changedAt: leadDetails.updatedAt || leadDetails.createdAt,
+        changedBy: leadDetails.createdBy,
+        remarks: 'Current status'
+      };
+      setStatusHistory([currentStatusEntry]);
+    } else {
+      setStatusHistory([]);
+    }
     setStatusHistoryLoading(false);
-  }, [id]);
+  }, [id, leadDetails]);
 
   // Course database for search
   const courseDatabase = [
@@ -129,6 +107,8 @@ const LeadDetail = () => {
         return 'bg-blue-100 text-blue-700';
       case 'follow up':
         return 'bg-orange-100 text-orange-700';
+      case 'raw':
+        return 'bg-purple-100 text-purple-700';
       default:
         return 'bg-gray-100 text-gray-700';
     }
@@ -143,12 +123,19 @@ const LeadDetail = () => {
     {
       key: 'status',
       header: 'Status',
-      render: (value) => {
+      render: (value, row, index) => {
         const statusValue = typeof value === 'object' ? value?.name || value?.code || '-' : value || '-';
         return (
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(statusValue)}`}>
-            {statusValue}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(statusValue)}`}>
+              {statusValue}
+            </span>
+            {index === 0 && (
+              <span className="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full border border-green-200">
+                Current
+              </span>
+            )}
+          </div>
         );
       }
     },

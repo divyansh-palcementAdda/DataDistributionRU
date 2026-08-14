@@ -103,6 +103,16 @@ const ApiRoutes = {
         update: '/api/boards/{id}',
         delete: '/api/boards/{id}',
         toggle: '/api/boards/{id}/toggle-active'
+    },
+
+    Dashboard: {
+        leadStatus: '/api/dashboard/lead-status',
+        leadSource: '/api/dashboard/lead-source',
+        grade:'/api/dashboard/grade',
+        course:'/api/dashboard/course',
+        board:'/api/dashboard/board',
+        recentActivity: '/api/dashboard/recent-activity',
+        summary: '/api/dashboard/summary',
     }
 }
 

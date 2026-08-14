@@ -404,14 +404,20 @@ const Leads = () => {
                   />
                 ),
                 sortable: false,
-                render: (value, row) => (
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.includes(row.id || row.leadId)}
-                    onChange={(e) => handleSelectRow(row.id || row.leadId, e.target.checked)}
-                    className="cursor-pointer"
-                  />
-                ),
+                render: (value, row) => {
+                  const rowId = typeof row.id === 'object' ? row.id?.id : row.id;
+                  const rowLeadId = typeof row.leadId === 'object' ? row.leadId?.id : row.leadId;
+                  const idToUse = rowId || rowLeadId;
+                  
+                  return (
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(idToUse)}
+                      onChange={(e) => handleSelectRow(idToUse, e.target.checked)}
+                      className="cursor-pointer"
+                    />
+                  );
+                },
               },
               {
                 key: 'sno',
@@ -419,59 +425,126 @@ const Leads = () => {
                 sortable: false,
                 render: (value, row, index) => {
                   const serialNumber = (page * size) + index + 1;
-                  return <span className="font-semibold text-gray-700">{serialNumber}</span>;
+                  return <span className="font-semibold text-gray-700">{typeof serialNumber === 'number' ? serialNumber : 'N/A'}</span>;
                 },
               },
               {
                 key: 'leadCode',
                 header: 'Lead Code',
-                render: (value) => <span className="font-semibold text-blue-600">{value}</span>,
+                render: (value, row) => {
+                  // Handle both value parameter and row.leadCode
+                  const leadCodeValue = value || row.leadCode;
+                  let displayValue = 'N/A';
+                  
+                  if (typeof leadCodeValue === 'object' && leadCodeValue !== null) {
+                    displayValue = leadCodeValue?.code || leadCodeValue?.name || 'N/A';
+                  } else if (typeof leadCodeValue === 'string') {
+                    displayValue = leadCodeValue;
+                  } else if (leadCodeValue === null || leadCodeValue === undefined) {
+                    displayValue = 'N/A';
+                  }
+                  
+                  return <span className="font-semibold text-blue-600">{displayValue}</span>;
+                },
               },
               {
                 key: 'lead',
                 header: 'Lead Info',
                 render: (value, row) => (
                   <div>
-                    <div className="font-semibold text-gray-800">{row.fullName}</div>
+                    <div className="font-semibold text-gray-800">
+                      {typeof row.fullName === 'object' ? row.fullName?.name || row.fullName?.firstName || 'N/A' : row.fullName || 'N/A'}
+                    </div>
                   </div>
                 ),
               },
               { 
                 key: 'courseInterested', 
                 header: 'Course',
-                render: (value) => value?.courseName || value || 'N/A',
+                render: (value, row) => {
+                  // Handle both value parameter and row.courseInterested
+                  const courseValue = value || row.courseInterested;
+                  let displayValue = 'N/A';
+                  
+                  if (typeof courseValue === 'object' && courseValue !== null) {
+                    displayValue = courseValue?.courseName || courseValue?.name || 'N/A';
+                  } else if (typeof courseValue === 'string') {
+                    displayValue = courseValue;
+                  } else if (courseValue === null || courseValue === undefined) {
+                    displayValue = 'N/A';
+                  }
+                  
+                  return displayValue;
+                },
               },
               {
                 key: 'source',
                 header: 'Source',
-                render: (value, row) => row.source?.name || 'N/A',
+                render: (value, row) => {
+                  if (typeof row.source === 'object' && row.source !== null) {
+                    return row.source?.name || 'N/A';
+                  }
+                  return row.source || 'N/A';
+                },
               },
               {
                 key: 'currentStatus',
                 header: 'Status',
-                render: (value, row) => (
-                  <span className="badge bg-slate-200 text-slate-800 px-2 py-1 rounded text-xs font-medium">
-                    {row.currentStatus}
-                  </span>
-                ),
+                render: (value, row) => {
+                  // Handle both value parameter and row.currentStatus
+                  const statusValue = value || row.currentStatus;
+                  let displayValue = 'N/A';
+                  
+                  if (typeof statusValue === 'object' && statusValue !== null) {
+                    displayValue = statusValue?.name || statusValue?.code || 'N/A';
+                  } else if (typeof statusValue === 'string') {
+                    displayValue = statusValue;
+                  } else if (statusValue === null || statusValue === undefined) {
+                    displayValue = 'N/A';
+                  }
+                  
+                  return (
+                    <span className="badge bg-slate-200 text-slate-800 px-2 py-1 rounded text-xs font-medium">
+                      {displayValue}
+                    </span>
+                  );
+                },
               },
               {
                 key: 'assignedTo',
                 header: 'Counselor',
-                render: (value, row) =>
-                  row.assignedTo ? `${row.assignedTo.firstName} ${row.assignedTo.lastName}` : 'Not Allotted',
+                render: (value, row) => {
+                  if (typeof row.assignedTo === 'object' && row.assignedTo !== null) {
+                    return `${row.assignedTo.firstName || ''} ${row.assignedTo.lastName || ''}`.trim() || 'Not Allotted';
+                  }
+                  return row.assignedTo || 'Not Allotted';
+                },
               },
               {
                 key: 'nextFollowUpDate',
                 header: 'Follow-up',
-                render: (value, row) =>
-                  row.nextFollowUpDate ? new Date(row.nextFollowUpDate).toLocaleDateString() : 'None',
+                render: (value, row) => {
+                  const followUpDate = row.nextFollowUpDate;
+                  if (followUpDate) {
+                    try {
+                      return new Date(followUpDate).toLocaleDateString();
+                    } catch (e) {
+                      return 'Invalid Date';
+                    }
+                  }
+                  return 'None';
+                },
               },
               {
                 key: 'createdBy',
                 header: 'Created By',
-                render: (value, row) =>
-                  row.createdBy ? `${row.createdBy.firstName} ${row.createdBy.lastName}` : 'N/A',
+                render: (value, row) => {
+                  const createdByValue = value || row.createdBy;
+                  if (typeof createdByValue === 'object' && createdByValue !== null) {
+                    return `${createdByValue.firstName || ''} ${createdByValue.lastName || ''}`.trim() || 'N/A';
+                  }
+                  return createdByValue || 'N/A';
+                },
               },
             ]}
             data={leadsData}
@@ -488,41 +561,50 @@ const Leads = () => {
             sortBy={sortBy}
             sortDirection={sortDirection}
             onSort={handleSort}
-            actions={(row) => (
-              <div className="flex justify-center items-center gap-3">
-                <button
-                  className="text-blue-500 hover:text-blue-700 transition bg-transparent border-none cursor-pointer"
-                  title="Remark"
-                  onClick={() => openRemarkModal(row)}
-                >
-                  <FiMessageSquare size={18} />
-                </button>
-                <button
-                  className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer"
-                  title="View"
-                  onClick={() => navTo(`lead-detail/${row?.id ?? row?.leadId}`)}
-                >
-                  <FiEye size={18} />
-                </button>
-                <button
-                  className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer"
-                  title="Edit"
-                  onClick={() => openAddLeadModal(row)}
-                >
-                  <FiEdit size={18} />
-                </button>
-                <button
-                  className="text-red-500 hover:text-red-700 transition bg-transparent border-none cursor-pointer"
-                  title="Delete"
-                  onClick={() => {
-                    console.log("Inline delete button clicked for row:", row);
-                    openDeleteModal(row);
-                  }}
-                >
-                  <FiTrash2 size={18} />
-                </button>
-              </div>
-            )}
+            actions={(row) => {
+              // Ensure row IDs are handled properly
+              const safeRow = {
+                ...row,
+                id: typeof row.id === 'object' ? row.id?.id : row.id,
+                leadId: typeof row.leadId === 'object' ? row.leadId?.id : row.leadId
+              };
+              
+              return (
+                <div className="flex justify-center items-center gap-3">
+                  <button
+                    className="text-blue-500 hover:text-blue-700 transition bg-transparent border-none cursor-pointer"
+                    title="Remark"
+                    onClick={() => openRemarkModal(safeRow)}
+                  >
+                    <FiMessageSquare size={18} />
+                  </button>
+                  <button
+                    className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer"
+                    title="View"
+                    onClick={() => navTo(`lead-detail/${safeRow?.id ?? safeRow?.leadId}`)}
+                  >
+                    <FiEye size={18} />
+                  </button>
+                  <button
+                    className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer"
+                    title="Edit"
+                    onClick={() => openAddLeadModal(safeRow)}
+                  >
+                    <FiEdit size={18} />
+                  </button>
+                  <button
+                    className="text-red-500 hover:text-red-700 transition bg-transparent border-none cursor-pointer"
+                    title="Delete"
+                    onClick={() => {
+                      console.log("Inline delete button clicked for row:", safeRow);
+                      openDeleteModal(safeRow);
+                    }}
+                  >
+                    <FiTrash2 size={18} />
+                  </button>
+                </div>
+              );
+            }}
             emptyMessage={loading ? "Loading..." : "No leads match your filters."}
           />
         </div>

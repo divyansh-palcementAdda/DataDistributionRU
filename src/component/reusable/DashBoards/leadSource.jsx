@@ -50,6 +50,9 @@ const LeadSource = ({ data = {} }) => {
     },
   ];
 
+  // Filter cards to only show those with data > 0
+  const cardsWithData = cardConfig.filter(card => data[card.key] !== undefined && data[card.key] > 0);
+
   return (
     <div style={{ marginBottom: '24px' }}>
       <h2 style={{ 
@@ -60,8 +63,36 @@ const LeadSource = ({ data = {} }) => {
       }}>
         Lead Source
       </h2>
-      <div className="lead-source-responsive-grid" style={gridStyle}>
-        {cardConfig.map((card) => (
+      
+      {cardsWithData.length === 0 ? (
+        <div style={{
+          background: '#ffffff',
+          borderRadius: '12px',
+          padding: '40px 20px',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+          border: '1px solid #e5e7eb',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '12px',
+        }}>
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <div style={{
+            fontSize: '16px',
+            fontWeight: '600',
+            color: '#94a3b8',
+          }}>
+            No Data Available
+          </div>
+        </div>
+      ) : (
+        <div className="lead-source-responsive-grid" style={gridStyle}>
+          {cardsWithData.map((card) => (
           <div
             key={card.key}
             style={{
@@ -86,44 +117,56 @@ const LeadSource = ({ data = {} }) => {
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '12px',
-              marginBottom: '8px',
+              justifyContent: 'space-between',
+              height: '100%',
             }}>
-              <div
-                style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '10px',
-                  background: card.iconBg,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}
-              >
-                <div style={{ color: card.iconStroke }}>
-                  {card.icon}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                flex: 1,
+                minWidth: 0,
+              }}>
+                <div
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '10px',
+                    background: card.iconBg,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <div style={{ color: card.iconStroke }}>
+                    {card.icon}
+                  </div>
+                </div>
+                <div style={{
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#1e293b',
+                  lineHeight: '1.3',
+                  flex: 1,
+                }}>
+                  {card.label}
                 </div>
               </div>
               <div style={{
-                fontSize: '14px',
-                fontWeight: '600',
+                fontSize: '28px',
+                fontWeight: '700',
                 color: '#1e293b',
-                lineHeight: '1.3',
+                flexShrink: 0,
+                marginLeft: '12px',
               }}>
-                {card.label}
+                {data[card.key].toLocaleString()}
               </div>
-            </div>
-            <div style={{
-              fontSize: '28px',
-              fontWeight: '700',
-              color: '#1e293b',
-            }}>
-              {data[card.key] !== undefined ? data[card.key].toLocaleString() : '0'}
             </div>
           </div>
         ))}
-      </div>
+        </div>
+      )}
       <style>{`
         @media (max-width: 1200px) {
           .lead-source-responsive-grid {

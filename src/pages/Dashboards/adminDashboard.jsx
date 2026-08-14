@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { leads, counselors, followups, funnelData, statusConfig } from '../../mockData';
 import {
   Chart as ChartJS,
@@ -18,6 +18,8 @@ import SystemCards from '../../component/reusable/DashBoards/SystemCards';
 import CategorywiseCard from '../../component/reusable/DashBoards/categorywiseCard';
 import BoardWiseCard from '../../component/reusable/DashBoards/BoardWiseCard';
 import GradWiseCard from '../../component/reusable/DashBoards/gradWiseCard';
+import { getLeadSourceBreakdown, getGradeBreakdown, getBoardBreakdown } from '../../Services/cards/cardService';
+import { getRecentActivity, getDashboardSummary } from '../../Services/Dashboard/Dashboard';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend);
 
@@ -81,6 +83,229 @@ const todayFollowups = followups.filter((f) => f.status === 'today');
 
 const Dashboard = () => {
   const { openAddLeadModal, navTo } = useAppContext();
+  const [leadSourceData, setLeadSourceData] = useState({
+    totalConsultantData: 0,
+    totalInboundData: 0,
+    totalOutboundData: 0,
+  });
+  
+  const [gradWiseData, setGradWiseData] = useState({
+    aGradData: 0,
+    bGradData: 0,
+    cGradData: 0,
+  });
+  
+  const [boardWiseData, setBoardWiseData] = useState({
+    cbseData: 0,
+    mpBoardData: 0,
+    otherBoard: 0,
+  });
+
+  const [recentActivityData, setRecentActivityData] = useState([]);
+  const [dashboardSummaryData, setDashboardSummaryData] = useState(null);
+
+  // Fetch lead source data from API
+  useEffect(() => {
+    const fetchLeadSourceData = async () => {
+      try {
+        const response = await getLeadSourceBreakdown();
+        console.log('Lead Source API Response:', response);
+        
+        if (response.data && response.data.data) {
+          const apiData = response.data.data;
+          console.log('API Data:', apiData);
+          
+          // Handle if API returns an array of objects
+          if (Array.isArray(apiData)) {
+            if (apiData.length > 0) {
+              // Map the API response to the expected format
+              const mappedData = {
+                totalConsultantData: apiData.find(item => item.source === 'consultant')?.count || 0,
+                totalInboundData: apiData.find(item => item.source === 'inbound')?.count || 0,
+                totalOutboundData: apiData.find(item => item.source === 'outbound')?.count || 0,
+              };
+              setLeadSourceData(mappedData);
+            } else {
+              // API returned empty array - set all to 0
+              console.log('API returned empty array');
+              setLeadSourceData({
+                totalConsultantData: 0,
+                totalInboundData: 0,
+                totalOutboundData: 0,
+              });
+            }
+          } else if (typeof apiData === 'object') {
+            // If API returns an object with the expected keys
+            setLeadSourceData({
+              totalConsultantData: apiData.totalConsultantData || 0,
+              totalInboundData: apiData.totalInboundData || 0,
+              totalOutboundData: apiData.totalOutboundData || 0,
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching lead source data:', error);
+        // Set all to 0 on error
+        setLeadSourceData({
+          totalConsultantData: 0,
+          totalInboundData: 0,
+          totalOutboundData: 0,
+        });
+      }
+    };
+
+    fetchLeadSourceData();
+  }, []);
+
+  // Fetch grade wise data from API
+  useEffect(() => {
+    const fetchGradeWiseData = async () => {
+      try {
+        const response = await getGradeBreakdown();
+        console.log('Grade Wise API Response:', response);
+        
+        if (response.data && response.data.data) {
+          const apiData = response.data.data;
+          console.log('Grade API Data:', apiData);
+          
+          // Handle if API returns an array of objects
+          if (Array.isArray(apiData)) {
+            if (apiData.length > 0) {
+              // Map the API response to the expected format
+              const mappedData = {
+                aGradData: apiData.find(item => item.grade === 'A')?.count || 0,
+                bGradData: apiData.find(item => item.grade === 'B')?.count || 0,
+                cGradData: apiData.find(item => item.grade === 'C')?.count || 0,
+              };
+              setGradWiseData(mappedData);
+            } else {
+              // API returned empty array - set all to 0
+              console.log('Grade API returned empty array');
+              setGradWiseData({
+                aGradData: 0,
+                bGradData: 0,
+                cGradData: 0,
+              });
+            }
+          } else if (typeof apiData === 'object') {
+            // If API returns an object with the expected keys
+            setGradWiseData({
+              aGradData: apiData.aGradData || 0,
+              bGradData: apiData.bGradData || 0,
+              cGradData: apiData.cGradData || 0,
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching grade wise data:', error);
+        // Set all to 0 on error
+        setGradWiseData({
+          aGradData: 0,
+          bGradData: 0,
+          cGradData: 0,
+        });
+      }
+    };
+
+    fetchGradeWiseData();
+  }, []);
+
+  // Fetch board wise data from API
+  useEffect(() => {
+    const fetchBoardWiseData = async () => {
+      try {
+        const response = await getBoardBreakdown();
+        console.log('Board Wise API Response:', response);
+        
+        if (response.data && response.data.data) {
+          const apiData = response.data.data;
+          console.log('Board API Data:', apiData);
+          
+          // Handle if API returns an array of objects
+          if (Array.isArray(apiData)) {
+            if (apiData.length > 0) {
+              // Map the API response to the expected format
+              const cbseCount = apiData.find(item => item.board === 'CBSE')?.count || 0;
+              const mpBoardCount = apiData.find(item => item.board === 'MP Board')?.count || 0;
+              // Calculate other as total minus CBSE and MP Board
+              const totalCount = apiData.reduce((sum, item) => sum + (item.count || 0), 0);
+              const otherCount = totalCount - cbseCount - mpBoardCount;
+              
+              const mappedData = {
+                cbseData: cbseCount,
+                mpBoardData: mpBoardCount,
+                otherBoard: otherCount > 0 ? otherCount : 0,
+              };
+              setBoardWiseData(mappedData);
+            } else {
+              // API returned empty array - set all to 0
+              console.log('Board API returned empty array');
+              setBoardWiseData({
+                cbseData: 0,
+                mpBoardData: 0,
+                otherBoard: 0,
+              });
+            }
+          } else if (typeof apiData === 'object') {
+            // If API returns an object with the expected keys
+            setBoardWiseData({
+              cbseData: apiData.cbseData || 0,
+              mpBoardData: apiData.mpBoardData || 0,
+              otherBoard: apiData.otherBoard || 0,
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching board wise data:', error);
+        // Set all to 0 on error
+        setBoardWiseData({
+          cbseData: 0,
+          mpBoardData: 0,
+          otherBoard: 0,
+        });
+      }
+    };
+
+    fetchBoardWiseData();
+  }, []);
+
+  // Fetch recent activity data from API
+  useEffect(() => {
+    const fetchRecentActivity = async () => {
+      try {
+        const response = await getRecentActivity();
+        console.log('Recent Activity API Response:', response);
+        
+        if (response && response.data) {
+          setRecentActivityData(response.data);
+        }
+      } catch (error) {
+        console.error('Error fetching recent activity data:', error);
+        setRecentActivityData([]);
+      }
+    };
+
+    fetchRecentActivity();
+  }, []);
+
+  // Fetch dashboard summary data from API
+  useEffect(() => {
+    const fetchDashboardSummary = async () => {
+      try {
+        const response = await getDashboardSummary();
+        console.log('Dashboard Summary API Response:', response);
+        
+        if (response && response.data) {
+          setDashboardSummaryData(response.data);
+        }
+      } catch (error) {
+        console.error('Error fetching dashboard summary data:', error);
+        setDashboardSummaryData(null);
+      }
+    };
+
+    fetchDashboardSummary();
+  }, []);
 
   // Calculate data for LeadCards
   const leadCardsData = useMemo(() => {
@@ -113,14 +338,7 @@ const Dashboard = () => {
     };
   }, [leads]);
 
-  // Calculate data for LeadSource
-  const leadSourceData = useMemo(() => {
-    return {
-      totalConsultantData: leads.filter(l => l.source === 'consultant').length,
-      totalInboundData: leads.filter(l => l.source === 'inbound').length,
-      totalOutboundData: leads.filter(l => l.source === 'outbound').length,
-    };
-  }, [leads]);
+
 
   // Calculate data for SystemCards
   const systemCardsData = useMemo(() => {
@@ -139,23 +357,9 @@ const Dashboard = () => {
     };
   }, [leads]);
 
-  // Calculate data for BoardWiseCard
-  const boardWiseData = useMemo(() => {
-    return {
-      cbseData: leads.filter(l => l.board === 'CBSE').length,
-      mpBoardData: leads.filter(l => l.board === 'MP Board').length,
-      otherBoard: leads.filter(l => l.board !== 'CBSE' && l.board !== 'MP Board').length,
-    };
-  }, [leads]);
 
-  // Calculate data for GradWiseCard
-  const gradWiseData = useMemo(() => {
-    return {
-      aGradData: leads.filter(l => l.grade === 'A').length,
-      bGradData: leads.filter(l => l.grade === 'B').length,
-      cGradData: leads.filter(l => l.grade === 'C').length,
-    };
-  }, [leads]);
+
+
 
   return (
     <div>
@@ -229,7 +433,7 @@ const Dashboard = () => {
                   Total Counsellors Logged Today
                 </div>
                 <div style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
-                  {counselors.filter(c => c.pending > 0).length}
+                  {dashboardSummaryData?.counsellorsLoggedToday || 0}
                 </div>
               </div>
 
@@ -261,7 +465,7 @@ const Dashboard = () => {
                   Total Follow-up Scheduled Today
                 </div>
                 <div style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
-                  {todayFollowups.length}
+                  {dashboardSummaryData?.totalFollowUpsToday || 0}
                 </div>
               </div>
 
@@ -291,7 +495,7 @@ const Dashboard = () => {
                   Total Counsellors Currently Working
                 </div>
                 <div style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
-                  {counselors.filter(c => c.followupsDone > 0).length}
+                  {dashboardSummaryData?.counsellorsCurrentlyWorking || 0}
                 </div>
               </div>
 
@@ -321,7 +525,9 @@ const Dashboard = () => {
                   Conversation Ratio
                 </div>
                 <div style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
-                  {leads.length > 0 ? Math.round((leads.filter(l => l.status === 'connected').length / leads.length) * 100) : 0}%
+                  {dashboardSummaryData?.conversationRatio 
+                    ? Math.round(dashboardSummaryData.conversationRatio * 100) + '%' 
+                    : '0%'}
                 </div>
               </div>
 
@@ -353,7 +559,7 @@ const Dashboard = () => {
                   Total Data in System
                 </div>
                 <div style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
-                  {leads.length}
+                  {dashboardSummaryData?.totalLeads || 0}
                 </div>
               </div>
             </div>
@@ -411,298 +617,163 @@ const Dashboard = () => {
 
             {/* Activity List */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-              {/* Activity Item 1 */}
-              <div style={{
-                display: 'flex',
-                gap: '12px',
-                padding: '12px',
-                borderRadius: '8px',
-                background: '#f8fafc',
-                transition: 'background 0.2s'
-              }}>
-                <div style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '8px',
-                  background: '#dbeafe',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0
-                }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2">
-                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-                    <polyline points="14 2 14 8 20 8" />
-                    <line x1="16" y1="13" x2="8" y2="13" />
-                    <line x1="16" y1="17" x2="8" y2="17" />
-                    <polyline points="10 9 9 9 8 9" />
-                  </svg>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    marginBottom: '4px'
-                  }}>
-                    <span style={{
-                      fontSize: '13px',
-                      fontWeight: '600',
-                      color: '#1e293b'
-                    }}>
-                      New Lead Added
-                    </span>
-                    <span style={{
-                      fontSize: '11px',
-                      color: '#64748b'
-                    }}>
-                      4 mins ago
-                    </span>
-                  </div>
-                  <p style={{
-                    fontSize: '12px',
-                    color: '#64748b',
-                    margin: 0,
-                    lineHeight: '1.4'
-                  }}>
-                    New lead added: Abhay Ahirwar from Inbound source - Status: Raw
-                  </p>
-                </div>
-              </div>
+              {recentActivityData.length > 0 ? (
+                recentActivityData.map((activity, index) => {
+                  // Determine icon and background color based on activity type
+                  const getActivityIcon = () => {
+                    if (activity.feedback && activity.feedback.toLowerCase().includes('registered')) {
+                      return {
+                        bg: '#dcfce7',
+                        stroke: '#16a34a',
+                        icon: (
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
+                            <polyline points="22 4 12 14.01 9 11.01" />
+                          </svg>
+                        )
+                      };
+                    } else if (activity.newStatus && activity.previousStatus) {
+                      return {
+                        bg: '#dbeafe',
+                        stroke: '#2563eb',
+                        icon: (
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                            <line x1="16" y1="13" x2="8" y2="13" />
+                            <line x1="16" y1="17" x2="8" y2="17" />
+                            <polyline points="10 9 9 9 8 9" />
+                          </svg>
+                        )
+                      };
+                    } else if (activity.feedback && activity.feedback.toLowerCase().includes('assigned')) {
+                      return {
+                        bg: '#dbeafe',
+                        stroke: '#2563eb',
+                        icon: (
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                            <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+                          </svg>
+                        )
+                      };
+                    } else {
+                      return {
+                        bg: '#fef3c7',
+                        stroke: '#d97706',
+                        icon: (
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                            <path d="M13.73 21a2 2 0 01-3.46 0" />
+                          </svg>
+                        )
+                      };
+                    }
+                  };
 
-              {/* Activity Item 2 */}
-              <div style={{
-                display: 'flex',
-                gap: '12px',
-                padding: '12px',
-                borderRadius: '8px',
-                background: '#f8fafc',
-                transition: 'background 0.2s'
-              }}>
-                <div style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '8px',
-                  background: '#dcfce7',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0
-                }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2">
-                    <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
-                    <polyline points="22 4 12 14.01 9 11.01" />
-                  </svg>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    marginBottom: '4px'
-                  }}>
-                    <span style={{
-                      fontSize: '13px',
-                      fontWeight: '600',
-                      color: '#1e293b'
-                    }}>
-                      Lead Status Updated
-                    </span>
-                    <span style={{
-                      fontSize: '11px',
-                      color: '#64748b'
-                    }}>
-                      6 mins ago
-                    </span>
-                  </div>
-                  <p style={{
-                    fontSize: '12px',
-                    color: '#64748b',
-                    margin: 0,
-                    lineHeight: '1.4'
-                  }}>
-                    Rahul Sharma status changed from Connected to Interested
-                  </p>
-                </div>
-              </div>
+                  const { bg, stroke, icon } = getActivityIcon();
+                  
+                  // Format timestamp
+                  const formatTime = (timestamp) => {
+                    const date = new Date(timestamp);
+                    const now = new Date();
+                    const diffMs = now - date;
+                    const diffMins = Math.floor(diffMs / 60000);
+                    const diffHours = Math.floor(diffMs / 3600000);
+                    const diffDays = Math.floor(diffMs / 86400000);
+                    
+                    if (diffMins < 60) return `${diffMins} mins ago`;
+                    if (diffHours < 24) return `${diffHours} hours ago`;
+                    return `${diffDays} days ago`;
+                  };
 
-              {/* Activity Item 3 */}
-              <div style={{
-                display: 'flex',
-                gap: '12px',
-                padding: '12px',
-                borderRadius: '8px',
-                background: '#f8fafc',
-                transition: 'background 0.2s'
-              }}>
-                <div style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '8px',
-                  background: '#fef3c7',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0
-                }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2">
-                    <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                    <path d="M13.73 21a2 2 0 01-3.46 0" />
-                  </svg>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    marginBottom: '4px'
-                  }}>
-                    <span style={{
-                      fontSize: '13px',
-                      fontWeight: '600',
-                      color: '#1e293b'
+                  return (
+                    <div key={activity.id || index} style={{
+                      display: 'flex',
+                      gap: '12px',
+                      padding: '12px',
+                      borderRadius: '8px',
+                      background: '#f8fafc',
+                      transition: 'background 0.2s'
                     }}>
-                      Follow-up Scheduled
-                    </span>
-                    <span style={{
-                      fontSize: '11px',
-                      color: '#64748b'
-                    }}>
-                      12 mins ago
-                    </span>
-                  </div>
-                  <p style={{
-                    fontSize: '12px',
-                    color: '#64748b',
-                    margin: 0,
-                    lineHeight: '1.4'
-                  }}>
-                    Follow-up scheduled for Priya Singh tomorrow at 10:00 AM
-                  </p>
+                      <div style={{
+                        width: '40px',
+                        height: '40px',
+                        borderRadius: '8px',
+                        background: bg,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0
+                      }}>
+                        <div style={{ color: stroke }}>
+                          {icon}
+                        </div>
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          marginBottom: '4px'
+                        }}>
+                          <span style={{
+                            fontSize: '13px',
+                            fontWeight: '600',
+                            color: '#1e293b'
+                          }}>
+                            {activity.feedback || 'Activity'}
+                          </span>
+                          <span style={{
+                            fontSize: '11px',
+                            color: '#64748b'
+                          }}>
+                            {activity.timestamp ? formatTime(activity.timestamp) : 'Just now'}
+                          </span>
+                        </div>
+                        <p style={{
+                          fontSize: '12px',
+                          color: '#64748b',
+                          margin: 0,
+                          lineHeight: '1.4'
+                        }}>
+                          {activity.leadCode && `Lead: ${activity.leadCode}`}
+                          {activity.newStatus && activity.previousStatus && 
+                            ` - Status changed from ${activity.previousStatus} to ${activity.newStatus}`}
+                          {activity.changedBy && ` by ${activity.changedBy}`}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })
+              ) : (
+                <div style={{ textAlign: 'center', padding: '20px', color: '#64748b' }}>
+                  No recent activity
                 </div>
-              </div>
+              )}
+            </div>
+          </div>
 
-              {/* Activity Item 4 */}
-              <div style={{
-                display: 'flex',
-                gap: '12px',
-                padding: '12px',
-                borderRadius: '8px',
-                background: '#f8fafc',
-                transition: 'background 0.2s'
-              }}>
-                <div style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '8px',
-                  background: '#dbeafe',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0
-                }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2">
-                    <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
-                  </svg>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    marginBottom: '4px'
-                  }}>
-                    <span style={{
-                      fontSize: '13px',
-                      fontWeight: '600',
-                      color: '#1e293b'
-                    }}>
-                      Lead Assigned
-                    </span>
-                    <span style={{
-                      fontSize: '11px',
-                      color: '#64748b'
-                    }}>
-                      18 mins ago
-                    </span>
-                  </div>
-                  <p style={{
-                    fontSize: '12px',
-                    color: '#64748b',
-                    margin: 0,
-                    lineHeight: '1.4'
-                  }}>
-                    Vikram Patel assigned to counselor Amit Kumar
-                  </p>
-                </div>
+          {/* ── Lead Status Card (Current Distribution) ── */}
+          <div className="card">
+            <div className="card-header">
+              <div>
+                <div className="card-title">Lead Status</div>
+                <div className="card-sub">Current distribution</div>
               </div>
-
-              {/* Activity Item 5 */}
-              <div style={{
-                display: 'flex',
-                gap: '12px',
-                padding: '12px',
-                borderRadius: '8px',
-                background: '#f8fafc',
-                transition: 'background 0.2s'
-              }}>
-                <div style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '8px',
-                  background: '#dcfce7',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0
-                }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2">
-                    <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
-                    <polyline points="22 4 12 14.01 9 11.01" />
-                  </svg>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    marginBottom: '4px'
-                  }}>
-                    <span style={{
-                      fontSize: '13px',
-                      fontWeight: '600',
-                      color: '#1e293b'
-                    }}>
-                      Lead Registered
-                    </span>
-                    <span style={{
-                      fontSize: '11px',
-                      color: '#64748b'
-                    }}>
-                      25 mins ago
-                    </span>
-                  </div>
-                  <p style={{
-                    fontSize: '12px',
-                    color: '#64748b',
-                    margin: 0,
-                    lineHeight: '1.4'
-                  }}>
-                    Suresh Kumar successfully registered for B.Tech program
-                  </p>
-                </div>
-              </div>
+            </div>
+            <div style={{ height: '220px' }}>
+              <Doughnut data={statusChartData} options={statusChartOptions} />
             </div>
           </div>
         </div>
       </div>
 
       {/* ── Charts Row ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '20px' }}>
-        {/* Monthly Bar Chart — spans 2 cols */}
-        <div className="card" style={{ gridColumn: 'span 2' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', marginBottom: '20px' }}>
+        {/* Monthly Bar Chart — full width */}
+        <div className="card">
           <div className="card-header">
             <div>
               <div className="card-title">Monthly Registrations</div>
@@ -712,19 +783,6 @@ const Dashboard = () => {
           </div>
           <div style={{ height: '220px' }}>
             <Bar data={monthlyChartData} options={monthlyChartOptions} />
-          </div>
-        </div>
-
-        {/* Status Doughnut Chart */}
-        <div className="card">
-          <div className="card-header">
-            <div>
-              <div className="card-title">Lead Status</div>
-              <div className="card-sub">Current distribution</div>
-            </div>
-          </div>
-          <div style={{ height: '220px' }}>
-            <Doughnut data={statusChartData} options={statusChartOptions} />
           </div>
         </div>
       </div>

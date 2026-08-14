@@ -101,7 +101,10 @@ const LeadDetail = () => {
     }
   }, [searchQuery]);
 
-  const initials = leadDetails?.fullName ? leadDetails.fullName.substring(0, 2).toUpperCase() : 'PK';
+  const initials = (() => {
+    const fullName = typeof leadDetails?.fullName === 'object' ? leadDetails?.fullName?.name || leadDetails?.fullName?.firstName : leadDetails?.fullName;
+    return fullName ? fullName.substring(0, 2).toUpperCase() : 'PK';
+  })();
 
   const formatDate = (dateString) => {
     if (!dateString) return '-';
@@ -116,7 +119,8 @@ const LeadDetail = () => {
   };
 
   const getStatusColor = (status) => {
-    switch (status?.toLowerCase()) {
+    const statusValue = typeof status === 'object' ? status?.name || status?.code : status;
+    switch (statusValue?.toLowerCase()) {
       case 'connected':
         return 'bg-green-100 text-green-700';
       case 'not connected':
@@ -139,11 +143,14 @@ const LeadDetail = () => {
     {
       key: 'status',
       header: 'Status',
-      render: (value) => (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(value)}`}>
-          {value || '-'}
-        </span>
-      )
+      render: (value) => {
+        const statusValue = typeof value === 'object' ? value?.name || value?.code || '-' : value || '-';
+        return (
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(statusValue)}`}>
+            {statusValue}
+          </span>
+        );
+      }
     },
     {
       key: 'changedAt',
@@ -220,12 +227,22 @@ const LeadDetail = () => {
                 {initials}
               </div>
               <div className="flex-1">
-                <h2 className="text-lg font-bold text-gray-900 mb-1">{leadDetails?.fullName || 'Priya Kumar'}</h2>
-                <p className="text-sm text-gray-500 mb-3">{leadDetails ? `${leadDetails.phoneNumber} · ${leadDetails.email}` : '+91 98765 43210 · priya.kumar@gmail.com'}</p>
+                <h2 className="text-lg font-bold text-gray-900 mb-1">
+                  {typeof leadDetails?.fullName === 'object' ? leadDetails?.fullName?.name || leadDetails?.fullName?.firstName || 'Priya Kumar' : leadDetails?.fullName || 'Priya Kumar'}
+                </h2>
+                <p className="text-sm text-gray-500 mb-3">
+                  {leadDetails ? 
+                    `${leadDetails.phoneNumber || 'N/A'} · ${leadDetails.email || 'N/A'}` 
+                    : '+91 98765 43210 · priya.kumar@gmail.com'}
+                </p>
                 <div className="flex flex-wrap gap-2">
-                  <span className="bg-orange-50 text-orange-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-orange-100 uppercase tracking-wide">{leadDetails?.currentStatus || 'Interested'}</span>
-                  <span className="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-100 uppercase tracking-wide">{leadDetails?.courseInterested || 'Full Stack Dev'}</span>
-                  <span className="bg-gray-50 text-gray-500 text-[10px] font-medium px-2 py-0.5 rounded-full border border-gray-100">Source: {leadDetails?.source?.name || 'Google Ads'}</span>
+                  <span className="bg-orange-50 text-orange-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-orange-100 uppercase tracking-wide">
+                    {typeof leadDetails?.currentStatus === 'object' ? leadDetails?.currentStatus?.name || leadDetails?.currentStatus?.code || 'Interested' : leadDetails?.currentStatus || 'Interested'}
+                  </span>
+                  <span className="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-100 uppercase tracking-wide">
+                    {typeof leadDetails?.courseInterested === 'object' ? leadDetails?.courseInterested?.courseName || leadDetails?.courseInterested?.name || 'Full Stack Dev' : leadDetails?.courseInterested || 'Full Stack Dev'}
+                  </span>
+                  <span className="bg-gray-50 text-gray-500 text-[10px] font-medium px-2 py-0.5 rounded-full border border-gray-100">Source: {typeof leadDetails?.source === 'object' ? leadDetails?.source?.name || 'Google Ads' : leadDetails?.source || 'Google Ads'}</span>
                 </div>
               </div>
             </div>
@@ -235,8 +252,17 @@ const LeadDetail = () => {
                 { label: 'City', value: leadDetails?.city || 'Bangalore, KA' },
                 { label: 'State', value: leadDetails?.state || 'Karnataka' },
                 { label: 'Country', value: leadDetails?.country || 'India' },
-                { label: 'Status', value: leadDetails?.currentStatus || 'Professional' },
-                { label: 'Lead Date', value: leadDetails?.createdAt ? new Date(leadDetails.createdAt).toLocaleDateString() : 'June 3, 2025' },
+                { label: 'Status', value: typeof leadDetails?.currentStatus === 'object' ? leadDetails?.currentStatus?.name || leadDetails?.currentStatus?.code || 'Professional' : leadDetails?.currentStatus || 'Professional' },
+                { label: 'Lead Date', value: (() => {
+                  try {
+                    if (leadDetails?.createdAt) {
+                      return new Date(leadDetails.createdAt).toLocaleDateString();
+                    }
+                    return 'June 3, 2025';
+                  } catch (e) {
+                    return 'Invalid Date';
+                  }
+                })() },
                 { label: 'Source', value: leadDetails?.source?.name || 'Google Ads' }
               ].map((item, idx) => (
                 <div key={idx} className="bg-gray-50 p-3 rounded-lg border border-gray-100">
@@ -252,7 +278,9 @@ const LeadDetail = () => {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
                   <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Interested Course</div>
-                  <div className="text-xs font-bold text-blue-600">{leadDetails?.courseInterested || 'Full Stack Development'}</div>
+                  <div className="text-xs font-bold text-blue-600">
+                    {typeof leadDetails?.courseInterested === 'object' ? leadDetails?.courseInterested?.courseName || leadDetails?.courseInterested?.name || 'Full Stack Development' : leadDetails?.courseInterested || 'Full Stack Development'}
+                  </div>
                 </div>
                 <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
                   <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Batch Preference</div>
@@ -294,7 +322,7 @@ const LeadDetail = () => {
                <div className="flex gap-2 mb-4">
               <CustomButton 
                 variant="primary" 
-                onClick={() => window.location.href = `mailto:${leadDetails?.email || 'priya.kumar@gmail.com'}`} 
+                onClick={() => window.location.href = `mailto:${typeof leadDetails?.email === 'object' ? leadDetails?.email?.email || leadDetails?.email?.value || 'priya.kumar@gmail.com' : leadDetails?.email || 'priya.kumar@gmail.com'}`} 
                 className="bg-blue-600 hover:bg-blue-700 py-2 px-4 text-xs flex-1 flex items-center justify-center gap-2"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

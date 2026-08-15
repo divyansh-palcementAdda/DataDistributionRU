@@ -1,6 +1,7 @@
 import { createContext, useContext, useState,useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
+import { usePermissions } from './PermissionContext';
 
 const AppContext = createContext(null);
 
@@ -13,6 +14,7 @@ export const AppProvider = ({ children }) => {
   const [isAccessDeniedModalOpen, setIsAccessDeniedModalOpen] = useState(false);
 
   const navigate = useNavigate();
+  const { clearPermissions } = usePermissions();
 
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
   const toggleDarkMode = () => setIsDarkMode((prev) => !prev);
@@ -64,6 +66,7 @@ useEffect(() => {
 
   const logout = () => {
     localStorage.clear();
+    clearPermissions();
     navigate('/');
   };
 

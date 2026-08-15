@@ -12,6 +12,13 @@ import {
 import { useAppContext } from '../../AppContext';
 import { Doughnut } from 'react-chartjs-2';
 import ReusableTable from '../../component/reusable/table';
+import BoardWiseCard from '../../component/reusable/DashBoards/BoardWiseCard';
+import SystemCards from '../../component/reusable/DashBoards/SystemCards';
+import CategorywiseCard from '../../component/reusable/DashBoards/categorywiseCard';
+import CounselorsCards from '../../component/reusable/DashBoards/counselorsCards';
+import GradWiseCard from '../../component/reusable/DashBoards/gradWiseCard';
+import LeadCards from '../../component/reusable/DashBoards/leadCards';
+import LeadSource from '../../component/reusable/DashBoards/leadSource';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend);
 
@@ -107,6 +114,45 @@ const HeadDashboard = () => {
       }
     });
   }, [headAllottedLeads, callerAllottedLeads, leads]);
+
+  // Data for reusable cards
+  const boardWiseData = useMemo(() => ({
+    cbseData: leads.filter(l => l.board === 'CBSE').length,
+    mpBoardData: leads.filter(l => l.board === 'MP Board').length,
+    otherBoard: leads.filter(l => l.board && l.board !== 'CBSE' && l.board !== 'MP Board').length,
+  }), [leads]);
+
+  const systemData = useMemo(() => ({
+    totalDataInSystem: leads.length,
+    totalSourceOfData: [...new Set(leads.map(l => l.source?.name))].length,
+  }), [leads]);
+
+  const categoryWiseData = useMemo(() => ({
+    ugData: leads.filter(l => l.category === 'UG').length,
+    pgData: leads.filter(l => l.category === 'PG').length,
+    unMappedByDate: leads.filter(l => !l.category).length,
+  }), [leads]);
+
+  const counselorsData = useMemo(() => ({
+    totalCounselors: counselors.length,
+    totalCounselorsLoggedInToday: counselors.filter(c => c.loggedInToday).length,
+    totalFollowupsScheduledToday: counselors.reduce((sum, c) => sum + (c.followupsToday || 0), 0),
+    allRegistrationsAndApplications: leads.filter(l => l.status === 'registered').length,
+    overallConversionByData: Math.round((leads.filter(l => l.status === 'registered').length / leads.length) * 100) || 0,
+    conversionRatio: Math.round((leads.filter(l => l.status === 'registered').length / leads.length) * 100) || 0,
+  }), [counselors, leads]);
+
+  const gradWiseData = useMemo(() => ({
+    aGradData: leads.filter(l => l.grade === 'A').length,
+    bGradData: leads.filter(l => l.grade === 'B').length,
+    cGradData: leads.filter(l => l.grade === 'C').length,
+  }), [leads]);
+
+  const leadSourceData = useMemo(() => ({
+    totalConsultantData: leads.filter(l => l.source?.type === 'consultant').length,
+    totalInboundData: leads.filter(l => l.source?.type === 'inbound').length,
+    totalOutboundData: leads.filter(l => l.source?.type === 'outbound').length,
+  }), [leads]);
 
   // Status distribution chart for Head's leads
   const statusChartData = useMemo(() => {
@@ -256,6 +302,15 @@ const HeadDashboard = () => {
           </div>
         ))}
       </div>
+
+      {/* ── Reusable Dashboard Cards ── */}
+      <SystemCards data={systemData} />
+      <BoardWiseCard data={boardWiseData} />
+      <CategorywiseCard data={categoryWiseData} />
+      <CounselorsCards data={counselorsData} />
+      <GradWiseCard data={gradWiseData} />
+      <LeadSource data={leadSourceData} />
+      <LeadCards />
 
       {/* ── Charts Row ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>

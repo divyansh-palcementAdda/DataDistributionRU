@@ -69,7 +69,8 @@ const ApiRoutes = {
         update: '/api/courses/{id}',
         delete: '/api/courses/{id}',
         toggle: '/api/courses/{id}/toggle-active',
-        details: '/api/courses/{id}'
+        details: '/api/courses/{id}',
+        communicationConfig: '/api/courses/{courseId}/communication-config'
     },
 
     LeadStatus: {

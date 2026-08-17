@@ -7,6 +7,7 @@ import CallModal from '../component/reusable/CallModal';
 import WhatsAppModal from '../component/reusable/WhatsAppModal';
 import ReusableTable from '../component/reusable/table';
 import { createLeadSchedule, getLeadById } from '../Services/lead/leadService';
+import { getAllCourses, getCourseCommunicationConfig } from '../Services/course/course';
 
 const LeadDetail = () => {
   const { id } = useParams();
@@ -18,8 +19,11 @@ const LeadDetail = () => {
   const [loading, setLoading] = useState(false);
   const [statusHistory, setStatusHistory] = useState([]);
   const [statusHistoryLoading, setStatusHistoryLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filteredCourses, setFilteredCourses] = useState([]);
+  const [courses, setCourses] = useState([]);
+  const [selectedCourse, setSelectedCourse] = useState('');
+  const [coursesLoading, setCoursesLoading] = useState(false);
+  const [communicationConfig, setCommunicationConfig] = useState(null);
+  const [configLoading, setConfigLoading] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -41,6 +45,44 @@ const LeadDetail = () => {
   }, [id]);
 
   useEffect(() => {
+    const fetchCourses = async () => {
+      setCoursesLoading(true);
+      try {
+        const res = await getAllCourses({ page: 0, size: 100 });
+        if (res?.success && res?.data?.content) {
+          setCourses(res.data.content);
+        }
+      } catch (err) {
+        console.error("Failed to fetch courses", err);
+      } finally {
+        setCoursesLoading(false);
+      }
+    };
+    fetchCourses();
+  }, []);
+
+  useEffect(() => {
+    const fetchCommunicationConfig = async () => {
+      if (selectedCourse) {
+        setConfigLoading(true);
+        try {
+          const res = await getCourseCommunicationConfig(selectedCourse);
+          if (res?.success) {
+            setCommunicationConfig(res.data);
+          }
+        } catch (err) {
+          console.error("Failed to fetch communication config", err);
+        } finally {
+          setConfigLoading(false);
+        }
+      } else {
+        setCommunicationConfig(null);
+      }
+    };
+    fetchCommunicationConfig();
+  }, [selectedCourse]);
+
+  useEffect(() => {
     // Show only current status from API
     if (leadDetails?.currentStatus) {
       const currentStatusEntry = {
@@ -56,31 +98,8 @@ const LeadDetail = () => {
     setStatusHistoryLoading(false);
   }, [id, leadDetails]);
 
-  // Course database for search
-  const courseDatabase = [
-    { name: 'BBA', duration: '3 Years', fees: '₹3,00,000', description: 'Bachelor of Business Administration - Management and business fundamentals', eligibility: '12th Commerce with 50%', modules: ['Marketing', 'Finance', 'HR', 'Operations', 'Business Law'] },
-    { name: 'BCA', duration: '3 Years', fees: '₹2,50,000', description: 'Bachelor of Computer Applications - Programming and software development', eligibility: '12th with Math/Computer Science', modules: ['Programming', 'Database', 'Web Dev', 'Networking', 'Software Engineering'] },
-    { name: 'B.Com', duration: '3 Years', fees: '₹1,50,000', description: 'Bachelor of Commerce - Accounting and finance specialization', eligibility: '12th Commerce', modules: ['Accounting', 'Taxation', 'Auditing', 'Finance', 'Economics'] },
-    { name: 'MBA', duration: '2 Years', fees: '₹8,00,000', description: 'Master of Business Administration - Advanced management studies', eligibility: 'Graduate with 50%', modules: ['Strategic Management', 'Leadership', 'Marketing', 'Finance', 'Operations'] },
-    { name: 'MCA', duration: '2 Years', fees: '₹4,00,000', description: 'Master of Computer Applications - Advanced software development', eligibility: 'BCA/B.Tech with Math', modules: ['Advanced Programming', 'AI/ML', 'Cloud Computing', 'Cyber Security', 'Project Management'] },
-    { name: 'Full Stack Development', duration: '6 Months', fees: '₹45,000', description: 'Complete web development with React, Node.js, and databases', eligibility: 'Basic programming knowledge', modules: ['HTML/CSS', 'JavaScript', 'React', 'Node.js', 'MongoDB'] },
-    { name: 'Data Science', duration: '6 Months', fees: '₹55,000', description: 'Machine learning, data analysis, and visualization', eligibility: 'Python and Statistics basics', modules: ['Python', 'Statistics', 'ML', 'Deep Learning', 'Tableau'] },
-    { name: 'Digital Marketing', duration: '3 Months', fees: '₹25,000', description: 'SEO, SEM, Social Media, and Content Marketing', eligibility: 'No specific requirement', modules: ['SEO', 'Google Ads', 'Social Media', 'Content Marketing', 'Analytics'] }
-  ];
-
-  useEffect(() => {
-    if (searchQuery.trim()) {
-      const filtered = courseDatabase.filter(course =>
-        course.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setFilteredCourses(filtered);
-    } else {
-      setFilteredCourses([]);
-    }
-  }, [searchQuery]);
-
   const initials = (() => {
-    const fullName = typeof leadDetails?.fullName === 'object' ? leadDetails?.fullName?.name || leadDetails?.fullName?.firstName : leadDetails?.fullName;
+    const fullName = leadDetails?.fullName;
     return fullName ? fullName.substring(0, 2).toUpperCase() : 'PK';
   })();
 
@@ -109,6 +128,10 @@ const LeadDetail = () => {
         return 'bg-orange-100 text-orange-700';
       case 'raw':
         return 'bg-purple-100 text-purple-700';
+      case 'converted':
+        return 'bg-green-100 text-green-700';
+      case 'lost':
+        return 'bg-red-100 text-red-700';
       default:
         return 'bg-gray-100 text-gray-700';
     }
@@ -215,42 +238,67 @@ const LeadDetail = () => {
               </div>
               <div className="flex-1">
                 <h2 className="text-lg font-bold text-gray-900 mb-1">
-                  {typeof leadDetails?.fullName === 'object' ? leadDetails?.fullName?.name || leadDetails?.fullName?.firstName || 'Priya Kumar' : leadDetails?.fullName || 'Priya Kumar'}
+                  {leadDetails?.fullName || 'N/A'}
                 </h2>
                 <p className="text-sm text-gray-500 mb-3">
-                  {leadDetails ? 
-                    `${leadDetails.phoneNumber || 'N/A'} · ${leadDetails.email || 'N/A'}` 
-                    : '+91 98765 43210 · priya.kumar@gmail.com'}
+                  {leadDetails?.phoneNumber ? `${leadDetails.phoneNumber} · ${leadDetails.email || 'N/A'}` : 'N/A'}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <span className="bg-orange-50 text-orange-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-orange-100 uppercase tracking-wide">
-                    {typeof leadDetails?.currentStatus === 'object' ? leadDetails?.currentStatus?.name || leadDetails?.currentStatus?.code || 'Interested' : leadDetails?.currentStatus || 'Interested'}
+                    {leadDetails?.currentStatus?.name || leadDetails?.currentStatus?.code || 'N/A'}
                   </span>
                   <span className="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-100 uppercase tracking-wide">
-                    {typeof leadDetails?.courseInterested === 'object' ? leadDetails?.courseInterested?.courseName || leadDetails?.courseInterested?.name || 'Full Stack Dev' : leadDetails?.courseInterested || 'Full Stack Dev'}
+                    {leadDetails?.courseInterested || 'N/A'}
                   </span>
-                  <span className="bg-gray-50 text-gray-500 text-[10px] font-medium px-2 py-0.5 rounded-full border border-gray-100">Source: {typeof leadDetails?.source === 'object' ? leadDetails?.source?.name || 'Google Ads' : leadDetails?.source || 'Google Ads'}</span>
+                  {leadDetails?.leadSources && leadDetails.leadSources.length > 0 && (
+                    <span className="bg-gray-50 text-gray-500 text-[10px] font-medium px-2 py-0.5 rounded-full border border-gray-100">
+                      Source: {leadDetails.leadSources[0]?.name || leadDetails.leadSources[0] || 'N/A'}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               {[
-                { label: 'City', value: leadDetails?.city || 'Bangalore, KA' },
-                { label: 'State', value: leadDetails?.state || 'Karnataka' },
-                { label: 'Country', value: leadDetails?.country || 'India' },
-                { label: 'Status', value: typeof leadDetails?.currentStatus === 'object' ? leadDetails?.currentStatus?.name || leadDetails?.currentStatus?.code || 'Professional' : leadDetails?.currentStatus || 'Professional' },
+                { label: 'City', value: leadDetails?.city || 'N/A' },
+                { label: 'State', value: leadDetails?.state || 'N/A' },
+                { label: 'Country', value: leadDetails?.country || 'N/A' },
+                { label: 'Status', value: leadDetails?.currentStatus?.name || leadDetails?.currentStatus?.code || 'N/A' },
                 { label: 'Lead Date', value: (() => {
                   try {
                     if (leadDetails?.createdAt) {
                       return new Date(leadDetails.createdAt).toLocaleDateString();
                     }
-                    return 'June 3, 2025';
+                    return 'N/A';
                   } catch (e) {
                     return 'Invalid Date';
                   }
                 })() },
-                { label: 'Source', value: leadDetails?.source?.name || 'Google Ads' }
+                { label: 'Lead Code', value: leadDetails?.leadCode || 'N/A' },
+                { label: 'Next Follow-up', value: (() => {
+                  try {
+                    if (leadDetails?.nextFollowUpDate) {
+                      return new Date(leadDetails.nextFollowUpDate).toLocaleDateString();
+                    }
+                    return 'N/A';
+                  } catch (e) {
+                    return 'Invalid Date';
+                  }
+                })() },
+                { label: 'Last Contacted', value: (() => {
+                  try {
+                    if (leadDetails?.lastContactedAt) {
+                      return new Date(leadDetails.lastContactedAt).toLocaleDateString();
+                    }
+                    return 'N/A';
+                  } catch (e) {
+                    return 'Invalid Date';
+                  }
+                })() },
+                { label: 'Assigned To', value: leadDetails?.assignedTo?.firstName && leadDetails?.assignedTo?.lastName
+                  ? `${leadDetails.assignedTo.firstName} ${leadDetails.assignedTo.lastName}`
+                  : leadDetails?.assignedTo?.username || 'N/A' }
               ].map((item, idx) => (
                 <div key={idx} className="bg-gray-50 p-3 rounded-lg border border-gray-100">
                   <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{item.label}</div>
@@ -266,23 +314,79 @@ const LeadDetail = () => {
                 <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
                   <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Interested Course</div>
                   <div className="text-xs font-bold text-blue-600">
-                    {typeof leadDetails?.courseInterested === 'object' ? leadDetails?.courseInterested?.courseName || leadDetails?.courseInterested?.name || 'Full Stack Development' : leadDetails?.courseInterested || 'Full Stack Development'}
+                    {leadDetails?.courseInterested || 'N/A'}
                   </div>
                 </div>
                 <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Batch Preference</div>
-                  <div className="text-xs font-semibold text-gray-800">Weekend Batch</div>
+                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Registered Course</div>
+                  <div className="text-xs font-semibold text-gray-800">{leadDetails?.registeredCourse || 'N/A'}</div>
                 </div>
                 <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Budget</div>
-                  <div className="text-xs font-semibold text-gray-800">₹45,000 – ₹60,000</div>
+                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Board</div>
+                  <div className="text-xs font-semibold text-gray-800">{leadDetails?.board || 'N/A'}</div>
                 </div>
                 <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Start Date Pref.</div>
-                  <div className="text-xs font-semibold text-gray-800">July 2025</div>
+                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Grade</div>
+                  <div className="text-xs font-semibold text-gray-800">{leadDetails?.grade || 'N/A'}</div>
+                </div>
+              </div>
+              
+              {/* Remarks */}
+              {leadDetails?.remarks && (
+                <div className="mt-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Remarks</div>
+                  <div className="text-xs font-semibold text-gray-800">{leadDetails.remarks}</div>
+                </div>
+              )}
+            </div>
+
+            {/* Contact Information */}
+            <div className="mt-5 pt-5 border-t border-gray-100">
+              <h3 className="text-sm font-bold text-gray-800 mb-4">Contact Information</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Phone Number</div>
+                  <div className="text-xs font-semibold text-gray-800">{leadDetails?.phoneNumber || 'N/A'}</div>
+                </div>
+                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Alternate Phone</div>
+                  <div className="text-xs font-semibold text-gray-800">{leadDetails?.alternatePhoneNumber || 'N/A'}</div>
+                </div>
+                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Email</div>
+                  <div className="text-xs font-semibold text-gray-800">{leadDetails?.email || 'N/A'}</div>
                 </div>
               </div>
             </div>
+
+            {/* Lead Sources */}
+            {leadDetails?.leadSources && leadDetails.leadSources.length > 0 && (
+              <div className="mt-5 pt-5 border-t border-gray-100">
+                <h3 className="text-sm font-bold text-gray-800 mb-4">Lead Sources</h3>
+                <div className="flex flex-wrap gap-2">
+                  {leadDetails.leadSources.map((source, index) => (
+                    <span key={index} className="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-100">
+                      {source.name || source}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Created By */}
+            {leadDetails?.createdBy && (
+              <div className="mt-5 pt-5 border-t border-gray-100">
+                <h3 className="text-sm font-bold text-gray-800 mb-4">Created By</h3>
+                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  <div className="text-xs font-semibold text-gray-800">
+                    {leadDetails.createdBy.firstName && leadDetails.createdBy.lastName
+                      ? `${leadDetails.createdBy.firstName} ${leadDetails.createdBy.lastName}`
+                      : leadDetails.createdBy.username || 'N/A'}
+                  </div>
+                  <div className="text-[10px] text-gray-500 mt-1">{leadDetails.createdBy.email || 'N/A'}</div>
+                </div>
+              </div>
+            )}
 
             {/* Lead Status History */}
             <div className="mt-5 pt-5 border-t border-gray-100">
@@ -307,10 +411,11 @@ const LeadDetail = () => {
               
 
                <div className="flex gap-2 mb-4">
-              <CustomButton 
-                variant="primary" 
-                onClick={() => window.location.href = `mailto:${typeof leadDetails?.email === 'object' ? leadDetails?.email?.email || leadDetails?.email?.value || 'priya.kumar@gmail.com' : leadDetails?.email || 'priya.kumar@gmail.com'}`} 
-                className="bg-blue-600 hover:bg-blue-700 py-2 px-4 text-xs flex-1 flex items-center justify-center gap-2"
+              <CustomButton
+                variant="primary"
+                onClick={() => leadDetails?.email && (window.location.href = `mailto:${leadDetails.email}`)}
+                disabled={!leadDetails?.email}
+                className="bg-blue-600 hover:bg-blue-700 py-2 px-4 text-xs flex-1 flex items-center justify-center gap-2 disabled:bg-gray-300 disabled:cursor-not-allowed"
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
@@ -327,112 +432,89 @@ const LeadDetail = () => {
             </div>
 
 
-            {/* Search Box */}
-            <div className="relative mb-4">
-              <input
-                type="text"
-                placeholder="Search courses (e.g., BBA, MBA, BCA...)"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <svg
-                className="absolute right-3 top-2.5 w-5 h-5 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+            {/* Course Dropdown */}
+            <div className="mb-4">
+              <label className="block text-xs font-semibold text-gray-700 mb-2">Select Course</label>
+              <select
+                value={selectedCourse}
+                onChange={(e) => setSelectedCourse(e.target.value)}
+                disabled={coursesLoading}
+                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
+                <option value="">Select a course...</option>
+                {courses.map((course) => (
+                  <option key={course.id} value={course.id}>
+                    {course.courseName} ({course.courseCode})
+                  </option>
+                ))}
+              </select>
+              {coursesLoading && (
+                <div className="text-xs text-gray-500 mt-1">Loading courses...</div>
+              )}
             </div>
 
          
            
 
-            {/* Search Results */}
-            <div className="space-y-3 max-h-[600px] overflow-y-auto">
-              {searchQuery.trim() === '' ? (
-                <div className="text-center py-8 text-gray-400 text-sm">
-                  <svg
-                    className="mx-auto w-12 h-12 mb-3 text-gray-300"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                    />
-                  </svg>
-                  <p>Type a course name to search</p>
-                  <p className="text-xs mt-1">Try: BBA, MBA, BCA, MCA, etc.</p>
-                </div>
-              ) : filteredCourses.length === 0 ? (
-                <div className="text-center py-8 text-gray-400 text-sm">
-                  <svg
-                    className="mx-auto w-12 h-12 mb-3 text-gray-300"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  <p>No courses found for "{searchQuery}"</p>
-                </div>
-              ) : (
-                filteredCourses.map((course, index) => (
-                  <div
-                    key={index}
-                    className="bg-gradient-to-br from-blue-50 to-purple-50 border border-blue-100 rounded-lg p-4 hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <h4 className="text-sm font-bold text-blue-800">{course.name}</h4>
-                      <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                        {course.duration}
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-600 mb-3">{course.description}</p>
-                    
-                    <div className="grid grid-cols-2 gap-2 mb-3">
-                      <div className="bg-white p-2 rounded border border-gray-100">
-                        <div className="text-[9px] font-bold text-gray-400 uppercase">Fees</div>
-                        <div className="text-xs font-semibold text-green-600">{course.fees}</div>
+            {/* Selected Course Info */}
+            {selectedCourse && (
+              <div className="mt-4">
+                {(() => {
+                  const course = courses.find(c => c.id === selectedCourse);
+                  if (!course) return null;
+                  return (
+                    <div className="bg-gradient-to-br from-blue-50 to-purple-50 border border-blue-100 rounded-lg p-4">
+                      <div className="flex items-start justify-between mb-2">
+                        <h4 className="text-sm font-bold text-blue-800">{course.courseName}</h4>
+                        <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                          {course.duration} {course.durationUnit}
+                        </span>
                       </div>
-                      <div className="bg-white p-2 rounded border border-gray-100">
-                        <div className="text-[9px] font-bold text-gray-400 uppercase">Eligibility</div>
-                        <div className="text-xs font-semibold text-gray-700">{course.eligibility}</div>
+                      <p className="text-xs text-gray-600 mb-3">{course.description}</p>
+                      
+                      <div className="grid grid-cols-2 gap-2 mb-3">
+                        <div className="bg-white p-2 rounded border border-gray-100">
+                          <div className="text-[9px] font-bold text-gray-400 uppercase">Fees</div>
+                          <div className="text-xs font-semibold text-green-600">₹{course.fees?.toLocaleString()}</div>
+                        </div>
+                        <div className="bg-white p-2 rounded border border-gray-100">
+                          <div className="text-[9px] font-bold text-gray-400 uppercase">Course Code</div>
+                          <div className="text-xs font-semibold text-gray-700">{course.courseCode}</div>
+                        </div>
                       </div>
-                    </div>
 
-                    <div>
-                      <div className="text-[9px] font-bold text-gray-400 uppercase mb-1">Modules</div>
-                      <div className="flex flex-wrap gap-1">
-                        {course.modules.map((module, idx) => (
-                          <span
-                            key={idx}
-                            className="bg-white text-gray-600 text-[10px] px-2 py-0.5 rounded border border-gray-200"
-                          >
-                            {module}
-                          </span>
-                        ))}
+                      <div>
+                        <div className="text-[9px] font-bold text-gray-400 uppercase mb-1">Course Type</div>
+                        <div className="bg-white text-gray-600 text-[10px] px-2 py-0.5 rounded border border-gray-200">
+                          {course.courseType?.name || 'N/A'}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
-              )}
-            </div>
+                  );
+                })()}
+              </div>
+            )}
+
+            {/* Communication Config */}
+            {configLoading ? (
+              <div className="mt-4 text-center py-4 text-gray-500 text-xs">Loading communication config...</div>
+            ) : communicationConfig ? (
+              <div className="mt-4 bg-gradient-to-br from-green-50 to-teal-50 border border-green-100 rounded-lg p-4">
+                <h4 className="text-sm font-bold text-green-800 mb-3">Communication Configuration</h4>
+                <div className="space-y-2">
+                  {Object.entries(communicationConfig).map(([key, value]) => (
+                    <div key={key} className="bg-white p-2 rounded border border-gray-100">
+                      <div className="text-[9px] font-bold text-gray-400 uppercase">{key}</div>
+                      <div className="text-xs font-semibold text-gray-700">
+                        {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : selectedCourse ? (
+              <div className="mt-4 text-center py-4 text-gray-400 text-xs">No communication config available</div>
+            ) : null}
           </div>
         </div>
       </div>

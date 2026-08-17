@@ -1,6 +1,23 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { getCourseTypesBreakdown } from '../../../Services/cards/cardService';
 
-const CategorywiseCard = ({ data = {} }) => {
+const CategorywiseCard = () => {
+  const [courseTypesData, setCourseTypesData] = useState({});
+
+  useEffect(() => {
+    const fetchCourseTypes = async () => {
+      try {
+        const response = await getCourseTypesBreakdown();
+        if (response.data && response.data.data) {
+          setCourseTypesData(response.data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching course types:', error);
+      }
+    };
+
+    fetchCourseTypes();
+  }, []);
   // Responsive styles
   const gridStyle = {
     display: 'grid',
@@ -8,49 +25,34 @@ const CategorywiseCard = ({ data = {} }) => {
     gap: '16px',
   };
 
-  // Card data configuration with icons and colors
-  const cardConfig = [
-    {
-      key: 'ugData',
-      label: 'UG Data',
-      color: 'blue',
-      iconBg: 'var(--primary-light)',
-      iconStroke: 'var(--primary)',
+  // Generate card config dynamically from API data
+  const cardConfig = Object.keys(courseTypesData).map((key, index) => {
+    const colors = ['blue', 'teal', 'orange', 'purple', 'green', 'red'];
+    const color = colors[index % colors.length];
+    
+    return {
+      key: key,
+      label: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1'),
+      color: color,
+      iconBg: color === 'blue' ? 'var(--primary-light)' : 
+              color === 'teal' ? '#E0F2F1' : 
+              color === 'orange' ? '#FFF7ED' : 
+              color === 'purple' ? '#F3E8FF' : 
+              color === 'green' ? '#DCFCE7' : '#FEE2E2',
+      iconStroke: color === 'blue' ? 'var(--primary)' : 
+                  color === 'teal' ? '#009688' : 
+                  color === 'orange' ? '#EA580C' : 
+                  color === 'purple' ? '#9333EA' : 
+                  color === 'green' ? '#16A34A' : '#DC2626',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
-          <path d="M6 12v5c3 3 9 3 12 0v-5" />
+          <rect x="3" y="3" width="18" height="18" rx="2" />
+          <path d="M3 9h18" />
+          <path d="M9 21V9" />
         </svg>
       ),
-    },
-    {
-      key: 'pgData',
-      label: 'PG Data',
-      color: 'teal',
-      iconBg: '#E0F2F1',
-      iconStroke: '#009688',
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3z" />
-          <path d="M6.82 12L12 14.18 17.18 12 12 9.82 6.82 12z" />
-        </svg>
-      ),
-    },
-    {
-      key: 'unMappedByDate',
-      label: 'Un Mapped by Date',
-      color: 'orange',
-      iconBg: '#FFF7ED',
-      iconStroke: '#EA580C',
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <rect x="3" y="4" width="18" height="18" rx="2" />
-          <path d="M16 2v4M8 2v4M3 10h18" />
-          <path d="M8 14h.01M12 14h.01M16 14h.01" />
-        </svg>
-      ),
-    },
-  ];
+    };
+  });
 
   return (
     <div style={{ marginBottom: '24px' }}>
@@ -60,10 +62,23 @@ const CategorywiseCard = ({ data = {} }) => {
         color: '#1e293b', 
         marginBottom: '16px' 
       }}>
-        Category wise data
+        Category Wise data
       </h2>
-      <div className="categorywise-responsive-grid" style={gridStyle}>
-        {cardConfig.map((card) => (
+      {cardConfig.length === 0 ? (
+        <div style={{
+          textAlign: 'center',
+          padding: '40px',
+          color: '#64748b',
+          fontSize: '16px',
+          background: '#f8fafc',
+          borderRadius: '12px',
+          border: '1px dashed #cbd5e1'
+        }}>
+          No Data Available
+        </div>
+      ) : (
+        <div className="categorywise-responsive-grid" style={gridStyle}>
+          {cardConfig.map((card) => (
           <div
             key={card.key}
             style={{
@@ -131,12 +146,15 @@ const CategorywiseCard = ({ data = {} }) => {
                 flexShrink: 0,
                 marginLeft: '12px',
               }}>
-                {data[card.key] !== undefined ? data[card.key].toLocaleString() : '0'}
+                {typeof courseTypesData[card.key] === 'number' 
+                  ? courseTypesData[card.key].toLocaleString() 
+                  : courseTypesData[card.key] || '0'}
               </div>
             </div>
           </div>
         ))}
-      </div>
+        </div>
+      )}
       <style>{`
         @media (max-width: 1200px) {
           .categorywise-responsive-grid {

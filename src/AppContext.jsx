@@ -73,6 +73,8 @@ useEffect(() => {
   const logout = () => {
     localStorage.clear();
     clearPermissions();
+    // Clear roleId as well
+    localStorage.removeItem('roleId');
     navigate('/');
   };
 

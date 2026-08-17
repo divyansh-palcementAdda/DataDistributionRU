@@ -13,12 +13,22 @@ export const PermissionProvider = ({ children }) => {
         // Check if user is logged in by checking for user role
         const userRole = localStorage.getItem('userRole');
         if (userRole) {
-          // Try to get role ID from localStorage or user info
-          const userInfo = localStorage.getItem('userInfo');
-          if (userInfo) {
-            const parsedUserInfo = JSON.parse(userInfo);
-            const roleId = parsedUserInfo.role?.id;
-            
+          // Try to get role ID from multiple sources
+          let roleId = localStorage.getItem('roleId');
+          console.log('RoleId from localStorage:', roleId);
+          
+          if (!roleId) {
+            // Fallback to userInfo
+            const userInfo = localStorage.getItem('userInfo');
+            console.log('UserInfo from localStorage:', userInfo);
+            if (userInfo) {
+              const parsedUserInfo = JSON.parse(userInfo);
+              console.log('Parsed userInfo:', parsedUserInfo);
+              roleId = parsedUserInfo.role?.id;
+              console.log('RoleId from userInfo:', roleId);
+            }
+          }
+          
             if (roleId) {
               console.log('Fetching permissions on page load for role:', roleId);
               const permissionsResponse = await getRolePermissions(roleId);
@@ -33,8 +43,9 @@ export const PermissionProvider = ({ children }) => {
                   setPermissions(permissionNames);
                 }
               }
+            } else {
+              console.log('No role ID found in localStorage or userInfo');
             }
-          }
         }
       } catch (err) {
         console.error("Failed to fetch permissions on page load:", err);
@@ -58,6 +69,7 @@ export const PermissionProvider = ({ children }) => {
 
   // Check if user has a specific permission
   const hasPermission = (permissionName) => {
+    console.log('Checking permission:', permissionName, 'Available permissions:', permissions);
     return permissions.includes(permissionName);
   };
 

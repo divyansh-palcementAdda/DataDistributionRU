@@ -46,3 +46,12 @@ export const getBoardBreakdown = async (params = {}) => {
     }
 };
 
+export const getCourseTypesBreakdown = async (params = {}) => {
+    try {
+        const response = await axiosInstance.get(ApiRoutes.Dashboard.courseTypes, { params });
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+

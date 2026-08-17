@@ -47,11 +47,19 @@ const Login = () => {
 
         // Store role information
         const roleName = response.data.data.role?.name;
+        const roleId = response.data.data.role?.id;
         localStorage.setItem('userRole', roleName);
-        localStorage.setItem('userInfo', JSON.stringify(response.data.data.user));
+        localStorage.setItem('roleId', roleId);
+        
+        // Store user info with role embedded
+        const userData = {
+          ...response.data.data.user,
+          role: response.data.data.role
+        };
+        console.log('Storing userInfo with role:', userData);
+        localStorage.setItem('userInfo', JSON.stringify(userData));
 
         // Fetch permissions using roleId
-        const roleId = response.data.data.role?.id;
         console.log('Role ID:', roleId);
         if (roleId) {
           try {

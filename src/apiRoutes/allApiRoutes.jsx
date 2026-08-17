@@ -111,6 +111,7 @@ const ApiRoutes = {
         grade:'/api/dashboard/grade',
         course:'/api/dashboard/course',
         board:'/api/dashboard/board',
+        courseTypes: '/api/dashboard/course-types',
         recentActivity: '/api/dashboard/recent-activity',
         summary: '/api/dashboard/summary',
     }

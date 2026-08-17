@@ -2,13 +2,72 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
 import { getCourseById } from '../Services/course/course';
+import CustomButton from '../component/reusable/CustomButton';
+import ReusableTable from '../component/reusable/table';
 
 const CourseDetails = () => {
     const { navTo } = useAppContext();
     const [details, setDetails] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [activeTab, setActiveTab] = useState(null);
     const { id } = useParams();
+
+    // ─── Tab config ────────────────────────────────────────────────────────────
+    const tabs = [
+        {
+            key: 'image',
+            label: 'Image Management',
+            columns: [
+                { key: 'id',        header: 'ID' },
+                { key: 'imageName', header: 'Image Name' },
+                { key: 'imageUrl',  header: 'URL' },
+                { key: 'type',      header: 'Type' },
+                { key: 'createdAt', header: 'Created At' },
+            ],
+            data: [],
+            emptyMessage: 'No images found for this course.',
+        },
+        {
+            key: 'template',
+            label: 'Template Management',
+            columns: [
+                { key: 'id',           header: 'ID' },
+                { key: 'templateName', header: 'Template Name' },
+                { key: 'type',         header: 'Type' },
+                { key: 'status',       header: 'Status' },
+                { key: 'createdAt',    header: 'Created At' },
+            ],
+            data: [],
+            emptyMessage: 'No templates found for this course.',
+        },
+        {
+            key: 'usp',
+            label: 'USP Management',
+            columns: [
+                { key: 'id',         header: 'ID' },
+                { key: 'title',      header: 'Title' },
+                { key: 'description',header: 'Description' },
+                { key: 'order',      header: 'Order' },
+                { key: 'status',     header: 'Status' },
+            ],
+            data: [],
+            emptyMessage: 'No USPs found for this course.',
+        },
+        {
+            key: 'communication',
+            label: 'Communication Management',
+            columns: [
+                { key: 'id',      header: 'ID' },
+                { key: 'type',    header: 'Type' },
+                { key: 'message', header: 'Message' },
+                { key: 'sentTo',  header: 'Sent To' },
+                { key: 'sentAt',  header: 'Sent At' },
+            ],
+            data: [],
+            emptyMessage: 'No communication records found for this course.',
+        },
+    ];
 
 
     useEffect(() => {
@@ -43,7 +102,7 @@ const CourseDetails = () => {
     return (
         <div className="block p-4 sm:p-6" id="page-course-detail">
             {/* Page Header */}
-            <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
+            <div className="mb-6">
                 <div className="flex items-center gap-3">
                     <button
                         className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors border border-transparent hover:border-gray-200"
@@ -69,6 +128,22 @@ const CourseDetails = () => {
                             View comprehensive details for this course
                         </p>
                     </div>
+                </div>
+
+                {/* Action Buttons Row */}
+                <div className="flex flex-wrap gap-2 mt-3 ml-9">
+                    {tabs.map((tab) => (
+                        <CustomButton
+                            key={tab.key}
+                            variant={activeTab === tab.key ? 'primary' : 'outline'}
+                            className="text-xs px-3 py-1.5"
+                            onClick={() =>
+                                setActiveTab((prev) => (prev === tab.key ? null : tab.key))
+                            }
+                        >
+                            {tab.label}
+                        </CustomButton>
+                    ))}
                 </div>
             </div>
 
@@ -172,6 +247,27 @@ const CourseDetails = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Tab Table Section */}
+            {activeTab && (() => {
+                const tab = tabs.find((t) => t.key === activeTab);
+                if (!tab) return null;
+                return (
+                    <div className="mt-6 max-w-5xl">
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="text-base font-bold text-gray-800">{tab.label}</h3>
+                            <CustomButton variant="primary" className="text-xs px-3 py-1.5">
+                                + Add
+                            </CustomButton>
+                        </div>
+                        <ReusableTable
+                            columns={tab.columns}
+                            data={tab.data}
+                            emptyMessage={tab.emptyMessage}
+                        />
+                    </div>
+                );
+            })()}
         </div>
     );
 };

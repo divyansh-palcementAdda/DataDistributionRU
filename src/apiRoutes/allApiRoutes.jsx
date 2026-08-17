@@ -15,6 +15,9 @@ const ApiRoutes = {
         // mark a lead .
         markLead: '/api/leads/followups/{followUpId}/complete',
         completeFollowUp: '/api/leads/followups/{followUpId}/complete',
+        infoPanel: '/api/leads/{leadId}/info-panel',
+        sendWhatsApp: '/api/leads/{leadId}/course-template/whatsapp',
+        sendEmail: '/api/leads/{leadId}/course-template/email',
     },
     Lead_Source: {
         create: '/api/lead-sources',

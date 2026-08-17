@@ -2,15 +2,16 @@ import React, { useEffect, useState } from 'react';
 import { getCourseTypesBreakdown } from '../../../Services/cards/cardService';
 
 const CategorywiseCard = () => {
-  const [courseTypesData, setCourseTypesData] = useState({});
+  // API returns an array: [{id, name, code, count, percentage}, ...]
+  const [courseTypesData, setCourseTypesData] = useState([]);
 
   useEffect(() => {
     const fetchCourseTypes = async () => {
       try {
         const response = await getCourseTypesBreakdown();
-        if (response.data && response.data.data) {
-          setCourseTypesData(response.data.data);
-        }
+        const payload = response?.data?.data ?? response?.data ?? response ?? [];
+        // Normalise: always store as an array
+        setCourseTypesData(Array.isArray(payload) ? payload : Object.values(payload));
       } catch (error) {
         console.error('Error fetching course types:', error);
       }
@@ -18,6 +19,7 @@ const CategorywiseCard = () => {
 
     fetchCourseTypes();
   }, []);
+
   // Responsive styles
   const gridStyle = {
     display: 'grid',
@@ -25,34 +27,25 @@ const CategorywiseCard = () => {
     gap: '16px',
   };
 
-  // Generate card config dynamically from API data
-  const cardConfig = Object.keys(courseTypesData).map((key, index) => {
-    const colors = ['blue', 'teal', 'orange', 'purple', 'green', 'red'];
-    const color = colors[index % colors.length];
-    
-    return {
-      key: key,
-      label: key.charAt(0).toUpperCase() + key.slice(1).replace(/([A-Z])/g, ' $1'),
-      color: color,
-      iconBg: color === 'blue' ? 'var(--primary-light)' : 
-              color === 'teal' ? '#E0F2F1' : 
-              color === 'orange' ? '#FFF7ED' : 
-              color === 'purple' ? '#F3E8FF' : 
-              color === 'green' ? '#DCFCE7' : '#FEE2E2',
-      iconStroke: color === 'blue' ? 'var(--primary)' : 
-                  color === 'teal' ? '#009688' : 
-                  color === 'orange' ? '#EA580C' : 
-                  color === 'purple' ? '#9333EA' : 
-                  color === 'green' ? '#16A34A' : '#DC2626',
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <rect x="3" y="3" width="18" height="18" rx="2" />
-          <path d="M3 9h18" />
-          <path d="M9 21V9" />
-        </svg>
-      ),
-    };
-  });
+  const colors = ['blue', 'teal', 'orange', 'purple', 'green', 'red'];
+
+  const getIconBg = (color) => ({
+    blue: 'var(--primary-light)',
+    teal: '#E0F2F1',
+    orange: '#FFF7ED',
+    purple: '#F3E8FF',
+    green: '#DCFCE7',
+    red: '#FEE2E2',
+  }[color] || '#F5F5F5');
+
+  const getIconStroke = (color) => ({
+    blue: 'var(--primary)',
+    teal: '#009688',
+    orange: '#EA580C',
+    purple: '#9333EA',
+    green: '#16A34A',
+    red: '#DC2626',
+  }[color] || '#9E9E9E');
 
   return (
     <div style={{ marginBottom: '24px' }}>
@@ -64,7 +57,7 @@ const CategorywiseCard = () => {
       }}>
         Category Wise data
       </h2>
-      {cardConfig.length === 0 ? (
+      {courseTypesData.length === 0 ? (
         <div style={{
           textAlign: 'center',
           padding: '40px',
@@ -78,81 +71,91 @@ const CategorywiseCard = () => {
         </div>
       ) : (
         <div className="categorywise-responsive-grid" style={gridStyle}>
-          {cardConfig.map((card) => (
-          <div
-            key={card.key}
-            style={{
-              background: '#ffffff',
-              borderRadius: '12px',
-              padding: '12px',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-              border: '1px solid #e5e7eb',
-              transition: 'all 0.3s ease',
-              cursor: 'pointer',
-              height: '100px',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.12)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.08)';
-            }}
-          >
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              height: '100%',
-            }}>
+          {courseTypesData.map((item, index) => {
+            const color = colors[index % colors.length];
+            const iconBg = getIconBg(color);
+            const iconStroke = getIconStroke(color);
+            const label = item.name || item.code || `Category ${index + 1}`;
+            const count = typeof item.count === 'number' ? item.count.toLocaleString() : item.count ?? '0';
+
+            return (
+            <div
+              key={item.id ?? index}
+              style={{
+                background: '#ffffff',
+                borderRadius: '12px',
+                padding: '12px',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+                border: '1px solid #e5e7eb',
+                transition: 'all 0.3s ease',
+                cursor: 'pointer',
+                height: '100px',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.12)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.08)';
+              }}
+            >
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '12px',
-                flex: 1,
-                minWidth: 0,
+                justifyContent: 'space-between',
+                height: '100%',
               }}>
-                <div
-                  style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '10px',
-                    background: card.iconBg,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                  }}
-                >
-                  <div style={{ color: card.iconStroke }}>
-                    {card.icon}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  flex: 1,
+                  minWidth: 0,
+                }}>
+                  <div
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '10px',
+                      background: iconBg,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <div style={{ color: iconStroke }}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" />
+                        <path d="M3 9h18" />
+                        <path d="M9 21V9" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div style={{
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#1e293b',
+                    lineHeight: '1.3',
+                    flex: 1,
+                  }}>
+                    {label}
                   </div>
                 </div>
                 <div style={{
-                  fontSize: '14px',
-                  fontWeight: '600',
+                  fontSize: '28px',
+                  fontWeight: '700',
                   color: '#1e293b',
-                  lineHeight: '1.3',
-                  flex: 1,
+                  flexShrink: 0,
+                  marginLeft: '12px',
                 }}>
-                  {card.label}
+                  {count}
                 </div>
               </div>
-              <div style={{
-                fontSize: '28px',
-                fontWeight: '700',
-                color: '#1e293b',
-                flexShrink: 0,
-                marginLeft: '12px',
-              }}>
-                {typeof courseTypesData[card.key] === 'number' 
-                  ? courseTypesData[card.key].toLocaleString() 
-                  : courseTypesData[card.key] || '0'}
-              </div>
             </div>
-          </div>
-        ))}
+            );
+          })}
         </div>
       )}
       <style>{`

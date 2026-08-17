@@ -191,8 +191,8 @@ const HeadDashboard = () => {
 
   // Table columns for Head's allotted leads
   const leadColumns = [
-    { key: 'name', header: 'Lead Name' },
-    { key: 'phone', header: 'Phone' },
+    { key: 'name', header: 'Lead Name', render: (value) => (typeof value === "object" && value !== null ? value?.name || value?.fullName || "—" : value || "—") },
+    { key: 'phone', header: 'Phone', render: (value) => (typeof value === "object" && value !== null ? value?.phone || value?.mobileNo || "—" : value || "—") },
     { 
       key: 'course', 
       header: 'Course',
@@ -222,12 +222,12 @@ const HeadDashboard = () => {
       header: 'Source',
       render: (value) => value?.name || '—'
     },
-    { key: 'city', header: 'City' },
+    { key: 'city', header: 'City', render: (value) => (typeof value === "object" && value !== null ? value?.name || value?.city || "—" : value || "—") },
   ];
 
   // Table columns for caller performance
   const callerColumns = [
-    { key: 'name', header: 'Caller Name' },
+    { key: 'name', header: 'Caller Name', render: (value) => (typeof value === "object" && value !== null ? value?.name || value?.firstName || "—" : value || "—") },
     { 
       key: 'allotted', 
       header: 'Allotted',

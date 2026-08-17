@@ -144,8 +144,8 @@ const CallersDashboard = () => {
 
   // Table columns for caller's leads
   const leadColumns = [
-    { key: 'name', header: 'Lead Name' },
-    { key: 'phone', header: 'Phone' },
+    { key: 'name', header: 'Lead Name', render: (value) => (typeof value === "object" && value !== null ? value?.name || value?.fullName || "—" : value || "—") },
+    { key: 'phone', header: 'Phone', render: (value) => (typeof value === "object" && value !== null ? value?.phone || value?.mobileNo || "—" : value || "—") },
     { 
       key: 'course', 
       header: 'Course',
@@ -184,14 +184,14 @@ const CallersDashboard = () => {
 
   // Table columns for follow-ups
   const followupColumns = [
-    { key: 'name', header: 'Lead Name' },
+    { key: 'name', header: 'Lead Name', render: (value) => (typeof value === "object" && value !== null ? value?.name || value?.fullName || "—" : value || "—") },
     { 
       key: 'course', 
       header: 'Course',
       render: (value) => value?.courseName || value || '—'
     },
-    { key: 'time', header: 'Scheduled Time' },
-    { key: 'type', header: 'Type' },
+    { key: 'time', header: 'Scheduled Time', render: (value) => (typeof value === "object" && value !== null ? value?.time || "—" : value || "—") },
+    { key: 'type', header: 'Type', render: (value) => (typeof value === "object" && value !== null ? value?.type || value?.name || "—" : value || "—") },
     { 
       key: 'status', 
       header: 'Status',

@@ -119,9 +119,9 @@ const Grades = () => {
       sortable: false,
       render: (_, row, index) => (currentPage - 1) * rowsPerPage + index + 1
     },
-    { key: "gradeName", header: "Name" },
-    { key: "gradeCode", header: "Code" },
-    { key: "description", header: "Description" },
+    { key: "gradeName", header: "Name", render: (value) => (typeof value === "object" && value !== null ? value?.name || value?.gradeName || "-" : value || "-") },
+    { key: "gradeCode", header: "Code", render: (value) => (typeof value === "object" && value !== null ? value?.code || value?.gradeCode || "-" : value || "-") },
+    { key: "description", header: "Description", render: (value) => (typeof value === "object" && value !== null ? value?.description || "-" : value || "-") },
     {
       key: "status",
       header: "Status",

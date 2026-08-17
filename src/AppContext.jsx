@@ -12,12 +12,14 @@ export const AppProvider = ({ children }) => {
   const [editLeadData, setEditLeadData] = useState(null);
   const [currentPage, setCurrentPage] = useState('dashboard');
   const [isAccessDeniedModalOpen, setIsAccessDeniedModalOpen] = useState(false);
+  const [isSettingsExpanded, setIsSettingsExpanded] = useState(false);
 
   const navigate = useNavigate();
   const { clearPermissions } = usePermissions();
 
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
   const toggleDarkMode = () => setIsDarkMode((prev) => !prev);
+  const toggleSettingsExpanded = () => setIsSettingsExpanded((prev) => !prev);
 
 useEffect(() => {
   const handleResize = () => {
@@ -61,7 +63,11 @@ useEffect(() => {
     setCurrentPage(page);
     setIsSidebarOpen(false);
     // Navigate to the route path. Assumes page names match routes.
-    navigate(`/${page}`);
+    if (page.startsWith('settings/')) {
+      navigate(`/settings/${page.replace('settings/', '')}`);
+    } else {
+      navigate(`/${page}`);
+    }
   };
 
   const logout = () => {
@@ -103,6 +109,8 @@ useEffect(() => {
         openAccessDeniedModal,
         closeAccessDeniedModal,
         handleAccessDeniedBackToDashboard,
+        isSettingsExpanded,
+        toggleSettingsExpanded,
       }}
     >
       {children}

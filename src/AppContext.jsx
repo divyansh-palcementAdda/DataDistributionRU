@@ -1,5 +1,5 @@
 import { createContext, useContext, useState,useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { usePermissions } from './PermissionContext';
 
@@ -10,7 +10,15 @@ export const AppProvider = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isAddLeadModalOpen, setIsAddLeadModalOpen] = useState(false);
   const [editLeadData, setEditLeadData] = useState(null);
-  const [currentPage, setCurrentPage] = useState('dashboard');
+  const location = useLocation();
+  const [currentPage, setCurrentPage] = useState(() => {
+    // Initialize currentPage based on current URL path
+    const path = location.pathname;
+    if (path === '/callers-dashboard') return 'callers-dashboard';
+    if (path === '/head-dashboard') return 'head-dashboard';
+    if (path.startsWith('/settings/')) return path;
+    return path.replace('/', '') || 'dashboard';
+  });
   const [isAccessDeniedModalOpen, setIsAccessDeniedModalOpen] = useState(false);
   const [isSettingsExpanded, setIsSettingsExpanded] = useState(false);
 
@@ -35,6 +43,24 @@ useEffect(() => {
   };
 }, []);
 
+// Update currentPage when location changes
+useEffect(() => {
+  const path = location.pathname;
+  let newPage = 'dashboard';
+  
+  if (path === '/callers-dashboard') {
+    newPage = 'callers-dashboard';
+  } else if (path === '/head-dashboard') {
+    newPage = 'head-dashboard';
+  } else if (path.startsWith('/settings/')) {
+    newPage = path;
+  } else if (path.startsWith('/')) {
+    newPage = path.replace('/', '') || 'dashboard';
+  }
+  
+  setCurrentPage(newPage);
+}, [location.pathname]);
+
   
   const openAddLeadModal = (leadData = null) => {
     setEditLeadData(leadData);
@@ -56,7 +82,12 @@ useEffect(() => {
 
   const handleAccessDeniedBackToDashboard = () => {
     setIsAccessDeniedModalOpen(false);
-    navTo('dashboard');
+    const userRole = localStorage.getItem('userRole');
+    if (userRole === 'COUNSELOR' || userRole === 'HEAD') {
+      navTo('callers-dashboard');
+    } else {
+      navTo('dashboard');
+    }
   };
 
   const navTo = (page) => {
@@ -65,6 +96,10 @@ useEffect(() => {
     // Navigate to the route path. Assumes page names match routes.
     if (page.startsWith('settings/')) {
       navigate(`/settings/${page.replace('settings/', '')}`);
+    } else if (page === 'callers-dashboard') {
+      navigate('/callers-dashboard');
+    } else if (page === 'head-dashboard') {
+      navigate('/head-dashboard');
     } else {
       navigate(`/${page}`);
     }
@@ -73,8 +108,6 @@ useEffect(() => {
   const logout = () => {
     localStorage.clear();
     clearPermissions();
-    // Clear roleId as well
-    localStorage.removeItem('roleId');
     navigate('/');
   };
 

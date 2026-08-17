@@ -120,13 +120,11 @@ const Leads = () => {
   }, [leadsData]);
 
   const openDeleteModal = (lead) => {
-    console.log("openDeleteModal called with lead:", lead);
     setLeadToDelete(lead);
     setIsDeleteModalOpen(true);
   };
 
   const closeDeleteModal = () => {
-    console.log("closeDeleteModal called");
     setIsDeleteModalOpen(false);
     setLeadToDelete(null);
   };
@@ -165,7 +163,6 @@ const Leads = () => {
       if (res?.data?.success) {
         const content = res.data.data.content;
         if (content?.length > 0) {
-          console.log('🔍 Lead object structure from backend:', content[0]);
         }
         setLeadsData(content);
         setTotalElements(res.data.data.totalElements);
@@ -187,7 +184,6 @@ const Leads = () => {
        
         setCoursesData(['All Courses', ...courseNames]);
       } else {
-        console.log('API response success check failed');
       }
     } catch (error) {
       console.error("Failed to fetch courses", error);
@@ -217,7 +213,6 @@ const Leads = () => {
   ]);
 
   const openRemarkModal = (lead) => {
-      console.log("Lead Data:", lead);
     setSelectedLeadForRemark(lead);
     setIsRemarkModalOpen(true);
   };
@@ -246,10 +241,8 @@ const Leads = () => {
   const handleAllotLead = async (leadOrIds, userId) => {
     // TODO: Implement the actual API call to allot the lead(s)
     if (Array.isArray(leadOrIds)) {
-      console.log('Alloting multiple leads:', leadOrIds, 'to user:', userId);
       showToast(`${leadOrIds.length} leads allotted successfully`);
     } else {
-      console.log('Alloting lead:', leadOrIds.id || leadOrIds.leadId, 'to user:', userId);
       showToast('Lead allotted successfully');
     }
     await fetchLeads();
@@ -607,7 +600,6 @@ const Leads = () => {
                       className="text-red-500 hover:text-red-700 transition bg-transparent border-none cursor-pointer"
                       title="Delete"
                       onClick={() => {
-                        console.log("Inline delete button clicked for row:", safeRow);
                         openDeleteModal(safeRow);
                       }}
                     >

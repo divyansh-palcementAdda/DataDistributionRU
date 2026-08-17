@@ -37,9 +37,6 @@ const AccessDeniedModal = ({
                 </div>
 
                 <div className="modal-footer pt-4 mt-2 border-t border-gray-100 flex justify-end gap-3" style={{ justifyContent: 'flex-end', gap: '12px' }}>
-                    <CustomButton variant="secondary" onClick={onClose}>
-                        Close
-                    </CustomButton>
                     <CustomButton
                         onClick={onBackToDashboard}
                         className="bg-blue-600 hover:bg-blue-700 text-white border-transparent"

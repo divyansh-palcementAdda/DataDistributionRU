@@ -146,7 +146,7 @@ const CourseType = () => {
 
 
                 <CustomButton variant="primary" onClick={() => { setEditData(null); setIsAddModalOpen(true); }} className="text-sm py-2 px-4 shadow-sm hover:shadow-md transition-shadow">
-                    + Add Course Type
+                    + Add Category Type
                 </CustomButton>
             </div>
 

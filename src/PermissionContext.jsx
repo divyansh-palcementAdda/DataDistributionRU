@@ -15,37 +15,29 @@ export const PermissionProvider = ({ children }) => {
         if (userRole) {
           // Try to get role ID from multiple sources
           let roleId = localStorage.getItem('roleId');
-          console.log('RoleId from localStorage:', roleId);
           
           if (!roleId) {
             // Fallback to userInfo
             const userInfo = localStorage.getItem('userInfo');
-            console.log('UserInfo from localStorage:', userInfo);
             if (userInfo) {
               const parsedUserInfo = JSON.parse(userInfo);
-              console.log('Parsed userInfo:', parsedUserInfo);
               roleId = parsedUserInfo.role?.id;
-              console.log('RoleId from userInfo:', roleId);
             }
           }
           
             if (roleId) {
-              console.log('Fetching permissions on page load for role:', roleId);
+             
               const permissionsResponse = await getRolePermissions(roleId);
-              console.log('Permissions API Response on load:', permissionsResponse);
+             
               
               if (permissionsResponse && permissionsResponse.status === 200) {
                 const permissionsData = permissionsResponse.data.data || permissionsResponse.data;
-                console.log('Permissions Data on load:', permissionsData);
                 if (Array.isArray(permissionsData)) {
                   const permissionNames = permissionsData.map(perm => perm.name);
-                  console.log('Setting permissions on page load:', permissionNames);
                   setPermissions(permissionNames);
                 }
               }
-            } else {
-              console.log('No role ID found in localStorage or userInfo');
-            }
+            } 
         }
       } catch (err) {
         console.error("Failed to fetch permissions on page load:", err);
@@ -58,7 +50,6 @@ export const PermissionProvider = ({ children }) => {
   // Set permissions (called after login)
   const setPermissionsData = (permissionsData) => {
     const permissionNames = permissionsData.map(perm => perm.name);
-    console.log('Setting permissions:', permissionNames);
     setPermissions(permissionNames);
   };
 
@@ -69,7 +60,6 @@ export const PermissionProvider = ({ children }) => {
 
   // Check if user has a specific permission
   const hasPermission = (permissionName) => {
-    console.log('Checking permission:', permissionName, 'Available permissions:', permissions);
     return permissions.includes(permissionName);
   };
 

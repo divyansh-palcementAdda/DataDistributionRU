@@ -43,7 +43,6 @@ const Login = () => {
         Cookies.set('accessToken', response.data.data.accessToken);
         Cookies.set('refreshToken', response.data.data.refreshToken);
 
-        console.log('Login response data:', response.data.data);
 
         // Store role information
         const roleName = response.data.data.role?.name;
@@ -56,20 +55,15 @@ const Login = () => {
           ...response.data.data.user,
           role: response.data.data.role
         };
-        console.log('Storing userInfo with role:', userData);
         localStorage.setItem('userInfo', JSON.stringify(userData));
 
         // Fetch permissions using roleId
-        console.log('Role ID:', roleId);
         if (roleId) {
           try {
             const permissionsResponse = await getRolePermissions(roleId);
-            console.log('Permissions API Response:', permissionsResponse);
             if (permissionsResponse && permissionsResponse.status === 200) {
               const permissionsData = permissionsResponse.data.data || permissionsResponse.data;
-              console.log('Permissions Data:', permissionsData);
               if (Array.isArray(permissionsData)) {
-                console.log('Setting permissions after login:', permissionsData);
                 setPermissionsData(permissionsData);
               } else {
                 console.log('Permissions data is not an array:', permissionsData);

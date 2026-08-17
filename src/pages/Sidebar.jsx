@@ -8,8 +8,21 @@ const BRAND_SUBTITLE = 'Education Lead Management';
 const Sidebar = () => {
   const { currentPage, navTo, isSidebarOpen, toggleSidebar, isSettingsExpanded, toggleSettingsExpanded } = useAppContext();
 
+  // Get user role to determine which dashboard to show in sidebar
+  const userRole = localStorage.getItem('userRole');
+  
+  // Update dashboard navigation based on user role
+  const getDashboardId = () => {
+    if (userRole === 'COUNSELOR' || userRole === 'HEAD') {
+      return 'callers-dashboard';
+    }
+    return 'dashboard';
+  };
+
+  const dashboardId = getDashboardId();
+
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>' },
+    { id: dashboardId, label: 'Dashboard', icon: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>' },
     { id: 'leads', label: 'Leads', icon: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>' },
     { id: 'followups', label: 'Follow-up', icon: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01"/></svg>' },
     { id: 'course-types', label: 'Category', icon: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>' },

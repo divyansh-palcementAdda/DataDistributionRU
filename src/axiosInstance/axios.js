@@ -83,7 +83,6 @@ const logoutUser = async () => {
         }
       );
 
-      console.log("Logout API called successfully");
     }
   } catch (logoutError) {
     // Logout API fail ho jaye tab bhi

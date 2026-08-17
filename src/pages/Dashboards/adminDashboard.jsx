@@ -127,11 +127,9 @@ const Dashboard = () => {
     const fetchLeadSourceData = async () => {
       try {
         const response = await getLeadSourceBreakdown();
-        console.log('Lead Source API Response:', response);
         
         if (response.data && response.data.data) {
           const apiData = response.data.data;
-          console.log('API Data:', apiData);
           
           // Handle if API returns an array of objects
           if (Array.isArray(apiData)) {

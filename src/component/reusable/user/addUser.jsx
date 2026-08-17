@@ -69,14 +69,10 @@ const AddUserModal = ({ isOpen, onClose, onSuccess, initialData }) => {
         const fetchRoles = async () => {
             try {
                 const response = await getAllRoles();
-                console.log('Roles response:', response);
-                console.log('Response data:', response.data);
                 
                 if (response && response.data && response.data.data && Array.isArray(response.data.data)) {
-                    console.log('Setting roles:', response.data.data);
                     setRoles(response.data.data);
                 } else {
-                    console.log('No valid roles data found');
                     setRoles([]);
                 }
             } catch (error) {

@@ -34,7 +34,7 @@ const CourseTypeDetails = () => {
     }, [id]);
 
     const goBack = () => {
-        navTo('courses-types');
+        navTo('/course-types');
     };
 
     if (loading) {

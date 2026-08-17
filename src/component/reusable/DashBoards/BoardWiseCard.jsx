@@ -68,7 +68,7 @@ const BoardWiseCard = ({ data = {} }) => {
         color: '#1e293b', 
         marginBottom: '16px' 
       }}>
-        Board wise data
+        Specialization
       </h2>
       
       {cardsWithData.length === 0 ? (

@@ -83,6 +83,24 @@ const todayFollowups = followups.filter((f) => f.status === 'today');
 
 const Dashboard = () => {
   const { openAddLeadModal, navTo } = useAppContext();
+  
+  // Get user info from localStorage for dynamic name
+  const getUserInfo = () => {
+    try {
+      const userInfo = localStorage.getItem('userInfo');
+      if (userInfo) {
+        const user = JSON.parse(userInfo);
+        return user;
+      }
+    } catch (error) {
+      console.error('Error parsing user info:', error);
+    }
+    return null;
+  };
+  
+  const userInfo = getUserInfo();
+  const userName = userInfo?.name || userInfo?.firstName || userInfo?.username || 'User';
+  
   const [leadSourceData, setLeadSourceData] = useState({
     totalConsultantData: 0,
     totalInboundData: 0,
@@ -368,7 +386,7 @@ const Dashboard = () => {
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#ffffff' }}>   Welcome to Dashboard </h1>
           <p style={{ fontSize: '13px', color: '#e0e7ff', marginTop: '4px' }}>
-            Good morning, Arjun! Here&apos;s what&apos;s happening today.
+            Good morning, {userName}! Here&apos;s what&apos;s happening today.
           </p>
         </div>
      

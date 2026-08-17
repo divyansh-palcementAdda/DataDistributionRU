@@ -48,7 +48,7 @@ const SystemCards = ({ data = {} }) => {
         color: '#1e293b', 
         marginBottom: '16px' 
       }}>
-        System Overview
+        Admin Management
       </h2>
       <div className="system-cards-responsive-grid" style={gridStyle}>
         {cardConfig.map((card) => (

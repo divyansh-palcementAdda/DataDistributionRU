@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { getLeadStatusBreakdown } from '../../../Services/cards/cardService';
 
-const LeadCards = () => {
+const LeadCards = ({ onCardClick, selectedCard }) => {
   const [leadData, setLeadData] = useState([]);
 
   useEffect(() => {
     const fetchLeadStatusData = async () => {
       try {
-        const response = await getLeadStatusBreakdown();
+        const filterRequest = {};
+        const response = await getLeadStatusBreakdown({ filterRequest: JSON.stringify(filterRequest) });
         setLeadData(response.data?.data || []);
       } catch (error) {
         console.error('Error fetching lead status breakdown:', error);
@@ -176,16 +177,21 @@ const LeadCards = () => {
           return (
             <div
               key={item.id}
+              onClick={() => onCardClick && onCardClick({ type: 'leadStatus', value: item.code, label: item.name })}
               style={{
                 background: cardStyle.isHighlighted ? 'linear-gradient(135deg, #FFF9E6 0%, #FFFFFF 100%)' : '#ffffff',
                 borderRadius: '12px',
                 padding: cardStyle.isHighlighted ? '12px' : '12px',
-                boxShadow: cardStyle.isHighlighted 
-                  ? '0 4px 20px rgba(255, 215, 0, 0.3), 0 0 0 2px rgba(255, 215, 0, 0.5)' 
-                  : '0 2px 8px rgba(0, 0, 0, 0.08)',
-                border: cardStyle.isHighlighted 
-                  ? '2px solid #FFD700' 
-                  : '1px solid #e5e7eb',
+                boxShadow: selectedCard?.type === 'leadStatus' && selectedCard?.value === item.code
+                  ? '0 0 0 1.5px #6366f1, 0 4px 12px rgba(99,102,241,0.12)'
+                  : cardStyle.isHighlighted 
+                    ? '0 4px 20px rgba(255, 215, 0, 0.3), 0 0 0 2px rgba(255, 215, 0, 0.5)' 
+                    : '0 2px 8px rgba(0, 0, 0, 0.08)',
+                border: selectedCard?.type === 'leadStatus' && selectedCard?.value === item.code
+                  ? '1.5px solid #6366f1'
+                  : cardStyle.isHighlighted 
+                    ? '2px solid #FFD700' 
+                    : '1px solid #e5e7eb',
                 transition: 'all 0.3s ease',
                 cursor: 'pointer',
                 position: 'relative',
@@ -194,15 +200,9 @@ const LeadCards = () => {
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateY(-4px)';
-                e.currentTarget.style.boxShadow = cardStyle.isHighlighted 
-                  ? '0 8px 30px rgba(255, 215, 0, 0.4), 0 0 0 3px rgba(255, 215, 0, 0.6)' 
-                  : '0 8px 24px rgba(0, 0, 0, 0.12)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = cardStyle.isHighlighted 
-                  ? '0 4px 20px rgba(255, 215, 0, 0.3), 0 0 0 2px rgba(255, 215, 0, 0.5)' 
-                  : '0 2px 8px rgba(0, 0, 0, 0.08)';
               }}
             >
               <div style={{

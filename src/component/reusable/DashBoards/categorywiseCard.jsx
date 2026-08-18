@@ -8,7 +8,8 @@ const CategorywiseCard = () => {
   useEffect(() => {
     const fetchCourseTypes = async () => {
       try {
-        const response = await getCourseTypesBreakdown();
+        const filterRequest = {};
+        const response = await getCourseTypesBreakdown({ filterRequest: JSON.stringify(filterRequest) });
         const payload = response?.data?.data ?? response?.data ?? response ?? [];
         // Normalise: always store as an array
         setCourseTypesData(Array.isArray(payload) ? payload : Object.values(payload));

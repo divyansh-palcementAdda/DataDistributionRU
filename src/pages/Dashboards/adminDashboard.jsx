@@ -126,7 +126,8 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchLeadSourceData = async () => {
       try {
-        const response = await getLeadSourceBreakdown();
+        const filterRequest = {};
+        const response = await getLeadSourceBreakdown({ filterRequest: JSON.stringify(filterRequest) });
         
         if (response.data && response.data.data) {
           const apiData = response.data.data;
@@ -177,7 +178,8 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchGradeWiseData = async () => {
       try {
-        const response = await getGradeBreakdown();
+        const filterRequest = {};
+        const response = await getGradeBreakdown({ filterRequest: JSON.stringify(filterRequest) });
         console.log('Grade Wise API Response:', response);
         
         if (response.data && response.data.data) {
@@ -230,7 +232,8 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchBoardWiseData = async () => {
       try {
-        const response = await getBoardBreakdown();
+        const filterRequest = {};
+        const response = await getBoardBreakdown({ filterRequest: JSON.stringify(filterRequest) });
         console.log('Board Wise API Response:', response);
         
         if (response.data && response.data.data) {

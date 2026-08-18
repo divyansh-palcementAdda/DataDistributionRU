@@ -1,11 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { getCourseTypesBreakdown } from '../../../Services/cards/cardService';
 
-const CategorywiseCard = () => {
+const CategorywiseCard = ({ data, onCardClick, selectedCard }) => {
   // API returns an array: [{id, name, code, count, percentage}, ...]
   const [courseTypesData, setCourseTypesData] = useState([]);
 
   useEffect(() => {
+    if (data !== undefined) {
+      const payload = data ?? [];
+      setCourseTypesData(Array.isArray(payload) ? payload : Object.values(payload));
+      return;
+    }
+
     const fetchCourseTypes = async () => {
       try {
         const filterRequest = {};
@@ -19,7 +25,7 @@ const CategorywiseCard = () => {
     };
 
     fetchCourseTypes();
-  }, []);
+  }, [data]);
 
   // Responsive styles
   const gridStyle = {
@@ -78,27 +84,31 @@ const CategorywiseCard = () => {
             const iconStroke = getIconStroke(color);
             const label = item.name || item.code || `Category ${index + 1}`;
             const count = typeof item.count === 'number' ? item.count.toLocaleString() : item.count ?? '0';
+            const isSelected = selectedCard?.type === 'courseType' && (selectedCard?.value === item.code || selectedCard?.value === item.id);
 
             return (
             <div
               key={item.id ?? index}
+              onClick={() => onCardClick && onCardClick({ type: 'courseType', value: item.code || item.id, label })}
               style={{
                 background: '#ffffff',
                 borderRadius: '12px',
                 padding: '12px',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-                border: '1px solid #e5e7eb',
+                boxShadow: isSelected
+                  ? '0 0 0 1.5px #6366f1, 0 4px 12px rgba(99,102,241,0.12)'
+                  : '0 2px 8px rgba(0, 0, 0, 0.08)',
+                border: isSelected ? '1.5px solid #6366f1' : '1px solid #e5e7eb',
                 transition: 'all 0.3s ease',
                 cursor: 'pointer',
                 height: '100px',
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateY(-4px)';
-                e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.12)';
+                if (!isSelected) e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.12)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.08)';
+                if (!isSelected) e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.08)';
               }}
             >
               <div style={{

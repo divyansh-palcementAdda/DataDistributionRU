@@ -2,8 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAppContext } from '../AppContext';
 import ReusableTable from '../component/reusable/table';
 import AddLeadSourceModal from '../component/reusable/Leads/addLeadSourceModel';
-import ViewLeadSourceModal from '../component/reusable/Leads/viewLeadSourseModel';
-import { getAllLeadSource, getLeadSourceById, deleteLeadSource, toggleLeadSource } from '../Services/leadsource/leadSourceService';
+import { getAllLeadSource, deleteLeadSource, toggleLeadSource } from '../Services/leadsource/leadSourceService';
 import { getLeadSourceWiseStats } from '../Services/lead/leadService';
 import CustomToggle from '../component/reusable/custumToggle';
 import StatsCard from '../component/reusable/StatsCard';
@@ -25,7 +24,7 @@ const fmtDate = (iso) => {
 
 
 const LeadSource = () => {
-    const { showToast } = useAppContext();
+    const { showToast, navTo } = useAppContext();
 
     /* ── Stats Cards state ── */
     const [statsData, setStatsData] = useState([]);
@@ -71,8 +70,7 @@ const LeadSource = () => {
     /* ── Modal ── */
     const [isAddLeadSourceModalOpen, setIsAddLeadSourceModalOpen] = useState(false);
     const [editModalData, setEditModalData] = useState(null);
-    const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-    const [viewModalData, setViewModalData] = useState(null);
+
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [deleteModalData, setDeleteModalData] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
@@ -137,18 +135,8 @@ const LeadSource = () => {
         if (didChange === true) fetchData(); // refresh after creation or update
     };
 
-    const handleView = async (row) => {
-        try {
-            const res = await getLeadSourceById(row.id);
-            if (res?.data?.success) {
-                setViewModalData(res.data.data);
-                setIsViewModalOpen(true);
-            } else {
-                showToast(res?.data?.message || 'Failed to fetch lead source details', 'error');
-            }
-        } catch (err) {
-            showToast('Error fetching lead source details', 'error');
-        }
+    const handleView = (row) => {
+        navTo(`lead-source-details/${row.id}`);
     };
 
     const handleEdit = (row) => {
@@ -283,7 +271,7 @@ const LeadSource = () => {
                 </div>
             </div>
 
-          
+
             {/* ── Search & Sort Bar ── */}
             <div
                 className="filter-bar"
@@ -369,12 +357,7 @@ const LeadSource = () => {
                 editData={editModalData}
             />
 
-            {/* ── View Lead Source Modal ── */}
-            <ViewLeadSourceModal
-                isOpen={isViewModalOpen}
-                onClose={() => setIsViewModalOpen(false)}
-                data={viewModalData}
-            />
+
 
             {/* ── Delete Modal ── */}
             <DeleteModal

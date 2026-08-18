@@ -23,6 +23,7 @@ import Reports from "./pages/Reports";
 import Courses from "./pages/Courses";
 import Settings from "./pages/Settings";
 import Leadsourse from "./pages/DataSource";
+import DataSourceDetails from "./pages/dataSourceDetails";
 import CourseType from "./pages/CourseType";
 import CourseTypeDetails from "./pages/CourseTypeDetails";
 import CourseDetails from "./pages/CourseDetails";
@@ -76,6 +77,7 @@ const Allroutes = () => {
           <Route path="roles-permissions" element={<RolesAndPermissions />} />
         </Route>
         <Route path="/lead-source" element={<Leadsourse />} />
+        <Route path="/lead-source-details/:id" element={<DataSourceDetails />} />
         <Route path="/course-types" element={<CourseType />} />
         <Route path="/course-types/:id" element={<CourseTypeDetails />} />
         <Route path="/course-details/:id" element={<CourseDetails />} />

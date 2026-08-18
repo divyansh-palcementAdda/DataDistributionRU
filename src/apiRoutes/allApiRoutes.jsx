@@ -108,7 +108,7 @@ const ApiRoutes = {
         toggle: '/api/grades/{id}/toggle-active'
     },
 
-    Boards:{
+    Boards: {
         create: '/api/boards',
         getAll: '/api/boards',
         getById: '/api/boards/{id}',
@@ -135,12 +135,21 @@ const ApiRoutes = {
     Dashboard: {
         leadStatus: '/api/dashboard/lead-status',
         leadSource: '/api/dashboard/lead-source',
-        grade:'/api/dashboard/grade',
-        course:'/api/dashboard/course',
-        board:'/api/dashboard/board',
+        grade: '/api/dashboard/grade',
+        course: '/api/dashboard/course',
+        board: '/api/dashboard/board',
         courseTypes: '/api/dashboard/course-types',
         recentActivity: '/api/dashboard/recent-activity',
         summary: '/api/dashboard/summary',
+    },
+
+    Department: {
+        create: '/api/departments',
+        getAll: '/api/departments',
+        getById: '/api/departments/{id}',
+        update: '/api/departments/{id}',
+        delete: '/api/departments/{id}',
+        toggle: '/api/departments/{id}/toggle-active'
     }
 }
 

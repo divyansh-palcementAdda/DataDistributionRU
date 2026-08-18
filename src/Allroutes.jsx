@@ -22,7 +22,7 @@ import Counselors from "./pages/Counselors";
 import Reports from "./pages/Reports";
 import Courses from "./pages/Courses";
 import Settings from "./pages/Settings";
-import Leadsourse from "./pages/LeadSource";
+import Leadsourse from "./pages/DataSource";
 import CourseType from "./pages/CourseType";
 import CourseTypeDetails from "./pages/CourseTypeDetails";
 import CourseDetails from "./pages/CourseDetails";

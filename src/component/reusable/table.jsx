@@ -116,7 +116,9 @@ const ReusableTable = ({
                                         >
                                             {column.render
                                                 ? column.render(row[column.key], row, index)
-                                                : row[column.key]}
+                                                : (typeof row[column.key] === 'object' && row[column.key] !== null)
+                                                    ? JSON.stringify(row[column.key])
+                                                    : row[column.key] ?? '-'}
                                         </td>
                                     ))}
 
@@ -179,7 +181,9 @@ const ReusableTable = ({
                                     <span className="text-sm text-gray-800 text-right">
                                         {column.render
                                             ? column.render(row[column.key], row, index)
-                                            : row[column.key]}
+                                            : (typeof row[column.key] === 'object' && row[column.key] !== null)
+                                                ? JSON.stringify(row[column.key])
+                                                : row[column.key] ?? '-'}
                                     </span>
                                 </div>
                             ))}

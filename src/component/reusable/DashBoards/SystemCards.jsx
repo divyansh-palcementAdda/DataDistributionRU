@@ -48,7 +48,7 @@ const SystemCards = ({ data = {} }) => {
         color: '#1e293b', 
         marginBottom: '16px' 
       }}>
-        System Overview
+        Admin Management
       </h2>
       <div className="system-cards-responsive-grid" style={gridStyle}>
         {cardConfig.map((card) => (
@@ -76,40 +76,51 @@ const SystemCards = ({ data = {} }) => {
             <div style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '12px',
-              marginBottom: '8px',
+              justifyContent: 'space-between',
+              height: '100%',
             }}>
-              <div
-                style={{
-                  width: '40px',
-                  height: '40px',
-                  borderRadius: '10px',
-                  background: card.iconBg,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}
-              >
-                <div style={{ color: card.iconStroke }}>
-                  {card.icon}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                flex: 1,
+                minWidth: 0,
+              }}>
+                <div
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '10px',
+                    background: card.iconBg,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <div style={{ color: card.iconStroke }}>
+                    {card.icon}
+                  </div>
+                </div>
+                <div style={{
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  color: '#1e293b',
+                  lineHeight: '1.3',
+                  flex: 1,
+                }}>
+                  {card.label}
                 </div>
               </div>
               <div style={{
-                fontSize: '14px',
-                fontWeight: '600',
+                fontSize: '28px',
+                fontWeight: '700',
                 color: '#1e293b',
-                lineHeight: '1.3',
+                flexShrink: 0,
+                marginLeft: '12px',
               }}>
-                {card.label}
+                {data[card.key] !== undefined ? data[card.key].toLocaleString() : '0'}
               </div>
-            </div>
-            <div style={{
-              fontSize: '28px',
-              fontWeight: '700',
-              color: '#1e293b',
-            }}>
-              {data[card.key] !== undefined ? data[card.key].toLocaleString() : '0'}
             </div>
           </div>
         ))}

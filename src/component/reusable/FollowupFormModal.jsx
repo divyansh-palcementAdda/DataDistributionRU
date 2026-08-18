@@ -70,7 +70,6 @@ const FollowupFormModal = ({ isOpen, onClose, onSubmit, initialData = null }) =>
         setTimeout(() => {
             setLoading(false);
             showToast("Follow-up submitted successfully!", "success");
-            console.log("Form Data Submitted:", formData);
             onSubmit(formData); // Callback to parent
             onClose(); // Close modal on success
         }, 1500);

@@ -85,3 +85,14 @@ export const toggleCourseStatus = async (id) => {
         throw error.response?.data || error.message;
     }
 };
+
+export const getCourseCommunicationConfig = async (courseId) => {
+    try {
+        const response = await axiosInstance.get(
+            ApiRoutes.Course.communicationConfig.replace('{courseId}', courseId)
+        );
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};

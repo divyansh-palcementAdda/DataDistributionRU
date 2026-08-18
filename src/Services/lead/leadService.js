@@ -93,3 +93,38 @@ export const completeLeadFollowUp = async (followUpId, remarks = "") => {
         throw error;
     }
 };
+
+// Get Info Panel data for a lead (with optional courseId)
+export const getLeadInfoPanel = async (leadId, courseId = null) => {
+    try {
+        const url = ApiRoutes.Lead.infoPanel.replace('{leadId}', leadId);
+        const response = await axiosInstance.get(url, {
+            params: courseId ? { courseId } : {},
+        });
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
+// Send WhatsApp message to lead via course template
+export const sendLeadWhatsApp = async (leadId, data) => {
+    try {
+        const url = ApiRoutes.Lead.sendWhatsApp.replace('{leadId}', leadId);
+        const response = await axiosInstance.post(url, data);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
+// Send Email to lead via course template
+export const sendLeadEmail = async (leadId, data) => {
+    try {
+        const url = ApiRoutes.Lead.sendEmail.replace('{leadId}', leadId);
+        const response = await axiosInstance.post(url, data);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};

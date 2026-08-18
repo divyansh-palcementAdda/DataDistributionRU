@@ -30,13 +30,7 @@ const Grades = () => {
   const fetchGrades = async () => {
     try {
       setLoading(true);
-      console.log("Fetching grades with params:", {
-        page: currentPage - 1,
-        size: rowsPerPage,
-        search: debouncedSearch,
-        sortBy,
-        sortDirection,
-      });
+      
       
       const res = await gradsService.getAllGrades({
         page: currentPage - 1,
@@ -46,7 +40,6 @@ const Grades = () => {
         sortDirection,
       });
 
-      console.log("API response:", res);
 
       // Map API response to UI format
       const mappedGrades = (res.data?.content || []).map(grade => ({
@@ -126,9 +119,9 @@ const Grades = () => {
       sortable: false,
       render: (_, row, index) => (currentPage - 1) * rowsPerPage + index + 1
     },
-    { key: "gradeName", header: "Name" },
-    { key: "gradeCode", header: "Code" },
-    { key: "description", header: "Description" },
+    { key: "gradeName", header: "Name", render: (value) => (typeof value === "object" && value !== null ? value?.name || value?.gradeName || "-" : value || "-") },
+    { key: "gradeCode", header: "Code", render: (value) => (typeof value === "object" && value !== null ? value?.code || value?.gradeCode || "-" : value || "-") },
+    { key: "description", header: "Description", render: (value) => (typeof value === "object" && value !== null ? value?.description || "-" : value || "-") },
     {
       key: "status",
       header: "Status",

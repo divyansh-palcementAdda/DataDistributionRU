@@ -1,6 +1,7 @@
 import { BrowserRouter } from "react-router-dom";
 import Allroutes from "./Allroutes";
 import { AppProvider, useAppContext } from "./AppContext";
+import { PermissionProvider } from "./PermissionContext";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import AccessDeniedModal from "./component/reusable/AccessDeniedModal";
@@ -36,11 +37,13 @@ function AppContent() {
 
 function App() {
   return (
-    <BrowserRouter>
-      <AppProvider>
-        <AppContent />
-      </AppProvider>
-    </BrowserRouter>
+    <PermissionProvider>
+      <BrowserRouter>
+        <AppProvider>
+          <AppContent />
+        </AppProvider>
+      </BrowserRouter>
+    </PermissionProvider>
   );
 }
 

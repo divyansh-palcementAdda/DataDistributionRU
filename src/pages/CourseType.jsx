@@ -113,8 +113,8 @@ const CourseType = () => {
             sortable: false,
             render: (_, row, index) => (currentPage - 1) * rowsPerPage + index + 1
         },
-        { key: "name", header: "Name" },
-        { key: "description", header: "Description" },
+        { key: "name", header: "Name", render: (value) => (typeof value === "object" && value !== null ? value?.name || "-" : value || "-") },
+        { key: "description", header: "Description", render: (value) => (typeof value === "object" && value !== null ? value?.description || "-" : value || "-") },
         {
             key: "status",
             header: "Status",
@@ -132,8 +132,8 @@ const CourseType = () => {
             {/* Page Header */}
             <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Course Types</h1>
-                    <p className="text-sm text-gray-500 mt-1">Manage your course types catalog and parameters</p>
+                    <h1 className="text-2xl font-bold text-gray-900">Category</h1>
+                    <p className="text-sm text-gray-500 mt-1">Manage your Category catalog and parameters</p>
                 </div>
 
                 <input
@@ -146,7 +146,7 @@ const CourseType = () => {
 
 
                 <CustomButton variant="primary" onClick={() => { setEditData(null); setIsAddModalOpen(true); }} className="text-sm py-2 px-4 shadow-sm hover:shadow-md transition-shadow">
-                    + Add Course Type
+                    + Add Category Type
                 </CustomButton>
             </div>
 

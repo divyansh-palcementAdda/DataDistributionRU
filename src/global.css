@@ -208,6 +208,46 @@ body.dark .cal-day {
   font-weight: 600;
 }
 
+.submenu-arrow {
+  width: 16px;
+  height: 16px;
+  margin-left: auto;
+  transition: transform 0.2s;
+}
+
+.nav-item[aria-expanded="true"] .submenu-arrow {
+  transform: rotate(90deg);
+}
+
+.submenu {
+  margin-left: 30px;
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.submenu-item {
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: var(--gray-600);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.submenu-item:hover {
+  background: var(--gray-50);
+  color: var(--gray-900);
+}
+
+.submenu-item.active {
+  background: var(--primary-light);
+  color: var(--primary);
+  font-weight: 600;
+}
+
 .sidebar-bottom {
   padding: 12px;
   margin-top: auto;

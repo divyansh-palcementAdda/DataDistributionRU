@@ -111,8 +111,8 @@ const Courses = () => {
       sortable: false,
       render: (_, row, index) => (currentPage - 1) * rowsPerPage + index + 1
     },
-    { key: "courseName", header: "Name" },
-    { key: "description", header: "Description" },
+    { key: "courseName", header: "Name", render: (value) => (typeof value === "object" && value !== null ? value?.courseName || value?.name || "-" : value || "-") },
+    { key: "description", header: "Description", render: (value) => (typeof value === "object" && value !== null ? value?.description || "-" : value || "-") },
     {
       key: "status",
       header: "Status",

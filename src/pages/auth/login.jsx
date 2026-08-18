@@ -4,9 +4,12 @@ import { login } from "../../Services/auth/login";
 import { getRolePermissions } from "../../Services/role/roleService";
 import { toast } from "react-toastify";
 import Cookies from "js-cookie";
+import { useAppContext } from "../../AppContext";
+import { usePermissions } from "../../PermissionContext";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { setPermissionsData } = usePermissions();
   const [form, setForm] = useState({ email: "", password: "" });
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -40,28 +43,45 @@ const Login = () => {
         Cookies.set('accessToken', response.data.data.accessToken);
         Cookies.set('refreshToken', response.data.data.refreshToken);
 
+
         // Store role information
         const roleName = response.data.data.role?.name;
+        const roleId = response.data.data.role?.id;
         localStorage.setItem('userRole', roleName);
-        localStorage.setItem('userInfo', JSON.stringify(response.data.data.user));
+        localStorage.setItem('roleId', roleId);
+        
+        // Store user info with role embedded
+        const userData = {
+          ...response.data.data.user,
+          role: response.data.data.role
+        };
+        localStorage.setItem('userInfo', JSON.stringify(userData));
 
         // Fetch permissions using roleId
-        const roleId = response.data.data.role?.id;
         if (roleId) {
           try {
             const permissionsResponse = await getRolePermissions(roleId);
             if (permissionsResponse && permissionsResponse.status === 200) {
-              localStorage.setItem('permissions', JSON.stringify(permissionsResponse.data.data || permissionsResponse.data));
+              const permissionsData = permissionsResponse.data.data || permissionsResponse.data;
+              if (Array.isArray(permissionsData)) {
+                setPermissionsData(permissionsData);
+              } else {
+                console.log('Permissions data is not an array:', permissionsData);
+              }
+            } else {
+              console.log('Permissions API status not 200:', permissionsResponse?.status);
             }
           } catch (err) {
             console.error("Failed to fetch permissions:", err);
           }
+        } else {
+          console.log('No role ID found');
         }
 
         // Role-based routing
         if (roleName === 'SUPER_ADMIN' || roleName === 'ADMIN') {
           navigate("/dashboard");
-        } else if (roleName === 'COUNSELORS' || roleName === 'HEAD') {
+        } else if (roleName === 'COUNSELOR' || roleName === 'HEAD') {
           navigate("/callers-dashboard");
         } else {
           navigate("/dashboard");

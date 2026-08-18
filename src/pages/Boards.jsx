@@ -113,8 +113,8 @@ const Boards = () => {
       sortable: false,
       render: (_, row, index) => (currentPage - 1) * rowsPerPage + index + 1
     },
-    { key: "name", header: "Name" },
-    { key: "description", header: "Description" },
+    { key: "name", header: "Name", render: (value) => (typeof value === "object" && value !== null ? value?.name || "-" : value || "-") },
+    { key: "description", header: "Description", render: (value) => (typeof value === "object" && value !== null ? value?.description || "-" : value || "-") },
     {
       key: "status",
       header: "Status",
@@ -132,7 +132,7 @@ const Boards = () => {
       {/* Page Header */}
       <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Boards</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Specialization</h1>
           <p className="text-sm text-gray-500 mt-1">Manage education boards and affiliations</p>
         </div>
 

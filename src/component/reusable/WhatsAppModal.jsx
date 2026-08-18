@@ -1,136 +1,250 @@
 import React, { useState } from 'react';
 import CustomButton from './CustomButton';
 
-const WhatsAppModal = ({ isOpen, onClose, studentData }) => {
-    const [message, setMessage] = useState('');
+const WhatsAppModal = ({
+  isOpen,
+  onClose,
+  studentData,
+  leadId,
+  courses = [],
+  onSend, // async (payload) => response
+}) => {
+  const [courseId, setCourseId] = useState('');
+  const [templateId, setTemplateId] = useState('');
+  const [imageId, setImageId] = useState('');
+  const [recipientOverride, setRecipientOverride] = useState('');
+  const [customMessageOverride, setCustomMessageOverride] = useState('');
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
 
-    if (!isOpen) return null;
+  if (!isOpen) return null;
 
-    const handleSend = () => {
-        if (studentData?.phoneNumber || studentData?.mobile) {
-            const phone = studentData.phoneNumber || studentData.mobile;
-            const encodedMessage = encodeURIComponent(message);
-            window.open(`https://wa.me/${phone}?text=${encodedMessage}`, '_blank');
-        }
-        onClose();
-    };
+  const resetForm = () => {
+    setCourseId('');
+    setTemplateId('');
+    setImageId('');
+    setRecipientOverride('');
+    setCustomMessageOverride('');
+    setError('');
+    setSuccess(false);
+  };
 
-    return (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 px-4">
-            <div className="w-full max-w-md rounded-xl bg-white shadow-xl overflow-hidden">
-                {/* Header - WhatsApp Green */}
-                <div className="bg-[#128C7E] text-white p-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-bold">
-                                {studentData?.fullName 
-                                    ? studentData.fullName.substring(0, 2).toUpperCase() 
-                                    : 'NA'}
-                            </div>
-                            <div>
-                                <h3 className="font-semibold text-white">
-                                    {studentData?.fullName || 'N/A'}
-                                </h3>
-                                <p className="text-xs text-white/80">
-                                    {studentData?.phoneNumber || studentData?.mobile || 'N/A'}
-                                </p>
-                            </div>
-                        </div>
-                        <button
-                            onClick={onClose}
-                            className="text-white/80 hover:text-white transition-colors"
-                        >
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <line x1="18" y1="6" x2="6" y2="18" />
-                                <line x1="6" y1="6" x2="18" y2="18" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
 
-                {/* Body - Chat Area */}
-                <div className="bg-[#ECE5DD] p-4 min-h-[200px]">
-                    {/* Chat Background Pattern */}
-                    <div className="bg-white rounded-lg p-4 shadow-sm">
-                        <div className="flex items-start gap-3">
-                            <div className="w-8 h-8 rounded-full bg-[#128C7E] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                                {studentData?.fullName 
-                                    ? studentData.fullName.substring(0, 2).toUpperCase() 
-                                    : 'NA'}
-                            </div>
-                            <div className="flex-1">
-                                <p className="text-xs text-gray-500 font-medium mb-1">
-                                    {studentData?.fullName || 'Student'}
-                                </p>
-                                <div className="bg-[#DCF8C6] rounded-lg p-3 max-w-[280px]">
-                                    <p className="text-sm text-gray-800">
-                                        Hi! I'm interested in learning more about your courses.
-                                    </p>
-                                </div>
-                                <p className="text-[10px] text-gray-400 mt-1">
-                                    {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                                </p>
-                            </div>
-                        </div>
-                    </div>
+  const handleSend = async () => {
+    if (!courseId) {
+      setError('Course is required.');
+      return;
+    }
+    if (!templateId) {
+      setError('Template ID is required.');
+      return;
+    }
+    setError('');
+    setSending(true);
+    try {
+      const payload = {
+        courseId,
+        templateId,
+        ...(imageId && { imageId }),
+        ...(recipientOverride && { recipientOverride }),
+        ...(customMessageOverride && { customMessageOverride }),
+      };
+      await onSend(payload);
+      setSuccess(true);
+      setTimeout(() => {
+        handleClose();
+      }, 1500);
+    } catch (err) {
+      setError('Failed to send WhatsApp message. Please try again.');
+    } finally {
+      setSending(false);
+    }
+  };
 
-                    {/* Student Info Card */}
-                    <div className="mt-4 bg-white rounded-lg p-3 shadow-sm">
-                        <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-500">
-                                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                                </svg>
-                                <span className="text-xs text-gray-600">
-                                    {studentData?.phoneNumber || studentData?.mobile || 'N/A'}
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-500">
-                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                                    <polyline points="22,6 12,13 2,6" />
-                                </svg>
-                                <span className="text-xs text-gray-600">
-                                    {studentData?.email || 'N/A'}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+  const phone = studentData?.phoneNumber || studentData?.mobile || '';
+  const initials = studentData?.fullName
+    ? studentData.fullName.substring(0, 2).toUpperCase()
+    : 'NA';
 
-                {/* Footer - Message Input */}
-                <div className="bg-gray-100 p-3 border-t">
-                    <div className="flex items-center gap-2">
-                        <div className="flex-1 relative">
-                            <input
-                                type="text"
-                                value={message}
-                                onChange={(e) => setMessage(e.target.value)}
-                                placeholder="Type a message..."
-                                className="w-full px-4 py-2.5 rounded-full border border-gray-300 focus:outline-none focus:border-[#128C7E] text-sm"
-                                onKeyPress={(e) => {
-                                    if (e.key === 'Enter' && message.trim()) {
-                                        handleSend();
-                                    }
-                                }}
-                            />
-                        </div>
-                        <CustomButton
-                            variant="primary"
-                            onClick={handleSend}
-                            disabled={!message.trim()}
-                            className="bg-[#128C7E] hover:bg-[#075E54] p-2.5 rounded-full text-white flex items-center justify-center"
-                        >
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <line x1="22" y1="2" x2="11" y2="13" />
-                                <polygon points="22 2 15 22 11 13 2 9 22 2" />
-                            </svg>
-                        </CustomButton>
-                    </div>
-                </div>
+  return (
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 px-4">
+      <div className="w-full max-w-md rounded-xl bg-white shadow-xl overflow-hidden">
+
+        {/* Header */}
+        <div className="bg-[#128C7E] text-white p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm">
+                {initials}
+              </div>
+              <div>
+                <h3 className="font-semibold text-white text-sm">
+                  {studentData?.fullName || 'N/A'}
+                </h3>
+                <p className="text-xs text-white/80">{phone || 'N/A'}</p>
+              </div>
             </div>
+            <button
+              onClick={handleClose}
+              className="text-white/80 hover:text-white transition-colors"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
         </div>
-    );
+
+        {/* Body */}
+        <div className="p-5 space-y-4 bg-[#ECE5DD]">
+
+          {/* Success State */}
+          {success && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              <span className="text-sm text-green-700 font-medium">WhatsApp message sent successfully!</span>
+            </div>
+          )}
+
+          {/* Error */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <span className="text-xs text-red-600">{error}</span>
+            </div>
+          )}
+
+          <div className="bg-white rounded-xl p-4 shadow-sm space-y-3">
+
+            {/* Course */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                Course <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={courseId}
+                onChange={(e) => setCourseId(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#128C7E] focus:border-transparent bg-white"
+              >
+                <option value="">Select a course...</option>
+                {courses.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.courseName} ({c.courseCode})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Template ID */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                Template ID <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={templateId}
+                onChange={(e) => setTemplateId(e.target.value)}
+                placeholder="Enter template ID..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#128C7E] focus:border-transparent"
+              />
+            </div>
+
+            {/* Image ID */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                Image ID <span className="text-gray-400 font-normal">(optional)</span>
+              </label>
+              <input
+                type="text"
+                value={imageId}
+                onChange={(e) => setImageId(e.target.value)}
+                placeholder="Enter image ID..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#128C7E] focus:border-transparent"
+              />
+            </div>
+
+            {/* Recipient Override */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                Recipient Override <span className="text-gray-400 font-normal">(optional)</span>
+              </label>
+              <input
+                type="text"
+                value={recipientOverride}
+                onChange={(e) => setRecipientOverride(e.target.value)}
+                placeholder={phone || 'Enter alternate phone number...'}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#128C7E] focus:border-transparent"
+              />
+              {phone && (
+                <p className="text-[10px] text-gray-400 mt-1">
+                  Leave blank to send to lead's number: {phone}
+                </p>
+              )}
+            </div>
+
+            {/* Custom Message Override */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                Custom Message <span className="text-gray-400 font-normal">(optional)</span>
+              </label>
+              <textarea
+                value={customMessageOverride}
+                onChange={(e) => setCustomMessageOverride(e.target.value)}
+                placeholder="Override the template message..."
+                rows={3}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#128C7E] focus:border-transparent resize-none"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="bg-white px-5 py-4 border-t border-gray-100 flex gap-3">
+          <CustomButton
+            variant="secondary"
+            onClick={handleClose}
+            className="flex-1 text-sm py-2"
+          >
+            Cancel
+          </CustomButton>
+          <CustomButton
+            variant="primary"
+            onClick={handleSend}
+            disabled={sending || success}
+            className="flex-1 text-sm py-2 bg-[#128C7E] hover:bg-[#075E54] flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {sending ? (
+              <>
+                <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                </svg>
+                Sending...
+              </>
+            ) : (
+              <>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z" />
+                </svg>
+                Send WhatsApp
+              </>
+            )}
+          </CustomButton>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default WhatsAppModal;

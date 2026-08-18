@@ -114,9 +114,21 @@ const LeadStatus = () => {
         <span className="font-medium">{(currentPage - 1) * rowsPerPage + index + 1}</span>
       )
     },
-    { key: "name", header: "Status Name" },
-    { key: "code", header: "Code" },
-    { key: "description", header: "Description" },
+    {
+      key: "name",
+      header: "Status Name",
+      render: (value) => (typeof value === "object" && value !== null ? value?.name || value?.code || "-" : value || "-"),
+    },
+    {
+      key: "code",
+      header: "Code",
+      render: (value) => (typeof value === "object" && value !== null ? value?.code || value?.name || "-" : value || "-"),
+    },
+    {
+      key: "description",
+      header: "Description",
+      render: (value) => (typeof value === "object" && value !== null ? value?.description || "-" : value || "-"),
+    },
     {
       key: "sentimentCategory",
       header: "Sentiment",

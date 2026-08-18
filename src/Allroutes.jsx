@@ -22,7 +22,8 @@ import Counselors from "./pages/Counselors";
 import Reports from "./pages/Reports";
 import Courses from "./pages/Courses";
 import Settings from "./pages/Settings";
-import Leadsourse from "./pages/LeadSource";
+import Leadsourse from "./pages/DataSource";
+import DataSourceDetails from "./pages/dataSourceDetails";
 import CourseType from "./pages/CourseType";
 import CourseTypeDetails from "./pages/CourseTypeDetails";
 import CourseDetails from "./pages/CourseDetails";
@@ -32,6 +33,14 @@ import Grades from "./pages/Grades";
 import GradesDetails from "./pages/gradesDetails";
 import Boards from "./pages/Boards";
 import BoardDetails from "./pages/boardsDetails";
+import CounselorDetails from "./pages/counselorsDetails";
+import Department from "./pages/Department";
+
+// Settings Sub-pages
+import UserManagement from "./pages/settings/UserManagement";
+import Notifications from "./pages/settings/Notifications";
+import CRMConfig from "./pages/settings/CRMConfig";
+import RolesAndPermissions from "./pages/settings/RolesAndPermissions";
 
 // Reusable Components / Standalone Pages
 import StudentForm from "./component/reusable/studentForm";
@@ -59,10 +68,17 @@ const Allroutes = () => {
         <Route path="/lead-detail/:id" element={<LeadDetail />} />
         <Route path="/followups" element={<FollowUps />} />
         <Route path="/counselors" element={<Counselors />} />
+        <Route path="/counselor-details/:id" element={<CounselorDetails />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/courses" element={<Courses />} />
-        <Route path="/settings" element={<Settings />} />
+        <Route path="/settings" element={<Settings />}>
+          <Route path="user-management" element={<UserManagement />} />
+          <Route path="notifications" element={<Notifications />} />
+          <Route path="crm-config" element={<CRMConfig />} />
+          <Route path="roles-permissions" element={<RolesAndPermissions />} />
+        </Route>
         <Route path="/lead-source" element={<Leadsourse />} />
+        <Route path="/lead-source-details/:id" element={<DataSourceDetails />} />
         <Route path="/course-types" element={<CourseType />} />
         <Route path="/course-types/:id" element={<CourseTypeDetails />} />
         <Route path="/course-details/:id" element={<CourseDetails />} />
@@ -72,6 +88,8 @@ const Allroutes = () => {
         <Route path="/grade-details/:id" element={<GradesDetails />} />
         <Route path="/boards" element={<Boards />} />
         <Route path="/board-details/:id" element={<BoardDetails />} />
+        <Route path="/department" element={<Department />} />
+        <Route path="/departments" element={<Department />} />
       </Route>
 
       {/* Standalone Route for Student Form from QR */}

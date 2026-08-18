@@ -32,6 +32,7 @@ import Grades from "./pages/Grades";
 import GradesDetails from "./pages/gradesDetails";
 import Boards from "./pages/Boards";
 import BoardDetails from "./pages/boardsDetails";
+import CounselorDetails from "./pages/counselorsDetails";
 
 // Settings Sub-pages
 import UserManagement from "./pages/settings/UserManagement";
@@ -65,6 +66,7 @@ const Allroutes = () => {
         <Route path="/lead-detail/:id" element={<LeadDetail />} />
         <Route path="/followups" element={<FollowUps />} />
         <Route path="/counselors" element={<Counselors />} />
+        <Route path="/counselor-details/:id" element={<CounselorDetails />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/courses" element={<Courses />} />
         <Route path="/settings" element={<Settings />}>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
 import ReusableTable from '../component/reusable/table';
 import { getAllCounselors } from '../Services/Counselors/counselors';
@@ -30,6 +31,7 @@ const SORTABLE_COLS = [
 
 const Counselors = () => {
   const { showToast } = useAppContext();
+  const navigate = useNavigate();
 
   /* ── API state ── */
   const [data, setData] = useState([]);
@@ -210,7 +212,35 @@ const Counselors = () => {
           </span>
         );
       },
-    }
+    },
+    {
+      key: 'actions',
+      header: 'Actions',
+      render: (_, row) => (
+        <button
+          className="btn btn-sm"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px',
+            fontSize: '12px',
+            padding: '4px 10px',
+            border: '1px solid var(--primary, #2563EB)',
+            color: 'var(--primary, #2563EB)',
+            background: 'transparent',
+            borderRadius: '6px',
+            cursor: 'pointer',
+          }}
+          onClick={() => navigate(`/counselor-details/${row.id}`)}
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+          View
+        </button>
+      ),
+    },
   ];
 
   return (

@@ -30,6 +30,7 @@ const ApiRoutes = {
     Users: {
         getAllUser: "/api/users",
         create: "/api/users",
+        getById: "/api/users/{id}",
         update: "/api/users/{id}",
         delete: "/api/users/{id}",
     },

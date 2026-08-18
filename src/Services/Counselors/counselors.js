@@ -2,6 +2,17 @@ import axiosInstance from "../../axiosInstance/axios";
 import ApiRoutes from "../../apiRoutes/allApiRoutes";
 
 
+export const getCounselorById = async (id) => {
+    try {
+        const response = await axiosInstance.get(
+            ApiRoutes.Users.getById.replace("{id}", id)
+        );
+        return response;
+    } catch (error) {
+        return error;
+    }
+};
+
 export const getAllCounselors = async (params = {}) => {
     try {
         const response = await axiosInstance.get(ApiRoutes.Counselors.getAllCounselors, {

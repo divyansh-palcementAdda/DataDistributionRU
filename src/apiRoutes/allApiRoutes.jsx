@@ -73,7 +73,14 @@ const ApiRoutes = {
         delete: '/api/courses/{id}',
         toggle: '/api/courses/{id}/toggle-active',
         details: '/api/courses/{id}',
-        communicationConfig: '/api/courses/{courseId}/communication-config'
+        communicationConfig: '/api/courses/{courseId}/communication-config',
+        uploadImage: '/api/courses/{courseId}/images',
+        getImages: '/api/courses/{courseId}/images'
+    },
+
+    CourseImage: {
+        update: '/api/course-images/{imageId}',
+        delete: '/api/course-images/{imageId}'
     },
 
     LeadStatus: {
@@ -107,6 +114,21 @@ const ApiRoutes = {
         update: '/api/boards/{id}',
         delete: '/api/boards/{id}',
         toggle: '/api/boards/{id}/toggle-active'
+    },
+
+    CourseTemplate: {
+        create: '/api/course-templates',
+        getAll: '/api/course-templates',
+        update: '/api/course-templates/{id}',
+        delete: '/api/course-templates/{id}',
+        getByCourseId: '/api/courses/{courseId}/templates',
+    },
+
+    USP: {
+        add: '/api/courses/{courseId}/usps',
+        getAll: '/api/courses/{courseId}/usps',
+        update: '/api/course-usps/{uspId}',
+        delete: '/api/course-usps/{uspId}',
     },
 
     Dashboard: {

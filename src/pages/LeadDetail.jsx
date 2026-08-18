@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
 import CustomButton from '../component/reusable/CustomButton';
@@ -23,6 +23,13 @@ const LeadDetail = () => {
   const [communicationConfig, setCommunicationConfig] = useState(null);
   const [configLoading, setConfigLoading] = useState(false);
 
+  // Searchable course dropdown state
+  const [courseSearch, setCourseSearch] = useState('');
+  const [isCourseDropdownOpen, setIsCourseDropdownOpen] = useState(false);
+  const [selectedCourseObj, setSelectedCourseObj] = useState(null);
+  const courseDropdownRef = useRef(null);
+  const courseSearchDebounceRef = useRef(null);
+
   useEffect(() => {
     if (id) {
       const fetchLead = async () => {
@@ -46,17 +53,40 @@ const LeadDetail = () => {
     const fetchCourses = async () => {
       setCoursesLoading(true);
       try {
-        const res = await getAllCourses({ page: 0, size: 100 });
+        const res = await getAllCourses({ page: 0, size: 20, search: courseSearch });
         if (res?.success && res?.data?.content) {
           setCourses(res.data.content);
+        } else {
+          setCourses([]);
         }
       } catch (err) {
         console.error("Failed to fetch courses", err);
+        setCourses([]);
       } finally {
         setCoursesLoading(false);
       }
     };
-    fetchCourses();
+
+    // Debounce search API calls
+    if (courseSearchDebounceRef.current) clearTimeout(courseSearchDebounceRef.current);
+    courseSearchDebounceRef.current = setTimeout(() => {
+      fetchCourses();
+    }, 300);
+
+    return () => {
+      if (courseSearchDebounceRef.current) clearTimeout(courseSearchDebounceRef.current);
+    };
+  }, [courseSearch]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (courseDropdownRef.current && !courseDropdownRef.current.contains(e.target)) {
+        setIsCourseDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   useEffect(() => {
@@ -553,63 +583,123 @@ const LeadDetail = () => {
               </CustomButton>
             </div>
 
-            {/* Course Dropdown */}
-            <div className="mb-4">
+            {/* Course Searchable Dropdown */}
+            <div className="mb-4" ref={courseDropdownRef}>
               <label className="block text-xs font-semibold text-gray-700 mb-2">Select Course</label>
-              <select
-                value={selectedCourse}
-                onChange={(e) => setSelectedCourse(e.target.value)}
-                disabled={coursesLoading}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
-              >
-                <option value="">Select a course...</option>
-                {courses.map((course) => (
-                  <option key={course.id} value={course.id}>
-                    {course.courseName} ({course.courseCode})
-                  </option>
-                ))}
-              </select>
-              {coursesLoading && (
-                <div className="text-xs text-gray-500 mt-1">Loading courses...</div>
-              )}
+              <div className="relative">
+                {/* Input trigger */}
+                <div
+                  className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm bg-white cursor-pointer flex items-center justify-between gap-2 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent"
+                  onClick={() => setIsCourseDropdownOpen(true)}
+                >
+                  {isCourseDropdownOpen ? (
+                    <input
+                      autoFocus
+                      type="text"
+                      value={courseSearch}
+                      onChange={(e) => setCourseSearch(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      placeholder="Search course..."
+                      className="flex-1 outline-none text-sm text-gray-700 bg-transparent placeholder-gray-400"
+                    />
+                  ) : (
+                    <span className={`flex-1 truncate text-sm ${selectedCourseObj ? 'text-gray-800' : 'text-gray-400'}`}>
+                      {selectedCourseObj
+                        ? `${selectedCourseObj.courseName} (${selectedCourseObj.courseCode})`
+                        : 'Select a course...'}
+                    </span>
+                  )}
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    {selectedCourseObj && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedCourse('');
+                          setSelectedCourseObj(null);
+                          setCourseSearch('');
+                          setIsCourseDropdownOpen(false);
+                        }}
+                        className="text-gray-400 hover:text-red-500 transition-colors p-0.5"
+                        title="Clear selection"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                      </button>
+                    )}
+                    <svg
+                      width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                      className={`text-gray-400 transition-transform ${isCourseDropdownOpen ? 'rotate-180' : ''}`}
+                    >
+                      <polyline points="6 9 12 15 18 9" />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Dropdown List */}
+                {isCourseDropdownOpen && (
+                  <div className="absolute z-50 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-52 overflow-y-auto">
+                    {coursesLoading ? (
+                      <div className="flex items-center justify-center py-4 gap-2 text-gray-500 text-xs">
+                        <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                        </svg>
+                        Searching...
+                      </div>
+                    ) : courses.length === 0 ? (
+                      <div className="py-4 text-center text-xs text-gray-400">No courses found</div>
+                    ) : (
+                      courses.map((course) => (
+                        <div
+                          key={course.id}
+                          onClick={() => {
+                            setSelectedCourse(course.id);
+                            setSelectedCourseObj(course);
+                            setCourseSearch('');
+                            setIsCourseDropdownOpen(false);
+                          }}
+                          className={`px-3 py-2.5 cursor-pointer hover:bg-blue-50 transition-colors border-b border-gray-50 last:border-0 ${selectedCourse === course.id ? 'bg-blue-50' : ''}`}
+                        >
+                          <div className="text-sm font-medium text-gray-800">{course.courseName}</div>
+                          <div className="text-[10px] text-gray-400 mt-0.5">{course.courseCode} · {course.duration} {course.durationUnit}</div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Selected Course Info */}
-            {selectedCourse && (
+            {selectedCourse && selectedCourseObj && (
               <div className="mt-4">
-                {(() => {
-                  const course = courses.find(c => c.id === selectedCourse);
-                  if (!course) return null;
-                  return (
-                    <div className="bg-gradient-to-br from-blue-50 to-purple-50 border border-blue-100 rounded-lg p-4">
-                      <div className="flex items-start justify-between mb-2">
-                        <h4 className="text-sm font-bold text-blue-800">{course.courseName}</h4>
-                        <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                          {course.duration} {course.durationUnit}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-600 mb-3">{course.description}</p>
+                <div className="bg-gradient-to-br from-blue-50 to-purple-50 border border-blue-100 rounded-lg p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <h4 className="text-sm font-bold text-blue-800">{selectedCourseObj.courseName}</h4>
+                    <span className="bg-blue-100 text-blue-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                      {selectedCourseObj.duration} {selectedCourseObj.durationUnit}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-3">{selectedCourseObj.description}</p>
 
-                      <div className="grid grid-cols-2 gap-2 mb-3">
-                        <div className="bg-white p-2 rounded border border-gray-100">
-                          <div className="text-[9px] font-bold text-gray-400 uppercase">Fees</div>
-                          <div className="text-xs font-semibold text-green-600">₹{course.fees?.toLocaleString()}</div>
-                        </div>
-                        <div className="bg-white p-2 rounded border border-gray-100">
-                          <div className="text-[9px] font-bold text-gray-400 uppercase">Course Code</div>
-                          <div className="text-xs font-semibold text-gray-700">{course.courseCode}</div>
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="text-[9px] font-bold text-gray-400 uppercase mb-1">Course Type</div>
-                        <div className="bg-white text-gray-600 text-[10px] px-2 py-0.5 rounded border border-gray-200">
-                          {course.courseType?.name || 'N/A'}
-                        </div>
-                      </div>
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    <div className="bg-white p-2 rounded border border-gray-100">
+                      <div className="text-[9px] font-bold text-gray-400 uppercase">Fees</div>
+                      <div className="text-xs font-semibold text-green-600">₹{selectedCourseObj.fees?.toLocaleString()}</div>
                     </div>
-                  );
-                })()}
+                    <div className="bg-white p-2 rounded border border-gray-100">
+                      <div className="text-[9px] font-bold text-gray-400 uppercase">Course Code</div>
+                      <div className="text-xs font-semibold text-gray-700">{selectedCourseObj.courseCode}</div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-[9px] font-bold text-gray-400 uppercase mb-1">Course Type</div>
+                    <div className="bg-white text-gray-600 text-[10px] px-2 py-0.5 rounded border border-gray-200">
+                      {selectedCourseObj.courseType?.name || 'N/A'}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -623,7 +713,7 @@ const LeadDetail = () => {
                   {Object.entries(communicationConfig).map(([key, value]) => (
                     <div key={key} className="bg-white p-2 rounded border border-gray-100">
                       <div className="text-[9px] font-bold text-gray-400 uppercase">{key}</div>
-                      <div className="text-xs font-semibold text-gray-700">
+                      <div className="text-xs font-semibold text-gray-700 break-all">
                         {typeof value === 'object' ? JSON.stringify(value) : String(value)}
                       </div>
                     </div>

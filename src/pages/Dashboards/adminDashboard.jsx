@@ -506,18 +506,6 @@ const Dashboard = () => {
               }}>
                 Recent Activity
               </h3>
-              <button style={{
-                background: 'none',
-                border: 'none',
-                color: '#64748b',
-                fontSize: '12px',
-                cursor: 'pointer',
-                padding: '4px 8px',
-                borderRadius: '4px',
-                transition: 'background 0.2s'
-              }}>
-                View All
-              </button>
             </div>
 
             {/* Activity List */}

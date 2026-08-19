@@ -146,7 +146,7 @@ const ApiRoutes = {
     Department: {
         create: '/api/departments',
         getAll: '/api/departments',
-        getById: '/api/departments/{id}',
+        getDetailsById: '/api/departments/{id}',
         update: '/api/departments/{id}',
         delete: '/api/departments/{id}',
         toggle: '/api/departments/{id}/toggle-active'

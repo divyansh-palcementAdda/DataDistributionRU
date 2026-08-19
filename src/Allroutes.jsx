@@ -35,6 +35,7 @@ import Boards from "./pages/Boards";
 import BoardDetails from "./pages/boardsDetails";
 import CounselorDetails from "./pages/counselorsDetails";
 import Department from "./pages/Department";
+import DepartmentDetails from "./pages/departmentDetails";
 
 // Settings Sub-pages
 import UserManagement from "./pages/settings/UserManagement";
@@ -90,6 +91,7 @@ const Allroutes = () => {
         <Route path="/board-details/:id" element={<BoardDetails />} />
         <Route path="/department" element={<Department />} />
         <Route path="/departments" element={<Department />} />
+        <Route path="/department-details/:id" element={<DepartmentDetails />} />
       </Route>
 
       {/* Standalone Route for Student Form from QR */}

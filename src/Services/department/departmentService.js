@@ -55,7 +55,7 @@ const getAllDepartments = async ({
 const getDepartmentById = async (id) => {
     try {
         if (!id) throw new Error("Department ID (UUID) is required");
-        const response = await axiosInstance.get(ApiRoutes.Department.getById.replace('{id}', id));
+        const response = await axiosInstance.get(ApiRoutes.Department.getDetailsById.replace('{id}', id));
         return response.data;
     } catch (error) {
         throw error.response?.data || error.message || error;

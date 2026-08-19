@@ -417,8 +417,7 @@ const BoardDetails = () => {
                         <rect x="3" y="14" width="7" height="7" rx="1" />
                         <rect x="14" y="14" width="7" height="7" rx="1" />
                     </svg>
-                    <p className="text-sm font-medium">Upar kisi card par click karein</p>
-                    <p className="text-xs mt-1">Selected filter ka data yahan table mein dikhega</p>
+                    <p className="text-sm font-medium">No Data</p>
                 </div>
             )}
         </div>

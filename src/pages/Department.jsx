@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FiRefreshCw, FiSearch, FiX, FiLayers } from 'react-icons/fi';
 
@@ -8,7 +9,6 @@ import StatsCard from '../component/reusable/StatsCard';
 import CustomButton from '../component/reusable/CustomButton';
 import DeleteModal from '../component/reusable/deleteModel';
 import AddDepartmentModal from '../component/reusable/department/addDepartmentModel';
-import DepartmentDetailsModal from '../component/reusable/department/departmentDetailsModal';
 
 // Services
 import {
@@ -307,6 +307,8 @@ const CARD_PALETTES = [
 ];
 
 const Department = () => {
+    const navigate = useNavigate();
+    
     // State
     const [departments, setDepartments] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -325,9 +327,6 @@ const Department = () => {
     // Modal States
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [editData, setEditData] = useState(null);
-
-    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-    const [selectedDepartment, setSelectedDepartment] = useState(null);
 
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [departmentToDelete, setDepartmentToDelete] = useState(null);
@@ -909,8 +908,7 @@ const Department = () => {
                     }}
                     emptyMessage={loading ? "Loading departments..." : "No departments found"}
                     onView={(row) => {
-                        setSelectedDepartment(row);
-                        setIsDetailsModalOpen(true);
+                        navigate(`/department-details/${row.id}`);
                     }}
                     onEdit={(row) => {
                         setEditData(row);
@@ -935,22 +933,7 @@ const Department = () => {
                 onSubmit={handleModalSubmit}
             />
 
-            {/* 2. Department Details View Modal */}
-            <DepartmentDetailsModal
-                isOpen={isDetailsModalOpen}
-                onClose={() => {
-                    setIsDetailsModalOpen(false);
-                    setSelectedDepartment(null);
-                }}
-                department={selectedDepartment}
-                onEdit={(dept) => {
-                    setIsDetailsModalOpen(false);
-                    setEditData(dept);
-                    setIsAddModalOpen(true);
-                }}
-            />
-
-            {/* 3. Reusable Delete Confirmation Modal */}
+            {/* 2. Reusable Delete Confirmation Modal */}
             <DeleteModal
                 isOpen={isDeleteModalOpen}
                 onClose={() => {

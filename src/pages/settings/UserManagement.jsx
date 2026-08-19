@@ -5,10 +5,19 @@ import ReusableTable from '../../component/reusable/table';
 import { getAllUser, deleteUser } from '../../Services/user/user';
 import AddUserModal from '../../component/reusable/user/addUser';
 import DeleteModal from '../../component/reusable/deleteModel';
+import { usePermissions } from '../../PermissionContext';
 
 const UserManagement = () => {
   const { showToast } = useAppContext();
+  const { canCreate, canUpdate, canDelete, canRead, hasPermission } = usePermissions();
   const [users, setUsers] = useState([]);
+
+  // Helper function to check both USER_READ and USER_VIEW permissions
+  const canReadUser = () => {
+    return hasPermission('USER_READ') || hasPermission('USER_VIEW');
+  };
+
+
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -98,6 +107,11 @@ const UserManagement = () => {
     setIsAddUserModalOpen(true);
   };
 
+  const handleOpenViewUserModal = (user) => {
+    setSelectedUser(user);
+    setIsAddUserModalOpen(true);
+  };
+
   const handleCloseUserModal = () => {
     setIsAddUserModalOpen(false);
     setSelectedUser(null);
@@ -154,7 +168,13 @@ const UserManagement = () => {
     <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden animate-fadeIn">
       <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
         <h2 className="text-sm font-semibold text-gray-800">User Management</h2>
-        <CustomButton variant="primary" onClick={handleOpenAddUserModal} className="text-xs py-1.5 px-3">
+        <CustomButton
+          variant="primary"
+          onClick={handleOpenAddUserModal}
+          className="text-xs py-1.5 px-3 disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={!hasPermission('USER_CREATE')}
+          style={{ cursor: !hasPermission('USER_CREATE') ? 'not-allowed' : 'pointer' }}
+        >
           + Add User
         </CustomButton>
       </div>
@@ -167,6 +187,10 @@ const UserManagement = () => {
             data={Array.isArray(users) ? users : []}
             onEdit={handleOpenEditUserModal}
             onDelete={handleOpenDeleteUserModal}
+            onView={handleOpenViewUserModal}
+            onEditDisabled={!hasPermission('USER_UPDATE')}
+            onDeleteDisabled={!hasPermission('USER_DELETE')}
+            onViewDisabled={!canReadUser()}
           />
         </div>
       )}

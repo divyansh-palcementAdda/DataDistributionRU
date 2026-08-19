@@ -83,7 +83,7 @@ useEffect(() => {
   const handleAccessDeniedBackToDashboard = () => {
     setIsAccessDeniedModalOpen(false);
     const userRole = localStorage.getItem('userRole');
-    if (userRole === 'COUNSELOR' || userRole === 'COUNSELLORS') {
+    if (userRole === 'COUNSELLORS' || userRole === 'COUNSELLORS') {
       navTo('callers-dashboard');
     } else if (userRole === 'HEAD' || userRole === 'HOD') {
       navTo('head-dashboard');

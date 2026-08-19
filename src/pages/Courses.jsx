@@ -7,10 +7,20 @@ import { getAllCourses, toggleCourseStatus, deleteCourse } from '../Services/cou
 import { toast } from 'react-toastify';
 import AddCourseModal from '../component/reusable/course/addCourseModel';
 import DeleteModal from '../component/reusable/deleteModel';
+import { usePermissions } from '../PermissionContext';
 
 const Courses = () => {
   const navigate = useNavigate();
+  const { canCreate, canUpdate, canDelete, canRead, hasPermission } = usePermissions();
   const [courses, setCourses] = useState([]);
+
+  // Debug: Check permissions
+  console.log('Permissions check:', {
+    canReadCourse: hasPermission('COURSE_VIEW'),
+    canUpdateCourse: hasPermission('COURSE_EDIT'),
+    canDeleteCourse: hasPermission('COURSE_DELETE'),
+    canCreateCourse: hasPermission('COURSE_CREATE')
+  });
 
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -144,7 +154,13 @@ const Courses = () => {
           className="border border-gray-300 rounded-lg px-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
 
-        <CustomButton variant="primary" onClick={() => { setEditData(null); setIsAddModalOpen(true); }} className="text-sm py-2 px-4 shadow-sm hover:shadow-md transition-shadow">
+        <CustomButton
+          variant="primary"
+          onClick={() => { setEditData(null); setIsAddModalOpen(true); }}
+          className="text-sm py-2 px-4 shadow-sm hover:shadow-md transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={!hasPermission('COURSE_CREATE')}
+          style={{ cursor: !hasPermission('COURSE_CREATE') ? 'not-allowed' : 'pointer' }}
+        >
           + Add Course
         </CustomButton>
       </div>
@@ -174,6 +190,9 @@ const Courses = () => {
             setItemToDelete(row);
             setIsDeleteModalOpen(true);
           }}
+          onViewDisabled={!hasPermission('COURSE_VIEW')}
+          onEditDisabled={!hasPermission('COURSE_EDIT')}
+          onDeleteDisabled={!hasPermission('COURSE_DELETE')}
         />
       </div>
 

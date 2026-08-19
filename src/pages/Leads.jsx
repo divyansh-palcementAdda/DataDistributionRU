@@ -282,43 +282,43 @@ const Leads = () => {
         </div>
         <div className="flex gap-2">
           {/* Export */}
-          {canRead('LEAD') && (
-            <button
-              className="btn btn-secondary btn-sm flex items-center gap-1.5"
+          <button
+            className="btn btn-secondary btn-sm flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!hasPermission('LEAD_VIEW')}
+            style={{ cursor: !hasPermission('LEAD_VIEW') ? 'not-allowed' : 'pointer' }}
+          >
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
             >
-              <svg
-                width="13"
-                height="13"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
-              </svg>
-              Export
-            </button>
-          )}
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+            </svg>
+            Export
+          </button>
           {/* Add Lead */}
-          {canCreate('LEAD') && (
-            <button
-              className="btn btn-primary btn-sm flex items-center gap-1.5"
-              onClick={() => openAddLeadModal()}
+          <button
+            className="btn btn-primary btn-sm flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+            onClick={() => openAddLeadModal()}
+            disabled={!hasPermission('LEAD_CREATE')}
+            style={{ cursor: !hasPermission('LEAD_CREATE') ? 'not-allowed' : 'pointer' }}
+          >
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
             >
-              <svg
-                width="13"
-                height="13"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <line x1="12" y1="5" x2="12" y2="19" />
-                <line x1="5" y1="12" x2="19" y2="12" />
-              </svg>
-              Add Lead
-            </button>
-          )}
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Add Lead
+          </button>
         </div>
       </div>
 
@@ -567,7 +567,7 @@ const Leads = () => {
                 id: typeof row.id === 'object' ? row.id?.id : row.id,
                 leadId: typeof row.leadId === 'object' ? row.leadId?.id : row.leadId
               };
-              
+
               return (
                 <div className="flex justify-center items-center gap-3">
                   <button
@@ -577,35 +577,35 @@ const Leads = () => {
                   >
                     <FiMessageSquare size={18} />
                   </button>
-                  {canRead('LEAD') && (
-                    <button
-                      className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer"
-                      title="View"
-                      onClick={() => navTo(`lead-detail/${safeRow?.id ?? safeRow?.leadId}`)}
-                    >
-                      <FiEye size={18} />
-                    </button>
-                  )}
-                  {canUpdate('LEAD') && (
-                    <button
-                      className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer"
-                      title="Edit"
-                      onClick={() => openAddLeadModal(safeRow)}
-                    >
-                      <FiEdit size={18} />
-                    </button>
-                  )}
-                  {canDelete('LEAD') && (
-                    <button
-                      className="text-red-500 hover:text-red-700 transition bg-transparent border-none cursor-pointer"
-                      title="Delete"
-                      onClick={() => {
-                        openDeleteModal(safeRow);
-                      }}
-                    >
-                      <FiTrash2 size={18} />
-                    </button>
-                  )}
+                  <button
+                    className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="View"
+                    onClick={() => navTo(`lead-detail/${safeRow?.id ?? safeRow?.leadId}`)}
+                    disabled={!hasPermission('LEAD_VIEW')}
+                    style={{ cursor: !hasPermission('LEAD_VIEW') ? 'not-allowed' : 'pointer' }}
+                  >
+                    <FiEye size={18} />
+                  </button>
+                  <button
+                    className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Edit"
+                    onClick={() => openAddLeadModal(safeRow)}
+                    disabled={!hasPermission('LEAD_UPDATE')}
+                    style={{ cursor: !hasPermission('LEAD_UPDATE') ? 'not-allowed' : 'pointer' }}
+                  >
+                    <FiEdit size={18} />
+                  </button>
+                  <button
+                    className="text-red-500 hover:text-red-700 transition bg-transparent border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Delete"
+                    onClick={() => {
+                      openDeleteModal(safeRow);
+                    }}
+                    disabled={!hasPermission('LEAD_DELETE')}
+                    style={{ cursor: !hasPermission('LEAD_DELETE') ? 'not-allowed' : 'pointer' }}
+                  >
+                    <FiTrash2 size={18} />
+                  </button>
                 </div>
               );
             }}

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { leads, followups, statusConfig } from '../../mockData';
 import {
   Chart as ChartJS,
@@ -18,6 +18,7 @@ import SystemCards from '../../component/reusable/DashBoards/SystemCards';
 import CategorywiseCard from '../../component/reusable/DashBoards/categorywiseCard';
 import BoardWiseCard from '../../component/reusable/DashBoards/BoardWiseCard';
 import GradWiseCard from '../../component/reusable/DashBoards/gradWiseCard';
+import { getLeadSourceBreakdown, getGradeBreakdown, getBoardBreakdown } from '../../Services/cards/cardService';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend);
 
@@ -79,6 +80,77 @@ const CallersDashboard = () => {
   // Mock: Get current caller name (in real app, this would come from auth/context)
   const currentCaller = 'Rahul Singh'; // Simulating logged-in caller
 
+  // State for API data
+  const [leadSourceData, setLeadSourceData] = useState([]);
+  const [gradWiseData, setGradWiseData] = useState([]);
+  const [boardWiseData, setBoardWiseData] = useState([]);
+
+  // Fetch lead source data from API
+  useEffect(() => {
+    const fetchLeadSourceData = async () => {
+      try {
+        const filterRequest = {};
+        const response = await getLeadSourceBreakdown({ filterRequest: JSON.stringify(filterRequest) });
+
+        if (response.data && response.data.data) {
+          const apiData = response.data.data;
+          setLeadSourceData(Array.isArray(apiData) ? apiData : []);
+        }
+      } catch (error) {
+        console.error('Error fetching lead source data:', error);
+        setLeadSourceData([]);
+      }
+    };
+
+    fetchLeadSourceData();
+  }, []);
+
+  // Fetch grade wise data from API
+  useEffect(() => {
+    const fetchGradeWiseData = async () => {
+      try {
+        const filterRequest = {};
+        const response = await getGradeBreakdown({ filterRequest: JSON.stringify(filterRequest) });
+        console.log('Grade Wise API Response:', response);
+        
+        if (response.data && response.data.data) {
+          const apiData = response.data.data;
+          setGradWiseData(Array.isArray(apiData) ? apiData : []);
+        }
+      } catch (error) {
+        console.error('Error fetching grade wise data:', error);
+        setGradWiseData([]);
+      }
+    };
+
+    fetchGradeWiseData();
+  }, []);
+
+  // Fetch board wise data from API
+  useEffect(() => {
+    const fetchBoardWiseData = async () => {
+      try {
+        const filterRequest = {};
+        const response = await getBoardBreakdown({ filterRequest: JSON.stringify(filterRequest) });
+        console.log('Board Wise API Response:', response);
+
+        if (response.data && response.data.data) {
+          const apiData = response.data.data;
+          if (Array.isArray(apiData)) {
+            setBoardWiseData(apiData);
+          } else {
+            setBoardWiseData([]);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching board wise data:', error);
+        setBoardWiseData([]);
+      }
+    };
+
+    fetchBoardWiseData();
+  }, []);
+
   // Filter leads allotted to this caller
   const myLeads = useMemo(() => {
     return leads.filter(lead => lead.counselor === currentCaller);
@@ -95,54 +167,6 @@ const CallersDashboard = () => {
       totalDataInSystem: myLeads.length,
       totalSourceOfData: [...new Set(myLeads.map(l => l.source?.name))].length,
     };
-  }, [myLeads]);
-
-  const boardWiseData = useMemo(() => {
-    const boardCounts = {};
-    myLeads.forEach(l => {
-      if (l.board) {
-        boardCounts[l.board] = (boardCounts[l.board] || 0) + 1;
-      }
-    });
-    return Object.entries(boardCounts).map(([board, count]) => ({
-      id: board,
-      name: board,
-      code: board,
-      count,
-      percentage: 0,
-    }));
-  }, [myLeads]);
-
-  const gradWiseData = useMemo(() => {
-    const gradeCounts = {};
-    myLeads.forEach(l => {
-      if (l.grade) {
-        gradeCounts[l.grade] = (gradeCounts[l.grade] || 0) + 1;
-      }
-    });
-    return Object.entries(gradeCounts).map(([grade, count]) => ({
-      id: grade,
-      name: `Grade ${grade}`,
-      code: grade,
-      count,
-      percentage: 0,
-    }));
-  }, [myLeads]);
-
-  const leadSourceData = useMemo(() => {
-    const sourceCounts = {};
-    myLeads.forEach(l => {
-      if (l.source?.name) {
-        sourceCounts[l.source.name] = (sourceCounts[l.source.name] || 0) + 1;
-      }
-    });
-    return Object.entries(sourceCounts).map(([source, count]) => ({
-      id: source,
-      name: source,
-      code: source,
-      count,
-      percentage: 0,
-    }));
   }, [myLeads]);
 
   const calculatedStatCards = useMemo(() => {

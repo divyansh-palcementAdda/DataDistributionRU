@@ -537,7 +537,7 @@ const RolesAndPermissions = () => {
             <h3 className="text-xs font-semibold text-gray-700">
               {selectedRoleForPermissions ? `Allot Permissions to: ${selectedRoleForPermissions.name}` : 'Select a role to allot permissions'}
             </h3>
-            <CustomButton
+            {/* <CustomButton
               variant="primary"
               onClick={handleOpenAddPermissionModal}
               className="text-xs py-1 px-2 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -545,7 +545,7 @@ const RolesAndPermissions = () => {
               style={{ cursor: !hasPermission('PERMISSION_CREATE') ? 'not-allowed' : 'pointer' }}
             >
               + Add Permission
-            </CustomButton>
+            </CustomButton> */}
           </div>
           {!selectedRoleForPermissions ? (
             <div className="py-8 text-center text-sm text-gray-500">

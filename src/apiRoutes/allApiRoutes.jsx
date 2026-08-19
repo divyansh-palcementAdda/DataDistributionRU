@@ -149,7 +149,10 @@ const ApiRoutes = {
         getDetailsById: '/api/departments/{id}',
         update: '/api/departments/{id}',
         delete: '/api/departments/{id}',
-        toggle: '/api/departments/{id}/toggle-active'
+        toggle: '/api/departments/{id}/toggle-active',
+        getUsers: '/api/departments/{id}/users',
+        getHods: '/api/departments/{id}/hods',
+        getCounsellors: '/api/departments/{id}/counsellors'
     }
 }
 

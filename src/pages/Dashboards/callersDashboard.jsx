@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { leads, followups, statusConfig } from '../../mockData';
 import {
   Chart as ChartJS,
@@ -12,6 +12,12 @@ import {
 import { useAppContext } from '../../AppContext';
 import { Doughnut } from 'react-chartjs-2';
 import ReusableTable from '../../component/reusable/table';
+import LeadCards from '../../component/reusable/DashBoards/leadCards';
+import LeadSource from '../../component/reusable/DashBoards/leadSource';
+import SystemCards from '../../component/reusable/DashBoards/SystemCards';
+import CategorywiseCard from '../../component/reusable/DashBoards/categorywiseCard';
+import BoardWiseCard from '../../component/reusable/DashBoards/BoardWiseCard';
+import GradWiseCard from '../../component/reusable/DashBoards/gradWiseCard';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend);
 
@@ -67,13 +73,6 @@ const statCards = [
   },
 ];
 
-/* ── Arrow icons ── */
-const ArrowUp = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-    <polyline points="18 15 12 9 6 15" />
-  </svg>
-);
-
 const CallersDashboard = () => {
   const { navTo } = useAppContext();
   
@@ -89,6 +88,62 @@ const CallersDashboard = () => {
   const myFollowups = useMemo(() => {
     return followups.filter(f => f.counselor === currentCaller);
   }, [followups, currentCaller]);
+
+  // Data for reusable cards
+  const systemCardsData = useMemo(() => {
+    return {
+      totalDataInSystem: myLeads.length,
+      totalSourceOfData: [...new Set(myLeads.map(l => l.source?.name))].length,
+    };
+  }, [myLeads]);
+
+  const boardWiseData = useMemo(() => {
+    const boardCounts = {};
+    myLeads.forEach(l => {
+      if (l.board) {
+        boardCounts[l.board] = (boardCounts[l.board] || 0) + 1;
+      }
+    });
+    return Object.entries(boardCounts).map(([board, count]) => ({
+      id: board,
+      name: board,
+      code: board,
+      count,
+      percentage: 0,
+    }));
+  }, [myLeads]);
+
+  const gradWiseData = useMemo(() => {
+    const gradeCounts = {};
+    myLeads.forEach(l => {
+      if (l.grade) {
+        gradeCounts[l.grade] = (gradeCounts[l.grade] || 0) + 1;
+      }
+    });
+    return Object.entries(gradeCounts).map(([grade, count]) => ({
+      id: grade,
+      name: `Grade ${grade}`,
+      code: grade,
+      count,
+      percentage: 0,
+    }));
+  }, [myLeads]);
+
+  const leadSourceData = useMemo(() => {
+    const sourceCounts = {};
+    myLeads.forEach(l => {
+      if (l.source?.name) {
+        sourceCounts[l.source.name] = (sourceCounts[l.source.name] || 0) + 1;
+      }
+    });
+    return Object.entries(sourceCounts).map(([source, count]) => ({
+      id: source,
+      name: source,
+      code: source,
+      count,
+      percentage: 0,
+    }));
+  }, [myLeads]);
 
   const calculatedStatCards = useMemo(() => {
     const allotted = myLeads.length;
@@ -247,6 +302,14 @@ const CallersDashboard = () => {
           </div>
         ))}
       </div>
+
+      {/* ── Reusable Dashboard Cards ── */}
+      <LeadCards />
+      <LeadSource data={leadSourceData} />
+      <SystemCards data={systemCardsData} />
+      <CategorywiseCard />
+      <BoardWiseCard data={boardWiseData} />
+      <GradWiseCard data={gradWiseData} />
 
       {/* ── Charts Row ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>

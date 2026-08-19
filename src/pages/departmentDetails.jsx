@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FiArrowLeft, FiLayers, FiUsers, FiUser, FiCalendar, FiEdit } from 'react-icons/fi';
-import { getDepartmentById } from '../Services/department/departmentService';
+import { getDepartmentById, getDepartmentUsers, getDepartmentHods, getDepartmentCounsellors } from '../Services/department/departmentService';
 import {
     getLeadStatusBreakdown,
     getLeadSourceBreakdown,
@@ -16,6 +16,7 @@ import CategorywiseCard from '../component/reusable/DashBoards/categorywiseCard'
 import BoardWiseCard from '../component/reusable/DashBoards/BoardWiseCard';
 import GradWiseCard from '../component/reusable/DashBoards/gradWiseCard';
 import ReusableTable from '../component/reusable/table';
+import AddDepartmentModal from '../component/reusable/department/addDepartmentModel';
 
 // Format Date Helper
 const formatDate = (isoString) => {
@@ -127,10 +128,18 @@ const DepartmentDetails = () => {
     // Dashboard card data
     const [dashData, setDashData] = useState({ leadStatus: [], leadSource: [], courseType: [], board: [], grade: [] });
 
+    // Department staff data
+    const [hods, setHods] = useState([]);
+    const [counsellors, setCounsellors] = useState([]);
+    const [users, setUsers] = useState([]);
+
     // Filter / table state
     const [selectedCard, setSelectedCard] = useState(null);
     const [tableData, setTableData] = useState([]);
     const [tableLoading, setTableLoading] = useState(false);
+
+    // Edit modal state
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
     useEffect(() => {
         if (!id) return;
@@ -178,6 +187,26 @@ const DepartmentDetails = () => {
         fetchDashboardData();
     }, [id]);
 
+    // Fetch department staff data (users, HODs, counsellors)
+    useEffect(() => {
+        if (!id) return;
+        const fetchStaffData = async () => {
+            try {
+                const [usersRes, hodsRes, counsellorsRes] = await Promise.all([
+                    getDepartmentUsers(id).catch(() => ({ data: [] })),
+                    getDepartmentHods(id).catch(() => ({ data: [] })),
+                    getDepartmentCounsellors(id).catch(() => ({ data: [] })),
+                ]);
+                setUsers(usersRes?.data || []);
+                setHods(hodsRes?.data || []);
+                setCounsellors(counsellorsRes?.data || []);
+            } catch (err) {
+                console.error('Staff data fetch failed', err);
+            }
+        };
+        fetchStaffData();
+    }, [id]);
+
     // Fetch table data when a card is selected
     useEffect(() => {
         if (!selectedCard) { setTableData([]); return; }
@@ -196,7 +225,16 @@ const DepartmentDetails = () => {
     };
 
     const handleEdit = () => {
-        navigate('/department', { state: { editDepartment: department } });
+        setIsEditModalOpen(true);
+    };
+
+    const handleModalClose = () => {
+        setIsEditModalOpen(false);
+    };
+
+    const handleModalSubmit = (updatedData) => {
+        setDepartment(updatedData);
+        setIsEditModalOpen(false);
     };
 
     if (loading) {
@@ -400,7 +438,7 @@ const DepartmentDetails = () => {
                             </span>
                         </div>
                         <p style={{ fontSize: '20px', fontWeight: '700', color: '#0F172A', margin: 0 }}>
-                            {department.userCount || (department.hods?.length || 0) + (department.counsellors?.length || 0)}
+                            {users.length || (hods.length || 0) + (counsellors.length || 0)}
                         </p>
                     </div>
 
@@ -433,14 +471,14 @@ const DepartmentDetails = () => {
             </div>
 
             {/* HODs Section */}
-            {department.hods && department.hods.length > 0 && (
+            {hods && hods.length > 0 && (
                 <div style={{ backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px solid #E2E8F0', padding: '24px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                     <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0F172A', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <FiUser style={{ color: '#7C3AED', fontSize: '18px' }} />
-                        Heads of Department ({department.hods.length})
+                        Heads of Department ({hods.length})
                     </h3>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
-                        {department.hods.map((hod, index) => (
+                        {hods.map((hod, index) => (
                             <div key={hod.id || index} style={{ backgroundColor: '#F8FAFC', padding: '16px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
                                     <div style={{
@@ -499,14 +537,14 @@ const DepartmentDetails = () => {
             )}
 
             {/* Counsellors Section */}
-            {department.counsellors && department.counsellors.length > 0 && (
+            {counsellors && counsellors.length > 0 && (
                 <div style={{ backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px solid #E2E8F0', padding: '24px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                     <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0F172A', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <FiUsers style={{ color: '#2563EB', fontSize: '18px' }} />
-                        Counsellors ({department.counsellors.length})
+                        Counsellors ({counsellors.length})
                     </h3>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '16px' }}>
-                        {department.counsellors.map((counsellor, index) => (
+                        {counsellors.map((counsellor, index) => (
                             <div key={counsellor.id || index} style={{ backgroundColor: '#F8FAFC', padding: '16px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
                                     <div style={{
@@ -567,7 +605,7 @@ const DepartmentDetails = () => {
             )}
 
             {/* No Staff Message */}
-            {(!department.hods || department.hods.length === 0) && (!department.counsellors || department.counsellors.length === 0) && (
+            {(!hods || hods.length === 0) && (!counsellors || counsellors.length === 0) && (
                 <div style={{ backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px dashed #E2E8F0', padding: '32px', textAlign: 'center' }}>
                     <FiUsers style={{ color: '#CBD5E1', fontSize: '32px', marginBottom: '12px' }} />
                     <p style={{ fontSize: '14px', color: '#64748B', margin: 0 }}>
@@ -660,6 +698,14 @@ const DepartmentDetails = () => {
                    <p className="text-sm font-medium">No Data</p>
                 </div>
             )}
+
+            {/* Edit Department Modal */}
+            <AddDepartmentModal
+                isOpen={isEditModalOpen}
+                onClose={handleModalClose}
+                onSubmit={handleModalSubmit}
+                initialData={department}
+            />
         </div>
     );
 };

@@ -17,7 +17,7 @@ const Courses = () => {
   // Debug: Check permissions
   console.log('Permissions check:', {
     canReadCourse: hasPermission('COURSE_VIEW'),
-    canUpdateCourse: hasPermission('COURSE_EDIT'),
+    canUpdateCourse: hasPermission('COURSE_UPDATE'),
     canDeleteCourse: hasPermission('COURSE_DELETE'),
     canCreateCourse: hasPermission('COURSE_CREATE')
   });
@@ -191,7 +191,7 @@ const Courses = () => {
             setIsDeleteModalOpen(true);
           }}
           onViewDisabled={!hasPermission('COURSE_VIEW')}
-          onEditDisabled={!hasPermission('COURSE_EDIT')}
+          onEditDisabled={!hasPermission('COURSE_UPDATE')}
           onDeleteDisabled={!hasPermission('COURSE_DELETE')}
         />
       </div>

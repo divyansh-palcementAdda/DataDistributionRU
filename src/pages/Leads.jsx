@@ -27,7 +27,7 @@ const COURSES = ['All Courses'];
 
 const Leads = () => {
   const { openAddLeadModal, navTo, showToast } = useAppContext();
-  const { canCreate, canUpdate, canDelete, canRead, hasPermission } = usePermissions();
+  const { canCreate, canUpdate, canDelete, canView, hasPermission } = usePermissions();
 
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -284,8 +284,8 @@ const Leads = () => {
           {/* Export */}
           <button
             className="btn btn-secondary btn-sm flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={!hasPermission('LEAD_VIEW')}
-            style={{ cursor: !hasPermission('LEAD_VIEW') ? 'not-allowed' : 'pointer' }}
+            disabled={!hasPermission('LEAD_READ') && !hasPermission('LEAD_VIEW')}
+            style={{ cursor: (!hasPermission('LEAD_READ') && !hasPermission('LEAD_VIEW')) ? 'not-allowed' : 'pointer' }}
           >
             <svg
               width="13"
@@ -581,8 +581,8 @@ const Leads = () => {
                     className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     title="View"
                     onClick={() => navTo(`lead-detail/${safeRow?.id ?? safeRow?.leadId}`)}
-                    disabled={!hasPermission('LEAD_VIEW')}
-                    style={{ cursor: !hasPermission('LEAD_VIEW') ? 'not-allowed' : 'pointer' }}
+                    disabled={!hasPermission('LEAD_READ') && !hasPermission('LEAD_VIEW')}
+                    style={{ cursor: (!hasPermission('LEAD_READ') && !hasPermission('LEAD_VIEW')) ? 'not-allowed' : 'pointer' }}
                   >
                     <FiEye size={18} />
                   </button>

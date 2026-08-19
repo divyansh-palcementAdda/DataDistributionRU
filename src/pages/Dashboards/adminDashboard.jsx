@@ -101,23 +101,11 @@ const Dashboard = () => {
   const userInfo = getUserInfo();
   const userName = userInfo?.name || userInfo?.firstName || userInfo?.username || 'User';
   
-  const [leadSourceData, setLeadSourceData] = useState({
-    totalConsultantData: 0,
-    totalInboundData: 0,
-    totalOutboundData: 0,
-  });
+  const [leadSourceData, setLeadSourceData] = useState([]);
   
-  const [gradWiseData, setGradWiseData] = useState({
-    aGradData: 0,
-    bGradData: 0,
-    cGradData: 0,
-  });
+  const [gradWiseData, setGradWiseData] = useState([]);
   
-  const [boardWiseData, setBoardWiseData] = useState({
-    cbseData: 0,
-    mpBoardData: 0,
-    otherBoard: 0,
-  });
+  const [boardWiseData, setBoardWiseData] = useState([]);
 
   const [recentActivityData, setRecentActivityData] = useState([]);
   const [dashboardSummaryData, setDashboardSummaryData] = useState(null);
@@ -128,46 +116,15 @@ const Dashboard = () => {
       try {
         const filterRequest = {};
         const response = await getLeadSourceBreakdown({ filterRequest: JSON.stringify(filterRequest) });
-        
+
         if (response.data && response.data.data) {
           const apiData = response.data.data;
-          
-          // Handle if API returns an array of objects
-          if (Array.isArray(apiData)) {
-            if (apiData.length > 0) {
-              // Map the API response to the expected format
-              const mappedData = {
-                totalConsultantData: apiData.find(item => item.source === 'consultant')?.count || 0,
-                totalInboundData: apiData.find(item => item.source === 'inbound')?.count || 0,
-                totalOutboundData: apiData.find(item => item.source === 'outbound')?.count || 0,
-              };
-              setLeadSourceData(mappedData);
-            } else {
-              // API returned empty array - set all to 0
-              console.log('API returned empty array');
-              setLeadSourceData({
-                totalConsultantData: 0,
-                totalInboundData: 0,
-                totalOutboundData: 0,
-              });
-            }
-          } else if (typeof apiData === 'object') {
-            // If API returns an object with the expected keys
-            setLeadSourceData({
-              totalConsultantData: apiData.totalConsultantData || 0,
-              totalInboundData: apiData.totalInboundData || 0,
-              totalOutboundData: apiData.totalOutboundData || 0,
-            });
-          }
+          // Directly use the array from API — LeadSource expects { id, name, code, count, percentage }
+          setLeadSourceData(Array.isArray(apiData) ? apiData : []);
         }
       } catch (error) {
         console.error('Error fetching lead source data:', error);
-        // Set all to 0 on error
-        setLeadSourceData({
-          totalConsultantData: 0,
-          totalInboundData: 0,
-          totalOutboundData: 0,
-        });
+        setLeadSourceData([]);
       }
     };
 
@@ -184,44 +141,12 @@ const Dashboard = () => {
         
         if (response.data && response.data.data) {
           const apiData = response.data.data;
-          console.log('Grade API Data:', apiData);
-          
-          // Handle if API returns an array of objects
-          if (Array.isArray(apiData)) {
-            if (apiData.length > 0) {
-              // Map the API response to the expected format
-              const mappedData = {
-                aGradData: apiData.find(item => item.grade === 'A')?.count || 0,
-                bGradData: apiData.find(item => item.grade === 'B')?.count || 0,
-                cGradData: apiData.find(item => item.grade === 'C')?.count || 0,
-              };
-              setGradWiseData(mappedData);
-            } else {
-              // API returned empty array - set all to 0
-              console.log('Grade API returned empty array');
-              setGradWiseData({
-                aGradData: 0,
-                bGradData: 0,
-                cGradData: 0,
-              });
-            }
-          } else if (typeof apiData === 'object') {
-            // If API returns an object with the expected keys
-            setGradWiseData({
-              aGradData: apiData.aGradData || 0,
-              bGradData: apiData.bGradData || 0,
-              cGradData: apiData.cGradData || 0,
-            });
-          }
+          // Pass the raw array directly to GradWiseCard
+          setGradWiseData(Array.isArray(apiData) ? apiData : []);
         }
       } catch (error) {
         console.error('Error fetching grade wise data:', error);
-        // Set all to 0 on error
-        setGradWiseData({
-          aGradData: 0,
-          bGradData: 0,
-          cGradData: 0,
-        });
+        setGradWiseData([]);
       }
     };
 
@@ -235,53 +160,21 @@ const Dashboard = () => {
         const filterRequest = {};
         const response = await getBoardBreakdown({ filterRequest: JSON.stringify(filterRequest) });
         console.log('Board Wise API Response:', response);
-        
+
         if (response.data && response.data.data) {
           const apiData = response.data.data;
           console.log('Board API Data:', apiData);
-          
-          // Handle if API returns an array of objects
+
           if (Array.isArray(apiData)) {
-            if (apiData.length > 0) {
-              // Map the API response to the expected format
-              const cbseCount = apiData.find(item => item.board === 'CBSE')?.count || 0;
-              const mpBoardCount = apiData.find(item => item.board === 'MP Board')?.count || 0;
-              // Calculate other as total minus CBSE and MP Board
-              const totalCount = apiData.reduce((sum, item) => sum + (item.count || 0), 0);
-              const otherCount = totalCount - cbseCount - mpBoardCount;
-              
-              const mappedData = {
-                cbseData: cbseCount,
-                mpBoardData: mpBoardCount,
-                otherBoard: otherCount > 0 ? otherCount : 0,
-              };
-              setBoardWiseData(mappedData);
-            } else {
-              // API returned empty array - set all to 0
-              console.log('Board API returned empty array');
-              setBoardWiseData({
-                cbseData: 0,
-                mpBoardData: 0,
-                otherBoard: 0,
-              });
-            }
-          } else if (typeof apiData === 'object') {
-            // If API returns an object with the expected keys
-            setBoardWiseData({
-              cbseData: apiData.cbseData || 0,
-              mpBoardData: apiData.mpBoardData || 0,
-              otherBoard: apiData.otherBoard || 0,
-            });
+            // Directly use the array from API — BoardWiseCard expects { id, name, code, count, percentage }
+            setBoardWiseData(apiData);
+          } else {
+            setBoardWiseData([]);
           }
         }
       } catch (error) {
         console.error('Error fetching board wise data:', error);
-        // Set all to 0 on error
-        setBoardWiseData({
-          cbseData: 0,
-          mpBoardData: 0,
-          otherBoard: 0,
-        });
+        setBoardWiseData([]);
       }
     };
 
@@ -367,14 +260,7 @@ const Dashboard = () => {
     };
   }, [leads]);
 
-  // Calculate data for CategorywiseCard
-  const categorywiseData = useMemo(() => {
-    return {
-      ugData: leads.filter(l => l.category === 'UG').length,
-      pgData: leads.filter(l => l.category === 'PG').length,
-      unMappedByDate: leads.filter(l => !l.category || l.category === '').length,
-    };
-  }, [leads]);
+  
 
 
 
@@ -588,7 +474,7 @@ const Dashboard = () => {
           <LeadCards data={leadCardsData} />
           <LeadSource data={leadSourceData} />
           <SystemCards data={systemCardsData} />
-          <CategorywiseCard data={categorywiseData} />
+          <CategorywiseCard />
           <BoardWiseCard data={boardWiseData} />
           <GradWiseCard data={gradWiseData} />
         </div>

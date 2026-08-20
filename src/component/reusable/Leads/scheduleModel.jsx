@@ -17,7 +17,14 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
     };
 
     const handleSave = async () => {
-        await onSubmit(formData);
+        const payload = {
+            ...formData,
+            followUpDate: formData.followUpDate
+                ? new Date(formData.followUpDate).toISOString()
+                : "",
+        };
+
+        await onSubmit(payload);
 
         setFormData({
             followUpDate: "",

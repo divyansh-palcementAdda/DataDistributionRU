@@ -99,8 +99,8 @@ const Counselors = () => {
         setTotalPages(payload.totalPages ?? 0);
       } else {
         const res = await getAllCounselors({
-          roleName: 'COUNSELLORS',
-          roleNames: 'COUNSELLORS',
+          roleName: 'COUNSELOR',
+          roleNames: 'COUNSELOR',
           page,
           size,
           sortBy,

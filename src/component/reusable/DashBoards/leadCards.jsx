@@ -182,13 +182,13 @@ const LeadCards = ({ onCardClick, selectedCard }) => {
                 background: cardStyle.isHighlighted ? 'linear-gradient(135deg, #FFF9E6 0%, #FFFFFF 100%)' : '#ffffff',
                 borderRadius: '12px',
                 padding: cardStyle.isHighlighted ? '12px' : '12px',
-                boxShadow: selectedCard?.type === 'leadStatus' && selectedCard?.value === item.code
-                  ? '0 0 0 1.5px #6366f1, 0 4px 12px rgba(99,102,241,0.12)'
+                boxShadow: selectedCard?.type === 'leadStatus' && selectedCard?.value === item.id
+                  ? '0 0 0 2px #6366f1, 0 4px 16px rgba(99,102,241,0.18)'
                   : cardStyle.isHighlighted 
                     ? '0 4px 20px rgba(255, 215, 0, 0.3), 0 0 0 2px rgba(255, 215, 0, 0.5)' 
                     : '0 2px 8px rgba(0, 0, 0, 0.08)',
-                border: selectedCard?.type === 'leadStatus' && selectedCard?.value === item.code
-                  ? '1.5px solid #6366f1'
+                border: selectedCard?.type === 'leadStatus' && selectedCard?.value === item.id
+                  ? '2px solid #6366f1'
                   : cardStyle.isHighlighted 
                     ? '2px solid #FFD700' 
                     : '1px solid #e5e7eb',
@@ -205,6 +205,26 @@ const LeadCards = ({ onCardClick, selectedCard }) => {
                 e.currentTarget.style.transform = 'translateY(0)';
               }}
             >
+              {/* Active indicator badge */}
+              {selectedCard?.type === 'leadStatus' && selectedCard?.value === item.id && (
+                <div style={{
+                  position: 'absolute',
+                  top: '6px',
+                  right: '6px',
+                  background: '#6366f1',
+                  borderRadius: '50%',
+                  width: '18px',
+                  height: '18px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 1,
+                }}>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+              )}
               <div style={{
                 display: 'flex',
                 alignItems: 'center',

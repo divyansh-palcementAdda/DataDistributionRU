@@ -66,16 +66,31 @@ const BoardWiseCard = ({ data = [], onCardClick, selectedCard }) => {
                   borderRadius: '12px',
                   padding: '12px',
                   boxShadow: isSelected
-                    ? '0 0 0 1.5px #6366f1, 0 4px 12px rgba(99,102,241,0.12)'
+                    ? '0 0 0 2px #6366f1, 0 4px 16px rgba(99,102,241,0.18)'
                     : '0 2px 8px rgba(0,0,0,0.08)',
-                  border: isSelected ? '1.5px solid #6366f1' : '1px solid #e5e7eb',
+                  border: isSelected ? '2px solid #6366f1' : '1px solid #e5e7eb',
                   transition: 'all 0.3s ease',
                   cursor: 'pointer',
                   height: '100px',
+                  position: 'relative',
+                  overflow: 'hidden',
                 }}
                 onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; }}
               >
+                {/* Active indicator badge */}
+                {isSelected && (
+                  <div style={{
+                    position: 'absolute', top: '6px', right: '6px',
+                    background: '#6366f1', borderRadius: '50%',
+                    width: '18px', height: '18px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1,
+                  }}>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  </div>
+                )}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
                     <div style={{

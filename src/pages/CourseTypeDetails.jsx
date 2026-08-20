@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
+import { FiEye, FiMessageSquare } from 'react-icons/fi';
 import { useAppContext } from '../AppContext';
 import { getCourseTypeById } from '../Services/courseTypes/courseTypeService';
 import {
-    getLeadStatusBreakdown,
     getLeadSourceBreakdown,
     getGradeBreakdown,
     getBoardBreakdown,
@@ -15,98 +15,135 @@ import LeadSource from '../component/reusable/DashBoards/leadSource';
 import BoardWiseCard from '../component/reusable/DashBoards/BoardWiseCard';
 import GradWiseCard from '../component/reusable/DashBoards/gradWiseCard';
 import ReusableTable from '../component/reusable/table';
+import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 
-// ─── Table columns for the breakdown data ───────────────────────────────────
-const TABLE_COLUMNS = [
+// ─── Lead table columns (same as Leads.jsx) ─────────────────────────────────
+const buildLeadColumns = (page, size, onOpenRemark, navTo) => [
     {
-        key: 'name',
-        header: 'Name',
-        sortable: true,
-    },
-    {
-        key: 'code',
-        header: 'Code',
-        sortable: true,
-        render: (val) => (
-            <span className="inline-block bg-gray-100 text-gray-700 text-xs font-mono px-2 py-0.5 rounded">
-                {val || '-'}
-            </span>
+        key: 'sno',
+        header: 'S.No',
+        sortable: false,
+        render: (value, row, index) => (
+            <span className="font-semibold text-gray-700">{page * size + index + 1}</span>
         ),
     },
     {
-        key: 'count',
-        header: 'Count',
-        sortable: true,
-        render: (val) => (
-            <span className="font-semibold text-gray-900">
-                {val !== undefined && val !== null ? val.toLocaleString() : '0'}
-            </span>
+        key: 'leadCode',
+        header: 'Lead Code',
+        render: (value, row) => {
+            const v = value || row.leadCode;
+            const display = typeof v === 'object' ? (v?.code || v?.name || 'N/A') : (v || 'N/A');
+            return <span className="font-semibold text-blue-600">{display}</span>;
+        },
+    },
+    {
+        key: 'lead',
+        header: 'Lead Info',
+        render: (value, row) => (
+            <div className="font-semibold text-gray-800">
+                {typeof row.fullName === 'object'
+                    ? row.fullName?.name || row.fullName?.firstName || 'N/A'
+                    : row.fullName || 'N/A'}
+            </div>
         ),
     },
     {
-        key: 'percentage',
-        header: 'Percentage',
-        sortable: true,
-        render: (val) => {
-            const pct = val !== undefined && val !== null ? Number(val) : 0;
+        key: 'courseInterested',
+        header: 'Course',
+        render: (value, row) => {
+            const v = value || row.courseInterested;
+            if (typeof v === 'object' && v !== null) return v?.courseName || v?.name || 'N/A';
+            return v || 'N/A';
+        },
+    },
+    {
+        key: 'source',
+        header: 'Source',
+        render: (value, row) => {
+            if (typeof row.source === 'object' && row.source !== null) return row.source?.name || 'N/A';
+            return row.source || 'N/A';
+        },
+    },
+    {
+        key: 'currentStatus',
+        header: 'Status',
+        render: (value, row) => {
+            const v = value || row.currentStatus;
+            const display = typeof v === 'object' ? (v?.name || v?.code || 'N/A') : (v || 'N/A');
             return (
-                <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-gray-100 rounded-full h-1.5 min-w-[60px]">
-                        <div
-                            className="h-1.5 rounded-full bg-indigo-500"
-                            style={{ width: `${Math.min(pct, 100)}%` }}
-                        />
-                    </div>
-                    <span className="text-xs font-medium text-gray-600 w-12 text-right">
-                        {pct.toFixed(1)}%
-                    </span>
-                </div>
+                <span className="badge bg-slate-200 text-slate-800 px-2 py-1 rounded text-xs font-medium">
+                    {display}
+                </span>
             );
+        },
+    },
+    {
+        key: 'assignedTo',
+        header: 'Counselor',
+        render: (value, row) => {
+            if (typeof row.assignedTo === 'object' && row.assignedTo !== null)
+                return `${row.assignedTo.firstName || ''} ${row.assignedTo.lastName || ''}`.trim() || 'Not Allotted';
+            return row.assignedTo || 'Not Allotted';
+        },
+    },
+    {
+        key: 'nextFollowUpDate',
+        header: 'Follow-up',
+        render: (value, row) => {
+            if (row.nextFollowUpDate) {
+                try { return new Date(row.nextFollowUpDate).toLocaleDateString(); }
+                catch { return 'Invalid Date'; }
+            }
+            return 'None';
+        },
+    },
+    {
+        key: 'createdBy',
+        header: 'Created By',
+        render: (value, row) => {
+            const v = value || row.createdBy;
+            if (typeof v === 'object' && v !== null)
+                return `${v.firstName || ''} ${v.lastName || ''}`.trim() || 'N/A';
+            return v || 'N/A';
         },
     },
 ];
 
-// ─── Helper: fetch table data based on selected card ────────────────────────
-const fetchTableData = async (selectedCard, courseTypeId) => {
-    const baseParams = { 
+// ─── Helper: fetch leads for the selected card (server-side) ─────────────────
+const fetchLeadsForCard = async (selectedCard, courseTypeId, page, size, sortBy, sortDirection) => {
+    if (!selectedCard) return { content: [], totalElements: 0, totalPages: 0 };
+
+    const params = {
         courseTypeId,
-        page: 0,
-        size: 10,
-        sortBy: 'createdAt',
-        sortDirection: 'ASC'
+        page,
+        size,
+        sortBy: sortBy || 'createdAt',
+        sortDirection: sortDirection || 'desc',
     };
 
-    if (!selectedCard) return [];
+    switch (selectedCard.type) {
+        case 'leadStatus':   params.statusId = selectedCard.value;  break;
+        case 'leadSource':   params.sourceId = selectedCard.value;  break;
+        case 'board':        params.boardId  = selectedCard.value;  break;
+        case 'grade':        params.gradeId  = selectedCard.value;  break;
+        default:             return { content: [], totalElements: 0, totalPages: 0 };
+    }
 
     try {
-        let params = { ...baseParams };
-        
-        switch (selectedCard.type) {
-            case 'leadStatus':
-                params.statusId = selectedCard.value;
-                break;
-            case 'leadSource':
-                params.sourceId = selectedCard.value;
-                break;
-            case 'board':
-                params.boardId = selectedCard.value;
-                break;
-            case 'grade':
-                params.gradeId = selectedCard.value;
-                break;
-            default:
-                return [];
-        }
-
         const res = await axiosInstance.get(ApiRoutes.Lead.getAllLeads, { params });
-        return res?.data?.data?.content || res?.data?.content || res?.data?.data || res?.data || [];
+        const d = res?.data?.data || res?.data || {};
+        return {
+            content:       d.content       ?? (Array.isArray(d) ? d : []),
+            totalElements: d.totalElements ?? 0,
+            totalPages:    d.totalPages    ?? 0,
+        };
     } catch (err) {
-        console.error('Failed to fetch table data', err);
-        return [];
+        console.error('Failed to fetch lead table data', err);
+        return { content: [], totalElements: 0, totalPages: 0 };
     }
 };
 
-// ─── Helper: fetch dashboard data for all card sections ─────────────────────
+// ─── Helper: fetch dashboard breakdown data for all card sections ────────────
 const fetchDashboardData = async (courseTypeId) => {
     const params = { courseTypeId };
     try {
@@ -148,6 +185,18 @@ const CourseTypeDetails = () => {
     const [tableData, setTableData] = useState([]);
     const [tableLoading, setTableLoading] = useState(false);
 
+    // server-side pagination & sorting for lead table
+    const [tablePage, setTablePage]             = useState(0);
+    const [tableSize, setTableSize]             = useState(10);
+    const [tableTotalElements, setTableTotalElements] = useState(0);
+    const [tableTotalPages, setTableTotalPages] = useState(0);
+    const [tableSortBy, setTableSortBy]         = useState('createdAt');
+    const [tableSortDir, setTableSortDir]       = useState('desc');
+
+    // remark modal
+    const [isRemarkModalOpen, setIsRemarkModalOpen]       = useState(false);
+    const [selectedLeadForRemark, setSelectedLeadForRemark] = useState(null);
+
     // ── fetch course-type details ──
     useEffect(() => {
         if (!id) return;
@@ -175,22 +224,47 @@ const CourseTypeDetails = () => {
         fetchDashboardData(id).then(setDashData);
     }, [id]);
 
-    // ── fetch table data when a card is selected ──
+    // ── fetch table data when a card is selected or pagination/sort changes ──
     useEffect(() => {
-        if (!selectedCard) { setTableData([]); return; }
+        if (!selectedCard) { setTableData([]); setTableTotalElements(0); setTableTotalPages(0); return; }
         setTableLoading(true);
-        fetchTableData(selectedCard, id).then((data) => {
-            setTableData(data);
-            setTableLoading(false);
-        });
-    }, [selectedCard, id]);
+        fetchLeadsForCard(selectedCard, id, tablePage, tableSize, tableSortBy, tableSortDir)
+            .then(({ content, totalElements, totalPages }) => {
+                setTableData(content);
+                setTableTotalElements(totalElements);
+                setTableTotalPages(totalPages);
+                setTableLoading(false);
+            });
+    }, [selectedCard, id, tablePage, tableSize, tableSortBy, tableSortDir]);
 
     // ── card click handler ──
     const handleCardClick = (card) => {
         // clicking the same card again → deselect
-        setSelectedCard((prev) =>
-            prev?.type === card.type && prev?.value === card.value ? null : card
-        );
+        const isSame = selectedCard?.type === card.type && selectedCard?.value === card.value;
+        setSelectedCard(isSame ? null : card);
+        // reset pagination when switching cards
+        setTablePage(0);
+    };
+
+    // ── remark modal handlers ──
+    const openRemarkModal  = (lead) => { setSelectedLeadForRemark(lead); setIsRemarkModalOpen(true); };
+    const closeRemarkModal = () => { setIsRemarkModalOpen(false); setSelectedLeadForRemark(null); };
+
+    // ── lead table sort handler ──
+    const handleLeadSort = (columnKey, direction) => {
+        const fieldMap = {
+            leadCode: 'leadCode',
+            lead: 'fullName',
+            courseInterested: 'courseInterested',
+            source: 'source.name',
+            currentStatus: 'currentStatus',
+            assignedTo: 'assignedTo',
+            nextFollowUpDate: 'nextFollowUpDate',
+            createdBy: 'createdAt',
+        };
+        setTableSortBy(fieldMap[columnKey] || columnKey);
+        setTableSortDir(direction);
+        setTablePage(0);
     };
 
     const goBack = () => navTo('/course-types');
@@ -219,6 +293,7 @@ const CourseTypeDetails = () => {
     }
 
     return (
+        <>
         <div className="block p-4 sm:p-6" id="page-course-type-detail">
 
             {/* ── Page Header ── */}
@@ -237,32 +312,6 @@ const CourseTypeDetails = () => {
                         <p className="text-sm text-gray-500 mt-1">View comprehensive details for this category</p>
                     </div>
                 </div>
-            </div>
-
-            {/* ── Dashboard Cards ── */}
-            <div className="mb-8">
-                <LeadCards
-                    onCardClick={handleCardClick}
-                    selectedCard={selectedCard}
-                />
-
-                <LeadSource
-                    data={dashData.leadSource}
-                    onCardClick={handleCardClick}
-                    selectedCard={selectedCard}
-                />
-
-                <BoardWiseCard
-                    data={dashData.board}
-                    onCardClick={handleCardClick}
-                    selectedCard={selectedCard}
-                />
-
-                <GradWiseCard
-                    data={dashData.grade}
-                    onCardClick={handleCardClick}
-                    selectedCard={selectedCard}
-                />
             </div>
 
             {/* ── Detail Card ── */}
@@ -335,7 +384,33 @@ const CourseTypeDetails = () => {
                 </div>
             </div>
 
-            {/* ── Filtered Table ── */}
+            {/* ── Dashboard Cards ── */}
+            <div className="mb-8">
+                <LeadCards
+                    onCardClick={handleCardClick}
+                    selectedCard={selectedCard}
+                />
+
+                <LeadSource
+                    data={dashData.leadSource}
+                    onCardClick={handleCardClick}
+                    selectedCard={selectedCard}
+                />
+
+                <BoardWiseCard
+                    data={dashData.board}
+                    onCardClick={handleCardClick}
+                    selectedCard={selectedCard}
+                />
+
+                <GradWiseCard
+                    data={dashData.grade}
+                    onCardClick={handleCardClick}
+                    selectedCard={selectedCard}
+                />
+            </div>
+
+            {/* ── Filtered Lead Table ── */}
             {selectedCard && (
                 <div className="mt-6">
                     {/* Table Header */}
@@ -346,7 +421,7 @@ const CourseTypeDetails = () => {
                                 {selectedCard.label}
                             </h3>
                             <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                                {tableData.length} records
+                                {tableTotalElements} records
                             </span>
                         </div>
                         <button
@@ -368,11 +443,48 @@ const CourseTypeDetails = () => {
                             <span className="ml-2 text-sm text-gray-500">Loading data...</span>
                         </div>
                     ) : (
-                        <ReusableTable
-                            columns={TABLE_COLUMNS}
-                            data={tableData}
-                            emptyMessage={`No data found for "${selectedCard.label}"`}
-                        />
+                        <div className="card">
+                            <ReusableTable
+                                columns={buildLeadColumns(tablePage, tableSize, openRemarkModal, navTo)}
+                                data={tableData}
+                                isServerSide={true}
+                                totalElements={tableTotalElements}
+                                totalPages={tableTotalPages}
+                                currentPage={tablePage + 1}
+                                rowsPerPage={tableSize}
+                                onPageChange={(newPage) => setTablePage(newPage - 1)}
+                                onRowsPerPageChange={(newSize) => { setTableSize(newSize); setTablePage(0); }}
+                                sortBy={tableSortBy}
+                                sortDirection={tableSortDir}
+                                onSort={handleLeadSort}
+                                actions={(row) => {
+                                    const safeRow = {
+                                        ...row,
+                                        id: typeof row.id === 'object' ? row.id?.id : row.id,
+                                        leadId: typeof row.leadId === 'object' ? row.leadId?.id : row.leadId,
+                                    };
+                                    return (
+                                        <div className="flex justify-center items-center gap-3">
+                                            <button
+                                                className="text-blue-500 hover:text-blue-700 transition bg-transparent border-none cursor-pointer"
+                                                title="Remark"
+                                                onClick={() => openRemarkModal(safeRow)}
+                                            >
+                                                <FiMessageSquare size={18} />
+                                            </button>
+                                            <button
+                                                className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer"
+                                                title="View"
+                                                onClick={() => navTo(`lead-detail/${safeRow?.id ?? safeRow?.leadId}`)}
+                                            >
+                                                <FiEye size={18} />
+                                            </button>
+                                        </div>
+                                    );
+                                }}
+                                emptyMessage={`No leads found for "${selectedCard.label}"`}
+                            />
+                        </div>
                     )}
                 </div>
             )}
@@ -390,6 +502,19 @@ const CourseTypeDetails = () => {
                 </div>
             )}
         </div>
+
+        {/* ── Remark Modal ── */}
+        <LeadRemarkModal
+            isOpen={isRemarkModalOpen}
+            onClose={closeRemarkModal}
+            lead={selectedLeadForRemark}
+            followUpId={selectedLeadForRemark?.followUpId || selectedLeadForRemark?.nextFollowUpId || selectedLeadForRemark?.followupId}
+            onSave={() => {
+                closeRemarkModal();
+                setTablePage((p) => p);
+            }}
+        />
+        </>
     );
 };
 

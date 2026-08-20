@@ -10,6 +10,7 @@ import {
   Legend,
 } from 'chart.js';
 import { useAppContext } from '../../AppContext';
+import { useNavigate } from 'react-router-dom';
 import { Bar, Doughnut } from 'react-chartjs-2';
 import ReusableTable from '../../component/reusable/table';
 import LeadCards from '../../component/reusable/DashBoards/leadCards';
@@ -83,6 +84,7 @@ const todayFollowups = followups.filter((f) => f.status === 'today');
 
 const Dashboard = () => {
   const { openAddLeadModal, navTo } = useAppContext();
+  const navigate = useNavigate();
   
   // Get user info from localStorage for dynamic name
   const getUserInfo = () => {
@@ -304,11 +306,10 @@ const Dashboard = () => {
             flex: '1 1 auto'
           }}>
             <div style={{ 
-              display: 'flex', 
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
               gap: '16px',
               width: '100%',
-              justifyContent: 'center',
-              flexWrap: 'wrap'
             }}>
               {/* Card 1: Total Counsellors Logged Today */}
               <div style={{ 
@@ -317,15 +318,11 @@ const Dashboard = () => {
                 WebkitBackdropFilter: 'blur(10px)',
                 borderRadius: '10px',
                 padding: '10px 12px',
-                minWidth: '140px',
-                flex: '1',
-                maxWidth: '180px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
                 transition: '.3s ease',
-                minWidth: '0',
                 boxSizing: 'border-box',
                 flexDirection: 'column'
               }}>
@@ -349,15 +346,11 @@ const Dashboard = () => {
                 WebkitBackdropFilter: 'blur(10px)',
                 borderRadius: '10px',
                 padding: '10px 12px',
-                minWidth: '140px',
-                flex: '1',
-                maxWidth: '180px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
                 transition: '.3s ease',
-                minWidth: '0',
                 boxSizing: 'border-box',
                 flexDirection: 'column'
               }}>
@@ -381,15 +374,11 @@ const Dashboard = () => {
                 WebkitBackdropFilter: 'blur(10px)',
                 borderRadius: '10px',
                 padding: '10px 12px',
-                minWidth: '140px',
-                flex: '1',
-                maxWidth: '180px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
                 transition: '.3s ease',
-                minWidth: '0',
                 boxSizing: 'border-box',
                 flexDirection: 'column'
               }}>
@@ -411,15 +400,11 @@ const Dashboard = () => {
                 WebkitBackdropFilter: 'blur(10px)',
                 borderRadius: '10px',
                 padding: '10px 12px',
-                minWidth: '140px',
-                flex: '1',
-                maxWidth: '180px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
                 transition: '.3s ease',
-                minWidth: '0',
                 boxSizing: 'border-box',
                 flexDirection: 'column'
               }}>
@@ -443,15 +428,11 @@ const Dashboard = () => {
                 WebkitBackdropFilter: 'blur(10px)',
                 borderRadius: '10px',
                 padding: '10px 12px',
-                minWidth: '140px',
-                flex: '1',
-                maxWidth: '180px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
                 transition: '.3s ease',
-                minWidth: '0',
                 boxSizing: 'border-box',
                 flexDirection: 'column'
               }}>
@@ -469,23 +450,22 @@ const Dashboard = () => {
               </div>
 
               {/* Card 6: Low Data Users Alert */}
-              <div style={{ 
+              <div
+                onClick={() => navigate('/counselors', { state: { lowDataMode: true } })}
+                style={{ 
                 background: '#ffffff2e',
                 backdropFilter: 'blur(10px)',
                 WebkitBackdropFilter: 'blur(10px)',
                 borderRadius: '10px',
                 padding: '10px 12px',
-                minWidth: '140px',
-                flex: '1',
-                maxWidth: '180px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
                 transition: '.3s ease',
-                minWidth: '0',
                 boxSizing: 'border-box',
-                flexDirection: 'column'
+                flexDirection: 'column',
+                cursor: 'pointer',
               }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
                   <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
@@ -504,23 +484,22 @@ const Dashboard = () => {
               </div>
 
               {/* Card 7: Users Not Logged In Today */}
-              <div style={{ 
+              <div
+                onClick={() => navigate('/counselors', { state: { usersNotLoggedInMode: true } })}
+                style={{ 
                 background: '#ffffff2e',
                 backdropFilter: 'blur(10px)',
                 WebkitBackdropFilter: 'blur(10px)',
                 borderRadius: '10px',
                 padding: '10px 12px',
-                minWidth: '140px',
-                flex: '1',
-                maxWidth: '180px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
                 transition: '.3s ease',
-                minWidth: '0',
                 boxSizing: 'border-box',
-                flexDirection: 'column'
+                flexDirection: 'column',
+                cursor: 'pointer',
               }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
                   <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
@@ -540,23 +519,22 @@ const Dashboard = () => {
               </div>
 
               {/* Card 8: Follow-up Users Not Logged In by 11 AM */}
-              <div style={{ 
+              <div
+                onClick={() => navigate('/counselors', { state: { followupNotLoggedIn11amMode: true } })}
+                style={{ 
                 background: '#ffffff2e',
                 backdropFilter: 'blur(10px)',
                 WebkitBackdropFilter: 'blur(10px)',
                 borderRadius: '10px',
                 padding: '10px 12px',
-                minWidth: '140px',
-                flex: '1',
-                maxWidth: '180px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
                 transition: '.3s ease',
-                minWidth: '0',
                 boxSizing: 'border-box',
-                flexDirection: 'column'
+                flexDirection: 'column',
+                cursor: 'pointer',
               }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
                   <circle cx="12" cy="12" r="10" />

@@ -141,6 +141,9 @@ const ApiRoutes = {
         courseTypes: '/api/dashboard/course-types',
         recentActivity: '/api/dashboard/recent-activity',
         summary: '/api/dashboard/summary',
+        lowDataUsers: '/api/dashboard/low-data-users',
+        usersNotLoggedIn: '/api/dashboard/users-not-logged-in',
+        followupUsersNotLoggedIn11am: '/api/dashboard/followup-users-not-logged-in-11am',
     },
 
     Department: {

@@ -467,6 +467,113 @@ const Dashboard = () => {
                   {dashboardSummaryData?.totalLeads || 0}
                 </div>
               </div>
+
+              {/* Card 6: Low Data Users Alert */}
+              <div style={{ 
+                background: '#ffffff2e',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
+                borderRadius: '10px',
+                padding: '10px 12px',
+                minWidth: '140px',
+                flex: '1',
+                maxWidth: '180px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                transition: '.3s ease',
+                minWidth: '0',
+                boxSizing: 'border-box',
+                flexDirection: 'column'
+              }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
+                  <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <line x1="6" y1="22" x2="12" y2="22" />
+                </svg>
+                <div style={{ fontSize: '11px', color: '#ffffff', fontWeight: 500, textAlign: 'center' }}>
+                  Low Data Users Alert
+                </div>
+                <div style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
+                  {dashboardSummaryData?.sections
+                    ?.find(s => s.code === 'OPERATIONS')
+                    ?.cards?.find(c => c.code === 'LOW_DATA_USERS')
+                    ?.value ?? 0}
+                </div>
+              </div>
+
+              {/* Card 7: Users Not Logged In Today */}
+              <div style={{ 
+                background: '#ffffff2e',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
+                borderRadius: '10px',
+                padding: '10px 12px',
+                minWidth: '140px',
+                flex: '1',
+                maxWidth: '180px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                transition: '.3s ease',
+                minWidth: '0',
+                boxSizing: 'border-box',
+                flexDirection: 'column'
+              }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
+                  <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <line x1="17" y1="11" x2="23" y2="17" />
+                  <line x1="23" y1="11" x2="17" y2="17" />
+                </svg>
+                <div style={{ fontSize: '11px', color: '#ffffff', fontWeight: 500, textAlign: 'center' }}>
+                  Users Not Logged In Today
+                </div>
+                <div style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
+                  {dashboardSummaryData?.sections
+                    ?.find(s => s.code === 'OPERATIONS')
+                    ?.cards?.find(c => c.code === 'USERS_NOT_LOGGED_IN')
+                    ?.value ?? 0}
+                </div>
+              </div>
+
+              {/* Card 8: Follow-up Users Not Logged In by 11 AM */}
+              <div style={{ 
+                background: '#ffffff2e',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
+                borderRadius: '10px',
+                padding: '10px 12px',
+                minWidth: '140px',
+                flex: '1',
+                maxWidth: '180px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                transition: '.3s ease',
+                minWidth: '0',
+                boxSizing: 'border-box',
+                flexDirection: 'column'
+              }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                  <line x1="12" y1="2" x2="12" y2="2" />
+                  <path d="M9 1l3 3-3 3" />
+                </svg>
+                <div style={{ fontSize: '11px', color: '#ffffff', fontWeight: 500, textAlign: 'center' }}>
+                  Follow-up Users Not Logged In by 11 AM
+                </div>
+                <div style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
+                  {dashboardSummaryData?.sections
+                    ?.find(s => s.code === 'OPERATIONS')
+                    ?.cards?.find(c => c.code === 'FOLLOWUP_USERS_NOT_LOGGED_IN_11AM')
+                    ?.value ?? 0}
+                </div>
+              </div>
             </div>
           </div>
 

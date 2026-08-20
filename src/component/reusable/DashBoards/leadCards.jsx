@@ -177,7 +177,7 @@ const LeadCards = ({ onCardClick, selectedCard }) => {
           return (
             <div
               key={item.id}
-              onClick={() => onCardClick && onCardClick({ type: 'leadStatus', value: item.code, label: item.name })}
+              onClick={() => onCardClick && onCardClick({ type: 'leadStatus', value: item.id, label: item.name })}
               style={{
                 background: cardStyle.isHighlighted ? 'linear-gradient(135deg, #FFF9E6 0%, #FFFFFF 100%)' : '#ffffff',
                 borderRadius: '12px',

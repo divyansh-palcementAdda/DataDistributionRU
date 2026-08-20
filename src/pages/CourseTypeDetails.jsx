@@ -8,6 +8,8 @@ import {
     getGradeBreakdown,
     getBoardBreakdown,
 } from '../Services/cards/cardService';
+import axiosInstance from '../axiosInstance/axios';
+import ApiRoutes from '../apiRoutes/allApiRoutes';
 import LeadCards from '../component/reusable/DashBoards/leadCards';
 import LeadSource from '../component/reusable/DashBoards/leadSource';
 import BoardWiseCard from '../component/reusable/DashBoards/BoardWiseCard';
@@ -66,29 +68,38 @@ const TABLE_COLUMNS = [
 
 // ─── Helper: fetch table data based on selected card ────────────────────────
 const fetchTableData = async (selectedCard, courseTypeId) => {
-    const baseParams = { courseTypeId };
+    const baseParams = { 
+        courseTypeId,
+        page: 0,
+        size: 10,
+        sortBy: 'createdAt',
+        sortDirection: 'ASC'
+    };
 
     if (!selectedCard) return [];
 
     try {
-        let res;
+        let params = { ...baseParams };
+        
         switch (selectedCard.type) {
             case 'leadStatus':
-                res = await getLeadStatusBreakdown({ ...baseParams, status: selectedCard.value });
+                params.statusId = selectedCard.value;
                 break;
             case 'leadSource':
-                res = await getLeadSourceBreakdown({ ...baseParams, sourceKey: selectedCard.value });
+                params.sourceId = selectedCard.value;
                 break;
             case 'board':
-                res = await getBoardBreakdown({ ...baseParams, boardKey: selectedCard.value });
+                params.boardId = selectedCard.value;
                 break;
             case 'grade':
-                res = await getGradeBreakdown({ ...baseParams, gradeKey: selectedCard.value });
+                params.gradeId = selectedCard.value;
                 break;
             default:
                 return [];
         }
-        return res?.data?.data || res?.data || [];
+
+        const res = await axiosInstance.get(ApiRoutes.Lead.getAllLeads, { params });
+        return res?.data?.data?.content || res?.data?.content || res?.data?.data || res?.data || [];
     } catch (err) {
         console.error('Failed to fetch table data', err);
         return [];

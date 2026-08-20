@@ -16,7 +16,7 @@ export const AppProvider = ({ children }) => {
     const path = location.pathname;
     if (path === '/callers-dashboard') return 'callers-dashboard';
     if (path === '/head-dashboard') return 'head-dashboard';
-    if (path.startsWith('/settings/')) return path;
+    if (path.startsWith('/settings/')) return path.substring(1);
     return path.replace('/', '') || 'dashboard';
   });
   const [isAccessDeniedModalOpen, setIsAccessDeniedModalOpen] = useState(false);
@@ -53,13 +53,40 @@ useEffect(() => {
   } else if (path === '/head-dashboard') {
     newPage = 'head-dashboard';
   } else if (path.startsWith('/settings/')) {
-    newPage = path;
+    newPage = path.substring(1);
+  } else if (path.startsWith('/lead-detail')) {
+    newPage = 'leads';
+  } else if (path.startsWith('/course-details')) {
+    newPage = 'courses';
+  } else if (path.startsWith('/course-types/')) {
+    newPage = 'course-types';
+  } else if (path === '/course-types') {
+    newPage = 'course-types';
+  } else if (path.startsWith('/lead-status-details')) {
+    newPage = 'lead-status';
+  } else if (path.startsWith('/grade-details')) {
+    newPage = 'grades';
+  } else if (path.startsWith('/board-details')) {
+    newPage = 'boards';
+  } else if (path.startsWith('/counselor-details')) {
+    newPage = 'counselors';
+  } else if (path.startsWith('/department-details')) {
+    newPage = 'department';
+  } else if (path.startsWith('/lead-source-details')) {
+    newPage = 'lead-source';
   } else if (path.startsWith('/')) {
     newPage = path.replace('/', '') || 'dashboard';
   }
   
   setCurrentPage(newPage);
 }, [location.pathname]);
+
+// Auto-expand settings when on a settings page
+useEffect(() => {
+  if (currentPage.startsWith('settings/')) {
+    setIsSettingsExpanded(true);
+  }
+}, [currentPage]);
 
   
   const openAddLeadModal = (leadData = null) => {

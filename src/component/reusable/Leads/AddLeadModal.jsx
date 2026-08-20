@@ -183,12 +183,12 @@ const AddLeadModal = () => {
       try {
         const res = await getAllLeadStatus({ size: 100 });
         console.log('Lead Statuses API response:', res);
-        if (res?.data?.success) {
-          setLeadStatuses(res.data.data?.content || []);
-        } else if (res?.data?.data) {
-          setLeadStatuses(res.data.data || []);
-        } else if (Array.isArray(res?.data)) {
+        if (res?.success) {
+          setLeadStatuses(res.data?.content || []);
+        } else if (res?.data) {
           setLeadStatuses(res.data || []);
+        } else if (Array.isArray(res)) {
+          setLeadStatuses(res || []);
         }
       } catch (err) {
         console.error('Failed to fetch lead statuses:', err);

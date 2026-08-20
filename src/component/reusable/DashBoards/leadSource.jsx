@@ -56,11 +56,11 @@ const LeadSource = ({ data = [], onCardClick, selectedCard }) => {
         <div className="lead-source-responsive-grid" style={gridStyle}>
           {items.map((item, index) => {
             const clr = COLORS[index % COLORS.length];
-            const isSelected = selectedCard?.type === 'leadSource' && selectedCard?.value === item.code;
+            const isSelected = selectedCard?.type === 'leadSource' && selectedCard?.value === item.id;
             return (
               <div
                 key={item.id || item.code}
-                onClick={() => onCardClick && onCardClick({ type: 'leadSource', value: item.code, label: item.name })}
+                onClick={() => onCardClick && onCardClick({ type: 'leadSource', value: item.id, label: item.name })}
                 style={{
                   background: '#ffffff',
                   borderRadius: '12px',

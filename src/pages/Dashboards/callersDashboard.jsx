@@ -300,7 +300,7 @@ const CallersDashboard = () => {
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: '700', color: 'var(--gray-900)' }}>Caller Dashboard</h1>
           <p style={{ fontSize: '13px', color: 'var(--gray-500)', marginTop: '4px' }}>
-            Welcome back, {currentCaller}! Here&apos;s your allotment overview.
+            Welcome back,  Here&apos;s your allotment overview.
           </p>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>

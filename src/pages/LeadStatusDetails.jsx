@@ -112,7 +112,7 @@ const buildLeadColumns = (page, size) => [
 
 // ─── Helper: fetch leads for selected card (server-side) ─────────────────────
 const fetchLeadsForCard = async (selectedCard, statusId, page, size, sortBy, sortDirection) => {
-    if (!selectedCard) return { content: [], totalElements: 0, totalPages: 0 };
+    if (!selectedCard || !statusId) return { content: [], totalElements: 0, totalPages: 0 };
 
     const params = {
         statusId,         // always filter by this lead status
@@ -123,6 +123,7 @@ const fetchLeadsForCard = async (selectedCard, statusId, page, size, sortBy, sor
     };
 
     switch (selectedCard.type) {
+        case 'all':         break; // only statusId, no extra filter
         case 'leadSource':  params.sourceId     = selectedCard.value; break;
         case 'courseType':  params.courseTypeId = selectedCard.value; break;
         case 'board':       params.boardId      = selectedCard.value; break;
@@ -158,7 +159,7 @@ const LeadStatusDetails = () => {
     const [dashData, setDashData] = useState({ leadSource: [], courseType: [], board: [], grade: [] });
 
     // filter / table state
-    const [selectedCard, setSelectedCard]               = useState(null);
+    const [selectedCard, setSelectedCard]               = useState({ type: 'all', value: null, label: 'All Leads' });
     const [tableData, setTableData]                     = useState([]);
     const [tableLoading, setTableLoading]               = useState(false);
 
@@ -225,6 +226,7 @@ const LeadStatusDetails = () => {
     // ── fetch leads when card selected or pagination/sort changes ──
     useEffect(() => {
         if (!selectedCard) { setTableData([]); setTableTotalElements(0); setTableTotalPages(0); return; }
+        if (!id) return;
         setTableLoading(true);
         fetchLeadsForCard(selectedCard, id, tablePage, tableSize, tableSortBy, tableSortDir)
             .then(({ content, totalElements, totalPages }) => {
@@ -238,7 +240,7 @@ const LeadStatusDetails = () => {
     // ── card click handler ──
     const handleCardClick = (card) => {
         const isSame = selectedCard?.type === card.type && selectedCard?.value === card.value;
-        setSelectedCard(isSame ? null : card);
+        setSelectedCard(isSame ? { type: 'all', value: null, label: 'All Leads' } : card);
         setTablePage(0);
     };
 
@@ -422,8 +424,9 @@ const LeadStatusDetails = () => {
                                 {tableTotalElements} records
                             </span>
                         </div>
+                        {selectedCard.type !== 'all' && (
                         <button
-                            onClick={() => setSelectedCard(null)}
+                            onClick={() => { setSelectedCard({ type: 'all', value: null, label: 'All Leads' }); setTablePage(0); }}
                             className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-red-500 hover:bg-red-50 px-2.5 py-1.5 rounded-lg border border-gray-200 hover:border-red-200 transition-all"
                         >
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -432,6 +435,7 @@ const LeadStatusDetails = () => {
                             </svg>
                             Clear Filter
                         </button>
+                        )}
                     </div>
 
                     {tableLoading ? (
@@ -486,18 +490,7 @@ const LeadStatusDetails = () => {
                 </div>
             )}
 
-            {/* ── Hint when no card selected ── */}
-            {!selectedCard && (
-                <div className="mt-6 flex flex-col items-center justify-center py-12 bg-white rounded-xl border border-dashed border-gray-200 text-gray-400">
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mb-3 opacity-50">
-                        <rect x="3" y="3" width="7" height="7" rx="1" />
-                        <rect x="14" y="3" width="7" height="7" rx="1" />
-                        <rect x="3" y="14" width="7" height="7" rx="1" />
-                        <rect x="14" y="14" width="7" height="7" rx="1" />
-                    </svg>
-                    <p className="text-sm font-medium">No Data</p>
-                </div>
-            )}
+            {/* ── Hint when no card selected — removed (default all-leads table always visible) ── */}
         </div>
 
         {/* ── Remark Modal ── */}

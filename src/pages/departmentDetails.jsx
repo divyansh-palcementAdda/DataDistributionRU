@@ -125,7 +125,7 @@ const buildLeadColumns = (page, size) => [
 
 // ─── Helper: fetch leads for selected card (server-side) ─────────────────────
 const fetchLeadsForCard = async (selectedCard, departmentId, page, size, sortBy, sortDirection) => {
-    if (!selectedCard) return { content: [], totalElements: 0, totalPages: 0 };
+    if (!selectedCard || !departmentId) return { content: [], totalElements: 0, totalPages: 0 };
 
     const params = {
         departmentId,     // always filter by this department
@@ -136,6 +136,7 @@ const fetchLeadsForCard = async (selectedCard, departmentId, page, size, sortBy,
     };
 
     switch (selectedCard.type) {
+        case 'all':         break; // only departmentId, no extra filter
         case 'leadStatus':  params.statusId     = selectedCard.value; break;
         case 'leadSource':  params.sourceId     = selectedCard.value; break;
         case 'courseType':  params.courseTypeId = selectedCard.value; break;
@@ -177,7 +178,7 @@ const DepartmentDetails = () => {
     const [users, setUsers]           = useState([]);
 
     // filter / table state
-    const [selectedCard, setSelectedCard]               = useState(null);
+    const [selectedCard, setSelectedCard]               = useState({ type: 'all', value: null, label: 'All Leads' });
     const [tableData, setTableData]                     = useState([]);
     const [tableLoading, setTableLoading]               = useState(false);
 
@@ -263,6 +264,7 @@ const DepartmentDetails = () => {
     // ── fetch leads when card selected or pagination/sort changes ──
     useEffect(() => {
         if (!selectedCard) { setTableData([]); setTableTotalElements(0); setTableTotalPages(0); return; }
+        if (!id) return;
         setTableLoading(true);
         fetchLeadsForCard(selectedCard, id, tablePage, tableSize, tableSortBy, tableSortDir)
             .then(({ content, totalElements, totalPages }) => {
@@ -276,7 +278,7 @@ const DepartmentDetails = () => {
     // ── card click handler ──
     const handleCardClick = (card) => {
         const isSame = selectedCard?.type === card.type && selectedCard?.value === card.value;
-        setSelectedCard(isSame ? null : card);
+        setSelectedCard(isSame ? { type: 'all', value: null, label: 'All Leads' } : card);
         setTablePage(0);
     };
 
@@ -543,8 +545,9 @@ const DepartmentDetails = () => {
                                 {tableTotalElements} records
                             </span>
                         </div>
+                        {selectedCard.type !== 'all' && (
                         <button
-                            onClick={() => setSelectedCard(null)}
+                            onClick={() => { setSelectedCard({ type: 'all', value: null, label: 'All Leads' }); setTablePage(0); }}
                             className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-red-500 hover:bg-red-50 px-2.5 py-1.5 rounded-lg border border-gray-200 hover:border-red-200 transition-all"
                         >
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -553,6 +556,7 @@ const DepartmentDetails = () => {
                             </svg>
                             Clear Filter
                         </button>
+                        )}
                     </div>
 
                     {tableLoading ? (
@@ -607,18 +611,7 @@ const DepartmentDetails = () => {
                 </div>
             )}
 
-            {/* ── Hint when no card selected ── */}
-            {!selectedCard && (
-                <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px', backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px dashed #E5E7EB', color: '#9CA3AF' }}>
-                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ marginBottom: '12px', opacity: 0.5 }}>
-                        <rect x="3" y="3" width="7" height="7" rx="1" />
-                        <rect x="14" y="3" width="7" height="7" rx="1" />
-                        <rect x="3" y="14" width="7" height="7" rx="1" />
-                        <rect x="14" y="14" width="7" height="7" rx="1" />
-                    </svg>
-                    <p className="text-sm font-medium">No Data</p>
-                </div>
-            )}
+            {/* ── Hint when no card selected — removed (default all-leads table always visible) ── */}
 
             {/* ── Edit Department Modal ── */}
             <AddDepartmentModal

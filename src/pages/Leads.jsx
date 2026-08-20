@@ -10,6 +10,7 @@ import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import DeleteModal from "../component/reusable/deleteModel"
 import AssignLeadModal from '../component/reusable/Leads/AssignLeadModal';
 import LeadCards from '../component/reusable/DashBoards/leadCards';
+import BulkUploadModal from '../component/reusable/Leads/BulkUploadModal';
 
 
 const STATUSES = [
@@ -203,6 +204,7 @@ const Leads = () => {
 
   const [isRemarkModalOpen, setIsRemarkModalOpen] = useState(false);
   const [selectedLeadForRemark, setSelectedLeadForRemark] = useState(null);
+  const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
   const [isAllotModalOpen, setIsAllotModalOpen] = useState(false);
   const [selectedLeadForAllot, setSelectedLeadForAllot] = useState(null);
   const [usersData, setUsersData] = useState([
@@ -281,11 +283,12 @@ const Leads = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          {/* Export */}
+          {/* Bulk Upload */}
           <button
             className="btn btn-secondary btn-sm flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={!hasPermission('LEAD_READ') && !hasPermission('LEAD_VIEW')}
-            style={{ cursor: (!hasPermission('LEAD_READ') && !hasPermission('LEAD_VIEW')) ? 'not-allowed' : 'pointer' }}
+            onClick={() => setIsBulkUploadOpen(true)}
+            disabled={!hasPermission('LEAD_CREATE')}
+            style={{ cursor: !hasPermission('LEAD_CREATE') ? 'not-allowed' : 'pointer' }}
           >
             <svg
               width="13"
@@ -295,7 +298,7 @@ const Leads = () => {
               stroke="currentColor"
               strokeWidth="2"
             >
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
             </svg>
             Export
           </button>
@@ -638,6 +641,16 @@ const Leads = () => {
         onAssign={handleAllotLead}
         currentLead={selectedLeadForAllot}
         users={usersData}
+      />
+
+      {/* Bulk Upload Modal */}
+      <BulkUploadModal
+        isOpen={isBulkUploadOpen}
+        onClose={() => setIsBulkUploadOpen(false)}
+        onSuccess={() => {
+          showToast('Leads uploaded successfully!');
+          fetchLeads();
+        }}
       />
     </div>
   );

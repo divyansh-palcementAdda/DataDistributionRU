@@ -245,34 +245,6 @@ const CounselorDetails = () => {
                 </div>
             ) : (
                 <>
-                    {/* ── Dashboard Cards ── */}
-                    <div className="mb-8">
-                        <LeadCards
-                            onCardClick={handleCardClick}
-                            selectedCard={selectedCard}
-                        />
-                        <LeadSource
-                            data={dashData.leadSource}
-                            onCardClick={handleCardClick}
-                            selectedCard={selectedCard}
-                        />
-                        <CategorywiseCard
-                            data={dashData.courseType}
-                            onCardClick={handleCardClick}
-                            selectedCard={selectedCard}
-                        />
-                        <BoardWiseCard
-                            data={dashData.board}
-                            onCardClick={handleCardClick}
-                            selectedCard={selectedCard}
-                        />
-                        <GradWiseCard
-                            data={dashData.grade}
-                            onCardClick={handleCardClick}
-                            selectedCard={selectedCard}
-                        />
-                    </div>
-
                     {/* ── Details Card ── */}
                     {details && (
                         <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm max-w-5xl">
@@ -387,6 +359,34 @@ const CounselorDetails = () => {
                             </div>
                         </div>
                     )}
+
+                    {/* ── Dashboard Cards ── */}
+                    <div className="mb-8 mt-6">
+                        <LeadCards
+                            onCardClick={handleCardClick}
+                            selectedCard={selectedCard}
+                        />
+                        <LeadSource
+                            data={dashData.leadSource}
+                            onCardClick={handleCardClick}
+                            selectedCard={selectedCard}
+                        />
+                        <CategorywiseCard
+                            data={dashData.courseType}
+                            onCardClick={handleCardClick}
+                            selectedCard={selectedCard}
+                        />
+                        <BoardWiseCard
+                            data={dashData.board}
+                            onCardClick={handleCardClick}
+                            selectedCard={selectedCard}
+                        />
+                        <GradWiseCard
+                            data={dashData.grade}
+                            onCardClick={handleCardClick}
+                            selectedCard={selectedCard}
+                        />
+                    </div>
 
                     {/* ── Filtered Table ── */}
                     {selectedCard && (

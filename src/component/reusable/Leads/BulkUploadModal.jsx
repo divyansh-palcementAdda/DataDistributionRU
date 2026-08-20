@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { FiUploadCloud, FiX, FiChevronDown, FiFile, FiAlertCircle } from 'react-icons/fi';
+import { FiUploadCloud, FiX, FiFile, FiAlertCircle } from 'react-icons/fi';
 import CustomButton from '../CustomButton';
 import { getAllCourseType } from '../../../Services/courseTypes/courseTypeService';
 import { getAllCourses } from '../../../Services/course/course';
@@ -30,7 +30,6 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
     gradeId: '',
     boardId: '',
     leadSourceId: '',
-    leadSourceIds: [],   // multi-select
     statusId: '',
     departmentId: '',
     assignedToUserId: '',
@@ -49,19 +48,6 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(false);
   const [error, setError] = useState('');
-  const [multiSourceOpen, setMultiSourceOpen] = useState(false);
-  const multiSourceRef = useRef(null);
-
-  /* ── close multi-select on outside click ── */
-  useEffect(() => {
-    const handler = (e) => {
-      if (multiSourceRef.current && !multiSourceRef.current.contains(e.target)) {
-        setMultiSourceOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
 
   /* ── fetch master data when modal opens ── */
   useEffect(() => {
@@ -78,7 +64,6 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
       gradeId: '',
       boardId: '',
       leadSourceId: '',
-      leadSourceIds: [],
       statusId: '',
       departmentId: '',
       assignedToUserId: '',
@@ -169,19 +154,6 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
     if (dropped) validateAndSetFile(dropped);
   };
 
-  /* ── multi-select lead source toggle ── */
-  const toggleLeadSource = (id) => {
-    setFilters((prev) => {
-      const exists = prev.leadSourceIds.includes(id);
-      return {
-        ...prev,
-        leadSourceIds: exists
-          ? prev.leadSourceIds.filter((x) => x !== id)
-          : [...prev.leadSourceIds, id],
-      };
-    });
-  };
-
   /* ── submit ── */
   const handleUpload = async () => {
     if (!file) {
@@ -201,7 +173,6 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
       if (filters.gradeId)         params.gradeId           = filters.gradeId;
       if (filters.boardId)         params.boardId           = filters.boardId;
       if (filters.leadSourceId)    params.leadSourceId      = filters.leadSourceId;
-      if (filters.leadSourceIds.length) params.leadSourceIds = filters.leadSourceIds.join(',');
       if (filters.statusId)        params.statusId          = filters.statusId;
       if (filters.departmentId)    params.departmentId      = filters.departmentId;
       if (filters.assignedToUserId) params.assignedToUserId = filters.assignedToUserId;
@@ -248,10 +219,6 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
       </select>
     </div>
   );
-
-  const sourcesLabel = filters.leadSourceIds.length
-    ? `${filters.leadSourceIds.length} source(s) selected`
-    : 'Select lead sources';
 
   return (
     <div className="modal-overlay open">
@@ -428,77 +395,6 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
                 options={leadSources}
                 labelKey="name"
               />
-
-              {/* Lead Sources (multi) — spans full width */}
-              <div className="form-group" style={{ gridColumn: '1 / -1' }} ref={multiSourceRef}>
-                <label className="form-label" style={{ fontWeight: 600, color: 'var(--gray-700)', fontSize: 12 }}>
-                  Lead Sources (multiple)
-                  <span style={{ marginLeft: 4, fontSize: 10, color: 'var(--gray-400)', fontWeight: 400 }}>(optional)</span>
-                </label>
-                <div style={{ position: 'relative' }}>
-                  <button
-                    type="button"
-                    onClick={() => setMultiSourceOpen((p) => !p)}
-                    style={{
-                      width: '100%', textAlign: 'left',
-                      padding: '7px 12px', borderRadius: 6, fontSize: 13,
-                      border: '1px solid var(--gray-300, #d1d5db)',
-                      background: 'var(--white, #fff)',
-                      color: filters.leadSourceIds.length ? 'var(--gray-800)' : 'var(--gray-400)',
-                      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {sourcesLabel}
-                    <FiChevronDown
-                      size={14}
-                      style={{
-                        transition: 'transform 0.2s',
-                        transform: multiSourceOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                        color: 'var(--gray-500)',
-                      }}
-                    />
-                  </button>
-                  {multiSourceOpen && (
-                    <div
-                      style={{
-                        position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
-                        background: '#fff', border: '1px solid var(--gray-200)',
-                        borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
-                        zIndex: 999, maxHeight: 180, overflowY: 'auto',
-                      }}
-                    >
-                      {leadSources.length === 0 ? (
-                        <div style={{ padding: '12px', fontSize: 12, color: 'var(--gray-400)', textAlign: 'center' }}>
-                          No lead sources found
-                        </div>
-                      ) : (
-                        leadSources.map((src) => (
-                          <label
-                            key={src.id}
-                            style={{
-                              display: 'flex', alignItems: 'center', gap: 8,
-                              padding: '8px 12px', cursor: 'pointer', fontSize: 13,
-                              background: filters.leadSourceIds.includes(src.id)
-                                ? 'var(--primary-light, #f0fdf4)'
-                                : 'transparent',
-                              transition: 'background 0.15s',
-                            }}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={filters.leadSourceIds.includes(src.id)}
-                              onChange={() => toggleLeadSource(src.id)}
-                              style={{ accentColor: 'var(--primary, #22c55e)', cursor: 'pointer' }}
-                            />
-                            <span style={{ color: 'var(--gray-700)' }}>{src.name}</span>
-                          </label>
-                        ))
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
 
               {/* Status */}
               <SelectField

@@ -565,7 +565,7 @@ const Dashboard = () => {
         </div>
 
         {/* Right Column: Recent Activity */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', position: 'sticky', top: '16px', alignSelf: 'flex-start', maxHeight: 'calc(100vh - 80px)', overflowY: 'auto' }}>
           {/* ── Recent Activity Card ── */}
           <div style={{
             background: '#ffffff',

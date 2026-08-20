@@ -4,12 +4,14 @@ import CustomInput from '../CustomInput';
 import Toggle from '../custumToggle';
 import { addUser, updateUser } from '../../../Services/user/user';
 import { getAllRoles } from '../../../Services/role/roleService';
+import { getAllDepartments } from '../../../Services/department/departmentService';
 import { useAppContext } from '../../../AppContext';
 
 const AddUserModal = ({ isOpen, onClose, onSuccess, initialData }) => {
     const { showToast } = useAppContext();
     const [isLoading, setIsLoading] = useState(false);
     const [roles, setRoles] = useState([]);
+    const [departments, setDepartments] = useState([]);
     const [showPassword, setShowPassword] = useState(false);
     const isEditMode = !!initialData;
     
@@ -71,7 +73,10 @@ const AddUserModal = ({ isOpen, onClose, onSuccess, initialData }) => {
                 const response = await getAllRoles();
                 
                 if (response && response.data && response.data.data && Array.isArray(response.data.data)) {
-                    setRoles(response.data.data);
+                    const filtered = response.data.data.filter(
+                        (role) => !['ADMIN', 'SUPER_ADMIN'].includes(role.name?.toUpperCase())
+                    );
+                    setRoles(filtered);
                 } else {
                     setRoles([]);
                 }
@@ -80,9 +85,24 @@ const AddUserModal = ({ isOpen, onClose, onSuccess, initialData }) => {
                 setRoles([]);
             }
         };
+
+        const fetchDepartments = async () => {
+            try {
+                const response = await getAllDepartments({ size: 100 });
+                if (response && response.data && response.data.content && Array.isArray(response.data.content)) {
+                    setDepartments(response.data.content);
+                } else {
+                    setDepartments([]);
+                }
+            } catch (error) {
+                console.error('Failed to fetch departments', error);
+                setDepartments([]);
+            }
+        };
         
         if (isOpen) {
             fetchRoles();
+            fetchDepartments();
         }
     }, [isOpen]);
 
@@ -233,11 +253,23 @@ const AddUserModal = ({ isOpen, onClose, onSuccess, initialData }) => {
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
-                            <CustomInput 
-                                label="Department" 
-                                value={formData.department} 
-                                onChange={(e) => handleChange('department', e.target.value)} 
-                            />
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-sm font-semibold text-gray-700 ml-1">Department</label>
+                                <select
+                                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500"
+                                    value={formData.department}
+                                    onChange={(e) => handleChange('department', e.target.value)}
+                                >
+                                    <option value="">
+                                        {departments.length === 0 ? 'Loading departments...' : 'Select Department'}
+                                    </option>
+                                    {departments.map((dept) => (
+                                        <option key={dept.id} value={dept.name}>
+                                            {dept.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
                             <div className="flex flex-col gap-1.5">
                                 <label className="text-sm font-semibold text-gray-700 ml-1">Role</label>
                                 <select 

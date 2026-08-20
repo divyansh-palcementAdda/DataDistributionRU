@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { FiUploadCloud, FiX, FiFile, FiAlertCircle } from 'react-icons/fi';
+import { FiUploadCloud, FiX, FiFile, FiAlertCircle, FiDownload } from 'react-icons/fi';
 import CustomButton from '../CustomButton';
 import { getAllCourseType } from '../../../Services/courseTypes/courseTypeService';
 import { getAllCourses } from '../../../Services/course/course';
@@ -47,6 +47,7 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
   /* ── ui state ── */
   const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(false);
+  const [templateLoading, setTemplateLoading] = useState(false);
   const [error, setError] = useState('');
 
   /* ── fetch master data when modal opens ── */
@@ -195,9 +196,29 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
     }
   };
 
-  if (!isOpen) return null;
+  /* ── download template ── */
+  const handleDownloadTemplate = async () => {
+    setTemplateLoading(true);
+    try {
+      const response = await axiosInstance.get('/api/leads/bulk-upload/template', {
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'leads-bulk-upload-template.xlsx');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError('Failed to download template. Please try again.');
+    } finally {
+      setTemplateLoading(false);
+    }
+  };
 
-  /* ── helpers ── */
+  if (!isOpen) return null;
   const SelectField = ({ label, value, onChange, options, placeholder, valueKey = 'id', labelKey = 'name' }) => (
     <div className="form-group">
       <label className="form-label" style={{ fontWeight: 600, color: 'var(--gray-700)', fontSize: 12 }}>
@@ -245,9 +266,31 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
               </p>
             </div>
           </div>
-          <CustomButton variant="ghost" className="btn-icon" onClick={onClose} disabled={loading}>
-            <FiX size={16} />
-          </CustomButton>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <CustomButton
+              variant="secondary"
+              onClick={handleDownloadTemplate}
+              disabled={loading || templateLoading}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, padding: '5px 10px' }}
+            >
+              {templateLoading ? (
+                <svg
+                  width="13" height="13" viewBox="0 0 24 24"
+                  fill="none" stroke="currentColor" strokeWidth="2"
+                  style={{ animation: 'spin 0.8s linear infinite' }}
+                >
+                  <circle cx="12" cy="12" r="10" strokeOpacity="0.25" />
+                  <path d="M12 2a10 10 0 0 1 10 10" />
+                </svg>
+              ) : (
+                <FiDownload size={13} />
+              )}
+              {templateLoading ? 'Downloading…' : 'Download Template'}
+            </CustomButton>
+            <CustomButton variant="ghost" className="btn-icon" onClick={onClose} disabled={loading}>
+              <FiX size={16} />
+            </CustomButton>
+          </div>
         </div>
 
         {/* ── Body ── */}

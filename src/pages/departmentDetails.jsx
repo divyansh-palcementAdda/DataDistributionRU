@@ -190,6 +190,11 @@ const DepartmentDetails = () => {
     const [tableSortBy, setTableSortBy]                 = useState('createdAt');
     const [tableSortDir, setTableSortDir]               = useState('desc');
 
+    // staff view state
+    const [activeStaffView, setActiveStaffView]     = useState(null); // null | 'users' | 'hods' | 'counsellors'
+    const [staffTableData, setStaffTableData]       = useState([]);
+    const [staffTableLoading, setStaffTableLoading] = useState(false);
+
     // remark modal
     const [isRemarkModalOpen, setIsRemarkModalOpen]         = useState(false);
     const [selectedLeadForRemark, setSelectedLeadForRemark] = useState(null);
@@ -280,6 +285,30 @@ const DepartmentDetails = () => {
         const isSame = selectedCard?.type === card.type && selectedCard?.value === card.value;
         setSelectedCard(isSame ? { type: 'all', value: null, label: 'All Leads' } : card);
         setTablePage(0);
+    };
+
+    // ── staff card click handler ──
+    const handleStaffCardClick = async (type) => {
+        if (activeStaffView === type) {
+            setActiveStaffView(null);
+            setStaffTableData([]);
+            return;
+        }
+        setActiveStaffView(type);
+        setStaffTableLoading(true);
+        try {
+            let res;
+            if (type === 'users')       res = await getDepartmentUsers(id);
+            else if (type === 'hods')   res = await getDepartmentHods(id);
+            else                        res = await getDepartmentCounsellors(id);
+            const data = res?.data?.data || res?.data || res || [];
+            setStaffTableData(Array.isArray(data) ? data : []);
+        } catch (err) {
+            console.error('Staff fetch failed', err);
+            setStaffTableData([]);
+        } finally {
+            setStaffTableLoading(false);
+        }
     };
 
     // ── remark modal handlers ──
@@ -402,14 +431,70 @@ const DepartmentDetails = () => {
                         </p>
                     </div>
 
-                    <div style={{ backgroundColor: '#F8FAFC', padding: '16px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                            <FiUsers style={{ color: '#64748B', fontSize: '14px' }} />
-                            <span style={{ fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Total Users</span>
+                    {/* ── Total Users Card ── */}
+                    <div
+                        onClick={() => handleStaffCardClick('users')}
+                        style={{ backgroundColor: activeStaffView === 'users' ? '#DBEAFE' : '#EFF6FF', padding: '16px', borderRadius: '8px', border: `2px solid ${activeStaffView === 'users' ? '#2563EB' : '#BFDBFE'}`, cursor: 'pointer', transition: 'all 0.2s', position: 'relative' }}
+                        onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 4px 12px rgba(37,99,235,0.15)'}
+                        onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                            <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <FiUsers style={{ color: '#FFFFFF', fontSize: '15px' }} />
+                            </div>
+                            <span style={{ fontSize: '11px', fontWeight: '700', color: '#1D4ED8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Total Users</span>
                         </div>
-                        <p style={{ fontSize: '20px', fontWeight: '700', color: '#0F172A', margin: 0 }}>
-                            {users.length || (hods.length || 0) + (counsellors.length || 0)}
+                        <p style={{ fontSize: '28px', fontWeight: '800', color: '#1E40AF', margin: '0 0 2px 0', lineHeight: 1 }}>
+                            {users.length > 0 ? users.length : (department.userCount ?? 0)}
                         </p>
+                        <p style={{ fontSize: '11px', color: '#3B82F6', margin: 0 }}>Click to view list</p>
+                        {activeStaffView === 'users' && (
+                            <div style={{ position: 'absolute', top: '8px', right: '8px', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#2563EB' }} />
+                        )}
+                    </div>
+
+                    {/* ── HODs Card ── */}
+                    <div
+                        onClick={() => handleStaffCardClick('hods')}
+                        style={{ backgroundColor: activeStaffView === 'hods' ? '#EDE9FE' : '#F5F3FF', padding: '16px', borderRadius: '8px', border: `2px solid ${activeStaffView === 'hods' ? '#7C3AED' : '#DDD6FE'}`, cursor: 'pointer', transition: 'all 0.2s', position: 'relative' }}
+                        onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 4px 12px rgba(124,58,237,0.15)'}
+                        onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                            <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: '#7C3AED', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <FiUser style={{ color: '#FFFFFF', fontSize: '15px' }} />
+                            </div>
+                            <span style={{ fontSize: '11px', fontWeight: '700', color: '#6D28D9', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Heads of Dept.</span>
+                        </div>
+                        <p style={{ fontSize: '28px', fontWeight: '800', color: '#5B21B6', margin: '0 0 2px 0', lineHeight: 1 }}>
+                            {hods.length > 0 ? hods.length : (department.hods?.length ?? 0)}
+                        </p>
+                        <p style={{ fontSize: '11px', color: '#8B5CF6', margin: 0 }}>Click to view list</p>
+                        {activeStaffView === 'hods' && (
+                            <div style={{ position: 'absolute', top: '8px', right: '8px', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#7C3AED' }} />
+                        )}
+                    </div>
+
+                    {/* ── Counsellors Card ── */}
+                    <div
+                        onClick={() => handleStaffCardClick('counsellors')}
+                        style={{ backgroundColor: activeStaffView === 'counsellors' ? '#DCFCE7' : '#F0FDF4', padding: '16px', borderRadius: '8px', border: `2px solid ${activeStaffView === 'counsellors' ? '#16A34A' : '#BBF7D0'}`, cursor: 'pointer', transition: 'all 0.2s', position: 'relative' }}
+                        onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 4px 12px rgba(22,163,74,0.15)'}
+                        onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                            <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: '#16A34A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <FiUsers style={{ color: '#FFFFFF', fontSize: '15px' }} />
+                            </div>
+                            <span style={{ fontSize: '11px', fontWeight: '700', color: '#15803D', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Counsellors</span>
+                        </div>
+                        <p style={{ fontSize: '28px', fontWeight: '800', color: '#166534', margin: '0 0 2px 0', lineHeight: 1 }}>
+                            {counsellors.length > 0 ? counsellors.length : (department.counsellors?.length ?? 0)}
+                        </p>
+                        <p style={{ fontSize: '11px', color: '#22C55E', margin: 0 }}>Click to view list</p>
+                        {activeStaffView === 'counsellors' && (
+                            <div style={{ position: 'absolute', top: '8px', right: '8px', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#16A34A' }} />
+                        )}
                     </div>
 
                     <div style={{ backgroundColor: '#F8FAFC', padding: '16px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
@@ -429,6 +514,96 @@ const DepartmentDetails = () => {
                     </div>
                 </div>
             </div>
+
+            {/* ── Staff List Table (shown on card click) ── */}
+            {activeStaffView && (
+                <div style={{ backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px solid #E2E8F0', padding: '24px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                        <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#0F172A', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            {activeStaffView === 'users' && <FiUsers style={{ color: '#2563EB' }} />}
+                            {activeStaffView === 'hods'  && <FiUser  style={{ color: '#7C3AED' }} />}
+                            {activeStaffView === 'counsellors' && <FiUsers style={{ color: '#16A34A' }} />}
+                            {activeStaffView === 'users' ? 'All Users' : activeStaffView === 'hods' ? 'Heads of Department' : 'Counsellors'}
+                            <span style={{ fontSize: '12px', fontWeight: '500', color: '#64748B', backgroundColor: '#F1F5F9', padding: '2px 8px', borderRadius: '12px' }}>
+                                {staffTableData.length} records
+                            </span>
+                        </h3>
+                        <button
+                            onClick={() => { setActiveStaffView(null); setStaffTableData([]); }}
+                            style={{ padding: '6px 12px', borderRadius: '6px', border: '1px solid #E2E8F0', backgroundColor: '#F8FAFC', color: '#64748B', fontSize: '12px', fontWeight: '500', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                        >
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                            </svg>
+                            Close
+                        </button>
+                    </div>
+
+                    {staffTableLoading ? (
+                        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '120px', gap: '8px' }}>
+                            <div style={{ width: '24px', height: '24px', borderRadius: '50%', border: '3px solid #E2E8F0', borderTopColor: '#2563EB', animation: 'spin 0.8s linear infinite' }} />
+                            <span style={{ color: '#64748B', fontSize: '14px' }}>Loading...</span>
+                        </div>
+                    ) : staffTableData.length === 0 ? (
+                        <div style={{ textAlign: 'center', padding: '32px', color: '#94A3B8', fontSize: '14px' }}>
+                            No records found.
+                        </div>
+                    ) : (
+                        <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                                <thead>
+                                    <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
+                                        <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: '700', color: '#64748B', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>#</th>
+                                        <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: '700', color: '#64748B', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Name</th>
+                                        <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: '700', color: '#64748B', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Email</th>
+                                        <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: '700', color: '#64748B', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                            {activeStaffView === 'hods' ? 'Access Type' : 'Role'}
+                                        </th>
+                                        <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: '700', color: '#64748B', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {staffTableData.map((member, idx) => (
+                                        <tr key={member.id || idx} style={{ borderBottom: '1px solid #F1F5F9', transition: 'background 0.15s' }}
+                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F8FAFC'}
+                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                        >
+                                            <td style={{ padding: '12px 14px', color: '#94A3B8', fontWeight: '500' }}>{idx + 1}</td>
+                                            <td style={{ padding: '12px 14px' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: activeStaffView === 'hods' ? '#7C3AED' : activeStaffView === 'counsellors' ? '#2563EB' : '#0F172A', color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '700', flexShrink: 0 }}>
+                                                        {member.firstName?.[0] || '?'}
+                                                    </div>
+                                                    <span style={{ fontWeight: '600', color: '#1E293B' }}>
+                                                        {`${member.firstName || ''} ${member.lastName || ''}`.trim() || 'N/A'}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td style={{ padding: '12px 14px', color: '#475569' }}>{member.email || '—'}</td>
+                                            <td style={{ padding: '12px 14px' }}>
+                                                {activeStaffView === 'hods' ? (
+                                                    <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: '600', backgroundColor: '#F5F3FF', color: '#6D28D9', border: '1px solid #E9D5FF' }}>
+                                                        {member.hodAccessType || 'FULL_ACCESS'}
+                                                    </span>
+                                                ) : (
+                                                    <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: '600', backgroundColor: '#DBEAFE', color: '#1D4ED8', border: '1px solid #BFDBFE' }}>
+                                                        {(member.roles && member.roles[0]) || member.roleName || '—'}
+                                                    </span>
+                                                )}
+                                            </td>
+                                            <td style={{ padding: '12px 14px' }}>
+                                                <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: '600', backgroundColor: member.active ? '#DCFCE7' : '#F1F5F9', color: member.active ? '#15803D' : '#64748B', border: `1px solid ${member.active ? '#BBF7D0' : '#E2E8F0'}` }}>
+                                                    {member.active ? 'Active' : 'Inactive'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* ── HODs Section ── */}
             {hods && hods.length > 0 && (

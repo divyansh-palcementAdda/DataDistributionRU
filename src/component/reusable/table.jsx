@@ -8,6 +8,9 @@ const ReusableTable = ({
     onView,
     onEdit,
     onDelete,
+    onViewDisabled = false,
+    onEditDisabled = false,
+    onDeleteDisabled = false,
     emptyMessage = "No data found",
     isServerSide = false,
     totalElements = 0,
@@ -127,17 +130,35 @@ const ReusableTable = ({
                                             {actions ? actions(row) : (
                                                 <div className="flex justify-center items-center gap-3">
                                                     {onView && (
-                                                        <button onClick={() => onView(row)} className="text-gray-500 hover:text-gray-700 transition" title="View">
+                                                        <button
+                                                            onClick={() => onView(row)}
+                                                            className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                                            title="View"
+                                                            disabled={onViewDisabled}
+                                                            style={{ cursor: onViewDisabled ? 'not-allowed' : 'pointer' }}
+                                                        >
                                                             <FiEye size={18} />
                                                         </button>
                                                     )}
                                                     {onEdit && (
-                                                        <button onClick={() => onEdit(row)} className="text-gray-500 hover:text-gray-700 transition" title="Edit">
+                                                        <button
+                                                            onClick={() => onEdit(row)}
+                                                            className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                                            title="Edit"
+                                                            disabled={onEditDisabled}
+                                                            style={{ cursor: onEditDisabled ? 'not-allowed' : 'pointer' }}
+                                                        >
                                                             <FiEdit size={18} />
                                                         </button>
                                                     )}
                                                     {onDelete && (
-                                                        <button onClick={() => onDelete(row)} className="text-red-500 hover:text-red-700 transition" title="Delete">
+                                                        <button
+                                                            onClick={() => onDelete(row)}
+                                                            className="text-red-500 hover:text-red-700 transition bg-transparent border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                                            title="Delete"
+                                                            disabled={onDeleteDisabled}
+                                                            style={{ cursor: onDeleteDisabled ? 'not-allowed' : 'pointer' }}
+                                                        >
                                                             <FiTrash2 size={18} />
                                                         </button>
                                                     )}
@@ -193,17 +214,35 @@ const ReusableTable = ({
                                     {actions ? actions(row) : (
                                         <>
                                             {onView && (
-                                                <button onClick={() => onView(row)} className="text-gray-500 hover:text-gray-700 transition" title="View">
+                                                <button
+                                                    onClick={() => onView(row)}
+                                                    className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    title="View"
+                                                    disabled={onViewDisabled}
+                                                    style={{ cursor: onViewDisabled ? 'not-allowed' : 'pointer' }}
+                                                >
                                                     <FiEye size={20} />
                                                 </button>
                                             )}
                                             {onEdit && (
-                                                <button onClick={() => onEdit(row)} className="text-gray-500 hover:text-gray-700 transition" title="Edit">
+                                                <button
+                                                    onClick={() => onEdit(row)}
+                                                    className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    title="Edit"
+                                                    disabled={onEditDisabled}
+                                                    style={{ cursor: onEditDisabled ? 'not-allowed' : 'pointer' }}
+                                                >
                                                     <FiEdit size={20} />
                                                 </button>
                                             )}
                                             {onDelete && (
-                                                <button onClick={() => onDelete(row)} className="text-red-500 hover:text-red-700 transition" title="Delete">
+                                                <button
+                                                    onClick={() => onDelete(row)}
+                                                    className="text-red-500 hover:text-red-700 transition bg-transparent border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    title="Delete"
+                                                    disabled={onDeleteDisabled}
+                                                    style={{ cursor: onDeleteDisabled ? 'not-allowed' : 'pointer' }}
+                                                >
                                                     <FiTrash2 size={20} />
                                                 </button>
                                             )}

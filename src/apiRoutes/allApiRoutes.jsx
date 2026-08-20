@@ -141,15 +141,21 @@ const ApiRoutes = {
         courseTypes: '/api/dashboard/course-types',
         recentActivity: '/api/dashboard/recent-activity',
         summary: '/api/dashboard/summary',
+        lowDataUsers: '/api/dashboard/low-data-users',
+        usersNotLoggedIn: '/api/dashboard/users-not-logged-in',
+        followupUsersNotLoggedIn11am: '/api/dashboard/followup-users-not-logged-in-11am',
     },
 
     Department: {
         create: '/api/departments',
         getAll: '/api/departments',
-        getById: '/api/departments/{id}',
+        getDetailsById: '/api/departments/{id}',
         update: '/api/departments/{id}',
         delete: '/api/departments/{id}',
-        toggle: '/api/departments/{id}/toggle-active'
+        toggle: '/api/departments/{id}/toggle-active',
+        getUsers: '/api/departments/{id}/users',
+        getHods: '/api/departments/{id}/hods',
+        getCounsellors: '/api/departments/{id}/counsellors'
     }
 }
 

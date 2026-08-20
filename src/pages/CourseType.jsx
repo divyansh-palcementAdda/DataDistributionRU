@@ -8,10 +8,17 @@ import { getAllCourseType, toggleCourseStatus, deleteCourseType } from '../Servi
 import { toast } from 'react-toastify';
 import AddCourseTypeModel from '../component/reusable/AddCourseTypeModel';
 import DeleteModal from '../component/reusable/deleteModel';
+import { usePermissions } from '../PermissionContext';
 
 const CourseType = () => {
     const navigate = useNavigate();
+    const { canCreate, canUpdate, canDelete, canRead, hasPermission } = usePermissions();
     const [courses, setCourses] = useState([]);
+
+    // Helper function to check both COURSE_TYPE_READ and COURSE_TYPE_VIEW permissions
+    const canReadCourseType = () => {
+        return hasPermission('COURSE_TYPE_READ') || hasPermission('COURSE_TYPE_VIEW');
+    };
 
     const [loading, setLoading] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
@@ -74,6 +81,10 @@ const CourseType = () => {
     };
 
     const handleToggleStatus = async (id, currentStatus) => {
+        if (!hasPermission('COURSE_TYPE_UPDATE')) {
+            toast.error('You do not have permission to update course type status');
+            return;
+        }
         try {
             // Optimistic UI update could be placed here, but a refetch is safer
             await toggleCourseStatus(id);
@@ -122,6 +133,7 @@ const CourseType = () => {
                 <Toggle
                     checked={status === 'ACTIVE' || status === true}
                     onChange={() => handleToggleStatus(row.id, status)}
+                    disabled={!hasPermission('COURSE_TYPE_UPDATE')}
                 />
             )
         }
@@ -145,7 +157,13 @@ const CourseType = () => {
                 />
 
 
-                <CustomButton variant="primary" onClick={() => { setEditData(null); setIsAddModalOpen(true); }} className="text-sm py-2 px-4 shadow-sm hover:shadow-md transition-shadow">
+                <CustomButton
+                    variant="primary"
+                    onClick={() => { setEditData(null); setIsAddModalOpen(true); }}
+                    className="text-sm py-2 px-4 shadow-sm hover:shadow-md transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
+                    disabled={!hasPermission('COURSE_TYPE_CREATE')}
+                    style={{ cursor: !hasPermission('COURSE_TYPE_CREATE') ? 'not-allowed' : 'pointer' }}
+                >
                     + Add Category Type
                 </CustomButton>
             </div>
@@ -176,6 +194,9 @@ const CourseType = () => {
                         setItemToDelete(row);
                         setIsDeleteModalOpen(true);
                     }}
+                    onViewDisabled={!canReadCourseType()}
+                    onEditDisabled={!hasPermission('COURSE_TYPE_UPDATE')}
+                    onDeleteDisabled={!hasPermission('COURSE_TYPE_DELETE')}
                 />
             </div>
 

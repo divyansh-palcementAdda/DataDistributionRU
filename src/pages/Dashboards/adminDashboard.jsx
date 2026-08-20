@@ -10,6 +10,7 @@ import {
   Legend,
 } from 'chart.js';
 import { useAppContext } from '../../AppContext';
+import { useNavigate } from 'react-router-dom';
 import { Bar, Doughnut } from 'react-chartjs-2';
 import ReusableTable from '../../component/reusable/table';
 import LeadCards from '../../component/reusable/DashBoards/leadCards';
@@ -83,6 +84,7 @@ const todayFollowups = followups.filter((f) => f.status === 'today');
 
 const Dashboard = () => {
   const { openAddLeadModal, navTo } = useAppContext();
+  const navigate = useNavigate();
   
   // Get user info from localStorage for dynamic name
   const getUserInfo = () => {
@@ -101,23 +103,11 @@ const Dashboard = () => {
   const userInfo = getUserInfo();
   const userName = userInfo?.name || userInfo?.firstName || userInfo?.username || 'User';
   
-  const [leadSourceData, setLeadSourceData] = useState({
-    totalConsultantData: 0,
-    totalInboundData: 0,
-    totalOutboundData: 0,
-  });
+  const [leadSourceData, setLeadSourceData] = useState([]);
   
-  const [gradWiseData, setGradWiseData] = useState({
-    aGradData: 0,
-    bGradData: 0,
-    cGradData: 0,
-  });
+  const [gradWiseData, setGradWiseData] = useState([]);
   
-  const [boardWiseData, setBoardWiseData] = useState({
-    cbseData: 0,
-    mpBoardData: 0,
-    otherBoard: 0,
-  });
+  const [boardWiseData, setBoardWiseData] = useState([]);
 
   const [recentActivityData, setRecentActivityData] = useState([]);
   const [dashboardSummaryData, setDashboardSummaryData] = useState(null);
@@ -128,46 +118,15 @@ const Dashboard = () => {
       try {
         const filterRequest = {};
         const response = await getLeadSourceBreakdown({ filterRequest: JSON.stringify(filterRequest) });
-        
+
         if (response.data && response.data.data) {
           const apiData = response.data.data;
-          
-          // Handle if API returns an array of objects
-          if (Array.isArray(apiData)) {
-            if (apiData.length > 0) {
-              // Map the API response to the expected format
-              const mappedData = {
-                totalConsultantData: apiData.find(item => item.source === 'consultant')?.count || 0,
-                totalInboundData: apiData.find(item => item.source === 'inbound')?.count || 0,
-                totalOutboundData: apiData.find(item => item.source === 'outbound')?.count || 0,
-              };
-              setLeadSourceData(mappedData);
-            } else {
-              // API returned empty array - set all to 0
-              console.log('API returned empty array');
-              setLeadSourceData({
-                totalConsultantData: 0,
-                totalInboundData: 0,
-                totalOutboundData: 0,
-              });
-            }
-          } else if (typeof apiData === 'object') {
-            // If API returns an object with the expected keys
-            setLeadSourceData({
-              totalConsultantData: apiData.totalConsultantData || 0,
-              totalInboundData: apiData.totalInboundData || 0,
-              totalOutboundData: apiData.totalOutboundData || 0,
-            });
-          }
+          // Directly use the array from API — LeadSource expects { id, name, code, count, percentage }
+          setLeadSourceData(Array.isArray(apiData) ? apiData : []);
         }
       } catch (error) {
         console.error('Error fetching lead source data:', error);
-        // Set all to 0 on error
-        setLeadSourceData({
-          totalConsultantData: 0,
-          totalInboundData: 0,
-          totalOutboundData: 0,
-        });
+        setLeadSourceData([]);
       }
     };
 
@@ -184,44 +143,12 @@ const Dashboard = () => {
         
         if (response.data && response.data.data) {
           const apiData = response.data.data;
-          console.log('Grade API Data:', apiData);
-          
-          // Handle if API returns an array of objects
-          if (Array.isArray(apiData)) {
-            if (apiData.length > 0) {
-              // Map the API response to the expected format
-              const mappedData = {
-                aGradData: apiData.find(item => item.grade === 'A')?.count || 0,
-                bGradData: apiData.find(item => item.grade === 'B')?.count || 0,
-                cGradData: apiData.find(item => item.grade === 'C')?.count || 0,
-              };
-              setGradWiseData(mappedData);
-            } else {
-              // API returned empty array - set all to 0
-              console.log('Grade API returned empty array');
-              setGradWiseData({
-                aGradData: 0,
-                bGradData: 0,
-                cGradData: 0,
-              });
-            }
-          } else if (typeof apiData === 'object') {
-            // If API returns an object with the expected keys
-            setGradWiseData({
-              aGradData: apiData.aGradData || 0,
-              bGradData: apiData.bGradData || 0,
-              cGradData: apiData.cGradData || 0,
-            });
-          }
+          // Pass the raw array directly to GradWiseCard
+          setGradWiseData(Array.isArray(apiData) ? apiData : []);
         }
       } catch (error) {
         console.error('Error fetching grade wise data:', error);
-        // Set all to 0 on error
-        setGradWiseData({
-          aGradData: 0,
-          bGradData: 0,
-          cGradData: 0,
-        });
+        setGradWiseData([]);
       }
     };
 
@@ -235,53 +162,21 @@ const Dashboard = () => {
         const filterRequest = {};
         const response = await getBoardBreakdown({ filterRequest: JSON.stringify(filterRequest) });
         console.log('Board Wise API Response:', response);
-        
+
         if (response.data && response.data.data) {
           const apiData = response.data.data;
           console.log('Board API Data:', apiData);
-          
-          // Handle if API returns an array of objects
+
           if (Array.isArray(apiData)) {
-            if (apiData.length > 0) {
-              // Map the API response to the expected format
-              const cbseCount = apiData.find(item => item.board === 'CBSE')?.count || 0;
-              const mpBoardCount = apiData.find(item => item.board === 'MP Board')?.count || 0;
-              // Calculate other as total minus CBSE and MP Board
-              const totalCount = apiData.reduce((sum, item) => sum + (item.count || 0), 0);
-              const otherCount = totalCount - cbseCount - mpBoardCount;
-              
-              const mappedData = {
-                cbseData: cbseCount,
-                mpBoardData: mpBoardCount,
-                otherBoard: otherCount > 0 ? otherCount : 0,
-              };
-              setBoardWiseData(mappedData);
-            } else {
-              // API returned empty array - set all to 0
-              console.log('Board API returned empty array');
-              setBoardWiseData({
-                cbseData: 0,
-                mpBoardData: 0,
-                otherBoard: 0,
-              });
-            }
-          } else if (typeof apiData === 'object') {
-            // If API returns an object with the expected keys
-            setBoardWiseData({
-              cbseData: apiData.cbseData || 0,
-              mpBoardData: apiData.mpBoardData || 0,
-              otherBoard: apiData.otherBoard || 0,
-            });
+            // Directly use the array from API — BoardWiseCard expects { id, name, code, count, percentage }
+            setBoardWiseData(apiData);
+          } else {
+            setBoardWiseData([]);
           }
         }
       } catch (error) {
         console.error('Error fetching board wise data:', error);
-        // Set all to 0 on error
-        setBoardWiseData({
-          cbseData: 0,
-          mpBoardData: 0,
-          otherBoard: 0,
-        });
+        setBoardWiseData([]);
       }
     };
 
@@ -367,14 +262,7 @@ const Dashboard = () => {
     };
   }, [leads]);
 
-  // Calculate data for CategorywiseCard
-  const categorywiseData = useMemo(() => {
-    return {
-      ugData: leads.filter(l => l.category === 'UG').length,
-      pgData: leads.filter(l => l.category === 'PG').length,
-      unMappedByDate: leads.filter(l => !l.category || l.category === '').length,
-    };
-  }, [leads]);
+  
 
 
 
@@ -418,11 +306,10 @@ const Dashboard = () => {
             flex: '1 1 auto'
           }}>
             <div style={{ 
-              display: 'flex', 
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
               gap: '16px',
               width: '100%',
-              justifyContent: 'center',
-              flexWrap: 'wrap'
             }}>
               {/* Card 1: Total Counsellors Logged Today */}
               <div style={{ 
@@ -431,15 +318,11 @@ const Dashboard = () => {
                 WebkitBackdropFilter: 'blur(10px)',
                 borderRadius: '10px',
                 padding: '10px 12px',
-                minWidth: '140px',
-                flex: '1',
-                maxWidth: '180px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
                 transition: '.3s ease',
-                minWidth: '0',
                 boxSizing: 'border-box',
                 flexDirection: 'column'
               }}>
@@ -463,15 +346,11 @@ const Dashboard = () => {
                 WebkitBackdropFilter: 'blur(10px)',
                 borderRadius: '10px',
                 padding: '10px 12px',
-                minWidth: '140px',
-                flex: '1',
-                maxWidth: '180px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
                 transition: '.3s ease',
-                minWidth: '0',
                 boxSizing: 'border-box',
                 flexDirection: 'column'
               }}>
@@ -495,15 +374,11 @@ const Dashboard = () => {
                 WebkitBackdropFilter: 'blur(10px)',
                 borderRadius: '10px',
                 padding: '10px 12px',
-                minWidth: '140px',
-                flex: '1',
-                maxWidth: '180px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
                 transition: '.3s ease',
-                minWidth: '0',
                 boxSizing: 'border-box',
                 flexDirection: 'column'
               }}>
@@ -525,15 +400,11 @@ const Dashboard = () => {
                 WebkitBackdropFilter: 'blur(10px)',
                 borderRadius: '10px',
                 padding: '10px 12px',
-                minWidth: '140px',
-                flex: '1',
-                maxWidth: '180px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
                 transition: '.3s ease',
-                minWidth: '0',
                 boxSizing: 'border-box',
                 flexDirection: 'column'
               }}>
@@ -557,15 +428,11 @@ const Dashboard = () => {
                 WebkitBackdropFilter: 'blur(10px)',
                 borderRadius: '10px',
                 padding: '10px 12px',
-                minWidth: '140px',
-                flex: '1',
-                maxWidth: '180px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
                 transition: '.3s ease',
-                minWidth: '0',
                 boxSizing: 'border-box',
                 flexDirection: 'column'
               }}>
@@ -581,6 +448,110 @@ const Dashboard = () => {
                   {dashboardSummaryData?.totalLeads || 0}
                 </div>
               </div>
+
+              {/* Card 6: Low Data Users Alert */}
+              <div
+                onClick={() => navigate('/counselors', { state: { lowDataMode: true } })}
+                style={{ 
+                background: '#ffffff2e',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
+                borderRadius: '10px',
+                padding: '10px 12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                transition: '.3s ease',
+                boxSizing: 'border-box',
+                flexDirection: 'column',
+                cursor: 'pointer',
+              }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
+                  <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <line x1="6" y1="22" x2="12" y2="22" />
+                </svg>
+                <div style={{ fontSize: '11px', color: '#ffffff', fontWeight: 500, textAlign: 'center' }}>
+                  Low Data Users Alert
+                </div>
+                <div style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
+                  {dashboardSummaryData?.sections
+                    ?.find(s => s.code === 'OPERATIONS')
+                    ?.cards?.find(c => c.code === 'LOW_DATA_USERS')
+                    ?.value ?? 0}
+                </div>
+              </div>
+
+              {/* Card 7: Users Not Logged In Today */}
+              <div
+                onClick={() => navigate('/counselors', { state: { usersNotLoggedInMode: true } })}
+                style={{ 
+                background: '#ffffff2e',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
+                borderRadius: '10px',
+                padding: '10px 12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                transition: '.3s ease',
+                boxSizing: 'border-box',
+                flexDirection: 'column',
+                cursor: 'pointer',
+              }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
+                  <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <line x1="17" y1="11" x2="23" y2="17" />
+                  <line x1="23" y1="11" x2="17" y2="17" />
+                </svg>
+                <div style={{ fontSize: '11px', color: '#ffffff', fontWeight: 500, textAlign: 'center' }}>
+                  Users Not Logged In Today
+                </div>
+                <div style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
+                  {dashboardSummaryData?.sections
+                    ?.find(s => s.code === 'OPERATIONS')
+                    ?.cards?.find(c => c.code === 'USERS_NOT_LOGGED_IN')
+                    ?.value ?? 0}
+                </div>
+              </div>
+
+              {/* Card 8: Follow-up Users Not Logged In by 11 AM */}
+              <div
+                onClick={() => navigate('/counselors', { state: { followupNotLoggedIn11amMode: true } })}
+                style={{ 
+                background: '#ffffff2e',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
+                borderRadius: '10px',
+                padding: '10px 12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                transition: '.3s ease',
+                boxSizing: 'border-box',
+                flexDirection: 'column',
+                cursor: 'pointer',
+              }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                  <line x1="12" y1="2" x2="12" y2="2" />
+                  <path d="M9 1l3 3-3 3" />
+                </svg>
+                <div style={{ fontSize: '11px', color: '#ffffff', fontWeight: 500, textAlign: 'center' }}>
+                  Follow-up Users Not Logged In by 11 AM
+                </div>
+                <div style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
+                  {dashboardSummaryData?.sections
+                    ?.find(s => s.code === 'OPERATIONS')
+                    ?.cards?.find(c => c.code === 'FOLLOWUP_USERS_NOT_LOGGED_IN_11AM')
+                    ?.value ?? 0}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -588,7 +559,7 @@ const Dashboard = () => {
           <LeadCards data={leadCardsData} />
           <LeadSource data={leadSourceData} />
           <SystemCards data={systemCardsData} />
-          <CategorywiseCard data={categorywiseData} />
+          <CategorywiseCard />
           <BoardWiseCard data={boardWiseData} />
           <GradWiseCard data={gradWiseData} />
         </div>
@@ -620,18 +591,6 @@ const Dashboard = () => {
               }}>
                 Recent Activity
               </h3>
-              <button style={{
-                background: 'none',
-                border: 'none',
-                color: '#64748b',
-                fontSize: '12px',
-                cursor: 'pointer',
-                padding: '4px 8px',
-                borderRadius: '4px',
-                transition: 'background 0.2s'
-              }}>
-                View All
-              </button>
             </div>
 
             {/* Activity List */}

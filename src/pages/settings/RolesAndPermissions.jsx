@@ -9,10 +9,22 @@ import AddEditPermissionModal from '../../component/reusable/permissions/addande
 import DeleteModal from '../../component/reusable/deleteModel';
 import RoleViewModal from '../../component/reusable/role/roleViewModel';
 import PermissionViewModal from '../../component/reusable/permissions/permissionViewModel';
+import { usePermissions } from '../../PermissionContext';
 
 const RolesAndPermissions = () => {
   const { showToast } = useAppContext();
+  const { canCreate, canUpdate, canDelete, canRead, hasPermission } = usePermissions();
   const [roles, setRoles] = useState([]);
+
+  // Helper function to check both ROLE_READ and ROLE_VIEW permissions
+  const canReadRole = () => {
+    return hasPermission('ROLE_READ') || hasPermission('ROLE_VIEW');
+  };
+
+  // Helper function to check both PERMISSION_READ and PERMISSION_VIEW permissions
+  const canReadPermission = () => {
+    return hasPermission('PERMISSION_READ') || hasPermission('PERMISSION_VIEW');
+  };
   const [permissions, setPermissions] = useState([]);
   const [loadingRoles, setLoadingRoles] = useState(false);
   const [loadingPermissions, setLoadingPermissions] = useState(false);
@@ -36,6 +48,7 @@ const RolesAndPermissions = () => {
   const [loadingRolePermissions, setLoadingRolePermissions] = useState(false);
   const [selectedPermissionIds, setSelectedPermissionIds] = useState([]);
   const [isSavingPermissions, setIsSavingPermissions] = useState(false);
+  const [permissionSearchQuery, setPermissionSearchQuery] = useState('');
 
   const fetchRoles = useCallback(async () => {
     try {
@@ -361,6 +374,10 @@ const RolesAndPermissions = () => {
   };
 
   const handleTogglePermission = (permissionId) => {
+    if (!hasPermission('PERMISSION_UPDATE')) {
+      showToast('You do not have permission to modify permissions', 'error');
+      return;
+    }
     setSelectedPermissionIds(prev => {
       if (prev.includes(permissionId)) {
         return prev.filter(id => id !== permissionId);
@@ -411,6 +428,18 @@ const RolesAndPermissions = () => {
       }));
   };
 
+  const filterPermissions = (permissions, searchQuery) => {
+    if (!searchQuery || searchQuery.trim() === '') {
+      return permissions;
+    }
+    const query = searchQuery.toLowerCase();
+    return permissions.filter(permission => {
+      const name = (permission.name || permission?.permissionName || '').toLowerCase();
+      const description = (permission.description || '').toLowerCase();
+      return name.includes(query) || description.includes(query);
+    });
+  };
+
   return (
     <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden animate-fadeIn">
       <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
@@ -419,8 +448,9 @@ const RolesAndPermissions = () => {
           <CustomButton
             variant="primary"
             onClick={handleSaveRolePermissions}
-            disabled={isSavingPermissions}
-            className="text-xs py-1.5 px-3"
+            disabled={isSavingPermissions || !hasPermission('PERMISSION_UPDATE')}
+            className="text-xs py-1.5 px-3 disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ cursor: (!hasPermission('PERMISSION_UPDATE') || isSavingPermissions) ? 'not-allowed' : 'pointer' }}
           >
             {isSavingPermissions ? 'Saving...' : 'Save Permissions'}
           </CustomButton>
@@ -434,7 +464,9 @@ const RolesAndPermissions = () => {
             <CustomButton
               variant="primary"
               onClick={handleOpenAddRoleModal}
-              className="text-xs py-1 px-2"
+              className="text-xs py-1 px-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!hasPermission('ROLE_CREATE')}
+              style={{ cursor: !hasPermission('ROLE_CREATE') ? 'not-allowed' : 'pointer' }}
             >
               + Add
             </CustomButton>
@@ -473,8 +505,10 @@ const RolesAndPermissions = () => {
                                 e.stopPropagation();
                                 handleOpenEditRoleModal(role);
                               }}
-                              className="p-1.5 rounded hover:bg-blue-100 text-gray-500 hover:text-blue-600 transition-colors"
+                              className="p-1.5 rounded hover:bg-blue-100 text-gray-500 hover:text-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-500"
                               title="Edit Role"
+                              disabled={!hasPermission('ROLE_UPDATE')}
+                              style={{ cursor: !hasPermission('ROLE_UPDATE') ? 'not-allowed' : 'pointer' }}
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -485,8 +519,10 @@ const RolesAndPermissions = () => {
                                 e.stopPropagation();
                                 handleOpenDeleteRoleModal(role);
                               }}
-                              className="p-1.5 rounded hover:bg-red-100 text-gray-500 hover:text-red-600 transition-colors"
+                              className="p-1.5 rounded hover:bg-red-100 text-gray-500 hover:text-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-500"
                               title="Delete Role"
+                              disabled={!hasPermission('ROLE_DELETE')}
+                              style={{ cursor: !hasPermission('ROLE_DELETE') ? 'not-allowed' : 'pointer' }}
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -510,10 +546,28 @@ const RolesAndPermissions = () => {
 
         {/* Right Side - All Permissions with Checkboxes */}
         <div className="w-1/2">
-          <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
+          <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
             <h3 className="text-xs font-semibold text-gray-700">
               {selectedRoleForPermissions ? `Allot Permissions to: ${selectedRoleForPermissions.name}` : 'Select a role to allot permissions'}
             </h3>
+            {selectedRoleForPermissions && (
+              <input
+                type="text"
+                placeholder="Search permissions..."
+                value={permissionSearchQuery}
+                onChange={(e) => setPermissionSearchQuery(e.target.value)}
+                className="text-xs px-2 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent h-7"
+              />
+            )}
+            {/* <CustomButton
+              variant="primary"
+              onClick={handleOpenAddPermissionModal}
+              className="text-xs py-1 px-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!hasPermission('PERMISSION_CREATE')}
+              style={{ cursor: !hasPermission('PERMISSION_CREATE') ? 'not-allowed' : 'pointer' }}
+            >
+              + Add Permission
+            </CustomButton> */}
           </div>
           {!selectedRoleForPermissions ? (
             <div className="py-8 text-center text-sm text-gray-500">
@@ -525,7 +579,7 @@ const RolesAndPermissions = () => {
             <div className="p-4 overflow-y-auto max-h-[450px]">
               {Array.isArray(permissions) && permissions.length > 0 ? (
                 <div className="space-y-4">
-                  {categorizePermissions(permissions).map((category) => (
+                  {categorizePermissions(filterPermissions(permissions, permissionSearchQuery)).map((category) => (
                     <div key={category.key} className="space-y-2">
                       <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wide bg-gray-100 px-3 py-2 rounded-md">
                         {category.label}
@@ -542,7 +596,7 @@ const RolesAndPermissions = () => {
                                 isSelected
                                   ? 'bg-blue-50 border-blue-200 shadow-sm'
                                   : 'bg-white border-gray-200 hover:border-blue-300 hover:bg-gray-50'
-                              }`}
+                              } ${!hasPermission('PERMISSION_UPDATE') ? 'cursor-not-allowed opacity-60' : ''}`}
                             >
                               <div className="flex items-center gap-3">
                                 <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
@@ -566,6 +620,36 @@ const RolesAndPermissions = () => {
                                   {permission.description && (
                                     <p className="text-xs text-gray-500 mt-1 ml-4">{permission.description}</p>
                                   )}
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleOpenEditPermissionModal(permission);
+                                    }}
+                                    className="p-1.5 rounded hover:bg-blue-100 text-gray-500 hover:text-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-500"
+                                    title="Edit Permission"
+                                    disabled={!hasPermission('PERMISSION_UPDATE')}
+                                    style={{ cursor: !hasPermission('PERMISSION_UPDATE') ? 'not-allowed' : 'pointer' }}
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleOpenDeletePermissionModal(permission);
+                                    }}
+                                    className="p-1.5 rounded hover:bg-red-100 text-gray-500 hover:text-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-500"
+                                    title="Delete Permission"
+                                    disabled={!hasPermission('PERMISSION_DELETE')}
+                                    style={{ cursor: !hasPermission('PERMISSION_DELETE') ? 'not-allowed' : 'pointer' }}
+                                  >
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                  </button>
                                 </div>
                               </div>
                             </div>

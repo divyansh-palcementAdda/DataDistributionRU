@@ -142,11 +142,21 @@ const HeadDashboard = () => {
     conversionRatio: Math.round((leads.filter(l => l.status === 'registered').length / leads.length) * 100) || 0,
   }), [counselors, leads]);
 
-  const gradWiseData = useMemo(() => ({
-    aGradData: leads.filter(l => l.grade === 'A').length,
-    bGradData: leads.filter(l => l.grade === 'B').length,
-    cGradData: leads.filter(l => l.grade === 'C').length,
-  }), [leads]);
+  const gradWiseData = useMemo(() => {
+    const gradeCounts = {};
+    leads.forEach(l => {
+      if (l.grade) {
+        gradeCounts[l.grade] = (gradeCounts[l.grade] || 0) + 1;
+      }
+    });
+    return Object.entries(gradeCounts).map(([grade, count]) => ({
+      id: grade,
+      name: `Grade ${grade}`,
+      code: grade,
+      count,
+      percentage: 0,
+    }));
+  }, [leads]);
 
   const leadSourceData = useMemo(() => ({
     totalConsultantData: leads.filter(l => l.source?.type === 'consultant').length,

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { leads, followups, statusConfig } from '../../mockData';
 import {
   Chart as ChartJS,
@@ -12,6 +12,13 @@ import {
 import { useAppContext } from '../../AppContext';
 import { Doughnut } from 'react-chartjs-2';
 import ReusableTable from '../../component/reusable/table';
+import LeadCards from '../../component/reusable/DashBoards/leadCards';
+import LeadSource from '../../component/reusable/DashBoards/leadSource';
+import SystemCards from '../../component/reusable/DashBoards/SystemCards';
+import CategorywiseCard from '../../component/reusable/DashBoards/categorywiseCard';
+import BoardWiseCard from '../../component/reusable/DashBoards/BoardWiseCard';
+import GradWiseCard from '../../component/reusable/DashBoards/gradWiseCard';
+import { getLeadSourceBreakdown, getGradeBreakdown, getBoardBreakdown } from '../../Services/cards/cardService';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend);
 
@@ -67,18 +74,82 @@ const statCards = [
   },
 ];
 
-/* ── Arrow icons ── */
-const ArrowUp = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-    <polyline points="18 15 12 9 6 15" />
-  </svg>
-);
-
 const CallersDashboard = () => {
   const { navTo } = useAppContext();
   
   // Mock: Get current caller name (in real app, this would come from auth/context)
   const currentCaller = 'Rahul Singh'; // Simulating logged-in caller
+
+  // State for API data
+  const [leadSourceData, setLeadSourceData] = useState([]);
+  const [gradWiseData, setGradWiseData] = useState([]);
+  const [boardWiseData, setBoardWiseData] = useState([]);
+
+  // Fetch lead source data from API
+  useEffect(() => {
+    const fetchLeadSourceData = async () => {
+      try {
+        const filterRequest = {};
+        const response = await getLeadSourceBreakdown({ filterRequest: JSON.stringify(filterRequest) });
+
+        if (response.data && response.data.data) {
+          const apiData = response.data.data;
+          setLeadSourceData(Array.isArray(apiData) ? apiData : []);
+        }
+      } catch (error) {
+        console.error('Error fetching lead source data:', error);
+        setLeadSourceData([]);
+      }
+    };
+
+    fetchLeadSourceData();
+  }, []);
+
+  // Fetch grade wise data from API
+  useEffect(() => {
+    const fetchGradeWiseData = async () => {
+      try {
+        const filterRequest = {};
+        const response = await getGradeBreakdown({ filterRequest: JSON.stringify(filterRequest) });
+        console.log('Grade Wise API Response:', response);
+        
+        if (response.data && response.data.data) {
+          const apiData = response.data.data;
+          setGradWiseData(Array.isArray(apiData) ? apiData : []);
+        }
+      } catch (error) {
+        console.error('Error fetching grade wise data:', error);
+        setGradWiseData([]);
+      }
+    };
+
+    fetchGradeWiseData();
+  }, []);
+
+  // Fetch board wise data from API
+  useEffect(() => {
+    const fetchBoardWiseData = async () => {
+      try {
+        const filterRequest = {};
+        const response = await getBoardBreakdown({ filterRequest: JSON.stringify(filterRequest) });
+        console.log('Board Wise API Response:', response);
+
+        if (response.data && response.data.data) {
+          const apiData = response.data.data;
+          if (Array.isArray(apiData)) {
+            setBoardWiseData(apiData);
+          } else {
+            setBoardWiseData([]);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching board wise data:', error);
+        setBoardWiseData([]);
+      }
+    };
+
+    fetchBoardWiseData();
+  }, []);
 
   // Filter leads allotted to this caller
   const myLeads = useMemo(() => {
@@ -89,6 +160,14 @@ const CallersDashboard = () => {
   const myFollowups = useMemo(() => {
     return followups.filter(f => f.counselor === currentCaller);
   }, [followups, currentCaller]);
+
+  // Data for reusable cards
+  const systemCardsData = useMemo(() => {
+    return {
+      totalDataInSystem: myLeads.length,
+      totalSourceOfData: [...new Set(myLeads.map(l => l.source?.name))].length,
+    };
+  }, [myLeads]);
 
   const calculatedStatCards = useMemo(() => {
     const allotted = myLeads.length;
@@ -221,7 +300,7 @@ const CallersDashboard = () => {
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: '700', color: 'var(--gray-900)' }}>Caller Dashboard</h1>
           <p style={{ fontSize: '13px', color: 'var(--gray-500)', marginTop: '4px' }}>
-            Welcome back, {currentCaller}! Here&apos;s your allotment overview.
+            Welcome back,  Here&apos;s your allotment overview.
           </p>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
@@ -247,6 +326,14 @@ const CallersDashboard = () => {
           </div>
         ))}
       </div>
+
+      {/* ── Reusable Dashboard Cards ── */}
+      <LeadCards />
+      <LeadSource data={leadSourceData} />
+      <SystemCards data={systemCardsData} />
+      <CategorywiseCard />
+      <BoardWiseCard data={boardWiseData} />
+      <GradWiseCard data={gradWiseData} />
 
       {/* ── Charts Row ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>

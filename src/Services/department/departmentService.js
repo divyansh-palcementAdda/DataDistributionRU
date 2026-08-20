@@ -55,7 +55,7 @@ const getAllDepartments = async ({
 const getDepartmentById = async (id) => {
     try {
         if (!id) throw new Error("Department ID (UUID) is required");
-        const response = await axiosInstance.get(ApiRoutes.Department.getById.replace('{id}', id));
+        const response = await axiosInstance.get(ApiRoutes.Department.getDetailsById.replace('{id}', id));
         return response.data;
     } catch (error) {
         throw error.response?.data || error.message || error;
@@ -103,12 +103,45 @@ const toggleDepartmentStatus = async (id) => {
     }
 };
 
+const getDepartmentUsers = async (id) => {
+    try {
+        if (!id) throw new Error("Department ID (UUID) is required");
+        const response = await axiosInstance.get(ApiRoutes.Department.getUsers.replace('{id}', id));
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message || error;
+    }
+};
+
+const getDepartmentHods = async (id) => {
+    try {
+        if (!id) throw new Error("Department ID (UUID) is required");
+        const response = await axiosInstance.get(ApiRoutes.Department.getHods.replace('{id}', id));
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message || error;
+    }
+};
+
+const getDepartmentCounsellors = async (id) => {
+    try {
+        if (!id) throw new Error("Department ID (UUID) is required");
+        const response = await axiosInstance.get(ApiRoutes.Department.getCounsellors.replace('{id}', id));
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message || error;
+    }
+};
+
 export {
     createDepartment,
     getAllDepartments,
     getDepartmentById,
     updateDepartment,
     deleteDepartment,
-    toggleDepartmentStatus
+    toggleDepartmentStatus,
+    getDepartmentUsers,
+    getDepartmentHods,
+    getDepartmentCounsellors
 };
 

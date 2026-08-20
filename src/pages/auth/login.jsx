@@ -81,8 +81,10 @@ const Login = () => {
         // Role-based routing
         if (roleName === 'SUPER_ADMIN' || roleName === 'ADMIN') {
           navigate("/dashboard");
-        } else if (roleName === 'COUNSELOR' || roleName === 'HEAD') {
+        } else if (roleName === 'COUNSELLORS' || roleName === 'COUNSELLORS') {
           navigate("/callers-dashboard");
+        } else if (roleName === 'HEAD' || roleName === 'HOD') {
+          navigate("/head-dashboard");
         } else {
           navigate("/dashboard");
         }

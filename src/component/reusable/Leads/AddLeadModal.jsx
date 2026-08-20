@@ -10,6 +10,7 @@ import gradsService from '../../../Services/Grads/gradsService';
 import { getAllBoards } from '../../../Services/Boards/boardsService';
 import { getAllLeadStatus } from '../../../Services/leadStatus/leadStatusService';
 import { getAllUser } from '../../../Services/user/user';
+import { getAllCourseType } from '../../../Services/courseTypes/courseTypeService';
 
 const AddLeadModal = () => {
   const { isAddLeadModalOpen, closeAddLeadModal, showToast, editLeadData } = useAppContext();
@@ -30,6 +31,7 @@ const AddLeadModal = () => {
     registeredCourseId: '',
     boardId: '',
     gradeId: '',
+    courseTypeId: '',
     remarks: '',
     assignedToUserId: '',
     statusId: '',
@@ -80,6 +82,7 @@ const AddLeadModal = () => {
   const [courses, setCourses] = useState([]);
   const [grades, setGrades] = useState([]);
   const [boards, setBoards] = useState([]);
+  const [courseTypes, setCourseTypes] = useState([]);
   const [leadStatuses, setLeadStatuses] = useState([]);
   const [users, setUsers] = useState([]);
   const [locationLoading, setLocationLoading] = useState({
@@ -91,6 +94,7 @@ const AddLeadModal = () => {
     courses: false,
     grades: false,
     boards: false,
+    courseTypes: false,
     leadStatuses: false,
     users: false,
   });
@@ -183,12 +187,12 @@ const AddLeadModal = () => {
       try {
         const res = await getAllLeadStatus({ size: 100 });
         console.log('Lead Statuses API response:', res);
-        if (res?.data?.success) {
-          setLeadStatuses(res.data.data?.content || []);
-        } else if (res?.data?.data) {
-          setLeadStatuses(res.data.data || []);
-        } else if (Array.isArray(res?.data)) {
+        if (res?.success) {
+          setLeadStatuses(res.data?.content || []);
+        } else if (res?.data) {
           setLeadStatuses(res.data || []);
+        } else if (Array.isArray(res)) {
+          setLeadStatuses(res || []);
         }
       } catch (err) {
         console.error('Failed to fetch lead statuses:', err);
@@ -210,6 +214,20 @@ const AddLeadModal = () => {
         setDropdownLoading((prev) => ({ ...prev, users: false }));
       }
     };
+
+    const fetchCourseTypes = async () => {
+      setDropdownLoading((prev) => ({ ...prev, courseTypes: true }));
+      try {
+        const res = await getAllCourseType({ size: 100 });
+        if (res?.success && res?.data?.content) {
+          setCourseTypes(res.data.content || []);
+        }
+      } catch (err) {
+        console.error('Failed to fetch course types:', err);
+      } finally {
+        setDropdownLoading((prev) => ({ ...prev, courseTypes: false }));
+      }
+    };
     
     if (isAddLeadModalOpen) {
       fetchLeadSources();
@@ -219,6 +237,7 @@ const AddLeadModal = () => {
       fetchBoards();
       fetchLeadStatuses();
       fetchUsers();
+      fetchCourseTypes();
       if (!editLeadData) {
         setStates([]);
         setCities([]);
@@ -231,7 +250,7 @@ const AddLeadModal = () => {
       const { 
         fullName, phoneNumber, alternatePhoneNumber, email, city, state, country, 
         leadSourceIds, sourceDetails, interestedCourseIds,
-        courseId, registeredCourseId, boardId, gradeId, remarks, 
+        courseId, registeredCourseId, boardId, gradeId, courseTypeId, remarks, 
         assignedToUserId, statusId, active, nextFollowUpDate 
       } = editLeadData;
       setFormData({
@@ -249,6 +268,7 @@ const AddLeadModal = () => {
         registeredCourseId: registeredCourseId || '',
         boardId: boardId || '',
         gradeId: gradeId || '',
+        courseTypeId: courseTypeId || '',
         remarks: remarks || '',
         assignedToUserId: assignedToUserId || '',
         statusId: statusId || '',
@@ -303,6 +323,7 @@ const AddLeadModal = () => {
         registeredCourseId: '',
         boardId: '',
         gradeId: '',
+        courseTypeId: '',
         remarks: '',
         assignedToUserId: '',
         statusId: '',
@@ -393,6 +414,7 @@ const AddLeadModal = () => {
       registeredCourseId: '',
       boardId: '',
       gradeId: '',
+      courseTypeId: '',
       remarks: '',
       assignedToUserId: '',
       statusId: '',
@@ -424,6 +446,7 @@ const AddLeadModal = () => {
       registeredCourseId: formData.registeredCourseId,
       boardId: formData.boardId,
       gradeId: formData.gradeId,
+      courseTypeId: formData.courseTypeId,
       remarks: formData.remarks,
       assignedToUserId: formData.assignedToUserId,
       statusId: formData.statusId,
@@ -915,6 +938,23 @@ const AddLeadModal = () => {
                 )) : <option disabled>No boards available</option>}
               </select>
               {dropdownLoading.boards && <small className="text-muted">Loading boards...</small>}
+            </div>
+            <div>
+              <label className="form-label">Category</label>
+              <select
+                className="form-control"
+                value={formData.courseTypeId}
+                onChange={handleChange('courseTypeId')}
+                disabled={dropdownLoading.courseTypes}
+              >
+                <option value="">Select Category</option>
+                {courseTypes.length > 0 ? courseTypes.map((ct) => (
+                  <option key={ct.id} value={ct.id}>
+                    {ct.name}
+                  </option>
+                )) : <option disabled>No categories available</option>}
+              </select>
+              {dropdownLoading.courseTypes && <small className="text-muted">Loading categories...</small>}
             </div>
             <div>
               <label className="form-label">Assigned To</label>

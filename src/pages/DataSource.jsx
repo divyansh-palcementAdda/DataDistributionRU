@@ -7,6 +7,7 @@ import { getLeadSourceWiseStats } from '../Services/lead/leadService';
 import CustomToggle from '../component/reusable/custumToggle';
 import StatsCard from '../component/reusable/StatsCard';
 import DeleteModal from '../component/reusable/deleteModel';
+import { usePermissions } from '../PermissionContext';
 
 
 /* ── Date formatter ── */
@@ -20,11 +21,14 @@ const fmtDate = (iso) => {
 };
 
 
-
-
-
 const LeadSource = () => {
     const { showToast, navTo } = useAppContext();
+    const { canCreate, canUpdate, canDelete, canRead, hasPermission } = usePermissions();
+
+    // Helper function to check both LEADSOURCE_READ and LEADSOURCE_VIEW permissions
+    const canReadLeadSource = () => {
+        return hasPermission('LEADSOURCE_READ') || hasPermission('LEADSOURCE_VIEW');
+    };
 
     /* ── Stats Cards state ── */
     const [statsData, setStatsData] = useState([]);
@@ -170,6 +174,10 @@ const LeadSource = () => {
     };
 
     const handleToggle = async (row) => {
+        if (!hasPermission('LEADSOURCE_UPDATE')) {
+            showToast('You do not have permission to update lead source status', 'error');
+            return;
+        }
         try {
             const res = await toggleLeadSource(row.id);
             if (res?.data?.success) {
@@ -217,7 +225,13 @@ const LeadSource = () => {
             key: 'active',
             header: 'Status',
             sortable: true,
-            render: (value, row) => <CustomToggle checked={value} onChange={() => handleToggle(row)} />,
+            render: (value, row) => (
+                <CustomToggle
+                    checked={value}
+                    onChange={() => handleToggle(row)}
+                    disabled={!hasPermission('LEADSOURCE_UPDATE')}
+                />
+            ),
         },
         {
             key: 'createdAt',
@@ -258,9 +272,10 @@ const LeadSource = () => {
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
                     <button
-                        className="btn btn-primary btn-sm"
-                        style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                        className="btn btn-primary btn-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: !hasPermission('LEADSOURCE_CREATE') ? 'not-allowed' : 'pointer' }}
                         onClick={() => setIsAddLeadSourceModalOpen(true)}
+                        disabled={!hasPermission('LEADSOURCE_CREATE')}
                     >
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <line x1="12" y1="5" x2="12" y2="19" />
@@ -346,6 +361,9 @@ const LeadSource = () => {
                         sortBy={sortBy}
                         sortDirection={sortDirection.toLowerCase()}
                         onSort={handleSort}
+                        onViewDisabled={!canReadLeadSource()}
+                        onEditDisabled={!hasPermission('LEADSOURCE_UPDATE')}
+                        onDeleteDisabled={!hasPermission('LEADSOURCE_DELETE')}
                     />
                 )}
             </div>

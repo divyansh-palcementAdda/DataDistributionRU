@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FiRefreshCw, FiSearch, FiX, FiLayers } from 'react-icons/fi';
 
@@ -8,7 +9,6 @@ import StatsCard from '../component/reusable/StatsCard';
 import CustomButton from '../component/reusable/CustomButton';
 import DeleteModal from '../component/reusable/deleteModel';
 import AddDepartmentModal from '../component/reusable/department/addDepartmentModel';
-import DepartmentDetailsModal from '../component/reusable/department/departmentDetailsModal';
 
 // Services
 import {
@@ -16,6 +16,7 @@ import {
     deleteDepartment,
     toggleDepartmentStatus
 } from '../Services/department/departmentService';
+import { usePermissions } from '../PermissionContext';
 
 // Format Date Helper
 const formatDate = (isoString) => {
@@ -32,272 +33,7 @@ const formatDate = (isoString) => {
     }
 };
 
-// Initial Mock Data according to user-specified schema
-const INITIAL_MOCK_DEPARTMENTS = [
-    {
-        id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-        name: "Admissions",
-        code: "ADM",
-        description: "Student Admissions & Enrollment Department handling intake and student onboarding",
-        active: true,
-        userCount: 12,
-        hods: [
-            {
-                id: "hod-101",
-                firstName: "Dr. Rajesh",
-                lastName: "Sharma",
-                email: "rajesh.sharma@university.edu",
-                phone: "+91 98765 43210",
-                username: "rajesh_sharma",
-                profileImage: "",
-                active: true,
-                locked: false,
-                emailVerified: true,
-                lastLogin: "2026-08-18T10:44:05.715Z",
-                department: "Admissions",
-                departments: [
-                    {
-                        id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                        name: "Admissions",
-                        code: "ADM"
-                    }
-                ],
-                hodAccessType: "FULL_ACCESS",
-                roles: ["HOD", "ADMIN"],
-                permissions: ["MANAGE_USERS", "VIEW_LEADS", "ASSIGN_COUNSELLOR", "EXPORT_REPORTS"],
-                createdAt: "2026-08-18T10:44:05.715Z",
-                updatedAt: "2026-08-18T10:44:05.715Z"
-            }
-        ],
-        counsellors: [
-            {
-                id: "coun-201",
-                firstName: "Priya",
-                lastName: "Verma",
-                email: "priya.verma@university.edu",
-                phone: "+91 98765 43211",
-                username: "priya_v",
-                profileImage: "",
-                active: true,
-                locked: false,
-                emailVerified: true,
-                lastLogin: "2026-08-18T10:44:05.715Z",
-                department: "Admissions",
-                departments: [
-                    {
-                        id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                        name: "Admissions",
-                        code: "ADM"
-                    }
-                ],
-                hodAccessType: "COUNSELLOR_ACCESS",
-                roles: ["COUNSELLOR"],
-                permissions: ["VIEW_LEADS", "CALL_LEADS", "CREATE_FOLLOWUP"],
-                createdAt: "2026-08-18T10:44:05.715Z",
-                updatedAt: "2026-08-18T10:44:05.715Z"
-            },
-            {
-                id: "coun-202",
-                firstName: "Amit",
-                lastName: "Patel",
-                email: "amit.patel@university.edu",
-                phone: "+91 98765 43212",
-                username: "amit_p",
-                profileImage: "",
-                active: true,
-                locked: false,
-                emailVerified: true,
-                lastLogin: "2026-08-18T09:30:00.715Z",
-                department: "Admissions",
-                departments: [
-                    {
-                        id: "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-                        name: "Admissions",
-                        code: "ADM"
-                    }
-                ],
-                hodAccessType: "COUNSELLOR_ACCESS",
-                roles: ["COUNSELLOR"],
-                permissions: ["VIEW_LEADS", "CALL_LEADS"],
-                createdAt: "2026-08-18T10:44:05.715Z",
-                updatedAt: "2026-08-18T10:44:05.715Z"
-            }
-        ],
-        createdAt: "2026-08-18T10:44:05.715Z",
-        updatedAt: "2026-08-18T10:44:05.715Z"
-    },
-    {
-        id: "4fa85f64-5717-4562-b3fc-2c963f66afa7",
-        name: "Marketing & Outreach",
-        code: "MKT",
-        description: "Digital campaigns, outreach drives, and brand awareness programs",
-        active: true,
-        userCount: 8,
-        hods: [
-            {
-                id: "hod-102",
-                firstName: "Sunita",
-                lastName: "Deshmukh",
-                email: "sunita.d@university.edu",
-                phone: "+91 98765 43213",
-                username: "sunita_d",
-                profileImage: "",
-                active: true,
-                locked: false,
-                emailVerified: true,
-                lastLogin: "2026-08-18T08:15:00.000Z",
-                department: "Marketing & Outreach",
-                departments: [
-                    {
-                        id: "4fa85f64-5717-4562-b3fc-2c963f66afa7",
-                        name: "Marketing & Outreach",
-                        code: "MKT"
-                    }
-                ],
-                hodAccessType: "FULL_ACCESS",
-                roles: ["HOD", "MARKETING_LEAD"],
-                permissions: ["CAMPAIGN_MANAGE", "LEAD_EXPORT", "ANALYTICS_VIEW"],
-                createdAt: "2026-08-15T08:00:00.000Z",
-                updatedAt: "2026-08-17T11:20:00.000Z"
-            }
-        ],
-        counsellors: [
-            {
-                id: "coun-203",
-                firstName: "Rohan",
-                lastName: "Kapoor",
-                email: "rohan.k@university.edu",
-                phone: "+91 98765 43214",
-                username: "rohan_k",
-                profileImage: "",
-                active: true,
-                locked: false,
-                emailVerified: true,
-                lastLogin: "2026-08-18T07:45:00.000Z",
-                department: "Marketing & Outreach",
-                departments: [
-                    {
-                        id: "4fa85f64-5717-4562-b3fc-2c963f66afa7",
-                        name: "Marketing & Outreach",
-                        code: "MKT"
-                    }
-                ],
-                hodAccessType: "COUNSELLOR_ACCESS",
-                roles: ["COUNSELLOR", "MARKETING_EXEC"],
-                permissions: ["VIEW_LEADS", "CALL_LEADS"],
-                createdAt: "2026-08-15T09:00:00.000Z",
-                updatedAt: "2026-08-17T12:00:00.000Z"
-            }
-        ],
-        createdAt: "2026-08-15T08:00:00.000Z",
-        updatedAt: "2026-08-17T11:20:00.000Z"
-    },
-    {
-        id: "5fa85f64-5717-4562-b3fc-2c963f66afa8",
-        name: "Engineering & Tech",
-        code: "ENG",
-        description: "B.Tech, M.Tech, and specialized technical degree programs counseling",
-        active: true,
-        userCount: 15,
-        hods: [
-            {
-                id: "hod-103",
-                firstName: "Prof. Vikram",
-                lastName: "Mehta",
-                email: "vikram.m@university.edu",
-                phone: "+91 98765 43215",
-                username: "vikram_m",
-                profileImage: "",
-                active: true,
-                locked: false,
-                emailVerified: true,
-                lastLogin: "2026-08-18T11:00:00.000Z",
-                department: "Engineering & Tech",
-                departments: [
-                    {
-                        id: "5fa85f64-5717-4562-b3fc-2c963f66afa8",
-                        name: "Engineering & Tech",
-                        code: "ENG"
-                    }
-                ],
-                hodAccessType: "FULL_ACCESS",
-                roles: ["HOD", "FACULTY_HEAD"],
-                permissions: ["ALL_ACCESS"],
-                createdAt: "2026-08-10T09:00:00.000Z",
-                updatedAt: "2026-08-16T14:30:00.000Z"
-            }
-        ],
-        counsellors: [
-            {
-                id: "coun-204",
-                firstName: "Neha",
-                lastName: "Gupta",
-                email: "neha.g@university.edu",
-                phone: "+91 98765 43216",
-                username: "neha_g",
-                profileImage: "",
-                active: true,
-                locked: false,
-                emailVerified: true,
-                lastLogin: "2026-08-18T10:10:00.000Z",
-                department: "Engineering & Tech",
-                departments: [
-                    {
-                        id: "5fa85f64-5717-4562-b3fc-2c963f66afa8",
-                        name: "Engineering & Tech",
-                        code: "ENG"
-                    }
-                ],
-                hodAccessType: "COUNSELLOR_ACCESS",
-                roles: ["COUNSELLOR"],
-                permissions: ["VIEW_LEADS", "CALL_LEADS", "CREATE_FOLLOWUP"],
-                createdAt: "2026-08-10T10:00:00.000Z",
-                updatedAt: "2026-08-16T14:30:00.000Z"
-            }
-        ],
-        createdAt: "2026-08-10T09:00:00.000Z",
-        updatedAt: "2026-08-16T14:30:00.000Z"
-    },
-    {
-        id: "6fa85f64-5717-4562-b3fc-2c963f66afa9",
-        name: "Management & Business",
-        code: "MGMT",
-        description: "MBA, BBA, Executive Programs, and Corporate Training Admissions",
-        active: false,
-        userCount: 6,
-        hods: [
-            {
-                id: "hod-104",
-                firstName: "Dr. Ananya",
-                lastName: "Rao",
-                email: "ananya.rao@university.edu",
-                phone: "+91 98765 43217",
-                username: "ananya_r",
-                profileImage: "",
-                active: false,
-                locked: false,
-                emailVerified: true,
-                lastLogin: "2026-08-14T14:20:00.000Z",
-                department: "Management & Business",
-                departments: [
-                    {
-                        id: "6fa85f64-5717-4562-b3fc-2c963f66afa9",
-                        name: "Management & Business",
-                        code: "MGMT"
-                    }
-                ],
-                hodAccessType: "FULL_ACCESS",
-                roles: ["HOD"],
-                permissions: ["VIEW_LEADS", "EXPORT_REPORTS"],
-                createdAt: "2026-08-01T08:30:00.000Z",
-                updatedAt: "2026-08-14T15:00:00.000Z"
-            }
-        ],
-        counsellors: [],
-        createdAt: "2026-08-01T08:30:00.000Z",
-        updatedAt: "2026-08-14T15:00:00.000Z"
-    }
-];
+
 
 const CARD_PALETTES = [
     { bg: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)' },
@@ -307,6 +43,14 @@ const CARD_PALETTES = [
 ];
 
 const Department = () => {
+    const navigate = useNavigate();
+    const { canCreate, canUpdate, canDelete, canRead, hasPermission } = usePermissions();
+
+    // Helper function to check both DEPARTMENT_READ and DEPARTMENT_VIEW permissions
+    const canReadDepartment = () => {
+        return hasPermission('DEPARTMENT_READ') || hasPermission('DEPARTMENT_VIEW');
+    };
+
     // State
     const [departments, setDepartments] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -325,9 +69,6 @@ const Department = () => {
     // Modal States
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [editData, setEditData] = useState(null);
-
-    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-    const [selectedDepartment, setSelectedDepartment] = useState(null);
 
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [departmentToDelete, setDepartmentToDelete] = useState(null);
@@ -395,6 +136,10 @@ const Department = () => {
 
     // Status toggle handler
     const handleToggleStatus = async (dept) => {
+        if (!hasPermission('DEPARTMENT_UPDATE')) {
+            toast.error('You do not have permission to update department status');
+            return;
+        }
         const updatedStatus = !dept.active;
         try {
             setDepartments((prev) =>
@@ -627,6 +372,7 @@ const Department = () => {
             sortable: true,
             render: (value, row) => {
                 const isActive = row.active === true || value === 'ACTIVE' || value === true;
+                const canUpdateStatus = hasPermission('DEPARTMENT_UPDATE');
                 return (
                     <span
                         style={{
@@ -640,7 +386,11 @@ const Department = () => {
                             backgroundColor: isActive ? '#DCFCE7' : '#F1F5F9',
                             color: isActive ? '#15803D' : '#64748B',
                             border: `1px solid ${isActive ? '#BBF7D0' : '#E2E8F0'}`,
+                            cursor: canUpdateStatus ? 'pointer' : 'default',
+                            opacity: canUpdateStatus ? 1 : 0.7,
                         }}
+                        onClick={() => canUpdateStatus && handleToggleStatus(row)}
+                        title={canUpdateStatus ? 'Click to toggle status' : 'No permission to change status'}
                     >
                         <span
                             style={{
@@ -744,7 +494,9 @@ const Department = () => {
                             setEditData(null);
                             setIsAddModalOpen(true);
                         }}
-                        className="shadow-sm hover:shadow-md"
+                        className="shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={!hasPermission('DEPARTMENT_CREATE')}
+                        style={{ cursor: !hasPermission('DEPARTMENT_CREATE') ? 'not-allowed' : 'pointer' }}
                     >
                         + Add Department
                     </CustomButton>
@@ -909,8 +661,7 @@ const Department = () => {
                     }}
                     emptyMessage={loading ? "Loading departments..." : "No departments found"}
                     onView={(row) => {
-                        setSelectedDepartment(row);
-                        setIsDetailsModalOpen(true);
+                        navigate(`/department-details/${row.id}`);
                     }}
                     onEdit={(row) => {
                         setEditData(row);
@@ -920,6 +671,9 @@ const Department = () => {
                         setDepartmentToDelete(row);
                         setIsDeleteModalOpen(true);
                     }}
+                    onViewDisabled={!canReadDepartment()}
+                    onEditDisabled={!hasPermission('DEPARTMENT_UPDATE')}
+                    onDeleteDisabled={!hasPermission('DEPARTMENT_DELETE')}
                 />
             </div>
 
@@ -935,22 +689,7 @@ const Department = () => {
                 onSubmit={handleModalSubmit}
             />
 
-            {/* 2. Department Details View Modal */}
-            <DepartmentDetailsModal
-                isOpen={isDetailsModalOpen}
-                onClose={() => {
-                    setIsDetailsModalOpen(false);
-                    setSelectedDepartment(null);
-                }}
-                department={selectedDepartment}
-                onEdit={(dept) => {
-                    setIsDetailsModalOpen(false);
-                    setEditData(dept);
-                    setIsAddModalOpen(true);
-                }}
-            />
-
-            {/* 3. Reusable Delete Confirmation Modal */}
+            {/* 2. Reusable Delete Confirmation Modal */}
             <DeleteModal
                 isOpen={isDeleteModalOpen}
                 onClose={() => {

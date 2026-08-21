@@ -146,6 +146,11 @@ const ApiRoutes = {
         followupUsersNotLoggedIn11am: '/api/dashboard/followup-users-not-logged-in-11am',
     },
 
+    Distribution: {
+        preview: '/api/leads/distribute/preview',
+        distribute: '/api/leads/distribute',
+    },
+
     Department: {
         create: '/api/departments',
         getAll: '/api/departments',

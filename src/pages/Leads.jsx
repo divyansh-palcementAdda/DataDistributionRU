@@ -11,6 +11,7 @@ import DeleteModal from "../component/reusable/deleteModel"
 import AssignLeadModal from '../component/reusable/Leads/AssignLeadModal';
 import LeadCards from '../component/reusable/DashBoards/leadCards';
 import BulkUploadModal from '../component/reusable/Leads/BulkUploadModal';
+import PreviewDistributionModal from '../component/reusable/Leads/PreviewDistributionModal';
 
 
 const Leads = () => {
@@ -207,14 +208,11 @@ const Leads = () => {
   const [isRemarkModalOpen, setIsRemarkModalOpen] = useState(false);
   const [selectedLeadForRemark, setSelectedLeadForRemark] = useState(null);
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isAllotModalOpen, setIsAllotModalOpen] = useState(false);
   const [selectedLeadForAllot, setSelectedLeadForAllot] = useState(null);
-  const [usersData, setUsersData] = useState([
-    { id: 1, firstName: 'Rahul', lastName: 'Singh' },
-    { id: 2, firstName: 'Neha', lastName: 'Joshi' },
-    { id: 3, firstName: 'Priya', lastName: 'Patel' },
-    { id: 4, firstName: 'Vikram', lastName: 'Das' },
-  ]);
+  const [usersData, setUsersData] = useState([]);
+  
 
   const openRemarkModal = (lead) => {
     setSelectedLeadForRemark(lead);
@@ -728,6 +726,13 @@ const Leads = () => {
           showToast('Leads uploaded successfully!');
           fetchLeads();
         }}
+      />
+
+      {/* Preview Distribution Modal */}
+      <PreviewDistributionModal
+        isOpen={isPreviewModalOpen}
+        onClose={() => setIsPreviewModalOpen(false)}
+        showToast={showToast}
       />
     </div>
   );

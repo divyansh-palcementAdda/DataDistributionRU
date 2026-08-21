@@ -19,7 +19,7 @@ const COLORS = [
   { iconBg: '#FEF9C3',              iconStroke: '#CA8A04' },
 ];
 
-const BoardWiseCard = ({ data = [], onCardClick, selectedCard }) => {
+const BoardWiseCard = ({ data = [], onCardClick, activeFilters = [] }) => {
   // Accept both array (new) and object (legacy) formats
   const items = Array.isArray(data)
     ? data
@@ -56,7 +56,7 @@ const BoardWiseCard = ({ data = [], onCardClick, selectedCard }) => {
         <div className="boardwise-responsive-grid" style={gridStyle}>
           {items.map((item, index) => {
             const clr = COLORS[index % COLORS.length];
-            const isSelected = selectedCard?.type === 'board' && selectedCard?.value === item.id;
+            const isSelected = activeFilters.some(f => f.type === 'board' && f.value === item.id);
             return (
               <div
                 key={item.id || item.code}

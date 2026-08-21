@@ -18,7 +18,7 @@ const COLORS = [
   { iconBg: '#FCE7F3',              iconStroke: '#DB2777' },
 ];
 
-const GradWiseCard = ({ data = [], onCardClick, selectedCard }) => {
+const GradWiseCard = ({ data = [], onCardClick, activeFilters = [] }) => {
   // Accept both array (new) and object (legacy) formats
   const items = Array.isArray(data)
     ? data
@@ -55,7 +55,7 @@ const GradWiseCard = ({ data = [], onCardClick, selectedCard }) => {
         <div className="gradwise-responsive-grid" style={gridStyle}>
           {items.map((item, index) => {
             const clr = COLORS[index % COLORS.length];
-            const isSelected = selectedCard?.type === 'grade' && selectedCard?.value === item.id;
+            const isSelected = activeFilters.some(f => f.type === 'grade' && f.value === item.id);
             return (
               <div
                 key={item.id || item.code}

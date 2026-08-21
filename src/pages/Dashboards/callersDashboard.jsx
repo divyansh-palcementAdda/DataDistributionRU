@@ -315,7 +315,7 @@ const CallersDashboard = () => {
       </div>
 
       {/* ── Stat Cards ── */}
-      <div className="stat-grid">
+      {/* <div className="stat-grid">
         {calculatedStatCards.map((card) => (
           <div key={card.label} className={`stat-card ${card.color}`}>
             <div className="stat-label">{card.label}</div>
@@ -325,7 +325,7 @@ const CallersDashboard = () => {
             </div>
           </div>
         ))}
-      </div>
+      </div> */}
 
       {/* ── Reusable Dashboard Cards ── */}
       <LeadCards />

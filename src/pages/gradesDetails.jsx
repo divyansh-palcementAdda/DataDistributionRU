@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { FiEye, FiMessageSquare } from 'react-icons/fi';
+import { FiEye, FiMessageSquare, FiUserPlus } from 'react-icons/fi';
 import { useAppContext } from '../AppContext';
 import gradsService from '../Services/Grads/gradsService';
 import {
@@ -16,9 +16,35 @@ import CategorywiseCard from '../component/reusable/DashBoards/categorywiseCard'
 import BoardWiseCard from '../component/reusable/DashBoards/BoardWiseCard';
 import ReusableTable from '../component/reusable/table';
 import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
+import AssignLeadModal from '../component/reusable/Leads/AssignLeadModal';
 
 // ─── Lead table columns ───────────────────────────────────────────────────────
-const buildLeadColumns = (page, size) => [
+const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, currentData) => [
+    {
+        key: 'checkbox',
+        header: (
+            <input
+                type="checkbox"
+                checked={currentData.length > 0 && currentData.every(r => selectedRows.has(r.id ?? r.leadId))}
+                onChange={(e) => onToggleAll(e.target.checked, currentData)}
+                style={{ width: '15px', height: '15px', cursor: 'pointer', accentColor: '#4f46e5' }}
+                title="Select All"
+            />
+        ),
+        sortable: false,
+        render: (value, row) => {
+            const rowId = row.id ?? row.leadId;
+            return (
+                <input
+                    type="checkbox"
+                    checked={selectedRows.has(rowId)}
+                    onChange={() => onToggleRow(rowId)}
+                    onClick={(e) => e.stopPropagation()}
+                    style={{ width: '15px', height: '15px', cursor: 'pointer', accentColor: '#4f46e5' }}
+                />
+            );
+        },
+    },
     {
         key: 'sno',
         header: 'S.No',
@@ -174,6 +200,10 @@ const GradesDetails = () => {
     const [isRemarkModalOpen, setIsRemarkModalOpen]         = useState(false);
     const [selectedLeadForRemark, setSelectedLeadForRemark] = useState(null);
 
+    // row selection & assign modal
+    const [selectedRows, setSelectedRows]           = useState(new Set());
+    const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+
     // ── fetch grade details ──
     useEffect(() => {
         if (!id) return;
@@ -244,6 +274,27 @@ const GradesDetails = () => {
         const isSame = selectedCard?.type === card.type && selectedCard?.value === card.value;
         setSelectedCard(isSame ? { type: 'all', value: null, label: 'All Leads' } : card);
         setTablePage(0);
+        setSelectedRows(new Set());
+    };
+
+    // ── row selection handlers ──
+    const handleToggleRow = (rowId) => {
+        setSelectedRows(prev => {
+            const next = new Set(prev);
+            next.has(rowId) ? next.delete(rowId) : next.add(rowId);
+            return next;
+        });
+    };
+
+    const handleToggleAll = (checked, rows) => {
+        setSelectedRows(prev => {
+            const next = new Set(prev);
+            rows.forEach(r => {
+                const rowId = r.id ?? r.leadId;
+                checked ? next.add(rowId) : next.delete(rowId);
+            });
+            return next;
+        });
     };
 
     // ── remark modal handlers ──
@@ -406,18 +457,33 @@ const GradesDetails = () => {
                                 {tableTotalElements} records
                             </span>
                         </div>
-                        {selectedCard.type !== 'all' && (
-                        <button
-                            onClick={() => { setSelectedCard({ type: 'all', value: null, label: 'All Leads' }); setTablePage(0); }}
-                            className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-red-500 hover:bg-red-50 px-2.5 py-1.5 rounded-lg border border-gray-200 hover:border-red-200 transition-all"
-                        >
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                <line x1="18" y1="6" x2="6" y2="18" />
-                                <line x1="6" y1="6" x2="18" y2="18" />
-                            </svg>
-                            Clear Filter
-                        </button>
-                        )}
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setIsAssignModalOpen(true)}
+                                disabled={selectedRows.size === 0}
+                                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all shadow-sm"
+                                style={{
+                                    backgroundColor: selectedRows.size === 0 ? 'var(--gray-200, #e5e7eb)' : '#4f46e5',
+                                    color: selectedRows.size === 0 ? 'var(--gray-400, #9ca3af)' : '#fff',
+                                    cursor: selectedRows.size === 0 ? 'not-allowed' : 'pointer',
+                                }}
+                            >
+                                <FiUserPlus size={13} />
+                                Allot Leads{selectedRows.size > 0 ? ` (${selectedRows.size})` : ''}
+                            </button>
+                            {selectedCard.type !== 'all' && (
+                            <button
+                                onClick={() => { setSelectedCard({ type: 'all', value: null, label: 'All Leads' }); setTablePage(0); setSelectedRows(new Set()); }}
+                                className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-red-500 hover:bg-red-50 px-2.5 py-1.5 rounded-lg border border-gray-200 hover:border-red-200 transition-all"
+                            >
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                    <line x1="18" y1="6" x2="6" y2="18" />
+                                    <line x1="6" y1="6" x2="18" y2="18" />
+                                </svg>
+                                Clear Filter
+                            </button>
+                            )}
+                        </div>
                     </div>
 
                     {tableLoading ? (
@@ -428,7 +494,7 @@ const GradesDetails = () => {
                     ) : (
                         <div className="card">
                             <ReusableTable
-                                columns={buildLeadColumns(tablePage, tableSize)}
+                                columns={buildLeadColumns(tablePage, tableSize, selectedRows, handleToggleRow, handleToggleAll, tableData)}
                                 data={tableData}
                                 isServerSide={true}
                                 totalElements={tableTotalElements}
@@ -485,6 +551,20 @@ const GradesDetails = () => {
                 closeRemarkModal();
                 setTablePage((p) => p);
             }}
+        />
+
+        {/* ── Assign / Distribute Modal ── */}
+        <AssignLeadModal
+            isOpen={isAssignModalOpen}
+            onClose={() => setIsAssignModalOpen(false)}
+            filters={{
+                gradeIds: id ? [id] : [],
+                ...(selectedCard?.type === 'leadStatus'  && { leadStatusIds: [selectedCard.value] }),
+                ...(selectedCard?.type === 'leadSource'  && { leadSourceIds: [selectedCard.value] }),
+                ...(selectedCard?.type === 'courseType'  && { courseTypeIds: [selectedCard.value] }),
+                ...(selectedCard?.type === 'board'       && { boardIds:      [selectedCard.value] }),
+            }}
+            showToast={(msg, type) => console.log(`[${type}]`, msg)}
         />
         </>
     );

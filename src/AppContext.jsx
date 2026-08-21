@@ -10,6 +10,7 @@ export const AppProvider = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isAddLeadModalOpen, setIsAddLeadModalOpen] = useState(false);
   const [editLeadData, setEditLeadData] = useState(null);
+  const [leadRefreshTrigger, setLeadRefreshTrigger] = useState(0);
   const location = useLocation();
   const [currentPage, setCurrentPage] = useState(() => {
     // Initialize currentPage based on current URL path
@@ -99,6 +100,10 @@ useEffect(() => {
     setEditLeadData(null);
   };
 
+  const triggerLeadRefresh = () => {
+    setLeadRefreshTrigger((prev) => prev + 1);
+  };
+
   const openAccessDeniedModal = () => {
     setIsAccessDeniedModalOpen(true);
   };
@@ -175,6 +180,8 @@ useEffect(() => {
         handleAccessDeniedBackToDashboard,
         isSettingsExpanded,
         toggleSettingsExpanded,
+        leadRefreshTrigger,
+        triggerLeadRefresh,
       }}
     >
       {children}

@@ -565,7 +565,7 @@ const Dashboard = () => {
         </div>
 
         {/* Right Column: Recent Activity */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', position: 'sticky', top: '16px', alignSelf: 'flex-start', maxHeight: 'calc(100vh - 80px)', overflowY: 'auto' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', position: 'sticky', top: '16px', alignSelf: 'flex-start' }}>
           {/* ── Recent Activity Card ── */}
           <div style={{
             background: '#ffffff',
@@ -573,7 +573,10 @@ const Dashboard = () => {
             padding: '20px',
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
             border: '1px solid #e2e8f0',
-            height: 'fit-content'
+            height: '750px',
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column'
           }}>
             <div style={{
               display: 'flex',

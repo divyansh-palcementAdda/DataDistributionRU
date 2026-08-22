@@ -138,6 +138,97 @@ const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, cu
     },
 ];
 
+// ─── Follow-up table columns ───────────────────────────────────────────────────
+const buildFollowUpColumns = (page, size) => [
+    {
+        key: 'sno',
+        header: 'S.No',
+        sortable: false,
+        render: (value, row, index) => (
+            <span className="font-semibold text-gray-700">{page * size + index + 1}</span>
+        ),
+    },
+    {
+        key: 'leadCode',
+        header: 'Lead Code',
+        render: (value, row) => {
+            const v = row.leadCode;
+            return <span className="font-semibold text-blue-600">{v || 'N/A'}</span>;
+        },
+    },
+    {
+        key: 'leadFullName',
+        header: 'Lead Name',
+        render: (value, row) => (
+            <div className="font-semibold text-gray-800">
+                {row.leadFullName || 'N/A'}
+            </div>
+        ),
+    },
+    {
+        key: 'followUpDate',
+        header: 'Follow-up Date',
+        render: (value, row) => {
+            if (row.followUpDate) {
+                try { return new Date(row.followUpDate).toLocaleDateString(); }
+                catch { return 'Invalid Date'; }
+            }
+            return 'N/A';
+        },
+    },
+    {
+        key: 'remarks',
+        header: 'Remarks',
+        render: (value, row) => (
+            <div className="text-sm text-gray-600">
+                {row.remarks || 'N/A'}
+            </div>
+        ),
+    },
+    {
+        key: 'status',
+        header: 'Status',
+        render: (value, row) => {
+            const status = row.status || 'N/A';
+            const statusColors = {
+                'PENDING': 'bg-yellow-100 text-yellow-800',
+                'COMPLETED': 'bg-green-100 text-green-800',
+                'CANCELLED': 'bg-red-100 text-red-800',
+            };
+            const colorClass = statusColors[status] || 'bg-gray-100 text-gray-800';
+            return (
+                <span className={`badge ${colorClass} px-2 py-1 rounded text-xs font-medium`}>
+                    {status}
+                </span>
+            );
+        },
+    },
+    {
+        key: 'completed',
+        header: 'Completed',
+        render: (value, row) => (
+            <span className="text-sm">
+                {row.completed ? (
+                    <span className="text-green-600 font-medium">Yes</span>
+                ) : (
+                    <span className="text-red-600 font-medium">No</span>
+                )}
+            </span>
+        ),
+    },
+    {
+        key: 'completedAt',
+        header: 'Completed At',
+        render: (value, row) => {
+            if (row.completedAt) {
+                try { return new Date(row.completedAt).toLocaleDateString(); }
+                catch { return 'Invalid Date'; }
+            }
+            return 'N/A';
+        },
+    },
+];
+
 // ─── Helper: fetch leads for selected card (server-side) ─────────────────────
 const fetchLeadsForCard = async (activeFilters, counselorId, page, size, sortBy, sortDirection) => {
     if (!counselorId) return { content: [], totalElements: 0, totalPages: 0 };
@@ -176,6 +267,32 @@ const fetchLeadsForCard = async (activeFilters, counselorId, page, size, sortBy,
     }
 };
 
+// ─── Helper: fetch follow-ups for user (server-side) ─────────────────────
+const fetchFollowUpsForUser = async (userId, page, size) => {
+    if (!userId) return { content: [], totalElements: 0, totalPages: 0 };
+
+    const params = {
+        page,
+        size,
+        sortBy: 'followUpDate',
+        sortDirection: 'desc',
+    };
+
+    try {
+        const url = ApiRoutes.FollowUp.getByUser.replace('{userId}', userId);
+        const res = await axiosInstance.get(url, { params });
+        const d = res?.data?.data || res?.data || {};
+        return {
+            content:       d.content       ?? (Array.isArray(d) ? d : []),
+            totalElements: d.totalElements ?? 0,
+            totalPages:    d.totalPages    ?? 0,
+        };
+    } catch (err) {
+        console.error('Failed to fetch follow-up data', err);
+        return { content: [], totalElements: 0, totalPages: 0 };
+    }
+};
+
 const CounselorDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -209,6 +326,14 @@ const CounselorDetails = () => {
     // row selection & assign modal
     const [selectedRows, setSelectedRows] = useState(new Set());
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+
+    // follow-up table state
+    const [followUpData, setFollowUpData] = useState([]);
+    const [followUpLoading, setFollowUpLoading] = useState(false);
+    const [followUpPage, setFollowUpPage] = useState(0);
+    const [followUpSize, setFollowUpSize] = useState(10);
+    const [followUpTotalElements, setFollowUpTotalElements] = useState(0);
+    const [followUpTotalPages, setFollowUpTotalPages] = useState(0);
 
     // ── fetch counselor details ──
     useEffect(() => {
@@ -267,6 +392,19 @@ const CounselorDetails = () => {
                 setTableLoading(false);
             });
     }, [activeFilters, id, tablePage, tableSize, tableSortBy, tableSortDir]);
+
+    // ── fetch follow-ups when component mounts or pagination changes ──
+    useEffect(() => {
+        if (!id) return;
+        setFollowUpLoading(true);
+        fetchFollowUpsForUser(id, followUpPage, followUpSize)
+            .then(({ content, totalElements, totalPages }) => {
+                setFollowUpData(content);
+                setFollowUpTotalElements(totalElements);
+                setFollowUpTotalPages(totalPages);
+                setFollowUpLoading(false);
+            });
+    }, [id, followUpPage, followUpSize]);
 
     // ── card click handler - toggle filters on/off ──
     const handleCardClick = (card) => {
@@ -665,6 +803,41 @@ const CounselorDetails = () => {
                                         );
                                     }}
                                     emptyMessage={`No leads found for ${activeFilters.length === 1 ? `"${activeFilters[0].label}"` : 'selected filters'}`}
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                    {/* ── Follow-up Table ── */}
+                    <div className="mt-8">
+                        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                            <div className="flex items-center gap-2">
+                                <div className="w-1 h-5 bg-green-500 rounded-full" />
+                                <h3 className="text-base font-bold text-gray-900">Follow-up Table</h3>
+                                <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                                    {followUpTotalElements} records
+                                </span>
+                            </div>
+                        </div>
+
+                        {followUpLoading ? (
+                            <div className="flex justify-center items-center h-40 bg-white rounded-xl border border-gray-200">
+                                <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-green-500" />
+                                <span className="ml-2 text-sm text-gray-500">Loading follow-ups...</span>
+                            </div>
+                        ) : (
+                            <div className="card">
+                                <ReusableTable
+                                    columns={buildFollowUpColumns(followUpPage, followUpSize)}
+                                    data={followUpData}
+                                    isServerSide={true}
+                                    totalElements={followUpTotalElements}
+                                    totalPages={followUpTotalPages}
+                                    currentPage={followUpPage + 1}
+                                    rowsPerPage={followUpSize}
+                                    onPageChange={(newPage) => setFollowUpPage(newPage - 1)}
+                                    onRowsPerPageChange={(newSize) => { setFollowUpSize(newSize); setFollowUpPage(0); }}
+                                    emptyMessage="No follow-ups found"
                                 />
                             </div>
                         )}

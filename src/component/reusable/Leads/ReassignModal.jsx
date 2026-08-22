@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import CustomButton from '../CustomButton';
 import { getAllUser } from '../../../Services/user/user';
-import { reassignLeads, reassignDistributeLeads } from '../../../Services/lead/leadService';
+import { reassignLeads, reassignDistributeLeads, reassignFollowUps, reassignDistributeFollowUps } from '../../../Services/lead/leadService';
 
 /**
  * ReassignModal
@@ -114,22 +114,40 @@ const ReassignModal = ({
     }
     setLoading(true);
     try {
-      const payload = {
-        sourceUserId: currentCounselorId,
-        assignments: [
-          {
-            targetUserId: singleSelectedUserId,
-            leadIds: dataType === 'leads' ? Array.from(selectedRows) : [],
-            followUpIds: dataType === 'followups' ? Array.from(selectedRows) : [],
-            count: selectedRows.size
-          }
-        ],
-        reason: reason,
-        reassignRelatedPendingFollowUps: true
-      };
-      
-      // Use reassign API for single user
-      const res = await reassignLeads(payload);
+      let payload;
+      let res;
+
+      if (dataType === 'followups') {
+        // Use follow-up specific API for follow-ups
+        payload = {
+          sourceUserId: currentCounselorId,
+          assignments: [
+            {
+              targetUserId: singleSelectedUserId,
+              followupIds: Array.from(selectedRows),
+              count: selectedRows.size
+            }
+          ],
+          reason: reason,
+          allowWorkloadOverride: false
+        };
+        res = await reassignFollowUps(payload);
+      } else {
+        // Use existing lead reassign API for leads
+        payload = {
+          sourceUserId: currentCounselorId,
+          assignments: [
+            {
+              targetUserId: singleSelectedUserId,
+              leadIds: Array.from(selectedRows),
+              count: selectedRows.size
+            }
+          ],
+          reason: reason,
+          reassignRelatedPendingFollowUps: true
+        };
+        res = await reassignLeads(payload);
+      }
       
       if (res?.data?.success || res?.status === 200 || res?.status === 201) {
         setStep('done');
@@ -174,7 +192,7 @@ const ReassignModal = ({
             assignments.push({
               targetUserId: userId,
               leadIds: isLeads ? userData : [],
-              followUpIds: !isLeads ? userData : [],
+              followupIds: !isLeads ? userData : [],
               count: userData.length
             });
             currentIndex += maxPerUser;
@@ -191,21 +209,34 @@ const ReassignModal = ({
           return {
             targetUserId: userId,
             leadIds: isLeads ? userData : [],
-            followUpIds: !isLeads ? userData : [],
+            followupIds: !isLeads ? userData : [],
             count: userData.length
           };
         });
       }
       
-      const payload = {
-        sourceUserId: currentCounselorId,
-        assignments: assignments,
-        reason: reason,
-        reassignRelatedPendingFollowUps: true
-      };
-      
-      // Use distribute API for multiple users
-      const res = await reassignDistributeLeads(payload);
+      let payload;
+      let res;
+
+      if (dataType === 'followups') {
+        // Use follow-up distribute API for follow-ups
+        payload = {
+          sourceUserId: currentCounselorId,
+          assignments: assignments,
+          reason: reason,
+          allowWorkloadOverride: false
+        };
+        res = await reassignDistributeFollowUps(payload);
+      } else {
+        // Use existing lead distribute API for leads
+        payload = {
+          sourceUserId: currentCounselorId,
+          assignments: assignments,
+          reason: reason,
+          reassignRelatedPendingFollowUps: true
+        };
+        res = await reassignDistributeLeads(payload);
+      }
       
       if (res?.data?.success || res?.status === 200 || res?.status === 201) {
         setStep('done');

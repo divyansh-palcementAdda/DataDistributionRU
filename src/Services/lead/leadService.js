@@ -168,3 +168,23 @@ export const reassignDistributeLeads = async (payload) => {
         throw error;
     }
 };
+
+// Reassign follow-ups — POST /api/follow-ups/reassign
+export const reassignFollowUps = async (payload) => {
+    try {
+        const response = await axiosInstance.post(ApiRoutes.FollowUp.reassign, payload);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
+// Reassign and distribute follow-ups — POST /api/follow-ups/reassign/distribute
+export const reassignDistributeFollowUps = async (payload) => {
+    try {
+        const response = await axiosInstance.post(ApiRoutes.FollowUp.reassignDistribute, payload);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};

@@ -99,6 +99,8 @@ const ApiRoutes = {
     FollowUp: {
         getAllFollowUps: "/api/followups",
         getByUser: "/api/followups/user/{userId}",
+        reassign: "/api/follow-ups/reassign",
+        reassignDistribute: "/api/follow-ups/reassign/distribute",
     },
 
     Grads: {

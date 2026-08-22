@@ -20,6 +20,7 @@ import GradWiseCard from '../component/reusable/DashBoards/gradWiseCard';
 import ReusableTable from '../component/reusable/table';
 import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import AssignLeadModal from '../component/reusable/Leads/AssignLeadModal';
+import ReassignModal from '../component/reusable/Leads/ReassignModal';
 
 // ─── Lead table columns ───────────────────────────────────────────────────────
 const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, currentData) => [
@@ -139,95 +140,219 @@ const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, cu
 ];
 
 // ─── Follow-up table columns ───────────────────────────────────────────────────
-const buildFollowUpColumns = (page, size) => [
-    {
-        key: 'sno',
-        header: 'S.No',
-        sortable: false,
-        render: (value, row, index) => (
-            <span className="font-semibold text-gray-700">{page * size + index + 1}</span>
-        ),
-    },
-    {
-        key: 'leadCode',
-        header: 'Lead Code',
-        render: (value, row) => {
-            const v = row.leadCode;
-            return <span className="font-semibold text-blue-600">{v || 'N/A'}</span>;
+const buildFollowUpColumns = (page, size, isReassignableMode = false, selectedRows = new Set(), onToggleRow = () => {}, onToggleAll = () => {}, currentData = []) => {
+    if (isReassignableMode) {
+        // Columns for reassignable follow-ups API response
+        return [
+            {
+                key: 'checkbox',
+                header: (
+                    <input
+                        type="checkbox"
+                        checked={currentData.length > 0 && currentData.every(r => selectedRows.has(r.id ?? r.followUpId))}
+                        onChange={(e) => onToggleAll(e.target.checked, currentData)}
+                        style={{ width: '15px', height: '15px', cursor: 'pointer', accentColor: '#4f46e5' }}
+                        title="Select All"
+                    />
+                ),
+                sortable: false,
+                render: (value, row) => {
+                    const rowId = row.id ?? row.followUpId;
+                    return (
+                        <input
+                            type="checkbox"
+                            checked={selectedRows.has(rowId)}
+                            onChange={() => onToggleRow(rowId)}
+                            onClick={(e) => e.stopPropagation()}
+                            style={{ width: '15px', height: '15px', cursor: 'pointer', accentColor: '#4f46e5' }}
+                        />
+                    );
+                },
+            },
+            {
+                key: 'sno',
+                header: 'S.No',
+                sortable: false,
+                render: (value, row, index) => (
+                    <span className="font-semibold text-gray-700">{page * size + index + 1}</span>
+                ),
+            },
+            {
+                key: 'leadId',
+                header: 'Lead ID',
+                render: (value, row) => {
+                    const v = row.leadId;
+                    return <span className="font-semibold text-blue-600">{v || 'N/A'}</span>;
+                },
+            },
+            {
+                key: 'studentName',
+                header: 'Student Name',
+                render: (value, row) => (
+                    <div className="font-semibold text-gray-800">
+                        {row.studentName || 'N/A'}
+                    </div>
+                ),
+            },
+            {
+                key: 'studentPhone',
+                header: 'Phone',
+                render: (value, row) => (
+                    <div className="text-sm text-gray-600">
+                        {row.studentPhone || 'N/A'}
+                    </div>
+                ),
+            },
+            {
+                key: 'studentEmail',
+                header: 'Email',
+                render: (value, row) => (
+                    <div className="text-sm text-gray-600">
+                        {row.studentEmail || 'N/A'}
+                    </div>
+                ),
+            },
+            {
+                key: 'followUpDate',
+                header: 'Follow-up Date',
+                render: (value, row) => {
+                    if (row.followUpDate) {
+                        try { return new Date(row.followUpDate).toLocaleDateString(); }
+                        catch { return 'Invalid Date'; }
+                    }
+                    return 'N/A';
+                },
+            },
+            {
+                key: 'status',
+                header: 'Status',
+                render: (value, row) => {
+                    const status = row.status || 'N/A';
+                    const statusColors = {
+                        'PENDING': 'bg-yellow-100 text-yellow-800',
+                        'COMPLETED': 'bg-green-100 text-green-800',
+                        'CANCELLED': 'bg-red-100 text-red-800',
+                    };
+                    const colorClass = statusColors[status] || 'bg-gray-100 text-gray-800';
+                    return (
+                        <span className={`badge ${colorClass} px-2 py-1 rounded text-xs font-medium`}>
+                            {status}
+                        </span>
+                    );
+                },
+            },
+            {
+                key: 'currentResponsibleUserName',
+                header: 'Current Responsible',
+                render: (value, row) => (
+                    <div className="text-sm text-gray-600">
+                        {row.currentResponsibleUserName || 'N/A'}
+                    </div>
+                ),
+            },
+            {
+                key: 'originalCreatorUserName',
+                header: 'Original Creator',
+                render: (value, row) => (
+                    <div className="text-sm text-gray-600">
+                        {row.originalCreatorUserName || 'N/A'}
+                    </div>
+                ),
+            },
+        ];
+    }
+
+    // Regular follow-up columns
+    return [
+        {
+            key: 'sno',
+            header: 'S.No',
+            sortable: false,
+            render: (value, row, index) => (
+                <span className="font-semibold text-gray-700">{page * size + index + 1}</span>
+            ),
         },
-    },
-    {
-        key: 'leadFullName',
-        header: 'Lead Name',
-        render: (value, row) => (
-            <div className="font-semibold text-gray-800">
-                {row.leadFullName || 'N/A'}
-            </div>
-        ),
-    },
-    {
-        key: 'followUpDate',
-        header: 'Follow-up Date',
-        render: (value, row) => {
-            if (row.followUpDate) {
-                try { return new Date(row.followUpDate).toLocaleDateString(); }
-                catch { return 'Invalid Date'; }
-            }
-            return 'N/A';
+        {
+            key: 'leadCode',
+            header: 'Lead Code',
+            render: (value, row) => {
+                const v = row.leadCode;
+                return <span className="font-semibold text-blue-600">{v || 'N/A'}</span>;
+            },
         },
-    },
-    {
-        key: 'remarks',
-        header: 'Remarks',
-        render: (value, row) => (
-            <div className="text-sm text-gray-600">
-                {row.remarks || 'N/A'}
-            </div>
-        ),
-    },
-    {
-        key: 'status',
-        header: 'Status',
-        render: (value, row) => {
-            const status = row.status || 'N/A';
-            const statusColors = {
-                'PENDING': 'bg-yellow-100 text-yellow-800',
-                'COMPLETED': 'bg-green-100 text-green-800',
-                'CANCELLED': 'bg-red-100 text-red-800',
-            };
-            const colorClass = statusColors[status] || 'bg-gray-100 text-gray-800';
-            return (
-                <span className={`badge ${colorClass} px-2 py-1 rounded text-xs font-medium`}>
-                    {status}
+        {
+            key: 'leadFullName',
+            header: 'Lead Name',
+            render: (value, row) => (
+                <div className="font-semibold text-gray-800">
+                    {row.leadFullName || 'N/A'}
+                </div>
+            ),
+        },
+        {
+            key: 'followUpDate',
+            header: 'Follow-up Date',
+            render: (value, row) => {
+                if (row.followUpDate) {
+                    try { return new Date(row.followUpDate).toLocaleDateString(); }
+                    catch { return 'Invalid Date'; }
+                }
+                return 'N/A';
+            },
+        },
+        {
+            key: 'remarks',
+            header: 'Remarks',
+            render: (value, row) => (
+                <div className="text-sm text-gray-600">
+                    {row.remarks || 'N/A'}
+                </div>
+            ),
+        },
+        {
+            key: 'status',
+            header: 'Status',
+            render: (value, row) => {
+                const status = row.status || 'N/A';
+                const statusColors = {
+                    'PENDING': 'bg-yellow-100 text-yellow-800',
+                    'COMPLETED': 'bg-green-100 text-green-800',
+                    'CANCELLED': 'bg-red-100 text-red-800',
+                };
+                const colorClass = statusColors[status] || 'bg-gray-100 text-gray-800';
+                return (
+                    <span className={`badge ${colorClass} px-2 py-1 rounded text-xs font-medium`}>
+                        {status}
+                    </span>
+                );
+            },
+        },
+        {
+            key: 'completed',
+            header: 'Completed',
+            render: (value, row) => (
+                <span className="text-sm">
+                    {row.completed ? (
+                        <span className="text-green-600 font-medium">Yes</span>
+                    ) : (
+                        <span className="text-red-600 font-medium">No</span>
+                    )}
                 </span>
-            );
+            ),
         },
-    },
-    {
-        key: 'completed',
-        header: 'Completed',
-        render: (value, row) => (
-            <span className="text-sm">
-                {row.completed ? (
-                    <span className="text-green-600 font-medium">Yes</span>
-                ) : (
-                    <span className="text-red-600 font-medium">No</span>
-                )}
-            </span>
-        ),
-    },
-    {
-        key: 'completedAt',
-        header: 'Completed At',
-        render: (value, row) => {
-            if (row.completedAt) {
-                try { return new Date(row.completedAt).toLocaleDateString(); }
-                catch { return 'Invalid Date'; }
-            }
-            return 'N/A';
+        {
+            key: 'completedAt',
+            header: 'Completed At',
+            render: (value, row) => {
+                if (row.completedAt) {
+                    try { return new Date(row.completedAt).toLocaleDateString(); }
+                    catch { return 'Invalid Date'; }
+                }
+                return 'N/A';
+            },
         },
-    },
-];
+    ];
+};
 
 // ─── Helper: fetch leads for selected card (server-side) ─────────────────────
 const fetchLeadsForCard = async (activeFilters, counselorId, page, size, sortBy, sortDirection) => {
@@ -293,6 +418,42 @@ const fetchFollowUpsForUser = async (userId, page, size) => {
     }
 };
 
+// ─── Helper: fetch reassignable leads ─────────────────────────────────────
+const fetchReassignableLeads = async (assignedUserId, page = 0, size = 10) => {
+    try {
+        const res = await axiosInstance.get('/api/leads/reassignable', {
+            params: { assignedUserId, page, size }
+        });
+        const d = res?.data?.data || res?.data || {};
+        return {
+            content:       d.content       ?? (Array.isArray(d) ? d : []),
+            totalElements: d.totalElements ?? 0,
+            totalPages:    d.totalPages    ?? 0,
+        };
+    } catch (err) {
+        console.error('Failed to fetch reassignable leads', err);
+        return { content: [], totalElements: 0, totalPages: 0 };
+    }
+};
+
+// ─── Helper: fetch reassignable follow-ups ─────────────────────────────────
+const fetchReassignableFollowUps = async (responsibleUserId, page = 0, size = 10) => {
+    try {
+        const res = await axiosInstance.get('/api/follow-ups/reassignable', {
+            params: { responsibleUserId, page, size }
+        });
+        const d = res?.data?.data || res?.data || {};
+        return {
+            content:       d.content       ?? (Array.isArray(d) ? d : []),
+            totalElements: d.totalElements ?? 0,
+            totalPages:    d.totalPages    ?? 0,
+        };
+    } catch (err) {
+        console.error('Failed to fetch reassignable follow-ups', err);
+        return { content: [], totalElements: 0, totalPages: 0 };
+    }
+};
+
 const CounselorDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -327,6 +488,10 @@ const CounselorDetails = () => {
     const [selectedRows, setSelectedRows] = useState(new Set());
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
 
+    // reassign modal
+    const [isReassignModalOpen, setIsReassignModalOpen] = useState(false);
+    const [reassignDataType, setReassignDataType] = useState('leads'); // 'leads' or 'followups'
+
     // follow-up table state
     const [followUpData, setFollowUpData] = useState([]);
     const [followUpLoading, setFollowUpLoading] = useState(false);
@@ -334,6 +499,26 @@ const CounselorDetails = () => {
     const [followUpSize, setFollowUpSize] = useState(10);
     const [followUpTotalElements, setFollowUpTotalElements] = useState(0);
     const [followUpTotalPages, setFollowUpTotalPages] = useState(0);
+
+    // reassignable leads state
+    const [reassignableLeadsData, setReassignableLeadsData] = useState([]);
+    const [reassignableLeadsLoading, setReassignableLeadsLoading] = useState(false);
+    const [reassignableLeadsTotalElements, setReassignableLeadsTotalElements] = useState(0);
+    const [reassignableLeadsTotalPages, setReassignableLeadsTotalPages] = useState(0);
+    const [reassignableLeadsPage, setReassignableLeadsPage] = useState(0);
+    const [reassignableLeadsSize, setReassignableLeadsSize] = useState(10);
+    const [showReassignableLeads, setShowReassignableLeads] = useState(false);
+    const [reassignableLeadsSelectedRows, setReassignableLeadsSelectedRows] = useState(new Set());
+
+    // reassignable follow-ups state
+    const [reassignableFollowUpsData, setReassignableFollowUpsData] = useState([]);
+    const [reassignableFollowUpsLoading, setReassignableFollowUpsLoading] = useState(false);
+    const [reassignableFollowUpsTotalElements, setReassignableFollowUpsTotalElements] = useState(0);
+    const [reassignableFollowUpsTotalPages, setReassignableFollowUpsTotalPages] = useState(0);
+    const [reassignableFollowUpsPage, setReassignableFollowUpsPage] = useState(0);
+    const [reassignableFollowUpsSize, setReassignableFollowUpsSize] = useState(10);
+    const [showReassignableFollowUps, setShowReassignableFollowUps] = useState(false);
+    const [reassignableFollowUpsSelectedRows, setReassignableFollowUpsSelectedRows] = useState(new Set());
 
     // ── fetch counselor details ──
     useEffect(() => {
@@ -406,6 +591,32 @@ const CounselorDetails = () => {
             });
     }, [id, followUpPage, followUpSize]);
 
+    // ── fetch reassignable leads when shown or pagination changes ──
+    useEffect(() => {
+        if (!showReassignableLeads || !id) return;
+        setReassignableLeadsLoading(true);
+        fetchReassignableLeads(id, reassignableLeadsPage, reassignableLeadsSize)
+            .then(({ content, totalElements, totalPages }) => {
+                setReassignableLeadsData(content);
+                setReassignableLeadsTotalElements(totalElements);
+                setReassignableLeadsTotalPages(totalPages);
+                setReassignableLeadsLoading(false);
+            });
+    }, [showReassignableLeads, id, reassignableLeadsPage, reassignableLeadsSize]);
+
+    // ── fetch reassignable follow-ups when shown or pagination changes ──
+    useEffect(() => {
+        if (!showReassignableFollowUps || !id) return;
+        setReassignableFollowUpsLoading(true);
+        fetchReassignableFollowUps(id, reassignableFollowUpsPage, reassignableFollowUpsSize)
+            .then(({ content, totalElements, totalPages }) => {
+                setReassignableFollowUpsData(content);
+                setReassignableFollowUpsTotalElements(totalElements);
+                setReassignableFollowUpsTotalPages(totalPages);
+                setReassignableFollowUpsLoading(false);
+            });
+    }, [showReassignableFollowUps, id, reassignableFollowUpsPage, reassignableFollowUpsSize]);
+
     // ── card click handler - toggle filters on/off ──
     const handleCardClick = (card) => {
         setActiveFilters(prev => {
@@ -443,6 +654,18 @@ const CounselorDetails = () => {
         setSelectedRows(new Set());
     };
 
+    // ── handle switch lead button click ──
+    const handleSwitchLead = () => {
+        setReassignableLeadsPage(0);
+        setShowReassignableLeads(true);
+    };
+
+    // ── handle switch follow-up button click ──
+    const handleSwitchFollowUp = () => {
+        setReassignableFollowUpsPage(0);
+        setShowReassignableFollowUps(true);
+    };
+
     // ── get current filter label for display ──
     const getFilterLabel = () => {
         if (activeFilters.length === 0) return 'All Leads';
@@ -470,9 +693,70 @@ const CounselorDetails = () => {
         });
     };
 
+    // ── reassignable leads row selection handlers ──
+    const handleReassignableLeadsToggleRow = (rowId) => {
+        setReassignableLeadsSelectedRows(prev => {
+            const next = new Set(prev);
+            next.has(rowId) ? next.delete(rowId) : next.add(rowId);
+            return next;
+        });
+    };
+
+    const handleReassignableLeadsToggleAll = (checked, rows) => {
+        setReassignableLeadsSelectedRows(prev => {
+            const next = new Set(prev);
+            rows.forEach(r => {
+                const rowId = r.id ?? r.leadId;
+                checked ? next.add(rowId) : next.delete(rowId);
+            });
+            return next;
+        });
+    };
+
+    // ── reassignable follow-ups row selection handlers ──
+    const handleReassignableFollowUpsToggleRow = (rowId) => {
+        setReassignableFollowUpsSelectedRows(prev => {
+            const next = new Set(prev);
+            next.has(rowId) ? next.delete(rowId) : next.add(rowId);
+            return next;
+        });
+    };
+
+    const handleReassignableFollowUpsToggleAll = (checked, rows) => {
+        setReassignableFollowUpsSelectedRows(prev => {
+            const next = new Set(prev);
+            rows.forEach(r => {
+                const rowId = r.id ?? r.followUpId;
+                checked ? next.add(rowId) : next.delete(rowId);
+            });
+            return next;
+        });
+    };
+
     // ── remark modal handlers ──
     const openRemarkModal  = (lead) => { setSelectedLeadForRemark(lead); setIsRemarkModalOpen(true); };
     const closeRemarkModal = () => { setIsRemarkModalOpen(false); setSelectedLeadForRemark(null); };
+
+    // ── reassign modal handler ──
+    const handleReassign = async (payload) => {
+        try {
+            // After successful reassignment, clear selected rows and refresh data
+            if (reassignDataType === 'leads') {
+                setSelectedRows(new Set());
+                setReassignableLeadsSelectedRows(new Set());
+                setTablePage((prev) => prev);
+                setReassignableLeadsPage((prev) => prev);
+            } else {
+                setReassignableFollowUpsSelectedRows(new Set());
+                setReassignableFollowUpsPage((prev) => prev);
+            }
+            
+            return Promise.resolve();
+        } catch (error) {
+            console.error('Reassign failed:', error);
+            throw error;
+        }
+    };
 
     // ── lead table sort handler ──
     const handleLeadSort = (columnKey, direction) => {
@@ -741,18 +1025,22 @@ const CounselorDetails = () => {
                                 )}
                             </div>
                             <div className="flex items-center gap-2">
+                                {selectedRows.size > 0 && (
+                                    <button
+                                        onClick={() => {
+                                            setReassignDataType('leads');
+                                            setIsReassignModalOpen(true);
+                                        }}
+                                        className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all shadow-sm bg-orange-600 text-white hover:bg-orange-700"
+                                    >
+                                        Reassign ({selectedRows.size})
+                                    </button>
+                                )}
                                 <button
-                                    onClick={() => setIsAssignModalOpen(true)}
-                                    disabled={selectedRows.size === 0}
-                                    className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all shadow-sm"
-                                    style={{
-                                        backgroundColor: selectedRows.size === 0 ? 'var(--gray-200, #e5e7eb)' : '#4f46e5',
-                                        color: selectedRows.size === 0 ? 'var(--gray-400, #9ca3af)' : '#fff',
-                                        cursor: selectedRows.size === 0 ? 'not-allowed' : 'pointer',
-                                    }}
+                                    onClick={handleSwitchLead}
+                                    className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all shadow-sm bg-indigo-600 text-white hover:bg-indigo-700"
                                 >
-                                    <FiUserPlus size={13} />
-                                    Allot Leads{selectedRows.size > 0 ? ` (${selectedRows.size})` : ''}
+                                    Switch Lead
                                 </button>
                             </div>
                         </div>
@@ -808,6 +1096,80 @@ const CounselorDetails = () => {
                         )}
                     </div>
 
+                    {/* ── Reassignable Leads Table ── */}
+                    {showReassignableLeads && (
+                        <div className="mt-6">
+                            <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-1 h-5 bg-purple-500 rounded-full" />
+                                    <h3 className="text-base font-bold text-gray-900">Reassignable Leads</h3>
+                                    <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                                        {reassignableLeadsTotalElements} records
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    {reassignableLeadsSelectedRows.size > 0 && (
+                                        <button
+                                            onClick={() => {
+                                                setReassignDataType('leads');
+                                                setIsReassignModalOpen(true);
+                                            }}
+                                            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all shadow-sm bg-orange-600 text-white hover:bg-orange-700"
+                                        >
+                                            Reassign ({reassignableLeadsSelectedRows.size})
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={() => setShowReassignableLeads(false)}
+                                        className="text-xs text-red-600 hover:text-red-800 hover:bg-red-50 px-2 py-1 rounded-full border border-red-200 transition-all"
+                                    >
+                                        Close
+                                    </button>
+                                </div>
+                            </div>
+
+                            {reassignableLeadsLoading ? (
+                                <div className="flex justify-center items-center h-40 bg-white rounded-xl border border-gray-200">
+                                    <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-purple-500" />
+                                    <span className="ml-2 text-sm text-gray-500">Loading reassignable leads...</span>
+                                </div>
+                            ) : (
+                                <div className="card">
+                                    <ReusableTable
+                                        columns={buildLeadColumns(reassignableLeadsPage, reassignableLeadsSize, reassignableLeadsSelectedRows, handleReassignableLeadsToggleRow, handleReassignableLeadsToggleAll, reassignableLeadsData)}
+                                        data={reassignableLeadsData}
+                                        isServerSide={true}
+                                        totalElements={reassignableLeadsTotalElements}
+                                        totalPages={reassignableLeadsTotalPages}
+                                        currentPage={reassignableLeadsPage + 1}
+                                        rowsPerPage={reassignableLeadsSize}
+                                        onPageChange={(newPage) => setReassignableLeadsPage(newPage - 1)}
+                                        onRowsPerPageChange={(newSize) => { setReassignableLeadsSize(newSize); setReassignableLeadsPage(0); }}
+                                        actions={(row) => {
+                                            const safeRow = {
+                                                ...row,
+                                                id:     typeof row.id     === 'object' ? row.id?.id     : row.id,
+                                                leadId: typeof row.leadId === 'object' ? row.leadId?.id : row.leadId,
+                                            };
+                                            return (
+                                                <div className="flex justify-center items-center gap-3">
+                                                    <button
+                                                        className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer"
+                                                        title="View"
+                                                        onClick={() => navigate(`/lead-detail/${safeRow?.id ?? safeRow?.leadId}`)}
+                                                    >
+                                                        <FiEye size={18} />
+                                                    </button>
+                                                </div>
+                                            );
+                                        }}
+                                        emptyMessage="No reassignable leads found"
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     {/* ── Follow-up Table ── */}
                     <div className="mt-8">
                         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
@@ -817,6 +1179,14 @@ const CounselorDetails = () => {
                                 <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
                                     {followUpTotalElements} records
                                 </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={handleSwitchFollowUp}
+                                    className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all shadow-sm bg-green-600 text-white hover:bg-green-700"
+                                >
+                                    Switch Follow-up
+                                </button>
                             </div>
                         </div>
 
@@ -828,7 +1198,7 @@ const CounselorDetails = () => {
                         ) : (
                             <div className="card">
                                 <ReusableTable
-                                    columns={buildFollowUpColumns(followUpPage, followUpSize)}
+                                    columns={buildFollowUpColumns(followUpPage, followUpSize, false, new Set(), () => {}, () => {}, followUpData)}
                                     data={followUpData}
                                     isServerSide={true}
                                     totalElements={followUpTotalElements}
@@ -842,6 +1212,62 @@ const CounselorDetails = () => {
                             </div>
                         )}
                     </div>
+
+                    {/* ── Reassignable Follow-ups Table ── */}
+                    {showReassignableFollowUps && (
+                        <div className="mt-6">
+                            <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-1 h-5 bg-orange-500 rounded-full" />
+                                    <h3 className="text-base font-bold text-gray-900">Reassignable Follow-ups</h3>
+                                    <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                                        {reassignableFollowUpsTotalElements} records
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    {reassignableFollowUpsSelectedRows.size > 0 && (
+                                        <button
+                                            onClick={() => {
+                                                setReassignDataType('followups');
+                                                setIsReassignModalOpen(true);
+                                            }}
+                                            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all shadow-sm bg-orange-600 text-white hover:bg-orange-700"
+                                        >
+                                            Reassign ({reassignableFollowUpsSelectedRows.size})
+                                        </button>
+                                    )}
+                                    <button
+                                        onClick={() => setShowReassignableFollowUps(false)}
+                                        className="text-xs text-red-600 hover:text-red-800 hover:bg-red-50 px-2 py-1 rounded-full border border-red-200 transition-all"
+                                    >
+                                        Close
+                                    </button>
+                                </div>
+                            </div>
+
+                            {reassignableFollowUpsLoading ? (
+                                <div className="flex justify-center items-center h-40 bg-white rounded-xl border border-gray-200">
+                                    <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-orange-500" />
+                                    <span className="ml-2 text-sm text-gray-500">Loading reassignable follow-ups...</span>
+                                </div>
+                            ) : (
+                                <div className="card">
+                                    <ReusableTable
+                                        columns={buildFollowUpColumns(reassignableFollowUpsPage, reassignableFollowUpsSize, true, reassignableFollowUpsSelectedRows, handleReassignableFollowUpsToggleRow, handleReassignableFollowUpsToggleAll, reassignableFollowUpsData)}
+                                        data={reassignableFollowUpsData}
+                                        isServerSide={true}
+                                        totalElements={reassignableFollowUpsTotalElements}
+                                        totalPages={reassignableFollowUpsTotalPages}
+                                        currentPage={reassignableFollowUpsPage + 1}
+                                        rowsPerPage={reassignableFollowUpsSize}
+                                        onPageChange={(newPage) => setReassignableFollowUpsPage(newPage - 1)}
+                                        onRowsPerPageChange={(newSize) => { setReassignableFollowUpsSize(newSize); setReassignableFollowUpsPage(0); }}
+                                        emptyMessage="No reassignable follow-ups found"
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* ── Remark Modal ── */}
                     <LeadRemarkModal
@@ -878,6 +1304,19 @@ const CounselorDetails = () => {
                             }),
                         }}
                         showToast={(msg, type) => console.log(`[${type}]`, msg)}
+                    />
+
+                    {/* ── Reassign Modal ── */}
+                    <ReassignModal
+                        isOpen={isReassignModalOpen}
+                        onClose={() => setIsReassignModalOpen(false)}
+                        currentCounselorId={id}
+                        selectedRows={reassignDataType === 'leads' ? 
+                            (showReassignableLeads ? reassignableLeadsSelectedRows : selectedRows) : 
+                            reassignableFollowUpsSelectedRows}
+                        dataType={reassignDataType}
+                        showToast={showToast}
+                        onReassign={handleReassign}
                     />
                 </>
             )}

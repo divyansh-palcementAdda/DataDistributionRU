@@ -477,6 +477,7 @@ const CourseTypeDetails = () => {
                 <LeadCards
                     onCardClick={handleCardClick}
                     activeFilters={activeFilters}
+                    courseTypeId={id}
                 />
 
                 <LeadSource

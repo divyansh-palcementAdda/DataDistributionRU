@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { getLeadStatusBreakdown } from '../../../Services/cards/cardService';
 
-const LeadCards = ({ onCardClick, activeFilters = [] }) => {
+const LeadCards = ({ onCardClick, activeFilters = [], courseTypeId }) => {
   const [leadData, setLeadData] = useState([]);
 
   useEffect(() => {
     const fetchLeadStatusData = async () => {
       try {
-        const filterRequest = {};
+        const filterRequest = courseTypeId ? { courseTypeId } : {};
         const response = await getLeadStatusBreakdown({ filterRequest: JSON.stringify(filterRequest) });
         setLeadData(response.data?.data || []);
       } catch (error) {
@@ -16,7 +16,7 @@ const LeadCards = ({ onCardClick, activeFilters = [] }) => {
     };
 
     fetchLeadStatusData();
-  }, []);
+  }, [courseTypeId]);
   // Responsive styles
   const gridStyle = {
     display: 'grid',

@@ -464,6 +464,7 @@ const GradesDetails = () => {
                     <LeadCards
                         onCardClick={handleCardClick}
                         activeFilters={activeFilters}
+                        gradeId={id}
                     />
                     <LeadSource
                         data={dashData.leadSource}

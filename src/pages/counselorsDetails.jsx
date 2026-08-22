@@ -959,6 +959,7 @@ const CounselorDetails = () => {
                         <LeadCards
                             onCardClick={handleCardClick}
                             activeFilters={activeFilters}
+                            counselorId={id}
                         />
                         <LeadSource
                             data={dashData.leadSource}

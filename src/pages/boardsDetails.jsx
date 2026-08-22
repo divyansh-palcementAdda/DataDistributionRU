@@ -459,6 +459,7 @@ const BoardDetails = () => {
                     <LeadCards
                         onCardClick={handleCardClick}
                         activeFilters={activeFilters}
+                        boardId={id}
                     />
                     <LeadSource
                         data={dashData.leadSource}

@@ -520,6 +520,7 @@ const DataSourceDetails = () => {
                 <LeadCards
                     onCardClick={handleCardClick}
                     activeFilters={activeFilters}
+                    leadSourceId={id}
                 />
                 <CategorywiseCard
                     data={dashData.courseType}

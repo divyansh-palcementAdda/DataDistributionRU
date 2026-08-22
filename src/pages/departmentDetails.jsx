@@ -774,6 +774,7 @@ const DepartmentDetails = () => {
                 <LeadCards
                     onCardClick={handleCardClick}
                     activeFilters={activeFilters}
+                    departmentId={id}
                 />
                 <LeadSource
                     data={dashData.leadSource}

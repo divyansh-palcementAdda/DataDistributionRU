@@ -504,7 +504,8 @@ const Department = () => {
             </div>
 
             {/* ── Stats Overview using StatsCard ── */}
-            <div
+            {/* Commented out for now - will use later */}
+            {/* <div
                 style={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
@@ -540,7 +541,7 @@ const Department = () => {
                     percentage={stats.totalUsers ? Math.round((stats.totalCounsellors / stats.totalUsers) * 100) : 0}
                     palette={CARD_PALETTES[3]}
                 />
-            </div>
+            </div> */}
 
             {/* ── Search & Filter Controls ── */}
             <div

@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { getGradeBreakdown } from '../../../Services/cards/cardService';
 
 const GradeIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -18,11 +19,36 @@ const COLORS = [
   { iconBg: '#FCE7F3',              iconStroke: '#DB2777' },
 ];
 
-const GradWiseCard = ({ data = [], onCardClick, activeFilters = [] }) => {
+const GradWiseCard = ({ data, onCardClick, activeFilters = [] }) => {
+  // API returns an array: [{id, name, code, count, percentage}, ...]
+  const [gradeData, setGradeData] = useState([]);
+
+  useEffect(() => {
+    if (data !== undefined) {
+      const payload = data ?? [];
+      setGradeData(Array.isArray(payload) ? payload : Object.values(payload));
+      return;
+    }
+
+    const fetchGradeData = async () => {
+      try {
+        const filterRequest = {};
+        const response = await getGradeBreakdown({ filterRequest: JSON.stringify(filterRequest) });
+        const payload = response?.data?.data ?? response?.data ?? response ?? [];
+        // Normalise: always store as an array
+        setGradeData(Array.isArray(payload) ? payload : Object.values(payload));
+      } catch (error) {
+        console.error('Error fetching grade breakdown:', error);
+      }
+    };
+
+    fetchGradeData();
+  }, [data]);
+
   // Accept both array (new) and object (legacy) formats
-  const items = Array.isArray(data)
-    ? data
-    : Object.entries(data)
+  const items = Array.isArray(gradeData)
+    ? gradeData
+    : Object.entries(gradeData)
         .filter(([, val]) => val > 0)
         .map(([key, val]) => ({ id: key, code: key, name: key, count: val, percentage: 0 }));
 

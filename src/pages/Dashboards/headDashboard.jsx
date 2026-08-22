@@ -116,21 +116,9 @@ const HeadDashboard = () => {
   }, [headAllottedLeads, callerAllottedLeads, leads]);
 
   // Data for reusable cards
-  const boardWiseData = useMemo(() => ({
-    cbseData: leads.filter(l => l.board === 'CBSE').length,
-    mpBoardData: leads.filter(l => l.board === 'MP Board').length,
-    otherBoard: leads.filter(l => l.board && l.board !== 'CBSE' && l.board !== 'MP Board').length,
-  }), [leads]);
-
   const systemData = useMemo(() => ({
     totalDataInSystem: leads.length,
     totalSourceOfData: [...new Set(leads.map(l => l.source?.name))].length,
-  }), [leads]);
-
-  const categoryWiseData = useMemo(() => ({
-    ugData: leads.filter(l => l.category === 'UG').length,
-    pgData: leads.filter(l => l.category === 'PG').length,
-    unMappedByDate: leads.filter(l => !l.category).length,
   }), [leads]);
 
   const counselorsData = useMemo(() => ({
@@ -141,28 +129,6 @@ const HeadDashboard = () => {
     overallConversionByData: Math.round((leads.filter(l => l.status === 'registered').length / leads.length) * 100) || 0,
     conversionRatio: Math.round((leads.filter(l => l.status === 'registered').length / leads.length) * 100) || 0,
   }), [counselors, leads]);
-
-  const gradWiseData = useMemo(() => {
-    const gradeCounts = {};
-    leads.forEach(l => {
-      if (l.grade) {
-        gradeCounts[l.grade] = (gradeCounts[l.grade] || 0) + 1;
-      }
-    });
-    return Object.entries(gradeCounts).map(([grade, count]) => ({
-      id: grade,
-      name: `Grade ${grade}`,
-      code: grade,
-      count,
-      percentage: 0,
-    }));
-  }, [leads]);
-
-  const leadSourceData = useMemo(() => ({
-    totalConsultantData: leads.filter(l => l.source?.type === 'consultant').length,
-    totalInboundData: leads.filter(l => l.source?.type === 'inbound').length,
-    totalOutboundData: leads.filter(l => l.source?.type === 'outbound').length,
-  }), [leads]);
 
   // Status distribution chart for Head's leads
   const statusChartData = useMemo(() => {
@@ -283,21 +249,7 @@ const HeadDashboard = () => {
             Manage your allotted leads and distribute to callers
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button
-            className="btn btn-primary btn-sm"
-            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-            onClick={() => setAllotModalOpen(true)}
-            disabled={selectedLeads.length === 0}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-              <circle cx="9" cy="7" r="4" />
-              <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
-            </svg>
-            Allot to Caller ({selectedLeads.length})
-          </button>
-        </div>
+        
       </div>
 
       {/* ── Stat Cards ── */}
@@ -314,13 +266,14 @@ const HeadDashboard = () => {
       </div> */}
 
       {/* ── Reusable Dashboard Cards ── */}
+       <LeadCards />
       <SystemCards data={systemData} />
-      <BoardWiseCard data={boardWiseData} />
-      <CategorywiseCard data={categoryWiseData} />
+      <BoardWiseCard />
+      <CategorywiseCard />
       <CounselorsCards data={counselorsData} />
-      <GradWiseCard data={gradWiseData} />
-      <LeadSource data={leadSourceData} />
-      <LeadCards />
+      <GradWiseCard />
+      <LeadSource />
+     
 
       {/* ── Charts Row ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>

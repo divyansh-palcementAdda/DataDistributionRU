@@ -13,10 +13,12 @@ const Sidebar = () => {
   
   // Update dashboard navigation based on user role
   const getDashboardId = () => {
-    if (userRole === 'COUNSELOR' || userRole === 'HEAD') {
+    if (userRole === 'COUNSELOR') {
       return 'callers-dashboard';
+    } else if (userRole === 'HOD') {
+      return 'head-dashboard';
     }
-    return 'dashboard';
+    return 'dashboard'; // Default for ADMIN
   };
 
   const dashboardId = getDashboardId();

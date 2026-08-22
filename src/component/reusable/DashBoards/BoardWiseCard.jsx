@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { getBoardBreakdown } from '../../../Services/cards/cardService';
 
 const BoardIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -19,11 +20,36 @@ const COLORS = [
   { iconBg: '#FEF9C3',              iconStroke: '#CA8A04' },
 ];
 
-const BoardWiseCard = ({ data = [], onCardClick, activeFilters = [] }) => {
+const BoardWiseCard = ({ data, onCardClick, activeFilters = [] }) => {
+  // API returns an array: [{id, name, code, count, percentage}, ...]
+  const [boardData, setBoardData] = useState([]);
+
+  useEffect(() => {
+    if (data !== undefined) {
+      const payload = data ?? [];
+      setBoardData(Array.isArray(payload) ? payload : Object.values(payload));
+      return;
+    }
+
+    const fetchBoardData = async () => {
+      try {
+        const filterRequest = {};
+        const response = await getBoardBreakdown({ filterRequest: JSON.stringify(filterRequest) });
+        const payload = response?.data?.data ?? response?.data ?? response ?? [];
+        // Normalise: always store as an array
+        setBoardData(Array.isArray(payload) ? payload : Object.values(payload));
+      } catch (error) {
+        console.error('Error fetching board breakdown:', error);
+      }
+    };
+
+    fetchBoardData();
+  }, [data]);
+
   // Accept both array (new) and object (legacy) formats
-  const items = Array.isArray(data)
-    ? data
-    : Object.entries(data)
+  const items = Array.isArray(boardData)
+    ? boardData
+    : Object.entries(boardData)
         .filter(([, val]) => val > 0)
         .map(([key, val]) => ({ id: key, code: key, name: key, count: val, percentage: 0 }));
 

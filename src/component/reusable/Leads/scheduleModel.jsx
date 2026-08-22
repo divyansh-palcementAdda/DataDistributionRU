@@ -1,11 +1,58 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { getAllLeadStatus } from "../../../Services/leadStatus/leadStatusService";
 
 const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
     const [formData, setFormData] = useState({
         followUpDate: "",
         remarks: "",
         status: "PENDING",
+        leadStatus: "",
     });
+    const [leadStatuses, setLeadStatuses] = useState([]);
+    
+    const allowedLeadStatuses = [
+        "Form Follow-Up",
+        "Counseling Follow-Up", 
+        "Registered",
+        "Form Not Interested",
+        "Continuous Form Follow-Up",
+        "Continuous Follow-Up",
+        "Interested Follow-Up",
+        "Go To Form Follow-Up",
+        "Counseling Not Interested"
+    ];
+
+    useEffect(() => {
+        const fetchLeadStatuses = async () => {
+            try {
+                const response = await getAllLeadStatus({
+                    page: 0,
+                    size: 100,
+                    sortBy: "displayOrder",
+                    sortDirection: "ASC",
+                    search: ""
+                });
+                const allStatuses = response.data?.content || response.content || response.data || [];
+                console.log("All statuses from API:", allStatuses.map(s => s.name));
+                console.log("Allowed statuses:", allowedLeadStatuses);
+                
+                const filteredStatuses = allStatuses.filter(status => 
+                    allowedLeadStatuses.some(allowed => 
+                        allowed.toLowerCase() === status.name.toLowerCase()
+                    )
+                );
+                console.log("Filtered statuses:", filteredStatuses.map(s => s.name));
+                setLeadStatuses(filteredStatuses);
+            } catch (error) {
+                console.error("Error fetching lead statuses:", error);
+                setLeadStatuses([]);
+            }
+        };
+
+        if (isOpen) {
+            fetchLeadStatuses();
+        }
+    }, [isOpen]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -30,6 +77,7 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
             followUpDate: "",
             remarks: "",
             status: "PENDING",
+            leadStatus: "",
         });
 
         onClose();
@@ -99,6 +147,26 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
                             <option value="PENDING">PENDING</option>
                             <option value="COMPLETED">COMPLETED</option>
                             <option value="CANCELLED">CANCELLED</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="mb-2 block text-sm font-medium text-gray-700">
+                            Lead Status
+                        </label>
+
+                        <select
+                            name="leadStatus"
+                            value={formData.leadStatus}
+                            onChange={handleChange}
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-blue-500"
+                        >
+                            <option value="">Select Lead Status</option>
+                            {leadStatuses.map((status) => (
+                                <option key={status.id} value={status.id}>
+                                    {status.name}
+                                </option>
+                            ))}
                         </select>
                     </div>
                 </div>

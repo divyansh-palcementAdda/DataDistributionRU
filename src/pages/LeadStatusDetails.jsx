@@ -137,8 +137,8 @@ const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, cu
 ];
 
 // ─── Helper: fetch leads for selected card (server-side) ─────────────────────
-const fetchLeadsForCard = async (selectedCard, statusId, page, size, sortBy, sortDirection) => {
-    if (!selectedCard || !statusId) return { content: [], totalElements: 0, totalPages: 0 };
+const fetchLeadsForCard = async (activeFilters, statusId, page, size, sortBy, sortDirection) => {
+    if (!statusId) return { content: [], totalElements: 0, totalPages: 0 };
 
     const params = {
         statusId,         // always filter by this lead status
@@ -148,14 +148,16 @@ const fetchLeadsForCard = async (selectedCard, statusId, page, size, sortBy, sor
         sortDirection: sortDirection || 'desc',
     };
 
-    switch (selectedCard.type) {
-        case 'all':         break; // only statusId, no extra filter
-        case 'leadSource':  params.sourceId     = selectedCard.value; break;
-        case 'courseType':  params.courseTypeId = selectedCard.value; break;
-        case 'board':       params.boardId      = selectedCard.value; break;
-        case 'grade':       params.gradeId      = selectedCard.value; break;
-        default:            return { content: [], totalElements: 0, totalPages: 0 };
-    }
+    // Support multiple filters - accumulate all active filter values
+    activeFilters.forEach(filter => {
+        switch (filter.type) {
+            case 'leadSource':  params.sourceId     = filter.value; break;
+            case 'courseType':  params.courseTypeId = filter.value; break;
+            case 'board':       params.boardId      = filter.value; break;
+            case 'grade':       params.gradeId      = filter.value; break;
+            default:             break;
+        }
+    });
 
     try {
         const res = await axiosInstance.get(ApiRoutes.Lead.getAllLeads, { params });
@@ -184,8 +186,8 @@ const LeadStatusDetails = () => {
     // dashboard card data
     const [dashData, setDashData] = useState({ leadSource: [], courseType: [], board: [], grade: [] });
 
-    // filter / table state
-    const [selectedCard, setSelectedCard]               = useState({ type: 'all', value: null, label: 'All Leads' });
+    // filter / table state - support multiple active filters
+    const [activeFilters, setActiveFilters] = useState([]); // Array of { type, value, label }
     const [tableData, setTableData]                     = useState([]);
     const [tableLoading, setTableLoading]               = useState(false);
 
@@ -253,26 +255,61 @@ const LeadStatusDetails = () => {
         fetchDashboardData();
     }, [id]);
 
-    // ── fetch leads when card selected or pagination/sort changes ──
+    // ── fetch leads when filters change or pagination/sort changes ──
     useEffect(() => {
-        if (!selectedCard) { setTableData([]); setTableTotalElements(0); setTableTotalPages(0); return; }
         if (!id) return;
         setTableLoading(true);
-        fetchLeadsForCard(selectedCard, id, tablePage, tableSize, tableSortBy, tableSortDir)
+        fetchLeadsForCard(activeFilters, id, tablePage, tableSize, tableSortBy, tableSortDir)
             .then(({ content, totalElements, totalPages }) => {
                 setTableData(content);
                 setTableTotalElements(totalElements);
                 setTableTotalPages(totalPages);
                 setTableLoading(false);
             });
-    }, [selectedCard, id, tablePage, tableSize, tableSortBy, tableSortDir]);
+    }, [activeFilters, id, tablePage, tableSize, tableSortBy, tableSortDir]);
 
-    // ── card click handler ──
+    // ── card click handler - toggle filters on/off ──
     const handleCardClick = (card) => {
-        const isSame = selectedCard?.type === card.type && selectedCard?.value === card.value;
-        setSelectedCard(isSame ? { type: 'all', value: null, label: 'All Leads' } : card);
+        setActiveFilters(prev => {
+            // Check if this filter is already active
+            const existingIndex = prev.findIndex(f => f.type === card.type && f.value === card.value);
+            
+            if (existingIndex !== -1) {
+                // Remove the filter (toggle off)
+                const newFilters = [...prev];
+                newFilters.splice(existingIndex, 1);
+                return newFilters;
+            } else {
+                // Add the filter (toggle on)
+                // First remove any existing filter of the same type (e.g., if clicking a different board)
+                const filteredByType = prev.filter(f => f.type !== card.type);
+                return [...filteredByType, card];
+            }
+        });
+        // reset pagination and selection when filters change
         setTablePage(0);
         setSelectedRows(new Set());
+    };
+
+    // ── remove specific filter ──
+    const handleRemoveFilter = (filterType, filterValue) => {
+        setActiveFilters(prev => prev.filter(f => !(f.type === filterType && f.value === filterValue)));
+        setTablePage(0);
+        setSelectedRows(new Set());
+    };
+
+    // ── clear all filters ──
+    const handleClearAllFilters = () => {
+        setActiveFilters([]);
+        setTablePage(0);
+        setSelectedRows(new Set());
+    };
+
+    // ── get current filter label for display ──
+    const getFilterLabel = () => {
+        if (activeFilters.length === 0) return 'All Leads';
+        if (activeFilters.length === 1) return activeFilters[0].label;
+        return `Filtered (${activeFilters.length})`;
     };
 
     // ── row selection handlers ──
@@ -445,64 +482,83 @@ const LeadStatusDetails = () => {
                 <LeadSource
                     data={dashData.leadSource}
                     onCardClick={handleCardClick}
-                    selectedCard={selectedCard}
+                    activeFilters={activeFilters}
                 />
                 <CategorywiseCard
                     data={dashData.courseType}
                     onCardClick={handleCardClick}
-                    selectedCard={selectedCard}
+                    activeFilters={activeFilters}
                 />
                 <BoardWiseCard
                     data={dashData.board}
                     onCardClick={handleCardClick}
-                    selectedCard={selectedCard}
+                    activeFilters={activeFilters}
                 />
                 <GradWiseCard
                     data={dashData.grade}
                     onCardClick={handleCardClick}
-                    selectedCard={selectedCard}
+                    activeFilters={activeFilters}
                 />
             </div>
 
             {/* ── Filtered Lead Table ── */}
-            {selectedCard && (
-                <div className="mt-6">
-                    <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-                        <div className="flex items-center gap-2">
-                            <div className="w-1 h-5 bg-indigo-500 rounded-full" />
-                            <h3 className="text-base font-bold text-gray-900">{selectedCard.label}</h3>
-                            <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                                {tableTotalElements} records
-                            </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => setIsAssignModalOpen(true)}
-                                disabled={selectedRows.size === 0}
-                                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all shadow-sm"
-                                style={{
-                                    backgroundColor: selectedRows.size === 0 ? 'var(--gray-200, #e5e7eb)' : '#4f46e5',
-                                    color: selectedRows.size === 0 ? 'var(--gray-400, #9ca3af)' : '#fff',
-                                    cursor: selectedRows.size === 0 ? 'not-allowed' : 'pointer',
-                                }}
-                            >
-                                <FiUserPlus size={13} />
-                                Allot Leads{selectedRows.size > 0 ? ` (${selectedRows.size})` : ''}
-                            </button>
-                            {selectedCard.type !== 'all' && (
-                            <button
-                                onClick={() => { setSelectedCard({ type: 'all', value: null, label: 'All Leads' }); setTablePage(0); setSelectedRows(new Set()); }}
-                                className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-red-500 hover:bg-red-50 px-2.5 py-1.5 rounded-lg border border-gray-200 hover:border-red-200 transition-all"
-                            >
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                    <line x1="18" y1="6" x2="6" y2="18" />
-                                    <line x1="6" y1="6" x2="18" y2="18" />
-                                </svg>
-                                Clear Filter
-                            </button>
-                            )}
-                        </div>
+            <div className="mt-6">
+                <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <div className="w-1 h-5 bg-indigo-500 rounded-full" />
+                        <h3 className="text-base font-bold text-gray-900">{getFilterLabel()}</h3>
+                        <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                            {tableTotalElements} records
+                        </span>
+                        
+                        {/* Active Filters Display */}
+                        {activeFilters.length > 0 && (
+                            <div className="flex items-center gap-2 flex-wrap ml-2">
+                                {activeFilters.map((filter, index) => (
+                                    <div
+                                        key={`${filter.type}-${filter.value}-${index}`}
+                                        className="flex items-center gap-1.5 text-xs bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full border border-indigo-200"
+                                    >
+                                        <span className="font-medium">{filter.label}</span>
+                                        <button
+                                            onClick={() => handleRemoveFilter(filter.type, filter.value)}
+                                            className="hover:text-red-600 transition-colors"
+                                            title="Remove this filter"
+                                        >
+                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                                <line x1="18" y1="6" x2="6" y2="18" />
+                                                <line x1="6" y1="6" x2="18" y2="18" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                ))}
+                                {activeFilters.length > 1 && (
+                                    <button
+                                        onClick={handleClearAllFilters}
+                                        className="text-xs text-red-600 hover:text-red-800 hover:bg-red-50 px-2 py-1 rounded-full border border-red-200 transition-all"
+                                    >
+                                        Clear All
+                                    </button>
+                                )}
+                            </div>
+                        )}
                     </div>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setIsAssignModalOpen(true)}
+                            disabled={selectedRows.size === 0}
+                            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all shadow-sm"
+                            style={{
+                                backgroundColor: selectedRows.size === 0 ? 'var(--gray-200, #e5e7eb)' : '#4f46e5',
+                                color: selectedRows.size === 0 ? 'var(--gray-400, #9ca3af)' : '#fff',
+                                cursor: selectedRows.size === 0 ? 'not-allowed' : 'pointer',
+                            }}
+                        >
+                            <FiUserPlus size={13} />
+                            Allot Leads{selectedRows.size > 0 ? ` (${selectedRows.size})` : ''}
+                        </button>
+                    </div>
+                </div>
 
                     {tableLoading ? (
                         <div className="flex justify-center items-center h-40 bg-white rounded-xl border border-gray-200">
@@ -549,12 +605,11 @@ const LeadStatusDetails = () => {
                                         </div>
                                     );
                                 }}
-                                emptyMessage={`No leads found for "${selectedCard.label}"`}
+                                emptyMessage={`No leads found for ${activeFilters.length === 1 ? `"${activeFilters[0].label}"` : 'selected filters'}`}
                             />
                         </div>
                     )}
                 </div>
-            )}
 
             {/* ── Hint when no card selected — removed (default all-leads table always visible) ── */}
         </div>
@@ -577,10 +632,13 @@ const LeadStatusDetails = () => {
             onClose={() => setIsAssignModalOpen(false)}
             filters={{
                 leadStatusIds: id ? [id] : [],
-                ...(selectedCard?.type === 'leadSource'  && { leadSourceIds: [selectedCard.value] }),
-                ...(selectedCard?.type === 'courseType'  && { courseTypeIds: [selectedCard.value] }),
-                ...(selectedCard?.type === 'board'       && { boardIds:      [selectedCard.value] }),
-                ...(selectedCard?.type === 'grade'       && { gradeIds:      [selectedCard.value] }),
+                ...activeFilters.reduce((acc, filter) => {
+                    if (filter.type === 'leadSource')  acc.leadSourceIds  = [...(acc.leadSourceIds || []), filter.value];
+                    if (filter.type === 'courseType')  acc.courseTypeIds  = [...(acc.courseTypeIds || []), filter.value];
+                    if (filter.type === 'board')       acc.boardIds       = [...(acc.boardIds || []), filter.value];
+                    if (filter.type === 'grade')       acc.gradeIds       = [...(acc.gradeIds || []), filter.value];
+                    return acc;
+                }, {}),
             }}
             showToast={(msg, type) => console.log(`[${type}]`, msg)}
         />

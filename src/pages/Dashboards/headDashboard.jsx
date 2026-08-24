@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { leads, counselors, statusConfig } from '../../mockData';
+import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import { leads, statusConfig } from '../../mockData';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -15,10 +15,10 @@ import ReusableTable from '../../component/reusable/table';
 import BoardWiseCard from '../../component/reusable/DashBoards/BoardWiseCard';
 import SystemCards from '../../component/reusable/DashBoards/SystemCards';
 import CategorywiseCard from '../../component/reusable/DashBoards/categorywiseCard';
-import CounselorsCards from '../../component/reusable/DashBoards/counselorsCards';
 import GradWiseCard from '../../component/reusable/DashBoards/gradWiseCard';
 import LeadCards from '../../component/reusable/DashBoards/leadCards';
 import LeadSource from '../../component/reusable/DashBoards/leadSource';
+import { getAllLeads } from '../../Services/lead/leadService';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend);
 
@@ -87,22 +87,102 @@ const HeadDashboard = () => {
   const [selectedLeads, setSelectedLeads] = useState([]);
   const [allotModalOpen, setAllotModalOpen] = useState(false);
   const [selectedCaller, setSelectedCaller] = useState('');
+  
+  // API State
+  const [leadsData, setLeadsData] = useState([]);
+  const [allLeadsData, setAllLeadsData] = useState([]); // For stats and other components
+  const [activeFilters, setActiveFilters] = useState([]); // Array of active filters
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(10);
+  const [totalElements, setTotalElements] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [sortBy, setSortBy] = useState('createdAt');
+  const [sortDirection, setSortDirection] = useState('desc');
+  
+  // Ref for table section
+  const tableSectionRef = useRef(null);
 
-  // Mock: Leads allotted to Head (simulated by filtering leads without caller allotment)
-  const headAllottedLeads = useMemo(() => {
-    return leads.filter(lead => !lead.counselor || lead.counselor === 'Head');
-  }, [leads]);
+  // Fetch all leads for stats and other components
+  const fetchAllLeads = useCallback(async () => {
+    try {
+      const params = {
+        page: 0,
+        size: 1000, // Fetch all leads for stats
+      };
+      const res = await getAllLeads(params);
+      if (res?.data?.success) {
+        const content = res.data.data.content;
+        setAllLeadsData(content);
+      }
+    } catch (error) {
+      console.error("Failed to fetch all leads", error);
+    }
+  }, []);
 
-  // Mock: Leads allotted to callers
-  const callerAllottedLeads = useMemo(() => {
-    return leads.filter(lead => lead.counselor && lead.counselor !== 'Head');
-  }, [leads]);
+  // Fetch leads from API for table (unallotted leads with card filtering)
+  const fetchLeads = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = {
+        page: page,
+        size: size,
+        sortBy: sortBy || undefined,
+        sortDirection: sortDirection || undefined,
+        // Filter for leads not allotted (allotted to Head)
+        assignedTo: null,
+      };
+      
+      // Add filters based on activeFilters array
+      activeFilters.forEach(filter => {
+        switch (filter.type) {
+          case 'leadStatus':
+            params.statusId = filter.value;
+            break;
+          case 'board':
+            params.boardId = filter.value;
+            break;
+          case 'grade':
+            params.gradeId = filter.value;
+            break;
+          case 'courseType':
+            params.courseTypeId = filter.value;
+            break;
+          case 'leadSource':
+            params.leadSourceId = filter.value;
+            break;
+          default:
+            break;
+        }
+      });
+      
+      const res = await getAllLeads(params);
+      if (res?.data?.success) {
+        const content = res.data.data.content;
+        setLeadsData(content);
+        setTotalElements(res.data.data.totalElements);
+        setTotalPages(res.data.data.totalPages);
+      }
+    } catch (error) {
+      console.error("Failed to fetch leads", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [page, size, sortBy, sortDirection, activeFilters]);
+
+  useEffect(() => {
+    fetchAllLeads();
+    fetchLeads();
+  }, [fetchAllLeads, fetchLeads]);
+
+  // Since we're filtering at API level with assignedTo: null, leadsData already contains only unallotted leads
+  const headAllottedLeads = leadsData;
 
   const calculatedStatCards = useMemo(() => {
     const allottedToMe = headAllottedLeads.length;
-    const allottedToCallers = callerAllottedLeads.length;
-    const notAllotted = leads.filter(l => !l.counselor).length;
-    const registered = leads.filter(l => l.status === 'registered').length;
+    const allottedToCallers = allLeadsData.filter(lead => lead.assignedTo && lead.assignedTo !== '').length;
+    const notAllotted = allLeadsData.filter(l => !l.assignedTo || l.assignedTo === '').length;
+    const registered = allLeadsData.filter(l => l.currentStatus === 'registered' || l.currentStatus === 'REGISTERED').length;
 
     return statCards.map(card => {
       switch (card.label) {
@@ -113,29 +193,22 @@ const HeadDashboard = () => {
         default: return card;
       }
     });
-  }, [headAllottedLeads, callerAllottedLeads, leads]);
+  }, [headAllottedLeads, allLeadsData]);
 
   // Data for reusable cards
   const systemData = useMemo(() => ({
-    totalDataInSystem: leads.length,
-    totalSourceOfData: [...new Set(leads.map(l => l.source?.name))].length,
-  }), [leads]);
-
-  const counselorsData = useMemo(() => ({
-    totalCounselors: counselors.length,
-    totalCounselorsLoggedInToday: counselors.filter(c => c.loggedInToday).length,
-    totalFollowupsScheduledToday: counselors.reduce((sum, c) => sum + (c.followupsToday || 0), 0),
-    allRegistrationsAndApplications: leads.filter(l => l.status === 'registered').length,
-    overallConversionByData: Math.round((leads.filter(l => l.status === 'registered').length / leads.length) * 100) || 0,
-    conversionRatio: Math.round((leads.filter(l => l.status === 'registered').length / leads.length) * 100) || 0,
-  }), [counselors, leads]);
+    totalDataInSystem: allLeadsData.length,
+    totalSourceOfData: [...new Set(allLeadsData.map(l => l.source?.name))].length,
+  }), [allLeadsData]);
 
   // Status distribution chart for Head's leads
   const statusChartData = useMemo(() => {
     const statusCounts = {};
     headAllottedLeads.forEach(lead => {
-      const status = lead.status || 'raw';
-      statusCounts[status] = (statusCounts[status] || 0) + 1;
+      const status = lead.currentStatus || 'raw';
+      // Handle both string and object status
+      const statusKey = typeof status === 'object' ? status?.code || status?.name || 'raw' : status;
+      statusCounts[statusKey] = (statusCounts[statusKey] || 0) + 1;
     });
 
     const labels = Object.keys(statusCounts).map(s => statusConfig[s]?.label || s);
@@ -167,18 +240,53 @@ const HeadDashboard = () => {
 
   // Table columns for Head's allotted leads
   const leadColumns = [
-    { key: 'name', header: 'Lead Name', render: (value) => (typeof value === "object" && value !== null ? value?.name || value?.fullName || "—" : value || "—") },
-    { key: 'phone', header: 'Phone', render: (value) => (typeof value === "object" && value !== null ? value?.phone || value?.mobileNo || "—" : value || "—") },
+    { 
+      key: 'name', 
+      header: 'Lead Name', 
+      render: (value, row) => {
+        const nameValue = value || row.fullName;
+        if (typeof nameValue === 'object' && nameValue !== null) {
+          return nameValue?.name || nameValue?.fullName || nameValue?.firstName || '—';
+        }
+        return nameValue || '—';
+      }
+    },
+    { 
+      key: 'phone', 
+      header: 'Phone', 
+      render: (value, row) => {
+        const phoneValue = value || row.phoneNumber;
+        if (typeof phoneValue === 'object' && phoneValue !== null) {
+          return phoneValue?.phone || phoneValue?.mobileNo || '—';
+        }
+        return phoneValue || '—';
+      }
+    },
     { 
       key: 'course', 
       header: 'Course',
-      render: (value) => value?.courseName || value || '—'
+      render: (value, row) => {
+        const courseValue = value || row.courseInterested;
+        if (typeof courseValue === 'object' && courseValue !== null) {
+          return courseValue?.courseName || courseValue?.name || '—';
+        }
+        return courseValue || '—';
+      }
     },
     { 
       key: 'status', 
       header: 'Status',
-      render: (value) => {
-        const config = statusConfig[value] || { label: value, color: '#64748B' };
+      render: (value, row) => {
+        const statusValue = value || row.currentStatus;
+        let displayStatus = '—';
+        
+        if (typeof statusValue === 'object' && statusValue !== null) {
+          displayStatus = statusValue?.name || statusValue?.code || '—';
+        } else if (typeof statusValue === 'string') {
+          displayStatus = statusValue;
+        }
+        
+        const config = statusConfig[displayStatus] || { label: displayStatus, color: '#64748B' };
         return (
           <span className="badge" style={{
             background: `${config.color}15`,
@@ -196,35 +304,28 @@ const HeadDashboard = () => {
     { 
       key: 'source', 
       header: 'Source',
-      render: (value) => value?.name || '—'
+      render: (value, row) => {
+        const sourceValue = value || row.source;
+        if (typeof sourceValue === 'object' && sourceValue !== null) {
+          return sourceValue?.name || '—';
+        }
+        return sourceValue || '—';
+      }
     },
-    { key: 'city', header: 'City', render: (value) => (typeof value === "object" && value !== null ? value?.name || value?.city || "—" : value || "—") },
+    { 
+      key: 'city', 
+      header: 'City', 
+      render: (value, row) => {
+        const cityValue = value || row.city;
+        if (typeof cityValue === 'object' && cityValue !== null) {
+          return cityValue?.name || cityValue?.city || '—';
+        }
+        return cityValue || '—';
+      }
+    },
   ];
 
-  // Table columns for caller performance
-  const callerColumns = [
-    { key: 'name', header: 'Caller Name', render: (value) => (typeof value === "object" && value !== null ? value?.name || value?.firstName || "—" : value || "—") },
-    { 
-      key: 'allotted', 
-      header: 'Allotted',
-      render: (value) => value.toLocaleString()
-    },
-    { 
-      key: 'connected', 
-      header: 'Connected',
-      render: (value) => value.toLocaleString()
-    },
-    { 
-      key: 'registered', 
-      header: 'Registered',
-      render: (value) => value.toLocaleString()
-    },
-    { 
-      key: 'pending', 
-      header: 'Pending',
-      render: (value) => value.toLocaleString()
-    },
-  ];
+
 
   const handleAllotToCaller = () => {
     if (selectedLeads.length === 0 || !selectedCaller) {
@@ -237,6 +338,46 @@ const HeadDashboard = () => {
     setSelectedLeads([]);
     setSelectedCaller('');
     setAllotModalOpen(false);
+  };
+
+  const handleCardClick = (cardInfo) => {
+    // Toggle: same card click kare toh filter clear ho jaye
+    const existingFilterIndex = activeFilters.findIndex(
+      f => f.type === cardInfo.type && f.value === cardInfo.value
+    );
+    
+    if (existingFilterIndex !== -1) {
+      // Remove filter if already exists
+      setActiveFilters(activeFilters.filter((_, index) => index !== existingFilterIndex));
+    } else {
+      // Remove existing filter of same type (single filter per type)
+      setActiveFilters(
+        activeFilters.filter(f => f.type !== cardInfo.type).concat(cardInfo)
+      );
+    }
+    
+    setPage(0); // filter change hone par page reset
+    
+    // Scroll to table section smoothly
+    if (tableSectionRef.current) {
+      tableSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const handleSort = (columnKey, direction) => {
+    // Map frontend column keys to backend field names (using camelCase from API response)
+    const fieldMapping = {
+      'name': 'fullName',
+      'phone': 'phoneNumber',
+      'course': 'courseInterested',
+      'status': 'currentStatus',
+      'source': 'source.name',
+      'city': 'city.name',
+    };
+    
+    const backendField = fieldMapping[columnKey] || columnKey;
+    setSortBy(backendField);
+    setSortDirection(direction);
   };
 
   return (
@@ -266,17 +407,31 @@ const HeadDashboard = () => {
       </div> */}
 
       {/* ── Reusable Dashboard Cards ── */}
-       <LeadCards />
+       <LeadCards 
+        onCardClick={handleCardClick}
+        activeFilters={activeFilters}
+      />
       <SystemCards data={systemData} />
-      <BoardWiseCard />
-      <CategorywiseCard />
-      <CounselorsCards data={counselorsData} />
-      <GradWiseCard />
-      <LeadSource />
+      <BoardWiseCard 
+        onCardClick={handleCardClick}
+        activeFilters={activeFilters}
+      />
+      <CategorywiseCard 
+        onCardClick={handleCardClick}
+        activeFilters={activeFilters}
+      />
+      <GradWiseCard 
+        onCardClick={handleCardClick}
+        activeFilters={activeFilters}
+      />
+      <LeadSource 
+        onCardClick={handleCardClick}
+        activeFilters={activeFilters}
+      />
      
 
       {/* ── Charts Row ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', marginBottom: '20px' }}>
         {/* Status Distribution Chart */}
         <div className="card">
           <div className="card-header">
@@ -289,50 +444,69 @@ const HeadDashboard = () => {
             <Doughnut data={statusChartData} options={statusChartOptions} />
           </div>
         </div>
-
-        {/* Caller Overview */}
-        <div className="card">
-          <div className="card-header">
-            <div className="card-title">Caller Overview</div>
-            <button className="btn btn-ghost btn-sm" onClick={() => navTo('counselors')}>View All</button>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {counselors.slice(0, 5).map((c) => {
-              const convPct = Math.round((c.registered / c.allotted) * 100);
-              return (
-                <div key={c.name} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div
-                    className="avatar"
-                    style={{ background: c.color, flexShrink: 0 }}
-                  >
-                    {c.initials}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                      <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--gray-800)' }}>{c.name}</span>
-                      <span style={{ fontSize: '12px', color: 'var(--gray-500)' }}>{c.registered} reg · {convPct}%</span>
-                    </div>
-                    <div style={{ height: '5px', background: 'var(--gray-100)', borderRadius: '99px', overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${convPct}%`, background: c.color, borderRadius: '99px', transition: 'width .4s' }} />
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
       </div>
 
       {/* ── Leads Allotted to Head Table ── */}
-      <div className="card" style={{ marginBottom: '20px' }}>
+      <div className="card" style={{ marginBottom: '20px' }} ref={tableSectionRef}>
         <div className="card-header">
           <div className="card-title">Leads Allotted to You</div>
-          <span className="badge badge-primary">{headAllottedLeads.length} leads</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {/* Active card filter badges */}
+            {activeFilters.map((filter, index) => (
+              <div 
+                key={`${filter.type}-${filter.value}-${index}`}
+                className="flex items-center gap-1.5 px-3 py-1 bg-indigo-50 border border-indigo-200 rounded-md text-sm text-indigo-700 font-medium"
+              >
+                <span>{filter.label}</span>
+                <button
+                  onClick={() => {
+                    setActiveFilters(activeFilters.filter((_, i) => i !== index));
+                    setPage(0);
+                  }}
+                  className="ml-1 text-indigo-400 hover:text-indigo-700 bg-transparent border-none cursor-pointer leading-none"
+                  title="Clear filter"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+            {/* Clear all filters button */}
+            {activeFilters.length > 0 && (
+              <button
+                onClick={() => {
+                  setActiveFilters([]);
+                  setPage(0);
+                }}
+                className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 rounded border border-gray-300 cursor-pointer"
+                title="Clear all filters"
+              >
+                Clear All
+              </button>
+            )}
+            <span className="badge badge-primary">{headAllottedLeads.length} leads</span>
+          </div>
         </div>
         <ReusableTable
           columns={leadColumns}
           data={headAllottedLeads}
-          onView={(lead) => navTo('lead-detail', { id: lead.id })}
+          isServerSide={true}
+          totalElements={totalElements}
+          totalPages={totalPages}
+          currentPage={page + 1}
+          rowsPerPage={size}
+          onPageChange={(newPage) => setPage(newPage - 1)}
+          onRowsPerPageChange={(newSize) => {
+            setSize(newSize);
+            setPage(0);
+          }}
+          sortBy={sortBy}
+          sortDirection={sortDirection}
+          onSort={handleSort}
+          onView={(lead) => {
+            const leadId = lead.id || lead.leadId;
+            navTo('lead-detail', { id: leadId });
+          }}
+          emptyMessage={loading ? "Loading..." : "No leads match your filters."}
         />
       </div>
 
@@ -380,9 +554,10 @@ const HeadDashboard = () => {
                   }}
                 >
                   <option value="">Choose a caller...</option>
-                  {counselors.map(c => (
-                    <option key={c.name} value={c.name}>{c.name} ({c.pending} pending)</option>
-                  ))}
+                  {/* TODO: Add real counselor data from API */}
+                  <option value="Caller 1">Caller 1</option>
+                  <option value="Caller 2">Caller 2</option>
+                  <option value="Caller 3">Caller 3</option>
                 </select>
               </div>
               <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>

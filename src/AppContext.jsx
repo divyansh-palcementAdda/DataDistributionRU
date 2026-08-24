@@ -124,7 +124,7 @@ useEffect(() => {
     }
   };
 
-  const navTo = (page) => {
+  const navTo = (page, params = {}) => {
     setCurrentPage(page);
     setIsSidebarOpen(false);
     // Navigate to the route path. Assumes page names match routes.
@@ -134,6 +134,8 @@ useEffect(() => {
       navigate('/callers-dashboard');
     } else if (page === 'head-dashboard') {
       navigate('/head-dashboard');
+    } else if (page === 'lead-detail' && params.id) {
+      navigate(`/lead-detail/${params.id}`);
     } else {
       navigate(`/${page}`);
     }

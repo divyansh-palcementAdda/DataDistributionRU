@@ -1,5 +1,6 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import { leads, followups, statusConfig } from '../../mockData';
+import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import { leads, statusConfig } from '../../mockData';
+import { getAllLeads } from '../../Services/lead/leadService';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -84,6 +85,21 @@ const CallersDashboard = () => {
   const [leadSourceData, setLeadSourceData] = useState([]);
   const [gradWiseData, setGradWiseData] = useState([]);
   const [boardWiseData, setBoardWiseData] = useState([]);
+  
+  // API State for leads table
+  const [leadsData, setLeadsData] = useState([]);
+  const [allLeadsData, setAllLeadsData] = useState([]);
+  const [activeFilters, setActiveFilters] = useState([]);
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(10);
+  const [totalElements, setTotalElements] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [sortBy, setSortBy] = useState('createdAt');
+  const [sortDirection, setSortDirection] = useState('desc');
+  
+  // Ref for table section
+  const tableSectionRef = useRef(null);
 
   // Fetch lead source data from API
   useEffect(() => {
@@ -151,29 +167,94 @@ const CallersDashboard = () => {
     fetchBoardWiseData();
   }, []);
 
-  // Filter leads allotted to this caller
-  const myLeads = useMemo(() => {
-    return leads.filter(lead => lead.counselor === currentCaller);
-  }, [leads, currentCaller]);
+  // Fetch all leads for stats
+  const fetchAllLeads = useCallback(async () => {
+    try {
+      const params = {
+        page: 0,
+        size: 1000,
+      };
+      const res = await getAllLeads(params);
+      if (res?.data?.success) {
+        const content = res.data.data.content;
+        setAllLeadsData(content);
+      }
+    } catch (error) {
+      console.error("Failed to fetch all leads", error);
+    }
+  }, []);
 
-  // Filter follow-ups for this caller
-  const myFollowups = useMemo(() => {
-    return followups.filter(f => f.counselor === currentCaller);
-  }, [followups, currentCaller]);
+  // Fetch leads from API for table (caller's leads with filtering)
+  const fetchLeads = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = {
+        page: page,
+        size: size,
+        sortBy: sortBy || undefined,
+        sortDirection: sortDirection || undefined,
+        // Filter for leads allotted to current caller
+        assignedTo: currentCaller,
+      };
+      
+      // Add filters based on activeFilters array
+      activeFilters.forEach(filter => {
+        switch (filter.type) {
+          case 'leadStatus':
+            params.statusId = filter.value;
+            break;
+          case 'board':
+            params.boardId = filter.value;
+            break;
+          case 'grade':
+            params.gradeId = filter.value;
+            break;
+          case 'courseType':
+            params.courseTypeId = filter.value;
+            break;
+          case 'leadSource':
+            params.leadSourceId = filter.value;
+            break;
+          default:
+            break;
+        }
+      });
+      
+      const res = await getAllLeads(params);
+      if (res?.data?.success) {
+        const content = res.data.data.content;
+        setLeadsData(content);
+        setTotalElements(res.data.data.totalElements);
+        setTotalPages(res.data.data.totalPages);
+      }
+    } catch (error) {
+      console.error("Failed to fetch leads", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [page, size, sortBy, sortDirection, activeFilters, currentCaller]);
+
+  useEffect(() => {
+    fetchAllLeads();
+    fetchLeads();
+  }, [fetchAllLeads, fetchLeads]);
+
+  // Filter leads allotted to this caller (from API data)
+  const myLeads = leadsData;
 
   // Data for reusable cards
   const systemCardsData = useMemo(() => {
     return {
-      totalDataInSystem: myLeads.length,
-      totalSourceOfData: [...new Set(myLeads.map(l => l.source?.name))].length,
+      totalDataInSystem: allLeadsData.length,
+      totalSourceOfData: [...new Set(allLeadsData.map(l => l.source?.name))].length,
     };
-  }, [myLeads]);
+  }, [allLeadsData]);
 
   const calculatedStatCards = useMemo(() => {
     const allotted = myLeads.length;
-    const connected = myLeads.filter(l => l.status === 'connected').length;
-    const registered = myLeads.filter(l => l.status === 'registered').length;
-    const pendingFollowups = myFollowups.filter(f => f.status === 'today').length;
+    const connected = myLeads.filter(l => l.currentStatus === 'connected' || l.currentStatus === 'CONNECTED').length;
+    const registered = myLeads.filter(l => l.currentStatus === 'registered' || l.currentStatus === 'REGISTERED').length;
+    const pendingFollowups = 0; // Placeholder since follow-ups removed
 
     return statCards.map(card => {
       switch (card.label) {
@@ -184,14 +265,16 @@ const CallersDashboard = () => {
         default: return card;
       }
     });
-  }, [myLeads, myFollowups]);
+  }, [myLeads]);
 
   // Status distribution chart for caller's leads
   const statusChartData = useMemo(() => {
     const statusCounts = {};
     myLeads.forEach(lead => {
-      const status = lead.status || 'raw';
-      statusCounts[status] = (statusCounts[status] || 0) + 1;
+      const status = lead.currentStatus || 'raw';
+      // Handle both string and object status
+      const statusKey = typeof status === 'object' ? status?.code || status?.name || 'raw' : status;
+      statusCounts[statusKey] = (statusCounts[statusKey] || 0) + 1;
     });
 
     const labels = Object.keys(statusCounts).map(s => statusConfig[s]?.label || s);
@@ -223,18 +306,53 @@ const CallersDashboard = () => {
 
   // Table columns for caller's leads
   const leadColumns = [
-    { key: 'name', header: 'Lead Name', render: (value) => (typeof value === "object" && value !== null ? value?.name || value?.fullName || "—" : value || "—") },
-    { key: 'phone', header: 'Phone', render: (value) => (typeof value === "object" && value !== null ? value?.phone || value?.mobileNo || "—" : value || "—") },
+    { 
+      key: 'name', 
+      header: 'Lead Name', 
+      render: (value, row) => {
+        const nameValue = value || row.fullName;
+        if (typeof nameValue === 'object' && nameValue !== null) {
+          return nameValue?.name || nameValue?.fullName || nameValue?.firstName || '—';
+        }
+        return nameValue || '—';
+      }
+    },
+    { 
+      key: 'phone', 
+      header: 'Phone', 
+      render: (value, row) => {
+        const phoneValue = value || row.phoneNumber;
+        if (typeof phoneValue === 'object' && phoneValue !== null) {
+          return phoneValue?.phone || phoneValue?.mobileNo || '—';
+        }
+        return phoneValue || '—';
+      }
+    },
     { 
       key: 'course', 
       header: 'Course',
-      render: (value) => value?.courseName || value || '—'
+      render: (value, row) => {
+        const courseValue = value || row.courseInterested;
+        if (typeof courseValue === 'object' && courseValue !== null) {
+          return courseValue?.courseName || courseValue?.name || '—';
+        }
+        return courseValue || '—';
+      }
     },
     { 
       key: 'status', 
       header: 'Status',
-      render: (value) => {
-        const config = statusConfig[value] || { label: value, color: '#64748B' };
+      render: (value, row) => {
+        const statusValue = value || row.currentStatus;
+        let displayStatus = '—';
+        
+        if (typeof statusValue === 'object' && statusValue !== null) {
+          displayStatus = statusValue?.name || statusValue?.code || '—';
+        } else if (typeof statusValue === 'string') {
+          displayStatus = statusValue;
+        }
+        
+        const config = statusConfig[displayStatus] || { label: displayStatus, color: '#64748B' };
         return (
           <span className="badge" style={{
             background: `${config.color}15`,
@@ -252,46 +370,60 @@ const CallersDashboard = () => {
     { 
       key: 'source', 
       header: 'Source',
-      render: (value) => value?.name || '—'
+      render: (value, row) => {
+        const sourceValue = value || row.source;
+        if (typeof sourceValue === 'object' && sourceValue !== null) {
+          return sourceValue?.name || '—';
+        }
+        return sourceValue || '—';
+      }
     },
     { 
       key: 'followup', 
       header: 'Follow-up',
-      render: (value) => value || '—'
+      render: (value, row) => row.nextFollowUpDate || '—'
     },
   ];
 
-  // Table columns for follow-ups
-  const followupColumns = [
-    { key: 'name', header: 'Lead Name', render: (value) => (typeof value === "object" && value !== null ? value?.name || value?.fullName || "—" : value || "—") },
-    { 
-      key: 'course', 
-      header: 'Course',
-      render: (value) => value?.courseName || value || '—'
-    },
-    { key: 'time', header: 'Scheduled Time', render: (value) => (typeof value === "object" && value !== null ? value?.time || "—" : value || "—") },
-    { key: 'type', header: 'Type', render: (value) => (typeof value === "object" && value !== null ? value?.type || value?.name || "—" : value || "—") },
-    { 
-      key: 'status', 
-      header: 'Status',
-      render: (value) => {
-        const isToday = value === 'today';
-        const isMissed = value === 'missed';
-        return (
-          <span className="badge" style={{
-            background: isToday ? 'var(--success-light)' : 'var(--danger-light)',
-            color: isToday ? 'var(--success)' : 'var(--danger)',
-            padding: '4px 8px',
-            borderRadius: '6px',
-            fontSize: '11px',
-            fontWeight: '600',
-          }}>
-            {isToday ? 'Today' : 'Missed'}
-          </span>
-        );
-      }
-    },
-  ];
+  const handleCardClick = (cardInfo) => {
+    // Toggle: same card click kare toh filter clear ho jaye
+    const existingFilterIndex = activeFilters.findIndex(
+      f => f.type === cardInfo.type && f.value === cardInfo.value
+    );
+    
+    if (existingFilterIndex !== -1) {
+      // Remove filter if already exists
+      setActiveFilters(activeFilters.filter((_, index) => index !== existingFilterIndex));
+    } else {
+      // Remove existing filter of same type (single filter per type)
+      setActiveFilters(
+        activeFilters.filter(f => f.type !== cardInfo.type).concat(cardInfo)
+      );
+    }
+    
+    setPage(0); // filter change hone par page reset
+    
+    // Scroll to table section smoothly
+    if (tableSectionRef.current) {
+      tableSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const handleSort = (columnKey, direction) => {
+    // Map frontend column keys to backend field names (using camelCase from API response)
+    const fieldMapping = {
+      'name': 'fullName',
+      'phone': 'phoneNumber',
+      'course': 'courseInterested',
+      'status': 'currentStatus',
+      'source': 'source.name',
+      'followup': 'nextFollowUpDate',
+    };
+    
+    const backendField = fieldMapping[columnKey] || columnKey;
+    setSortBy(backendField);
+    setSortDirection(direction);
+  };
 
   return (
     <div>
@@ -328,15 +460,33 @@ const CallersDashboard = () => {
       </div> */}
 
       {/* ── Reusable Dashboard Cards ── */}
-      <LeadCards />
-      <LeadSource data={leadSourceData} />
+      <LeadCards 
+        onCardClick={handleCardClick}
+        activeFilters={activeFilters}
+      />
+      <LeadSource 
+        data={leadSourceData}
+        onCardClick={handleCardClick}
+        activeFilters={activeFilters}
+      />
       <SystemCards data={systemCardsData} />
-      <CategorywiseCard />
-      <BoardWiseCard data={boardWiseData} />
-      <GradWiseCard data={gradWiseData} />
+      <CategorywiseCard 
+        onCardClick={handleCardClick}
+        activeFilters={activeFilters}
+      />
+      <BoardWiseCard 
+        data={boardWiseData}
+        onCardClick={handleCardClick}
+        activeFilters={activeFilters}
+      />
+      <GradWiseCard 
+        data={gradWiseData}
+        onCardClick={handleCardClick}
+        activeFilters={activeFilters}
+      />
 
       {/* ── Charts Row ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', marginBottom: '20px' }}>
         {/* Status Distribution Chart */}
         <div className="card">
           <div className="card-header">
@@ -349,66 +499,69 @@ const CallersDashboard = () => {
             <Doughnut data={statusChartData} options={statusChartOptions} />
           </div>
         </div>
-
-        {/* Performance Summary */}
-        <div className="card">
-          <div className="card-header">
-            <div className="card-title">Performance Summary</div>
-          </div>
-          <div style={{ padding: '16px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <div style={{ textAlign: 'center', padding: '16px', background: 'var(--gray-50)', borderRadius: '8px' }}>
-                <div style={{ fontSize: '28px', fontWeight: '700', color: 'var(--primary)' }}>
-                  {myLeads.length > 0 ? Math.round((myLeads.filter(l => l.status === 'connected').length / myLeads.length) * 100) : 0}%
-                </div>
-                <div style={{ fontSize: '12px', color: 'var(--gray-600)', marginTop: '4px' }}>Connection Rate</div>
-              </div>
-              <div style={{ textAlign: 'center', padding: '16px', background: 'var(--gray-50)', borderRadius: '8px' }}>
-                <div style={{ fontSize: '28px', fontWeight: '700', color: 'var(--success)' }}>
-                  {myLeads.length > 0 ? Math.round((myLeads.filter(l => l.status === 'registered').length / myLeads.length) * 100) : 0}%
-                </div>
-                <div style={{ fontSize: '12px', color: 'var(--gray-600)', marginTop: '4px' }}>Conversion Rate</div>
-              </div>
-              <div style={{ textAlign: 'center', padding: '16px', background: 'var(--gray-50)', borderRadius: '8px' }}>
-                <div style={{ fontSize: '28px', fontWeight: '700', color: 'var(--warning)' }}>
-                  {myFollowups.filter(f => f.status === 'today').length}
-                </div>
-                <div style={{ fontSize: '12px', color: 'var(--gray-600)', marginTop: '4px' }}>Today's Follow-ups</div>
-              </div>
-              <div style={{ textAlign: 'center', padding: '16px', background: 'var(--gray-50)', borderRadius: '8px' }}>
-                <div style={{ fontSize: '28px', fontWeight: '700', color: 'var(--danger)' }}>
-                  {myFollowups.filter(f => f.status === 'missed').length}
-                </div>
-                <div style={{ fontSize: '12px', color: 'var(--gray-600)', marginTop: '4px' }}>Missed Follow-ups</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Today's Follow-ups Table ── */}
-      <div className="card" style={{ marginBottom: '20px' }}>
-        <div className="card-header">
-          <div className="card-title">Today's Follow-ups</div>
-          <span className="badge badge-warning">{myFollowups.filter(f => f.status === 'today').length} pending</span>
-        </div>
-        <ReusableTable
-          columns={followupColumns}
-          data={myFollowups.filter(f => f.status === 'today')}
-          emptyMessage="No follow-ups scheduled for today"
-        />
       </div>
 
       {/* ── My Allotted Leads Table ── */}
-      <div className="card">
+      <div className="card" ref={tableSectionRef}>
         <div className="card-header">
           <div className="card-title">My Allotted Leads</div>
-          <span className="badge badge-primary">{myLeads.length} leads</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {/* Active card filter badges */}
+            {activeFilters.map((filter, index) => (
+              <div 
+                key={`${filter.type}-${filter.value}-${index}`}
+                className="flex items-center gap-1.5 px-3 py-1 bg-indigo-50 border border-indigo-200 rounded-md text-sm text-indigo-700 font-medium"
+              >
+                <span>{filter.label}</span>
+                <button
+                  onClick={() => {
+                    setActiveFilters(activeFilters.filter((_, i) => i !== index));
+                    setPage(0);
+                  }}
+                  className="ml-1 text-indigo-400 hover:text-indigo-700 bg-transparent border-none cursor-pointer leading-none"
+                  title="Clear filter"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+            {/* Clear all filters button */}
+            {activeFilters.length > 0 && (
+              <button
+                onClick={() => {
+                  setActiveFilters([]);
+                  setPage(0);
+                }}
+                className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 rounded border border-gray-300 cursor-pointer"
+                title="Clear all filters"
+              >
+                Clear All
+              </button>
+            )}
+            <span className="badge badge-primary">{myLeads.length} leads</span>
+          </div>
         </div>
         <ReusableTable
           columns={leadColumns}
           data={myLeads}
-          onView={(lead) => navTo('lead-detail', { id: lead.id })}
+          isServerSide={true}
+          totalElements={totalElements}
+          totalPages={totalPages}
+          currentPage={page + 1}
+          rowsPerPage={size}
+          onPageChange={(newPage) => setPage(newPage - 1)}
+          onRowsPerPageChange={(newSize) => {
+            setSize(newSize);
+            setPage(0);
+          }}
+          sortBy={sortBy}
+          sortDirection={sortDirection}
+          onSort={handleSort}
+          onView={(lead) => {
+            const leadId = lead.id || lead.leadId;
+            navTo('lead-detail', { id: leadId });
+          }}
+          emptyMessage={loading ? "Loading..." : "No leads match your filters."}
         />
       </div>
     </div>

@@ -268,6 +268,20 @@ const FollowUps = () => {
           onChange={handleSearchInput}
           style={{ maxWidth: "250px" }}
         />
+        <select
+          className="form-control"
+          value={activeTab}
+          onChange={(e) => {
+            setActiveTab(e.target.value);
+            setPage(0);
+          }}
+          style={{ maxWidth: "150px" }}
+        >
+          <option value="ALL">ALL</option>
+          <option value="PENDING">PENDING</option>
+          <option value="COMPLETED">COMPLETED</option>
+          <option value="MISSED">MISSED</option>
+        </select>
       </div>
 
       {/* Table */}

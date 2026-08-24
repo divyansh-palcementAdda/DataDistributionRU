@@ -94,7 +94,7 @@ const AddCourseModel = ({
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-blue-600">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
             </svg>
-            {initialData ? 'Edit Course' : 'Add New Course'}
+            {initialData ? 'Edit Category' : 'Add New Category'}
           </div>
           <CustomButton variant="ghost" className="btn-icon" onClick={onClose} disabled={isLoading || isSubmitting}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -108,9 +108,9 @@ const AddCourseModel = ({
           <form id="addCourseForm" onSubmit={handleSubmit} className="flex flex-col gap-4">
             
             <CustomInput
-              label="Course Name"
+              label="Category"
               name="name"
-              placeholder="Enter course name"
+              placeholder="Enter Category name"
               value={formData.name}
               onChange={handleChange}
               error={errors.name}
@@ -120,7 +120,7 @@ const AddCourseModel = ({
               <label className="text-sm font-semibold text-gray-700 ml-1">Description</label>
               <textarea
                 name="description"
-                placeholder="Enter course description"
+                placeholder="Enter Category description"
                 value={formData.description}
                 onChange={handleChange}
                 rows={3}
@@ -162,7 +162,7 @@ const AddCourseModel = ({
             variant="primary"
             disabled={isLoading || isSubmitting}
           >
-            {isSubmitting || isLoading ? 'Saving...' : 'Save Course'}
+            {isSubmitting || isLoading ? 'Saving...' : 'Save Category'}
           </CustomButton>
         </div>
       </div>

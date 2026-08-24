@@ -18,6 +18,8 @@ const ApiRoutes = {
         infoPanel: '/api/leads/{leadId}/info-panel',
         sendWhatsApp: '/api/leads/{leadId}/course-template/whatsapp',
         sendEmail: '/api/leads/{leadId}/course-template/email',
+        reassign: '/api/leads/reassign',
+        reassignDistribute: '/api/leads/reassign/distribute',
     },
     Lead_Source: {
         create: '/api/lead-sources',
@@ -96,7 +98,9 @@ const ApiRoutes = {
 
     FollowUp: {
         getAllFollowUps: "/api/followups",
-
+        getByUser: "/api/followups/user/{userId}",
+        reassign: "/api/follow-ups/reassign",
+        reassignDistribute: "/api/follow-ups/reassign/distribute",
     },
 
     Grads: {
@@ -123,6 +127,7 @@ const ApiRoutes = {
         update: '/api/course-templates/{id}',
         delete: '/api/course-templates/{id}',
         getByCourseId: '/api/courses/{courseId}/templates',
+        getById: '/api/course-templates/{id}',
     },
 
     USP: {
@@ -144,6 +149,11 @@ const ApiRoutes = {
         lowDataUsers: '/api/dashboard/low-data-users',
         usersNotLoggedIn: '/api/dashboard/users-not-logged-in',
         followupUsersNotLoggedIn11am: '/api/dashboard/followup-users-not-logged-in-11am',
+    },
+
+    Distribution: {
+        preview: '/api/leads/distribute/preview',
+        distribute: '/api/leads/distribute',
     },
 
     Department: {

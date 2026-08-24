@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useAppContext } from "../AppContext";
 import ReusableTable from "../component/reusable/table";
 import { getAllFollowups } from "../Services/followUp/followService";
 import FollowupFormModal from "../component/reusable/FollowupFormModal";
+import LeadCards from "../component/reusable/DashBoards/leadCards";
+import ScheduleModal from "../component/reusable/Leads/scheduleModel";
 
 const formatFollowUpDate = (value) => {
   if (!value) return "-";
@@ -32,83 +34,6 @@ const getStatusClass = (value) => {
   }
 };
 
-/* ── Stat Cards data ── */
-const followupStatCards = [
-  {
-    color: 'orange',
-    label: 'Form Follow up',
-    value: '0',
-    iconBg: '#FFF7ED',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EA580C" strokeWidth="2">
-        <rect x="3" y="4" width="18" height="18" rx="2" />
-        <path d="M16 2v4M8 2v4M3 10h18" />
-        <path d="M8 14h.01M12 14h.01M16 14h.01" />
-      </svg>
-    ),
-  },
-  {
-    color: 'blue',
-    label: 'Counselling Follow-up',
-    value: '0',
-
-    iconBg: 'var(--primary-light)',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-      </svg>
-    ),
-  },
-  {
-    color: 'green',
-    label: 'Registered',
-    value: '0',
-    iconBg: 'var(--success-light)',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--success)" strokeWidth="2">
-        <polyline points="20 6 9 17 4 12" />
-      </svg>
-    ),
-  },
-  {
-    color: 'orange',
-    label: 'Continue Form Follow-up',
-    value: '0',
-    iconBg: '#FFF7ED',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EA580C" strokeWidth="2">
-        <path d="M17 14V2H7v12l5 5 5-5z" />
-        <path d="M9 18l-6 6" />
-        <path d="M15 18l6 6" />
-      </svg>
-    ),
-  },
-  {
-    color: 'purple',
-    label: 'Interested Form Follow-up',
-    value: '0',
-    iconBg: '#F3E8FF',
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" strokeWidth="2">
-        <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71" />
-        <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
-      </svg>
-    ),
-  },
-];
-
-/* ── Arrow icons ── */
-const ArrowUp = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-    <polyline points="18 15 12 9 6 15" />
-  </svg>
-);
-const ArrowDown = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-    <polyline points="6 9 12 15 18 9" />
-  </svg>
-);
-
 const FollowUps = () => {
   const { showToast } = useAppContext();
 
@@ -128,29 +53,17 @@ const FollowUps = () => {
   const [searchInput, setSearchInput] = useState("");
 
   const [isFollowupModalOpen, setIsFollowupModalOpen] = useState(false);
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [selectedFollowup, setSelectedFollowup] = useState(null);
   const [activeTab, setActiveTab] = useState("PENDING");
 
   const debounceRef = useRef(null);
 
-  // Calculate stat cards based on followup data
-  const calculatedStatCards = useMemo(() => {
-    const formFollowUp = data.filter(d => d.status === 'formfollowup' || d.status === 'FORMFOLLOWUP' || d.followUpType === 'formfollowup').length;
-    const counsellingFollowUp = data.filter(d => d.status === 'counsellingfollowup' || d.status === 'COUNSELLINGFOLLOWUP' || d.followUpType === 'counsellingfollowup').length;
-    const registered = data.filter(d => d.status === 'registered' || d.status === 'REGISTERED' || d.followUpType === 'registered').length;
-    const continueFormFollowUp = data.filter(d => d.status === 'continueformfollowup' || d.status === 'CONTINUEFORMFOLLOWUP' || d.followUpType === 'continueformfollowup').length;
-    const interestedFollowUpNotInterested = data.filter(d => d.status === 'interestedfollowupnotinterested' || d.status === 'INTERESTEDFOLLOWUPNOTINTERESTED' || d.followUpType === 'interestedfollowupnotinterested').length;
-
-    return followupStatCards.map(card => {
-      switch (card.label) {
-        case 'Form Follow up': return { ...card, value: formFollowUp.toLocaleString() };
-        case 'Counselling Follow-up': return { ...card, value: counsellingFollowUp.toLocaleString() };
-        case 'Registered': return { ...card, value: registered.toLocaleString() };
-        case 'Continue Form Follow-up': return { ...card, value: continueFormFollowUp.toLocaleString() };
-        case 'Interested Form Follow-up': return { ...card, value: interestedFollowUpNotInterested.toLocaleString() };
-        default: return card;
-      }
-    });
-  }, [data]);
+  const handleCardClick = (filter) => {
+    if (filter.type === 'leadStatus') {
+      setActiveTab(filter.value);
+    }
+  };
 
   const handleSearchInput = (e) => {
     const value = e.target.value;
@@ -171,6 +84,22 @@ const FollowUps = () => {
     setSortBy(column);
     setSortDirection(direction);
     setPage(0);
+  };
+
+  const handleReschedule = (row) => {
+    setSelectedFollowup(row);
+    setIsScheduleModalOpen(true);
+  };
+
+  const handleScheduleSubmit = async (payload) => {
+    try {
+      // Here you can add the API call to reschedule the followup
+      // For now, just showing a toast and refreshing data
+      showToast("Follow-up rescheduled successfully", "success");
+      fetchData();
+    } catch (error) {
+      showToast("Error rescheduling follow-up", "error");
+    }
   };
 
   const fetchData = useCallback(async () => {
@@ -283,9 +212,7 @@ const FollowUps = () => {
         <div className="flex gap-2">
           <button
             className="btn btn-sm btn-outline"
-            onClick={() =>
-              showToast("Rescheduled")
-            }
+            onClick={() => handleReschedule(row)}
           >
             Reschedule
           </button>
@@ -322,18 +249,7 @@ const FollowUps = () => {
       </div>
 
       {/* ── Stat Cards ── */}
-      <div className="stat-grid mb-5">
-        {calculatedStatCards.map((card) => (
-          <div key={card.label} className={`stat-card ${card.color}`}>
-            <div className="stat-label">{card.label}</div>
-            <div className="stat-value">{card.value}</div>
-          
-            <div className="stat-icon" style={{ background: card.iconBg }}>
-              {card.icon}
-            </div>
-          </div>
-        ))}
-      </div>
+      <LeadCards onCardClick={handleCardClick} />
 
       {/* Search */}
       <div
@@ -352,6 +268,20 @@ const FollowUps = () => {
           onChange={handleSearchInput}
           style={{ maxWidth: "250px" }}
         />
+        <select
+          className="form-control"
+          value={activeTab}
+          onChange={(e) => {
+            setActiveTab(e.target.value);
+            setPage(0);
+          }}
+          style={{ maxWidth: "150px" }}
+        >
+          <option value="ALL">ALL</option>
+          <option value="PENDING">PENDING</option>
+          <option value="COMPLETED">COMPLETED</option>
+          <option value="MISSED">MISSED</option>
+        </select>
       </div>
 
       {/* Table */}
@@ -396,6 +326,15 @@ const FollowUps = () => {
           setIsFollowupModalOpen(false);
           fetchData();
         }}
+      />
+
+      <ScheduleModal
+        isOpen={isScheduleModalOpen}
+        onClose={() => {
+          setIsScheduleModalOpen(false);
+          setSelectedFollowup(null);
+        }}
+        onSubmit={handleScheduleSubmit}
       />
     </div>
   );

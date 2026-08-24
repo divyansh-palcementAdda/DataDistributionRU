@@ -182,48 +182,48 @@ const AddUserModal = ({ isOpen, onClose, onSuccess, initialData }) => {
                 <div className="modal-body">
                     <form id="addUserForm" onSubmit={handleSubmit} className="flex flex-col gap-4">
                         <div className="grid grid-cols-2 gap-4">
-                            <CustomInput 
-                                label="First Name" 
-                                value={formData.firstName} 
-                                onChange={(e) => handleChange('firstName', e.target.value)} 
-                                required 
+                            <CustomInput
+                                label="First Name"
+                                value={formData.firstName}
+                                onChange={(e) => handleChange('firstName', e.target.value)}
+                                required
                             />
-                            <CustomInput 
-                                label="Last Name" 
-                                value={formData.lastName} 
-                                onChange={(e) => handleChange('lastName', e.target.value)} 
-                                required 
-                            />
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-4">
-                            <CustomInput 
-                                label="Email" 
-                                type="email" 
-                                value={formData.email} 
-                                onChange={(e) => handleChange('email', e.target.value)} 
-                                required 
-                            />
-                            <CustomInput 
-                                label="Phone" 
-                                value={formData.phone} 
-                                onChange={(e) => handleChange('phone', e.target.value)} 
+                            <CustomInput
+                                label="Last Name"
+                                value={formData.lastName}
+                                onChange={(e) => handleChange('lastName', e.target.value)}
+                                required
                             />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
-                            <CustomInput 
-                                label="Username" 
-                                value={formData.username} 
-                                onChange={(e) => handleChange('username', e.target.value)} 
-                                required 
+                            <CustomInput
+                                label="Email"
+                                type="email"
+                                value={formData.email}
+                                onChange={(e) => handleChange('email', e.target.value)}
+                                required
+                            />
+                            <CustomInput
+                                label="Phone"
+                                value={formData.phone}
+                                onChange={(e) => handleChange('phone', e.target.value)}
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <CustomInput
+                                label="Username"
+                                value={formData.username}
+                                onChange={(e) => handleChange('username', e.target.value)}
+                                required
                             />
                             <div className="flex flex-col gap-1.5">
                                 <label className="text-sm font-semibold text-gray-700 ml-1">
                                     Password {isEditMode && <span className="text-gray-400 font-normal">(leave blank to keep current)</span>}
                                 </label>
                                 <div className="relative">
-                                    <input 
+                                    <input
                                         type={showPassword ? "text" : "password"}
                                         value={formData.password}
                                         onChange={(e) => handleChange('password', e.target.value)}
@@ -272,7 +272,7 @@ const AddUserModal = ({ isOpen, onClose, onSuccess, initialData }) => {
                             </div>
                             <div className="flex flex-col gap-1.5">
                                 <label className="text-sm font-semibold text-gray-700 ml-1">Role</label>
-                                <select 
+                                <select
                                     className="px-4 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500"
                                     value={formData.roles[0]}
                                     onChange={(e) => handleRoleChange(e.target.value)}
@@ -294,20 +294,20 @@ const AddUserModal = ({ isOpen, onClose, onSuccess, initialData }) => {
 
                         <div className="flex flex-col gap-3 mt-2 p-4 bg-gray-50 rounded-lg border border-gray-100">
                             <div className="text-sm font-semibold text-gray-700 mb-1">Account Status</div>
-                            <Toggle 
-                                label="Active Account" 
-                                checked={formData.active} 
-                                onChange={(val) => handleChange('active', val)} 
+                            <Toggle
+                                label="Active Account"
+                                checked={formData.active}
+                                onChange={(val) => handleChange('active', val)}
                             />
-                            <Toggle 
-                                label="Account Locked" 
-                                checked={formData.locked} 
-                                onChange={(val) => handleChange('locked', val)} 
+                            <Toggle
+                                label="Account Locked"
+                                checked={formData.locked}
+                                onChange={(val) => handleChange('locked', val)}
                             />
-                            <Toggle 
-                                label="Email Verified" 
-                                checked={formData.emailVerified} 
-                                onChange={(val) => handleChange('emailVerified', val)} 
+                            <Toggle
+                                label="Email Verified"
+                                checked={formData.emailVerified}
+                                onChange={(val) => handleChange('emailVerified', val)}
                             />
                         </div>
                     </form>

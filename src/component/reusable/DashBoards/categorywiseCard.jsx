@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getCourseTypesBreakdown } from '../../../Services/cards/cardService';
 
-const CategorywiseCard = ({ data, onCardClick, selectedCard }) => {
+const CategorywiseCard = ({ data, onCardClick, activeFilters = [] }) => {
   // API returns an array: [{id, name, code, count, percentage}, ...]
   const [courseTypesData, setCourseTypesData] = useState([]);
 
@@ -84,7 +84,7 @@ const CategorywiseCard = ({ data, onCardClick, selectedCard }) => {
             const iconStroke = getIconStroke(color);
             const label = item.name || item.code || `Category ${index + 1}`;
             const count = typeof item.count === 'number' ? item.count.toLocaleString() : item.count ?? '0';
-            const isSelected = selectedCard?.type === 'courseType' && (selectedCard?.value === item.code || selectedCard?.value === item.id);
+            const isSelected = activeFilters.some(f => f.type === 'courseType' && (f.value === item.code || f.value === item.id));
 
             return (
             <div
@@ -101,6 +101,8 @@ const CategorywiseCard = ({ data, onCardClick, selectedCard }) => {
                 transition: 'all 0.3s ease',
                 cursor: 'pointer',
                 height: '100px',
+                position: 'relative',
+                overflow: 'hidden',
               }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.transform = 'translateY(-4px)';
@@ -111,6 +113,26 @@ const CategorywiseCard = ({ data, onCardClick, selectedCard }) => {
                 if (!isSelected) e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.08)';
               }}
             >
+              {/* Active indicator badge */}
+              {isSelected && (
+                <div style={{
+                  position: 'absolute',
+                  top: '6px',
+                  right: '6px',
+                  background: '#6366f1',
+                  borderRadius: '50%',
+                  width: '18px',
+                  height: '18px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 1,
+                }}>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+              )}
               <div style={{
                 display: 'flex',
                 alignItems: 'center',

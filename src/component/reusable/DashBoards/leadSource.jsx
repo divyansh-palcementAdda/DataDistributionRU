@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { getLeadSourceBreakdown } from '../../../Services/cards/cardService';
 
 // Generic icon for lead source items
 const SourceIcon = () => (
@@ -19,11 +20,36 @@ const COLORS = [
   { iconBg: '#FCE7F3',              iconStroke: '#DB2777' },
 ];
 
-const LeadSource = ({ data = [], onCardClick, selectedCard }) => {
+const LeadSource = ({ data, onCardClick, activeFilters = [] }) => {
+  // API returns an array: [{id, name, code, count, percentage}, ...]
+  const [sourceData, setSourceData] = useState([]);
+
+  useEffect(() => {
+    if (data !== undefined) {
+      const payload = data ?? [];
+      setSourceData(Array.isArray(payload) ? payload : Object.values(payload));
+      return;
+    }
+
+    const fetchSourceData = async () => {
+      try {
+        const filterRequest = {};
+        const response = await getLeadSourceBreakdown({ filterRequest: JSON.stringify(filterRequest) });
+        const payload = response?.data?.data ?? response?.data ?? response ?? [];
+        // Normalise: always store as an array
+        setSourceData(Array.isArray(payload) ? payload : Object.values(payload));
+      } catch (error) {
+        console.error('Error fetching lead source breakdown:', error);
+      }
+    };
+
+    fetchSourceData();
+  }, [data]);
+
   // Accept both array (new) and object (legacy) formats
-  const items = Array.isArray(data)
-    ? data
-    : Object.entries(data)
+  const items = Array.isArray(sourceData)
+    ? sourceData
+    : Object.entries(sourceData)
         .filter(([, val]) => val > 0)
         .map(([key, val], i) => ({ id: key, code: key, name: key, count: val, percentage: 0 }));
 
@@ -56,7 +82,7 @@ const LeadSource = ({ data = [], onCardClick, selectedCard }) => {
         <div className="lead-source-responsive-grid" style={gridStyle}>
           {items.map((item, index) => {
             const clr = COLORS[index % COLORS.length];
-            const isSelected = selectedCard?.type === 'leadSource' && selectedCard?.value === item.id;
+            const isSelected = activeFilters.some(f => f.type === 'leadSource' && f.value === item.id);
             return (
               <div
                 key={item.id || item.code}

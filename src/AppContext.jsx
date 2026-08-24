@@ -10,6 +10,7 @@ export const AppProvider = ({ children }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isAddLeadModalOpen, setIsAddLeadModalOpen] = useState(false);
   const [editLeadData, setEditLeadData] = useState(null);
+  const [leadRefreshTrigger, setLeadRefreshTrigger] = useState(0);
   const location = useLocation();
   const [currentPage, setCurrentPage] = useState(() => {
     // Initialize currentPage based on current URL path
@@ -99,6 +100,10 @@ useEffect(() => {
     setEditLeadData(null);
   };
 
+  const triggerLeadRefresh = () => {
+    setLeadRefreshTrigger((prev) => prev + 1);
+  };
+
   const openAccessDeniedModal = () => {
     setIsAccessDeniedModalOpen(true);
   };
@@ -119,7 +124,7 @@ useEffect(() => {
     }
   };
 
-  const navTo = (page) => {
+  const navTo = (page, params = {}) => {
     setCurrentPage(page);
     setIsSidebarOpen(false);
     // Navigate to the route path. Assumes page names match routes.
@@ -129,6 +134,8 @@ useEffect(() => {
       navigate('/callers-dashboard');
     } else if (page === 'head-dashboard') {
       navigate('/head-dashboard');
+    } else if (page === 'lead-detail' && params.id) {
+      navigate(`/lead-detail/${params.id}`);
     } else {
       navigate(`/${page}`);
     }
@@ -175,6 +182,8 @@ useEffect(() => {
         handleAccessDeniedBackToDashboard,
         isSettingsExpanded,
         toggleSettingsExpanded,
+        leadRefreshTrigger,
+        triggerLeadRefresh,
       }}
     >
       {children}

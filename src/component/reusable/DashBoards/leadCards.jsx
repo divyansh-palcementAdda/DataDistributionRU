@@ -1,14 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { getLeadStatusBreakdown } from '../../../Services/cards/cardService';
 
-const LeadCards = ({ onCardClick, selectedCard }) => {
+const LeadCards = ({ onCardClick, activeFilters = [], courseTypeId, leadSourceId, boardId, gradeId, counselorId, departmentId }) => {
   const [leadData, setLeadData] = useState([]);
 
   useEffect(() => {
     const fetchLeadStatusData = async () => {
       try {
-        const filterRequest = {};
-        const response = await getLeadStatusBreakdown({ filterRequest: JSON.stringify(filterRequest) });
+        const params = {};
+        if (courseTypeId) params.courseTypeId = courseTypeId;
+        if (leadSourceId) params.leadSourceId = leadSourceId;
+        if (boardId) params.boardId = boardId;
+        if (gradeId) params.gradeId = gradeId;
+        if (counselorId) params.counselorId = counselorId;
+        if (departmentId) params.departmentId = departmentId;
+        const response = await getLeadStatusBreakdown(params);
         setLeadData(response.data?.data || []);
       } catch (error) {
         console.error('Error fetching lead status breakdown:', error);
@@ -16,7 +22,7 @@ const LeadCards = ({ onCardClick, selectedCard }) => {
     };
 
     fetchLeadStatusData();
-  }, []);
+  }, [courseTypeId, leadSourceId, boardId, gradeId, counselorId, departmentId]);
   // Responsive styles
   const gridStyle = {
     display: 'grid',
@@ -182,12 +188,12 @@ const LeadCards = ({ onCardClick, selectedCard }) => {
                 background: cardStyle.isHighlighted ? 'linear-gradient(135deg, #FFF9E6 0%, #FFFFFF 100%)' : '#ffffff',
                 borderRadius: '12px',
                 padding: cardStyle.isHighlighted ? '12px' : '12px',
-                boxShadow: selectedCard?.type === 'leadStatus' && selectedCard?.value === item.id
+                boxShadow: activeFilters.some(f => f.type === 'leadStatus' && f.value === item.id)
                   ? '0 0 0 2px #6366f1, 0 4px 16px rgba(99,102,241,0.18)'
                   : cardStyle.isHighlighted 
                     ? '0 4px 20px rgba(255, 215, 0, 0.3), 0 0 0 2px rgba(255, 215, 0, 0.5)' 
                     : '0 2px 8px rgba(0, 0, 0, 0.08)',
-                border: selectedCard?.type === 'leadStatus' && selectedCard?.value === item.id
+                border: activeFilters.some(f => f.type === 'leadStatus' && f.value === item.id)
                   ? '2px solid #6366f1'
                   : cardStyle.isHighlighted 
                     ? '2px solid #FFD700' 
@@ -206,7 +212,7 @@ const LeadCards = ({ onCardClick, selectedCard }) => {
               }}
             >
               {/* Active indicator badge */}
-              {selectedCard?.type === 'leadStatus' && selectedCard?.value === item.id && (
+              {activeFilters.some(f => f.type === 'leadStatus' && f.value === item.id) && (
                 <div style={{
                   position: 'absolute',
                   top: '6px',

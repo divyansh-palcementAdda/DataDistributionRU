@@ -128,3 +128,63 @@ export const sendLeadEmail = async (leadId, data) => {
         throw error;
     }
 };
+
+// Preview lead distribution — POST /api/leads/distribute/preview
+export const previewLeadDistribution = async (payload) => {
+    try {
+        const response = await axiosInstance.post(ApiRoutes.Distribution.preview, payload);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
+// Distribute leads — POST /api/leads/distribute
+export const distributeLeads = async (payload) => {
+    try {
+        const response = await axiosInstance.post(ApiRoutes.Distribution.distribute, payload);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
+// Reassign leads — POST /api/leads/reassign
+export const reassignLeads = async (payload) => {
+    try {
+        const response = await axiosInstance.post(ApiRoutes.Lead.reassign, payload);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
+// Reassign and distribute leads — POST /api/leads/reassign/distribute
+export const reassignDistributeLeads = async (payload) => {
+    try {
+        const response = await axiosInstance.post(ApiRoutes.Lead.reassignDistribute, payload);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
+// Reassign follow-ups — POST /api/follow-ups/reassign
+export const reassignFollowUps = async (payload) => {
+    try {
+        const response = await axiosInstance.post(ApiRoutes.FollowUp.reassign, payload);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
+// Reassign and distribute follow-ups — POST /api/follow-ups/reassign/distribute
+export const reassignDistributeFollowUps = async (payload) => {
+    try {
+        const response = await axiosInstance.post(ApiRoutes.FollowUp.reassignDistribute, payload);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};

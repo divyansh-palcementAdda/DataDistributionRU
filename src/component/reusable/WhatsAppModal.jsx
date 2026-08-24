@@ -1,15 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import CustomButton from './CustomButton';
+import { getCourseImages } from '../../Services/course/course';
+import { getCourseTemplatesByCourseId } from '../../Services/templateManagement/template';
+
+const BASE_URL = import.meta.env.VITE_BASE_URL || '';
 
 const WhatsAppModal = ({
   isOpen,
   onClose,
   studentData,
   leadId,
-  courses = [],
+  selectedCourse,
   onSend, // async (payload) => response
 }) => {
-  const [courseId, setCourseId] = useState('');
   const [templateId, setTemplateId] = useState('');
   const [imageId, setImageId] = useState('');
   const [recipientOverride, setRecipientOverride] = useState('');
@@ -17,17 +20,70 @@ const WhatsAppModal = ({
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [courseImages, setCourseImages] = useState([]);
+  const [courseTemplates, setCourseTemplates] = useState([]);
+  const [imagesLoading, setImagesLoading] = useState(false);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchCourseImages = async () => {
+      if (selectedCourse) {
+        setImagesLoading(true);
+        try {
+          const res = await getCourseImages(selectedCourse, true);
+          if (res?.success && res?.data) {
+            setCourseImages(res.data);
+          } else {
+            setCourseImages([]);
+          }
+        } catch (err) {
+          console.error('Failed to fetch course images', err);
+          setCourseImages([]);
+        } finally {
+          setImagesLoading(false);
+        }
+      } else {
+        setCourseImages([]);
+      }
+    };
+    fetchCourseImages();
+  }, [selectedCourse]);
+
+  useEffect(() => {
+    const fetchCourseTemplates = async () => {
+      if (selectedCourse) {
+        setTemplatesLoading(true);
+        try {
+          const res = await getCourseTemplatesByCourseId(selectedCourse);
+          if (res?.success && res?.data) {
+            setCourseTemplates(res.data);
+          } else {
+            setCourseTemplates([]);
+          }
+        } catch (err) {
+          console.error('Failed to fetch course templates', err);
+          setCourseTemplates([]);
+        } finally {
+          setTemplatesLoading(false);
+        }
+      } else {
+        setCourseTemplates([]);
+      }
+    };
+    fetchCourseTemplates();
+  }, [selectedCourse]);
 
   if (!isOpen) return null;
 
   const resetForm = () => {
-    setCourseId('');
     setTemplateId('');
     setImageId('');
     setRecipientOverride('');
     setCustomMessageOverride('');
     setError('');
     setSuccess(false);
+    setCourseImages([]);
+    setCourseTemplates([]);
   };
 
   const handleClose = () => {
@@ -36,19 +92,19 @@ const WhatsAppModal = ({
   };
 
   const handleSend = async () => {
-    if (!courseId) {
-      setError('Course is required.');
+    if (!selectedCourse) {
+      setError('Please select a course from the info panel first.');
       return;
     }
     if (!templateId) {
-      setError('Template ID is required.');
+      setError('Please select a WhatsApp template.');
       return;
     }
     setError('');
     setSending(true);
     try {
       const payload = {
-        courseId,
+        courseId: selectedCourse,
         templateId,
         ...(imageId && { imageId }),
         ...(recipientOverride && { recipientOverride }),
@@ -128,85 +184,110 @@ const WhatsAppModal = ({
 
           <div className="bg-white rounded-xl p-4 shadow-sm space-y-3">
 
-            {/* Course */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                Course <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={courseId}
-                onChange={(e) => setCourseId(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#128C7E] focus:border-transparent bg-white"
-              >
-                <option value="">Select a course...</option>
-                {courses.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.courseName} ({c.courseCode})
-                  </option>
-                ))}
-              </select>
-            </div>
+            {!selectedCourse && (
+              <div className="text-center py-8">
+                <div className="text-gray-400 text-sm mb-2">No course selected</div>
+                <div className="text-gray-500 text-xs">Please select a course from the info panel to view templates and images</div>
+              </div>
+            )}
 
-            {/* Template ID */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                Template ID <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                value={templateId}
-                onChange={(e) => setTemplateId(e.target.value)}
-                placeholder="Enter template ID..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#128C7E] focus:border-transparent"
-              />
-            </div>
+            {/* Templates */}
+            {selectedCourse && (
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                  WhatsApp Template <span className="text-red-500">*</span>
+                </label>
+                {templatesLoading ? (
+                  <p className="text-[10px] text-gray-400">Loading templates...</p>
+                ) : courseTemplates.length > 0 ? (
+                  <div className="space-y-2">
+                    {courseTemplates
+                      .filter(template => template.channel?.toLowerCase() === 'whatsapp')
+                      .map((template) => (
+                      <div
+                        key={template.id}
+                        onClick={() => setTemplateId(template.id)}
+                        className={`p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                          templateId === template.id 
+                            ? 'border-[#128C7E] bg-green-50 ring-2 ring-green-200' 
+                            : 'border-gray-200 hover:border-gray-300 bg-white'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between mb-1">
+                          <p className="text-xs font-semibold text-gray-800">{template.name}</p>
+                          {templateId === template.id && (
+                            <div className="bg-[#128C7E] text-white rounded-full w-4 h-4 flex items-center justify-center flex-shrink-0">
+                              <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                <polyline points="20 6 9 17 4 12" />
+                              </svg>
+                            </div>
+                          )}
+                        </div>
+                        <p className="text-[9px] text-gray-400">Channel: {template.channel}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[10px] text-gray-400">No WhatsApp templates available for this course</p>
+                )}
+              </div>
+            )}
 
-            {/* Image ID */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                Image ID <span className="text-gray-400 font-normal">(optional)</span>
-              </label>
-              <input
-                type="text"
-                value={imageId}
-                onChange={(e) => setImageId(e.target.value)}
-                placeholder="Enter image ID..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#128C7E] focus:border-transparent"
-              />
-            </div>
+            {/* Course Images */}
+            {selectedCourse && (
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                  Course Image <span className="text-gray-400 font-normal">(optional)</span>
+                </label>
+                {imagesLoading ? (
+                  <p className="text-[10px] text-gray-400">Loading images...</p>
+                ) : courseImages.length > 0 ? (
+                  <div className="grid grid-cols-3 gap-2">
+                    {courseImages.map((img) => (
+                      <div
+                        key={img.id}
+                        onClick={() => setImageId(img.id)}
+                        className={`relative cursor-pointer rounded-lg overflow-hidden border-2 transition-all ${
+                          imageId === img.id ? 'border-[#128C7E] ring-2 ring-green-200' : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                      >
+                        <img
+                          src={`${BASE_URL}${img.imageUrl}`}
+                          alt={img.displayName}
+                          className="w-full h-16 object-cover"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                          }}
+                        />
+                        {imageId === img.id && (
+                          <div className="absolute top-1 right-1 bg-[#128C7E] text-white rounded-full w-4 h-4 flex items-center justify-center">
+                            <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                              <polyline points="20 6 9 17 4 12" />
+                            </svg>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[10px] text-gray-400">No images available for this course</p>
+                )}
+              </div>
+            )}
 
-            {/* Recipient Override */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                Recipient Override <span className="text-gray-400 font-normal">(optional)</span>
-              </label>
-              <input
-                type="text"
-                value={recipientOverride}
-                onChange={(e) => setRecipientOverride(e.target.value)}
-                placeholder={phone || 'Enter alternate phone number...'}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#128C7E] focus:border-transparent"
-              />
-              {phone && (
-                <p className="text-[10px] text-gray-400 mt-1">
-                  Leave blank to send to lead's number: {phone}
-                </p>
-              )}
-            </div>
+            {/* Recipient Override - Hidden Field */}
+            <input
+              type="hidden"
+              value={recipientOverride}
+              onChange={(e) => setRecipientOverride(e.target.value)}
+            />
 
-            {/* Custom Message Override */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                Custom Message <span className="text-gray-400 font-normal">(optional)</span>
-              </label>
-              <textarea
-                value={customMessageOverride}
-                onChange={(e) => setCustomMessageOverride(e.target.value)}
-                placeholder="Override the template message..."
-                rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#128C7E] focus:border-transparent resize-none"
-              />
-            </div>
+            {/* Custom Message Override - Hidden Field */}
+            <input
+              type="hidden"
+              value={customMessageOverride}
+              onChange={(e) => setCustomMessageOverride(e.target.value)}
+            />
           </div>
         </div>
 

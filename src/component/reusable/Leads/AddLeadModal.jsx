@@ -11,9 +11,10 @@ import { getAllBoards } from '../../../Services/Boards/boardsService';
 import { getAllLeadStatus } from '../../../Services/leadStatus/leadStatusService';
 import { getAllUser } from '../../../Services/user/user';
 import { getAllCourseType } from '../../../Services/courseTypes/courseTypeService';
+import { getAllDepartments } from '../../../Services/department/departmentService';
 
 const AddLeadModal = () => {
-  const { isAddLeadModalOpen, closeAddLeadModal, showToast, editLeadData } = useAppContext();
+  const { isAddLeadModalOpen, closeAddLeadModal, showToast, editLeadData, triggerLeadRefresh } = useAppContext();
 
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -32,6 +33,7 @@ const AddLeadModal = () => {
     boardId: '',
     gradeId: '',
     courseTypeId: '',
+    departmentId: '',
     remarks: '',
     assignedToUserId: '',
     statusId: '',
@@ -83,6 +85,7 @@ const AddLeadModal = () => {
   const [grades, setGrades] = useState([]);
   const [boards, setBoards] = useState([]);
   const [courseTypes, setCourseTypes] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const [leadStatuses, setLeadStatuses] = useState([]);
   const [users, setUsers] = useState([]);
   const [locationLoading, setLocationLoading] = useState({
@@ -95,6 +98,7 @@ const AddLeadModal = () => {
     grades: false,
     boards: false,
     courseTypes: false,
+    departments: false,
     leadStatuses: false,
     users: false,
   });
@@ -228,6 +232,22 @@ const AddLeadModal = () => {
         setDropdownLoading((prev) => ({ ...prev, courseTypes: false }));
       }
     };
+
+    const fetchDepartments = async () => {
+      setDropdownLoading((prev) => ({ ...prev, departments: true }));
+      try {
+        const res = await getAllDepartments({ size: 100, sortBy: 'name', sortDirection: 'ASC' });
+        if (res?.success && res?.data?.content) {
+          setDepartments(res.data.content || []);
+        } else if (res?.data?.success && res?.data?.data?.content) {
+          setDepartments(res.data.data.content || []);
+        }
+      } catch (err) {
+        console.error('Failed to fetch departments:', err);
+      } finally {
+        setDropdownLoading((prev) => ({ ...prev, departments: false }));
+      }
+    };
     
     if (isAddLeadModalOpen) {
       fetchLeadSources();
@@ -238,6 +258,7 @@ const AddLeadModal = () => {
       fetchLeadStatuses();
       fetchUsers();
       fetchCourseTypes();
+      fetchDepartments();
       if (!editLeadData) {
         setStates([]);
         setCities([]);
@@ -250,9 +271,14 @@ const AddLeadModal = () => {
       const { 
         fullName, phoneNumber, alternatePhoneNumber, email, city, state, country, 
         leadSourceIds, sourceDetails, interestedCourseIds,
-        courseId, registeredCourseId, boardId, gradeId, courseTypeId, remarks, 
+        courseId, registeredCourseId, boardId, gradeId, courseTypeId, departmentId, remarks, 
         assignedToUserId, statusId, active, nextFollowUpDate 
       } = editLeadData;
+
+      // Convert all IDs to strings so they match HTML <select> / <option value="..."> comparisons
+      const toStr = (v) => (v !== undefined && v !== null && v !== '') ? String(v) : '';
+      const toStrArr = (arr) => Array.isArray(arr) ? arr.map(toStr).filter(Boolean) : [];
+
       setFormData({
         fullName: fullName || '',
         phoneNumber: phoneNumber || '',
@@ -261,17 +287,18 @@ const AddLeadModal = () => {
         city: city || '',
         state: state || '',
         country: country || '',
-        leadSourceIds: leadSourceIds || [],
+        leadSourceIds: toStrArr(leadSourceIds),
         sourceDetails: sourceDetails || '',
-        interestedCourseIds: interestedCourseIds || [],
-        courseId: courseId || '',
-        registeredCourseId: registeredCourseId || '',
-        boardId: boardId || '',
-        gradeId: gradeId || '',
-        courseTypeId: courseTypeId || '',
+        interestedCourseIds: toStrArr(interestedCourseIds),
+        courseId: toStr(courseId),
+        registeredCourseId: toStr(registeredCourseId),
+        boardId: toStr(boardId),
+        gradeId: toStr(gradeId),
+        courseTypeId: toStr(courseTypeId),
+        departmentId: toStr(departmentId),
         remarks: remarks || '',
-        assignedToUserId: assignedToUserId || '',
-        statusId: statusId || '',
+        assignedToUserId: toStr(assignedToUserId),
+        statusId: toStr(statusId),
         active: active !== undefined ? active : true,
         nextFollowUpDate: nextFollowUpDate ? new Date(nextFollowUpDate).toISOString().slice(0, 16) : '',
       });
@@ -324,6 +351,7 @@ const AddLeadModal = () => {
         boardId: '',
         gradeId: '',
         courseTypeId: '',
+        departmentId: '',
         remarks: '',
         assignedToUserId: '',
         statusId: '',
@@ -415,6 +443,7 @@ const AddLeadModal = () => {
       boardId: '',
       gradeId: '',
       courseTypeId: '',
+      departmentId: '',
       remarks: '',
       assignedToUserId: '',
       statusId: '',
@@ -447,6 +476,7 @@ const AddLeadModal = () => {
       boardId: formData.boardId,
       gradeId: formData.gradeId,
       courseTypeId: formData.courseTypeId,
+      departmentId: formData.departmentId,
       remarks: formData.remarks,
       assignedToUserId: formData.assignedToUserId,
       statusId: formData.statusId,
@@ -468,6 +498,7 @@ const AddLeadModal = () => {
         showToast(editLeadData ? 'Lead updated successfully!' : 'Lead added successfully!');
         resetForm();
         closeAddLeadModal();
+        triggerLeadRefresh(); // 🔄 Leads page ko refresh signal bhejo
       } else {
         const msg =
           response?.response?.data?.message ||
@@ -725,23 +756,24 @@ const AddLeadModal = () => {
                         .map((source) => (
                         <div 
                           key={source.id} 
-                          className={`custom-dropdown-option ${formData.leadSourceIds.includes(source.id) ? 'selected' : ''}`}
+                          className={`custom-dropdown-option ${formData.leadSourceIds.includes(String(source.id)) ? 'selected' : ''}`}
                         >
                           <input
                             type="checkbox"
                             id={`custom-source-${source.id}`}
                             value={source.id}
-                            checked={formData.leadSourceIds.includes(source.id)}
+                            checked={formData.leadSourceIds.includes(String(source.id))}
                             onChange={(e) => {
+                              const sid = String(source.id);
                               if (e.target.checked) {
                                 setFormData((prev) => ({
                                   ...prev,
-                                  leadSourceIds: [...prev.leadSourceIds, source.id],
+                                  leadSourceIds: [...prev.leadSourceIds, sid],
                                 }));
                               } else {
                                 setFormData((prev) => ({
                                   ...prev,
-                                  leadSourceIds: prev.leadSourceIds.filter((id) => id !== source.id),
+                                  leadSourceIds: prev.leadSourceIds.filter((id) => id !== sid),
                                 }));
                               }
                             }}
@@ -799,23 +831,24 @@ const AddLeadModal = () => {
                         .map((course) => (
                         <div 
                           key={course.id} 
-                          className={`custom-dropdown-option ${formData.interestedCourseIds.includes(course.id) ? 'selected' : ''}`}
+                          className={`custom-dropdown-option ${formData.interestedCourseIds.includes(String(course.id)) ? 'selected' : ''}`}
                         >
                           <input
                             type="checkbox"
                             id={`custom-interested-course-${course.id}`}
                             value={course.id}
-                            checked={formData.interestedCourseIds.includes(course.id)}
+                            checked={formData.interestedCourseIds.includes(String(course.id))}
                             onChange={(e) => {
+                              const cid = String(course.id);
                               if (e.target.checked) {
                                 setFormData((prev) => ({
                                   ...prev,
-                                  interestedCourseIds: [...prev.interestedCourseIds, course.id],
+                                  interestedCourseIds: [...prev.interestedCourseIds, cid],
                                 }));
                               } else {
                                 setFormData((prev) => ({
                                   ...prev,
-                                  interestedCourseIds: prev.interestedCourseIds.filter((id) => id !== course.id),
+                                  interestedCourseIds: prev.interestedCourseIds.filter((id) => id !== cid),
                                 }));
                               }
                             }}
@@ -844,7 +877,7 @@ const AddLeadModal = () => {
                   onClick={() => setDropdownStates(prev => ({ ...prev, course: !prev.course }))}
                 >
                   {formData.courseId 
-                    ? courses.find(c => c.id === formData.courseId)?.courseName || 'Select Course'
+                    ? courses.find(c => String(c.id) === String(formData.courseId))?.courseName || 'Select Course'
                     : 'Select Course'
                   }
                   <span className="custom-dropdown-arrow">▼</span>
@@ -868,18 +901,18 @@ const AddLeadModal = () => {
                         .map((course) => (
                         <div 
                           key={course.id} 
-                          className={`custom-dropdown-option ${formData.courseId === course.id ? 'selected' : ''}`}
+                          className={`custom-dropdown-option ${String(formData.courseId) === String(course.id) ? 'selected' : ''}`}
                         >
                           <input
                             type="checkbox"
                             id={`custom-course-${course.id}`}
                             value={course.id}
-                            checked={formData.courseId === course.id}
+                            checked={String(formData.courseId) === String(course.id)}
                             onChange={(e) => {
                               if (e.target.checked) {
                                 setFormData((prev) => ({
                                   ...prev,
-                                  courseId: course.id,
+                                  courseId: String(course.id),
                                 }));
                               } else {
                                 setFormData((prev) => ({
@@ -915,7 +948,7 @@ const AddLeadModal = () => {
               >
                 <option value="">Select Grade</option>
                 {grades.length > 0 ? grades.map((grade) => (
-                  <option key={grade.id} value={grade.id}>
+                  <option key={grade.id} value={String(grade.id)}>
                     {grade.name}
                   </option>
                 )) : <option disabled>No grades available</option>}
@@ -932,7 +965,7 @@ const AddLeadModal = () => {
               >
                 <option value="">Select Board</option>
                 {boards.length > 0 ? boards.map((board) => (
-                  <option key={board.id} value={board.id}>
+                  <option key={board.id} value={String(board.id)}>
                     {board.name}
                   </option>
                 )) : <option disabled>No boards available</option>}
@@ -949,12 +982,29 @@ const AddLeadModal = () => {
               >
                 <option value="">Select Category</option>
                 {courseTypes.length > 0 ? courseTypes.map((ct) => (
-                  <option key={ct.id} value={ct.id}>
+                  <option key={ct.id} value={String(ct.id)}>
                     {ct.name}
                   </option>
                 )) : <option disabled>No categories available</option>}
               </select>
               {dropdownLoading.courseTypes && <small className="text-muted">Loading categories...</small>}
+            </div>
+            <div>
+              <label className="form-label">Department</label>
+              <select
+                className="form-control"
+                value={formData.departmentId}
+                onChange={handleChange('departmentId')}
+                disabled={dropdownLoading.departments}
+              >
+                <option value="">Select Department</option>
+                {departments.length > 0 ? departments.map((dept) => (
+                  <option key={dept.id} value={String(dept.id)}>
+                    {dept.name}
+                  </option>
+                )) : <option disabled>No departments available</option>}
+              </select>
+              {dropdownLoading.departments && <small className="text-muted">Loading departments...</small>}
             </div>
             <div>
               <label className="form-label">Assigned To</label>
@@ -966,8 +1016,8 @@ const AddLeadModal = () => {
               >
                 <option value="">Select User</option>
                 {users.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.fullName || user.username}
+                  <option key={user.id} value={String(user.id)}>
+                    {user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username}
                   </option>
                 ))}
               </select>
@@ -983,7 +1033,7 @@ const AddLeadModal = () => {
               >
                 <option value="">Select Status</option>
                 {leadStatuses.length > 0 ? leadStatuses.map((status) => (
-                  <option key={status.id} value={status.id}>
+                  <option key={status.id} value={String(status.id)}>
                     {status.name}
                   </option>
                 )) : <option disabled>No statuses available</option>}

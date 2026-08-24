@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { FiEye, FiEdit, FiTrash2, FiMessageSquare } from 'react-icons/fi';
 import { statusConfig } from '../mockData';
-import { getAllLeads, deleteLead } from '../Services/lead/leadService';
+import { getAllLeads, deleteLead, getLeadById } from '../Services/lead/leadService';
 import { getAllCourses } from '../Services/course/course';
 import { useAppContext } from '../AppContext';
 import { usePermissions } from '../PermissionContext';
@@ -11,29 +11,18 @@ import DeleteModal from "../component/reusable/deleteModel"
 import AssignLeadModal from '../component/reusable/Leads/AssignLeadModal';
 import LeadCards from '../component/reusable/DashBoards/leadCards';
 import BulkUploadModal from '../component/reusable/Leads/BulkUploadModal';
+import PreviewDistributionModal from '../component/reusable/Leads/PreviewDistributionModal';
 
-
-const STATUSES = [
-  { value: '', label: 'All Status' },
-  { value: 'raw', label: 'Raw Lead' },
-  { value: 'connected', label: 'Connected' },
-  { value: 'interested', label: 'Interested' },
-  { value: 'registered', label: 'Registered' },
-  { value: 'notinterested', label: 'Not Interested' },
-  { value: 'bad', label: 'Bad Lead' },
-];
-
-const COUNSELORS = ['All Counselors', 'Rahul Singh', 'Neha Joshi', 'Priya Patel', 'Vikram Das'];
-const COURSES = ['All Courses'];
 
 const Leads = () => {
-  const { openAddLeadModal, navTo, showToast } = useAppContext();
+  const { openAddLeadModal, navTo, showToast, leadRefreshTrigger } = useAppContext();
   const { canCreate, canUpdate, canDelete, canView, hasPermission } = usePermissions();
 
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterCounselor, setFilterCounselor] = useState('All Counselors');
   const [filterCourse, setFilterCourse] = useState('All Courses');
+  const [selectedCard, setSelectedCard] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
 
@@ -150,6 +139,16 @@ const Leads = () => {
     }
   };
 
+  const handleCardClick = (cardInfo) => {
+    // Toggle: same card click kare toh filter clear ho jaye
+    if (selectedCard?.type === cardInfo.type && selectedCard?.value === cardInfo.value) {
+      setSelectedCard(null);
+    } else {
+      setSelectedCard(cardInfo);
+    }
+    setPage(0); // filter change hone par page reset
+  };
+
   const fetchLeads = async () => {
     setLoading(true);
     try {
@@ -158,7 +157,11 @@ const Leads = () => {
         size: size,
         search: search || undefined,
         sortBy: sortBy || undefined,
-        sortDirection: sortDirection || undefined
+        sortDirection: sortDirection || undefined,
+        // Card filter — statusId send karo agar koi card selected hai
+        ...(selectedCard?.type === 'leadStatus' && selectedCard?.value
+          ? { statusId: selectedCard.value }
+          : {}),
       };
       const res = await getAllLeads(params);
       if (res?.data?.success) {
@@ -196,7 +199,7 @@ const Leads = () => {
       fetchLeads();
     }, 500);
     return () => clearTimeout(delayDebounceFn);
-  }, [page, size, search, sortBy, sortDirection]);
+  }, [page, size, search, sortBy, sortDirection, leadRefreshTrigger, selectedCard]);
 
   useEffect(() => {
     fetchCourses();
@@ -205,14 +208,11 @@ const Leads = () => {
   const [isRemarkModalOpen, setIsRemarkModalOpen] = useState(false);
   const [selectedLeadForRemark, setSelectedLeadForRemark] = useState(null);
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isAllotModalOpen, setIsAllotModalOpen] = useState(false);
   const [selectedLeadForAllot, setSelectedLeadForAllot] = useState(null);
-  const [usersData, setUsersData] = useState([
-    { id: 1, firstName: 'Rahul', lastName: 'Singh' },
-    { id: 2, firstName: 'Neha', lastName: 'Joshi' },
-    { id: 3, firstName: 'Priya', lastName: 'Patel' },
-    { id: 4, firstName: 'Vikram', lastName: 'Das' },
-  ]);
+  const [usersData, setUsersData] = useState([]);
+  
 
   const openRemarkModal = (lead) => {
     setSelectedLeadForRemark(lead);
@@ -326,7 +326,10 @@ const Leads = () => {
       </div>
 
       {/* ── Stat Cards ── */}
-      <LeadCards data={leadCardsData} />
+      <LeadCards
+        onCardClick={handleCardClick}
+        selectedCard={selectedCard}
+      />
 
       {/* ── Filter Bar ── */}
       <div className="flex gap-2 flex-wrap mb-4">
@@ -337,15 +340,19 @@ const Leads = () => {
           value={search}
           onChange={(e) => { setSearch(e.target.value); }}
         />
-        <select
-          className="form-control max-w-[160px]"
-          value={filterCourse}
-          onChange={(e) => { setFilterCourse(e.target.value); }}
-        >
-          {coursesData.map((c) => (
-            <option key={c}>{c}</option>
-          ))}
-        </select>
+        {/* Active card filter badge */}
+        {selectedCard && (
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-indigo-50 border border-indigo-200 rounded-md text-sm text-indigo-700 font-medium">
+            <span>Filter: {selectedCard.label}</span>
+            <button
+              onClick={() => { setSelectedCard(null); setPage(0); }}
+              className="ml-1 text-indigo-400 hover:text-indigo-700 bg-transparent border-none cursor-pointer leading-none"
+              title="Clear filter"
+            >
+              ✕
+            </button>
+          </div>
+        )}
         {/* Allot Lead */}
         <button
           className="btn btn-secondary btn-sm flex items-center gap-1.5"
@@ -592,7 +599,75 @@ const Leads = () => {
                   <button
                     className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Edit"
-                    onClick={() => openAddLeadModal(safeRow)}
+                    onClick={async () => {
+                      const leadId = safeRow?.id ?? safeRow?.leadId;
+                      try {
+                        // Fetch full lead detail so we get proper IDs for all fields
+                        const res = await getLeadById(leadId);
+                        const full = res?.data?.success ? res.data.data : safeRow;
+
+                        const editData = {
+                          id: full.id ?? full.leadId,
+                          leadId: full.id ?? full.leadId,
+                          fullName: full.fullName || '',
+                          phoneNumber: full.phoneNumber || '',
+                          alternatePhoneNumber: full.alternatePhoneNumber || '',
+                          email: full.email || '',
+                          country: typeof full.country === 'object' ? full.country?.name || '' : full.country || '',
+                          state: typeof full.state === 'object' ? full.state?.name || '' : full.state || '',
+                          city: typeof full.city === 'object' ? full.city?.name || '' : full.city || '',
+                          sourceDetails: full.sourceDetails || '',
+                          remarks: full.remarks || '',
+                          nextFollowUpDate: full.nextFollowUpDate || '',
+                          active: full.active !== undefined ? full.active : true,
+                          // courseId — could be full.course.id or full.courseId
+                          courseId: String(
+                            full.course?.id ?? full.courseId ?? ''
+                          ),
+                          // registeredCourse
+                          registeredCourseId: String(
+                            full.registeredCourse?.id ?? full.registeredCourseId ?? ''
+                          ),
+                          // board
+                          boardId: String(
+                            full.board?.id ?? full.boardId ?? ''
+                          ),
+                          // grade
+                          gradeId: String(
+                            full.grade?.id ?? full.gradeId ?? ''
+                          ),
+                          // category / courseType
+                          courseTypeId: String(
+                            full.courseType?.id ?? full.interestedCourseTypes?.[0]?.id ?? full.courseTypeId ?? ''
+                          ),
+                          // assignedTo
+                          assignedToUserId: String(
+                            full.assignedTo?.id ?? full.assignedToUserId ?? ''
+                          ),
+                          // status
+                          statusId: String(
+                            full.currentStatus?.id ?? full.statusId ?? ''
+                          ),
+                          // leadSources array
+                          leadSourceIds: Array.isArray(full.leadSources)
+                            ? full.leadSources.map(s => String(typeof s === 'object' ? s.id : s)).filter(Boolean)
+                            : Array.isArray(full.leadSourceIds)
+                              ? full.leadSourceIds.map(String)
+                              : (full.source?.id ? [String(full.source.id)] : []),
+                          // interestedCourses array
+                          interestedCourseIds: Array.isArray(full.interestedCourses)
+                            ? full.interestedCourses.map(c => String(typeof c === 'object' ? c.id : c)).filter(Boolean)
+                            : Array.isArray(full.interestedCourseIds)
+                              ? full.interestedCourseIds.map(String)
+                              : [],
+                        };
+
+                        openAddLeadModal(editData);
+                      } catch (err) {
+                        console.error('Failed to fetch lead for edit', err);
+                        showToast('Failed to load lead data', 'error');
+                      }
+                    }}
                     disabled={!hasPermission('LEAD_UPDATE')}
                     style={{ cursor: !hasPermission('LEAD_UPDATE') ? 'not-allowed' : 'pointer' }}
                   >
@@ -651,6 +726,13 @@ const Leads = () => {
           showToast('Leads uploaded successfully!');
           fetchLeads();
         }}
+      />
+
+      {/* Preview Distribution Modal */}
+      <PreviewDistributionModal
+        isOpen={isPreviewModalOpen}
+        onClose={() => setIsPreviewModalOpen(false)}
+        showToast={showToast}
       />
     </div>
   );

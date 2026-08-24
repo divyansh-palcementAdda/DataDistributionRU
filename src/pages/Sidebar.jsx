@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAppContext } from '../AppContext';
+import { usePermissions } from '../PermissionContext';
 
 const BRAND_LOGO = 'https://ru-website-bucket.s3.ap-south-1.amazonaws.com/images/svg/logoblack.svg';
 const BRAND_NAME = 'Data Distribute System';
@@ -7,6 +8,7 @@ const BRAND_SUBTITLE = 'Education Lead Management';
 
 const Sidebar = () => {
   const { currentPage, navTo, isSidebarOpen, toggleSidebar, isSettingsExpanded, toggleSettingsExpanded } = useAppContext();
+  const { hasPermission } = usePermissions();
 
   // Get user role to determine which dashboard to show in sidebar
   const userRole = localStorage.getItem('userRole');
@@ -55,6 +57,44 @@ const Sidebar = () => {
     { id: 'settings/roles-permissions', label: 'Roles & Permissions' }
   ];
 
+  // Define permission mappings for sidebar items
+  const itemPermissions = {
+    'leads': 'LEAD_READ',
+    'followups': 'FOLLOWUP_VIEW',
+    'course-types': 'COURSE_TYPE_VIEW',
+    'lead-source': 'LEADSOURCE_READ',
+    'boards': 'BOARD_VIEW',
+    'grades': 'GRADE_VIEW',
+    'counselors': 'DEPARTMENT_COUNSELLOR_VIEW',
+    'department': 'DEPARTMENT_VIEW',
+    'courses': 'COURSE_VIEW',
+    'lead-status': 'LEAD_STATUS_VIEW',
+    'reports': 'DASHBOARD_VIEW_ALL',
+    'settings/user-management': 'SETTINGS_USER_MANAGEMENT',
+    'settings/notifications': 'SETTINGS_NOTIFICATIONS',
+    'settings/crm-config': 'SETTINGS_PROJECT_CONFIGURATION',
+    'settings/roles-permissions': 'SETTINGS_ROLES_AND_PERMISSIONS'
+  };
+
+  // Check if user has permission to view a specific item
+  const canViewItem = (itemId) => {
+    const requiredPermission = itemPermissions[itemId];
+    if (!requiredPermission) return true; // If no permission defined, show by default
+    return hasPermission(requiredPermission);
+  };
+
+  // Filter nav items based on permissions
+  const filteredNavItems = navItems.filter(item => canViewItem(item.id));
+  
+  // Filter config nav items based on permissions
+  const filteredConfigNavItems = configNavItems.filter(item => canViewItem(item.id));
+  
+  // Filter settings submenu items based on permissions
+  const filteredSettingsSubmenuItems = settingsSubmenuItems.filter(item => canViewItem(item.id));
+  
+  // Check if settings should be shown (if any submenu item is visible)
+  const shouldShowSettings = filteredSettingsSubmenuItems.length > 0;
+
   return (
     <>
    
@@ -78,7 +118,7 @@ const Sidebar = () => {
       </div>
       <div className="sidebar-section">
         <div className="sidebar-label">Main</div>
-        {navItems.map(item => (
+        {filteredNavItems.map(item => (
           <div
             key={item.id}
             className={`nav-item ${currentPage === item.id ? 'active' : ''}`}
@@ -90,7 +130,7 @@ const Sidebar = () => {
       </div>
       <div className="sidebar-section">
         <div className="sidebar-label">Config</div>
-        {configNavItems.map(item => (
+        {filteredConfigNavItems.map(item => (
           <div
             key={item.id}
             className={`nav-item ${currentPage === item.id ? 'active' : ''}`}
@@ -100,37 +140,41 @@ const Sidebar = () => {
           </div>
         ))}
 
-        {/* Settings with submenu */}
-        <div
-          className={`nav-item ${currentPage === 'settings' || currentPage.startsWith('settings/') ? 'active' : ''}`}
-          aria-expanded={isSettingsExpanded}
-          onClick={() => {
-            toggleSettingsExpanded();
-            if (!isSettingsExpanded) {
-              navTo('settings/user-management');
-            }
-          }}
-        >
-          <span dangerouslySetInnerHTML={{ __html: settingsItem.icon }} />
-          <span>{settingsItem.label}</span>
-          <svg className="submenu-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M9 18l6-6-6-6"/>
-          </svg>
-        </div>
+        {/* Settings with submenu - only show if user has access to any settings submenu item */}
+        {shouldShowSettings && (
+          <>
+            <div
+              className={`nav-item ${currentPage === 'settings' || currentPage.startsWith('settings/') ? 'active' : ''}`}
+              aria-expanded={isSettingsExpanded}
+              onClick={() => {
+                toggleSettingsExpanded();
+                if (!isSettingsExpanded) {
+                  navTo(filteredSettingsSubmenuItems[0].id);
+                }
+              }}
+            >
+              <span dangerouslySetInnerHTML={{ __html: settingsItem.icon }} />
+              <span>{settingsItem.label}</span>
+              <svg className="submenu-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 18l6-6-6-6"/>
+              </svg>
+            </div>
 
-        {/* Settings Submenu */}
-        {isSettingsExpanded && (
-          <div className="submenu">
-            {settingsSubmenuItems.map(subItem => (
-              <div
-                key={subItem.id}
-                className={`submenu-item ${currentPage === subItem.id ? 'active' : ''}`}
-                onClick={() => navTo(subItem.id)}
-              >
-                {subItem.label}
+            {/* Settings Submenu */}
+            {isSettingsExpanded && (
+              <div className="submenu">
+                {filteredSettingsSubmenuItems.map(subItem => (
+                  <div
+                    key={subItem.id}
+                    className={`submenu-item ${currentPage === subItem.id ? 'active' : ''}`}
+                    onClick={() => navTo(subItem.id)}
+                  >
+                    {subItem.label}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
       </div>
     </nav>

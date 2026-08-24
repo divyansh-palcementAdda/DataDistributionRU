@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FiEye, FiMessageSquare, FiUserPlus } from 'react-icons/fi';
 import { useAppContext } from '../AppContext';
@@ -520,6 +520,10 @@ const CounselorDetails = () => {
     const [showReassignableFollowUps, setShowReassignableFollowUps] = useState(false);
     const [reassignableFollowUpsSelectedRows, setReassignableFollowUpsSelectedRows] = useState(new Set());
 
+    // refs for scrolling to tables
+    const reassignableLeadsRef = useRef(null);
+    const reassignableFollowUpsRef = useRef(null);
+
     // ── fetch counselor details ──
     useEffect(() => {
         if (!id) return;
@@ -601,6 +605,10 @@ const CounselorDetails = () => {
                 setReassignableLeadsTotalElements(totalElements);
                 setReassignableLeadsTotalPages(totalPages);
                 setReassignableLeadsLoading(false);
+                // Scroll to the reassignable leads table
+                if (reassignableLeadsRef.current) {
+                    reassignableLeadsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
             });
     }, [showReassignableLeads, id, reassignableLeadsPage, reassignableLeadsSize]);
 
@@ -614,6 +622,10 @@ const CounselorDetails = () => {
                 setReassignableFollowUpsTotalElements(totalElements);
                 setReassignableFollowUpsTotalPages(totalPages);
                 setReassignableFollowUpsLoading(false);
+                // Scroll to the reassignable follow-ups table
+                if (reassignableFollowUpsRef.current) {
+                    reassignableFollowUpsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
             });
     }, [showReassignableFollowUps, id, reassignableFollowUpsPage, reassignableFollowUpsSize]);
 
@@ -1099,7 +1111,7 @@ const CounselorDetails = () => {
 
                     {/* ── Reassignable Leads Table ── */}
                     {showReassignableLeads && (
-                        <div className="mt-6">
+                        <div className="mt-6" ref={reassignableLeadsRef}>
                             <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                                 <div className="flex items-center gap-2">
                                     <div className="w-1 h-5 bg-purple-500 rounded-full" />
@@ -1216,7 +1228,7 @@ const CounselorDetails = () => {
 
                     {/* ── Reassignable Follow-ups Table ── */}
                     {showReassignableFollowUps && (
-                        <div className="mt-6">
+                        <div className="mt-6" ref={reassignableFollowUpsRef}>
                             <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                                 <div className="flex items-center gap-2">
                                     <div className="w-1 h-5 bg-orange-500 rounded-full" />

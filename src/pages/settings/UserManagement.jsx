@@ -4,6 +4,7 @@ import CustomButton from '../../component/reusable/CustomButton';
 import ReusableTable from '../../component/reusable/table';
 import { getAllUser, deleteUser } from '../../Services/user/user';
 import AddUserModal from '../../component/reusable/user/addUser';
+import ViewUserModal from '../../component/reusable/user/viewUser';
 import DeleteModal from '../../component/reusable/deleteModel';
 import { usePermissions } from '../../PermissionContext';
 
@@ -21,6 +22,7 @@ const UserManagement = () => {
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [isViewUserModalOpen, setIsViewUserModalOpen] = useState(false);
   const [isDeleteUserModalOpen, setIsDeleteUserModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
   const [isDeletingUser, setIsDeletingUser] = useState(false);
@@ -109,11 +111,16 @@ const UserManagement = () => {
 
   const handleOpenViewUserModal = (user) => {
     setSelectedUser(user);
-    setIsAddUserModalOpen(true);
+    setIsViewUserModalOpen(true);
   };
 
   const handleCloseUserModal = () => {
     setIsAddUserModalOpen(false);
+    setSelectedUser(null);
+  };
+
+  const handleCloseViewUserModal = () => {
+    setIsViewUserModalOpen(false);
     setSelectedUser(null);
   };
 
@@ -200,6 +207,12 @@ const UserManagement = () => {
         onClose={handleCloseUserModal}
         onSuccess={fetchUsers}
         initialData={selectedUser}
+      />
+
+      <ViewUserModal
+        isOpen={isViewUserModalOpen}
+        onClose={handleCloseViewUserModal}
+        userData={selectedUser}
       />
 
       <DeleteModal

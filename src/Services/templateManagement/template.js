@@ -47,5 +47,12 @@ export const deleteCourseTemplate = async (id) => {
     return response.data;
 };
 
+// GET /api/course-templates/{id} — Get a specific course template by ID
+export const getCourseTemplateById = async (id) => {
+    const url = ApiRoutes.CourseTemplate.getById.replace('{id}', id);
+    const response = await axiosInstance.get(url);
+    return response.data;
+};
+
 
 

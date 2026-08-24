@@ -96,3 +96,19 @@ export const getCourseCommunicationConfig = async (courseId) => {
         throw error.response?.data || error.message;
     }
 };
+
+export const getCourseImages = async (courseId, activeOnly = true) => {
+    try {
+        const response = await axiosInstance.get(
+            ApiRoutes.Course.getImages.replace('{courseId}', courseId),
+            {
+                params: {
+                    activeOnly,
+                },
+            }
+        );
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};

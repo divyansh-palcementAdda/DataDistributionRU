@@ -127,6 +127,7 @@ const ApiRoutes = {
         update: '/api/course-templates/{id}',
         delete: '/api/course-templates/{id}',
         getByCourseId: '/api/courses/{courseId}/templates',
+        getById: '/api/course-templates/{id}',
     },
 
     USP: {

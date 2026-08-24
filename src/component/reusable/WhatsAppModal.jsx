@@ -3,6 +3,8 @@ import CustomButton from './CustomButton';
 import { getCourseImages } from '../../Services/course/course';
 import { getCourseTemplatesByCourseId } from '../../Services/templateManagement/template';
 
+const BASE_URL = import.meta.env.VITE_BASE_URL || '';
+
 const WhatsAppModal = ({
   isOpen,
   onClose,
@@ -250,9 +252,12 @@ const WhatsAppModal = ({
                         }`}
                       >
                         <img
-                          src={img.imageUrl}
+                          src={`${BASE_URL}${img.imageUrl}`}
                           alt={img.displayName}
                           className="w-full h-16 object-cover"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                          }}
                         />
                         {imageId === img.id && (
                           <div className="absolute top-1 right-1 bg-[#128C7E] text-white rounded-full w-4 h-4 flex items-center justify-center">

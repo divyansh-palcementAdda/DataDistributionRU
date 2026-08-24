@@ -9,6 +9,8 @@ import ReusableTable from '../component/reusable/table';
 import { createLeadSchedule, getLeadById, getLeadInfoPanel, sendLeadWhatsApp, sendLeadEmail } from '../Services/lead/leadService';
 import { getAllCourses } from '../Services/course/course';
 
+const BASE_URL = import.meta.env.VITE_BASE_URL || '';
+
 const LeadDetail = () => {
   const { id } = useParams();
   const { navTo, showToast, openAddLeadModal } = useAppContext();
@@ -716,7 +718,34 @@ const LeadDetail = () => {
                     <div key={key} className="bg-white p-2 rounded border border-gray-100">
                       <div className="text-[9px] font-bold text-gray-400 uppercase">{key}</div>
                       <div className="text-xs font-semibold text-gray-700 break-all">
-                        {typeof value === 'object' ? JSON.stringify(value) : String(value)}
+                        {key === 'imageUrl' && typeof value === 'string' ? (
+                          <img 
+                            src={`${BASE_URL}${value}`} 
+                            alt="Course image" 
+                            className="mt-1 rounded border border-gray-200 max-w-full h-auto"
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                            }}
+                          />
+                        ) : key === 'availableImages' && Array.isArray(value) ? (
+                          <div className="mt-1 grid grid-cols-2 gap-2">
+                            {value.map((img, idx) => (
+                              <img
+                                key={idx}
+                                src={`${BASE_URL}${img.imageUrl || img}`}
+                                alt={`Available image ${idx + 1}`}
+                                className="rounded border border-gray-200 max-w-full h-auto"
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                }}
+                              />
+                            ))}
+                          </div>
+                        ) : typeof value === 'object' ? (
+                          JSON.stringify(value)
+                        ) : (
+                          String(value)
+                        )}
                       </div>
                     </div>
                   ))}

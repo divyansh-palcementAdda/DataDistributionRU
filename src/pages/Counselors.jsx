@@ -627,6 +627,7 @@ const Counselors = () => {
         isOpen={isAddUserModalOpen}
         onClose={handleCloseAddUserModal}
         onSuccess={handleUserAdded}
+        defaultRole="COUNSELOR"
       />
     </div>
   );

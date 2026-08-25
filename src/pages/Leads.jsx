@@ -599,12 +599,28 @@ const Leads = () => {
                     onClick={async () => {
                       const leadId = safeRow?.id ?? safeRow?.leadId;
                       try {
-                        await availLead(leadId);
-                        showToast('Lead marked as availed successfully');
-                        fetchLeads();
+                        // Fetch lead details to check conditions
+                        const res = await getLeadById(leadId);
+                        const leadDetails = res?.data?.data;
+
+                        // Get current user from localStorage
+                        const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+                        const currentUserId = userInfo?.id || userInfo?.userId;
+
+                        // Check conditions
+                        const shouldCallAvail = 
+                          (leadDetails?.isAvailed === false || leadDetails?.isAvailed === null) &&
+                          (leadDetails?.assignedTo === null || leadDetails?.assignedTo?.id === currentUserId);
+
+
+                        if (shouldCallAvail) {
+                          await availLead(leadId);
+                          showToast('Lead marked as availed successfully');
+                          fetchLeads();
+                        }
                       } catch (error) {
-                        console.error('Avail error', error);
-                        showToast('Failed to mark lead as availed', 'error');
+                        console.error('Error:', error);
+                        // Still navigate even if avail API fails
                       }
                       navTo(`lead-detail/${leadId}`);
                     }}

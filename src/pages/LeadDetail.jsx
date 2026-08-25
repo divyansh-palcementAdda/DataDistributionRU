@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
+import { usePermissions } from '../PermissionContext';
 import CustomButton from '../component/reusable/CustomButton';
 import ScheduleModal from "../component/reusable/Leads/scheduleModel";
 import WhatsAppModal from '../component/reusable/WhatsAppModal';
@@ -14,6 +15,7 @@ const BASE_URL = import.meta.env.VITE_BASE_URL || '';
 const LeadDetail = () => {
   const { id } = useParams();
   const { navTo, showToast, openAddLeadModal } = useAppContext();
+  const { hasPermission } = usePermissions();
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
@@ -285,6 +287,8 @@ const LeadDetail = () => {
             variant="secondary"
             onClick={() => openAddLeadModal()}
             className="text-xs py-1.5 px-3 flex items-center gap-1.5"
+            disabled={!hasPermission('LEAD_CREATE')}
+            style={{ cursor: !hasPermission('LEAD_CREATE') ? 'not-allowed' : 'pointer' }}
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="12" y1="5" x2="12" y2="19" />
@@ -343,8 +347,10 @@ const LeadDetail = () => {
                   };
                   openAddLeadModal(editPayload);
                 }}
-                className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-lg transition-colors"
+                className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-50 disabled:hover:text-blue-600"
                 title="Edit Lead"
+                disabled={!hasPermission('LEAD_UPDATE')}
+                style={{ cursor: !hasPermission('LEAD_UPDATE') ? 'not-allowed' : 'pointer' }}
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />

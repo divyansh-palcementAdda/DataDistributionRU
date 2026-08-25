@@ -425,6 +425,7 @@ const fetchReassignableLeads = async (assignedUserId, page = 0, size = 10) => {
             params: { assignedUserId, page, size }
         });
         const d = res?.data?.data || res?.data || {};
+        console.log(d,"this is data of D")
         return {
             content:       d.content       ?? (Array.isArray(d) ? d : []),
             totalElements: d.totalElements ?? 0,

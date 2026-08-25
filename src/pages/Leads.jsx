@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { FiEye, FiEdit, FiTrash2, FiMessageSquare } from 'react-icons/fi';
 import { statusConfig } from '../mockData';
-import { getAllLeads, deleteLead, getLeadById } from '../Services/lead/leadService';
+import { getAllLeads, deleteLead, getLeadById, availLead } from '../Services/lead/leadService';
 import { getAllCourses } from '../Services/course/course';
 import { useAppContext } from '../AppContext';
 import { usePermissions } from '../PermissionContext';
@@ -596,7 +596,18 @@ const Leads = () => {
                   <button
                     className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     title="View"
-                    onClick={() => navTo(`lead-detail/${safeRow?.id ?? safeRow?.leadId}`)}
+                    onClick={async () => {
+                      const leadId = safeRow?.id ?? safeRow?.leadId;
+                      try {
+                        await availLead(leadId);
+                        showToast('Lead marked as availed successfully');
+                        fetchLeads();
+                      } catch (error) {
+                        console.error('Avail error', error);
+                        showToast('Failed to mark lead as availed', 'error');
+                      }
+                      navTo(`lead-detail/${leadId}`);
+                    }}
                     disabled={!hasPermission('LEAD_READ') && !hasPermission('LEAD_VIEW')}
                     style={{ cursor: (!hasPermission('LEAD_READ') && !hasPermission('LEAD_VIEW')) ? 'not-allowed' : 'pointer' }}
                   >

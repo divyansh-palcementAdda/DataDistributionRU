@@ -22,6 +22,7 @@ const ApiRoutes = {
         reassignDistribute: '/api/leads/reassign/distribute',
         changeStatus: '/api/leads/{id}/change-status',
         statusHistory: '/api/leads/{id}/status-history',
+        avail: '/api/leads/{id}/avail',
     },
     Lead_Source: {
         create: '/api/lead-sources',

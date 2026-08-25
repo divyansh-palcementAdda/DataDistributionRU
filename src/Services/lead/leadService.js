@@ -210,3 +210,14 @@ export const getLeadStatusHistory = async (id, params = {}) => {
         throw error;
     }
 };
+
+// Mark a lead as availed — POST /api/leads/{id}/avail
+export const availLead = async (id) => {
+    try {
+        const url = ApiRoutes.Lead.avail.replace("{id}", id);
+        const response = await axiosInstance.post(url);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};

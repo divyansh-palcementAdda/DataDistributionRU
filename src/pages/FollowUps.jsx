@@ -35,7 +35,7 @@ const getStatusClass = (value) => {
 };
 
 const FollowUps = () => {
-  const { showToast } = useAppContext();
+  const { showToast, navTo } = useAppContext();
 
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -89,6 +89,13 @@ const FollowUps = () => {
   const handleReschedule = (row) => {
     setSelectedFollowup(row);
     setIsScheduleModalOpen(true);
+  };
+
+  const handleViewLead = (row) => {
+    const leadId = row.leadId || row.id;
+    if (leadId) {
+      navTo(`lead-detail/${leadId}`);
+    }
   };
 
   const handleScheduleSubmit = async (payload) => {
@@ -210,6 +217,12 @@ const FollowUps = () => {
       header: "Actions",
       render: (_, row) => (
         <div className="flex gap-2">
+          <button
+            className="btn btn-sm btn-primary"
+            onClick={() => handleViewLead(row)}
+          >
+            View
+          </button>
           <button
             className="btn btn-sm btn-outline"
             onClick={() => handleReschedule(row)}

@@ -469,7 +469,7 @@ const CallersDashboard = () => {
         onCardClick={handleCardClick}
         activeFilters={activeFilters}
       />
-      <SystemCards data={systemCardsData} />
+      {/* <SystemCards data={systemCardsData} /> */}
       <CategorywiseCard 
         onCardClick={handleCardClick}
         activeFilters={activeFilters}

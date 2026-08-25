@@ -355,7 +355,7 @@ const Leads = () => {
         )}
         {/* Allot Lead */}
         <button
-          className="btn btn-secondary btn-sm flex items-center gap-1.5"
+          className="btn btn-secondary btn-sm flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={() => {
             if (selectedIds.length > 0) {
               openAllotModal(selectedIds);
@@ -363,6 +363,8 @@ const Leads = () => {
               showToast('Please select leads to allot', 'warning');
             }
           }}
+          disabled={!hasPermission('LEAD_ASSIGN')}
+          style={{ cursor: !hasPermission('LEAD_ASSIGN') ? 'not-allowed' : 'pointer' }}
         >
           <svg
             width="13"
@@ -410,6 +412,8 @@ const Leads = () => {
                     checked={selectAll}
                     onChange={(e) => handleSelectAll(e.target.checked)}
                     className="cursor-pointer"
+                    disabled={!hasPermission('LEAD_ASSIGN')}
+                    style={{ cursor: !hasPermission('LEAD_ASSIGN') ? 'not-allowed' : 'pointer' }}
                   />
                 ),
                 sortable: false,
@@ -424,6 +428,8 @@ const Leads = () => {
                       checked={selectedIds.includes(idToUse)}
                       onChange={(e) => handleSelectRow(idToUse, e.target.checked)}
                       className="cursor-pointer"
+                      disabled={!hasPermission('LEAD_ASSIGN')}
+                      style={{ cursor: !hasPermission('LEAD_ASSIGN') ? 'not-allowed' : 'pointer' }}
                     />
                   );
                 },

@@ -7,6 +7,7 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
         remarks: "",
         status: "PENDING",
         leadStatus: "",
+        leadStatusCode: "",
     });
     const [leadStatuses, setLeadStatuses] = useState([]);
     
@@ -57,10 +58,19 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
     const handleChange = (e) => {
         const { name, value } = e.target;
 
-        setFormData((prev) => ({
-            ...prev,
-            [name]: value,
-        }));
+        if (name === "leadStatus") {
+            const selectedStatus = leadStatuses.find(status => status.id === value);
+            setFormData((prev) => ({
+                ...prev,
+                [name]: value,
+                leadStatusCode: selectedStatus?.code || "",
+            }));
+        } else {
+            setFormData((prev) => ({
+                ...prev,
+                [name]: value,
+            }));
+        }
     };
 
     const handleSave = async () => {
@@ -78,6 +88,7 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
             remarks: "",
             status: "PENDING",
             leadStatus: "",
+            leadStatusCode: "",
         });
 
         onClose();

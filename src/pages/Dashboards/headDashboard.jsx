@@ -411,7 +411,7 @@ const HeadDashboard = () => {
         onCardClick={handleCardClick}
         activeFilters={activeFilters}
       />
-      <SystemCards data={systemData} />
+      {/* <SystemCards data={systemData} /> */}
       <BoardWiseCard 
         onCardClick={handleCardClick}
         activeFilters={activeFilters}

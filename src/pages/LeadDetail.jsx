@@ -7,7 +7,7 @@ import ScheduleModal from "../component/reusable/Leads/scheduleModel";
 import WhatsAppModal from '../component/reusable/WhatsAppModal';
 import EmailModal from '../component/reusable/EmailModal';
 import ReusableTable from '../component/reusable/table';
-import { createLeadSchedule, getLeadById, getLeadInfoPanel, sendLeadWhatsApp, sendLeadEmail } from '../Services/lead/leadService';
+import { createLeadSchedule, getLeadById, getLeadInfoPanel, sendLeadWhatsApp, sendLeadEmail, changeLeadStatus, getLeadStatusHistory } from '../Services/lead/leadService';
 import { getAllCourses } from '../Services/course/course';
 
 const BASE_URL = import.meta.env.VITE_BASE_URL || '';
@@ -26,6 +26,8 @@ const LeadDetail = () => {
   const [coursesLoading, setCoursesLoading] = useState(false);
   const [communicationConfig, setCommunicationConfig] = useState(null);
   const [configLoading, setConfigLoading] = useState(false);
+  const [statusHistory, setStatusHistory] = useState([]);
+  const [statusHistoryLoading, setStatusHistoryLoading] = useState(false);
 
   // Searchable course dropdown state
   const [courseSearch, setCourseSearch] = useState('');
@@ -117,6 +119,28 @@ const LeadDetail = () => {
     fetchInfoPanel();
   }, [selectedCourse]);
 
+  useEffect(() => {
+    const fetchStatusHistory = async () => {
+      if (id) {
+        setStatusHistoryLoading(true);
+        try {
+          const res = await getLeadStatusHistory(id, { page: 0, size: 50, sortBy: 'changedAt', sortDirection: 'desc' });
+          if (res?.data?.success && res?.data?.data?.content) {
+            setStatusHistory(res.data.data.content);
+          } else {
+            setStatusHistory([]);
+          }
+        } catch (err) {
+          console.error("Failed to fetch status history", err);
+          setStatusHistory([]);
+        } finally {
+          setStatusHistoryLoading(false);
+        }
+      }
+    };
+    fetchStatusHistory();
+  }, [id]);
+
   const initials = (() => {
     const fullName = leadDetails?.fullName;
     return fullName ? fullName.substring(0, 2).toUpperCase() : '--';
@@ -150,16 +174,6 @@ const LeadDetail = () => {
     }
   };
 
-  // Status history: only current status from API
-  const statusHistory = leadDetails?.currentStatus
-    ? [{
-        status: leadDetails.currentStatus,
-        changedAt: leadDetails.updatedAt || leadDetails.createdAt,
-        changedBy: leadDetails.createdBy,
-        remarks: leadDetails.remarks || '-',
-      }]
-    : [];
-
   const statusHistoryColumns = [
     {
       key: 'sno',
@@ -170,7 +184,8 @@ const LeadDetail = () => {
       key: 'status',
       header: 'Status',
       render: (value, row, index) => {
-        const statusValue = typeof value === 'object' ? value?.name || value?.code || '-' : value || '-';
+        const statusObj = row?.newStatus || row?.currentStatus || row?.status;
+        const statusValue = typeof statusObj === 'object' ? statusObj?.name || statusObj?.code || '-' : statusObj || '-';
         return (
           <div className="flex items-center gap-2">
             <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(statusValue)}`}>
@@ -196,12 +211,12 @@ const LeadDetail = () => {
       render: (value, row) =>
         row?.changedBy?.firstName && row?.changedBy?.lastName
           ? `${row.changedBy.firstName} ${row.changedBy.lastName}`
-          : row?.changedBy?.username || '-',
+          : row?.changedBy?.username || row?.changedBy || '-',
     },
     {
       key: 'remarks',
       header: 'Remarks',
-      render: (value) => value || '-',
+      render: (value, row) => row?.feedback || row?.remarks || value || '-',
     },
   ];
 
@@ -210,6 +225,19 @@ const LeadDetail = () => {
       const response = await createLeadSchedule(id, formData);
       if (response?.data?.success) {
         showToast('Follow-up scheduled successfully');
+        
+        // Background API call to change lead status
+        if (formData.leadStatus && formData.leadStatusCode) {
+          try {
+            await changeLeadStatus(id, {
+              newStatusId: formData.leadStatus,
+              statusCode: formData.leadStatusCode,
+              feedback: formData.remarks || ""
+            });
+          } catch (error) {
+            console.error('Error changing lead status in background:', error);
+          }
+        }
       } else {
         showToast(response?.data?.message || 'Unable to schedule follow-up');
       }
@@ -553,11 +581,20 @@ const LeadDetail = () => {
             {/* Lead Status History */}
             <div className="mt-5 pt-5 border-t border-gray-100">
               <h3 className="text-sm font-bold text-gray-800 mb-4">Lead Status History</h3>
-              <ReusableTable
-                columns={statusHistoryColumns}
-                data={statusHistory}
-                emptyMessage="No status history available"
-              />
+              {statusHistoryLoading ? (
+                <div className="flex items-center justify-center py-8 gap-2 text-gray-500 text-sm">
+                  <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                  </svg>
+                  Loading status history...
+                </div>
+              ) : (
+                <ReusableTable
+                  columns={statusHistoryColumns}
+                  data={statusHistory}
+                  emptyMessage="No status history available"
+                />
+              )}
             </div>
           </div>
         </div>

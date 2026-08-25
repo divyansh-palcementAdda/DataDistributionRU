@@ -20,6 +20,8 @@ const ApiRoutes = {
         sendEmail: '/api/leads/{leadId}/course-template/email',
         reassign: '/api/leads/reassign',
         reassignDistribute: '/api/leads/reassign/distribute',
+        changeStatus: '/api/leads/{id}/change-status',
+        statusHistory: '/api/leads/{id}/status-history',
     },
     Lead_Source: {
         create: '/api/lead-sources',

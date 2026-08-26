@@ -152,6 +152,10 @@ const ApiRoutes = {
         lowDataUsers: '/api/dashboard/low-data-users',
         usersNotLoggedIn: '/api/dashboard/users-not-logged-in',
         followupUsersNotLoggedIn11am: '/api/dashboard/followup-users-not-logged-in-11am',
+        //its all cards 
+        unallottedCount: '/api/dashboard/leads/unallotted/count',
+        availedCount: '/api/dashboard/leads/availed/count',
+        allottedCount: '/api/dashboard/leads/allotted/count',
     },
 
     Distribution: {

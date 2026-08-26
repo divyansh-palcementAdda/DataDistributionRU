@@ -19,6 +19,9 @@ import SystemCards from '../../component/reusable/DashBoards/SystemCards';
 import CategorywiseCard from '../../component/reusable/DashBoards/categorywiseCard';
 import BoardWiseCard from '../../component/reusable/DashBoards/BoardWiseCard';
 import GradWiseCard from '../../component/reusable/DashBoards/gradWiseCard';
+import UnallottedCard from '../../component/reusable/DashBoards/UnallottedCard';
+import AvailedCard from '../../component/reusable/DashBoards/availedCard';
+import AllottedCard from '../../component/reusable/DashBoards/allottedCard';
 import { getLeadSourceBreakdown, getGradeBreakdown, getBoardBreakdown } from '../../Services/cards/cardService';
 import { getRecentActivity, getDashboardSummary } from '../../Services/Dashboard/Dashboard';
 
@@ -111,6 +114,9 @@ const Dashboard = () => {
 
   const [recentActivityData, setRecentActivityData] = useState([]);
   const [dashboardSummaryData, setDashboardSummaryData] = useState(null);
+
+  const [activeFilters, setActiveFilters] = useState([]);
+  const [filterRequest, setFilterRequest] = useState({});
 
   // Fetch lead source data from API
   useEffect(() => {
@@ -261,6 +267,62 @@ const Dashboard = () => {
       totalSourceOfData: 3, // consultant, inbound, outbound
     };
   }, [leads]);
+
+  const handleCardClick = (cardInfo) => {
+    const existingFilterIndex = activeFilters.findIndex(
+      f => f.type === cardInfo.type && f.value === cardInfo.value
+    );
+    
+    if (existingFilterIndex !== -1) {
+      setActiveFilters(activeFilters.filter((_, index) => index !== existingFilterIndex));
+    } else {
+      setActiveFilters(
+        activeFilters.filter(f => f.type !== cardInfo.type).concat(cardInfo)
+      );
+    }
+  };
+
+  // Update filterRequest when activeFilters changes
+  useEffect(() => {
+    const newFilterRequest = {};
+    activeFilters.forEach(filter => {
+      switch (filter.type) {
+        case 'unallotted':
+          newFilterRequest.allotted = false;
+          break;
+        case 'availed':
+          newFilterRequest.availed = true;
+          break;
+        case 'allotted':
+          newFilterRequest.allotted = true;
+          break;
+        case 'leadStatus':
+          if (!newFilterRequest.leadStatusIds) newFilterRequest.leadStatusIds = [];
+          newFilterRequest.leadStatusIds.push(filter.value);
+          break;
+        case 'board':
+          if (!newFilterRequest.boardIds) newFilterRequest.boardIds = [];
+          newFilterRequest.boardIds.push(filter.value);
+          break;
+        case 'grade':
+          if (!newFilterRequest.gradeIds) newFilterRequest.gradeIds = [];
+          newFilterRequest.gradeIds.push(filter.value);
+          break;
+        case 'courseType':
+          if (!newFilterRequest.courseTypeIds) newFilterRequest.courseTypeIds = [];
+          newFilterRequest.courseTypeIds.push(filter.value);
+          break;
+        case 'leadSource':
+          if (!newFilterRequest.leadSourceIds) newFilterRequest.leadSourceIds = [];
+          newFilterRequest.leadSourceIds.push(filter.value);
+          break;
+        default:
+          break;
+      }
+    });
+    setFilterRequest(newFilterRequest);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeFilters]);
 
   
 
@@ -562,6 +624,21 @@ const Dashboard = () => {
           <CategorywiseCard />
           <BoardWiseCard data={boardWiseData} />
           <GradWiseCard data={gradWiseData} />
+          <UnallottedCard 
+            onCardClick={handleCardClick}
+            activeFilters={activeFilters}
+            filterRequest={filterRequest}
+          />
+          <AvailedCard 
+            onCardClick={handleCardClick}
+            activeFilters={activeFilters}
+            filterRequest={filterRequest}
+          />
+          <AllottedCard 
+            onCardClick={handleCardClick}
+            activeFilters={activeFilters}
+            filterRequest={filterRequest}
+          />
         </div>
 
         {/* Right Column: Recent Activity */}

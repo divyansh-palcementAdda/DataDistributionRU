@@ -10,6 +10,9 @@ import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import DeleteModal from "../component/reusable/deleteModel"
 import AssignLeadModal from '../component/reusable/Leads/AssignLeadModal';
 import LeadCards from '../component/reusable/DashBoards/leadCards';
+import UnallottedCard from '../component/reusable/DashBoards/UnallottedCard';
+import AvailedCard from '../component/reusable/DashBoards/availedCard';
+import AllottedCard from '../component/reusable/DashBoards/allottedCard';
 import BulkUploadModal from '../component/reusable/Leads/BulkUploadModal';
 import PreviewDistributionModal from '../component/reusable/Leads/PreviewDistributionModal';
 
@@ -25,6 +28,8 @@ const Leads = () => {
   const [selectedCard, setSelectedCard] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
+  const [activeFilters, setActiveFilters] = useState([]);
+  const [filterRequest, setFilterRequest] = useState({});
 
   const handleSelectAll = (checked) => {
     setSelectAll(checked);
@@ -141,11 +146,25 @@ const Leads = () => {
 
   const handleCardClick = (cardInfo) => {
     // Toggle: same card click kare toh filter clear ho jaye
+    const existingFilterIndex = activeFilters.findIndex(
+      f => f.type === cardInfo.type && f.value === cardInfo.value
+    );
+    
+    if (existingFilterIndex !== -1) {
+      setActiveFilters(activeFilters.filter((_, index) => index !== existingFilterIndex));
+    } else {
+      setActiveFilters(
+        activeFilters.filter(f => f.type !== cardInfo.type).concat(cardInfo)
+      );
+    }
+    
+    // Also update selectedCard for backward compatibility with LeadCards
     if (selectedCard?.type === cardInfo.type && selectedCard?.value === cardInfo.value) {
       setSelectedCard(null);
     } else {
       setSelectedCard(cardInfo);
     }
+    
     setPage(0); // filter change hone par page reset
   };
 
@@ -158,7 +177,9 @@ const Leads = () => {
         search: search || undefined,
         sortBy: sortBy || undefined,
         sortDirection: sortDirection || undefined,
-        // Card filter — statusId send karo agar koi card selected hai
+        // Add filterRequest parameters
+        ...filterRequest,
+        // Card filter — statusId send karo agar koi card selected hai (for backward compatibility)
         ...(selectedCard?.type === 'leadStatus' && selectedCard?.value
           ? { statusId: selectedCard.value }
           : {}),
@@ -199,7 +220,48 @@ const Leads = () => {
       fetchLeads();
     }, 500);
     return () => clearTimeout(delayDebounceFn);
-  }, [page, size, search, sortBy, sortDirection, leadRefreshTrigger, selectedCard]);
+  }, [page, size, search, sortBy, sortDirection, leadRefreshTrigger, selectedCard, filterRequest]);
+
+  // Update filterRequest when activeFilters changes
+  useEffect(() => {
+    const newFilterRequest = {};
+    activeFilters.forEach(filter => {
+      switch (filter.type) {
+        case 'unallotted':
+          newFilterRequest.allotted = false;
+          break;
+        case 'availed':
+          newFilterRequest.availed = true;
+          break;
+        case 'allotted':
+          newFilterRequest.allotted = true;
+          break;
+        case 'leadStatus':
+          if (!newFilterRequest.leadStatusIds) newFilterRequest.leadStatusIds = [];
+          newFilterRequest.leadStatusIds.push(filter.value);
+          break;
+        case 'board':
+          if (!newFilterRequest.boardIds) newFilterRequest.boardIds = [];
+          newFilterRequest.boardIds.push(filter.value);
+          break;
+        case 'grade':
+          if (!newFilterRequest.gradeIds) newFilterRequest.gradeIds = [];
+          newFilterRequest.gradeIds.push(filter.value);
+          break;
+        case 'courseType':
+          if (!newFilterRequest.courseTypeIds) newFilterRequest.courseTypeIds = [];
+          newFilterRequest.courseTypeIds.push(filter.value);
+          break;
+        case 'leadSource':
+          if (!newFilterRequest.leadSourceIds) newFilterRequest.leadSourceIds = [];
+          newFilterRequest.leadSourceIds.push(filter.value);
+          break;
+        default:
+          break;
+      }
+    });
+    setFilterRequest(newFilterRequest);
+  }, [activeFilters]);
 
   useEffect(() => {
     fetchCourses();
@@ -330,6 +392,25 @@ const Leads = () => {
         onCardClick={handleCardClick}
         selectedCard={selectedCard}
       />
+      
+      {/* ── New Lead Status Cards ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }}>
+        <UnallottedCard 
+          onCardClick={handleCardClick}
+          activeFilters={activeFilters}
+          filterRequest={filterRequest}
+        />
+        <AvailedCard 
+          onCardClick={handleCardClick}
+          activeFilters={activeFilters}
+          filterRequest={filterRequest}
+        />
+        <AllottedCard 
+          onCardClick={handleCardClick}
+          activeFilters={activeFilters}
+          filterRequest={filterRequest}
+        />
+      </div>
 
       {/* ── Filter Bar ── */}
       <div className="flex gap-2 flex-wrap mb-4">
@@ -340,8 +421,27 @@ const Leads = () => {
           value={search}
           onChange={(e) => { setSearch(e.target.value); }}
         />
-        {/* Active card filter badge */}
-        {selectedCard && (
+        {/* Active card filter badges */}
+        {activeFilters.map((filter, index) => (
+          <div 
+            key={`${filter.type}-${filter.value}-${index}`}
+            className="flex items-center gap-1.5 px-3 py-1 bg-indigo-50 border border-indigo-200 rounded-md text-sm text-indigo-700 font-medium"
+          >
+            <span>{filter.label}</span>
+            <button
+              onClick={() => {
+                setActiveFilters(activeFilters.filter((_, i) => i !== index));
+                setPage(0);
+              }}
+              className="ml-1 text-indigo-400 hover:text-indigo-700 bg-transparent border-none cursor-pointer leading-none"
+              title="Clear filter"
+            >
+              ✕
+            </button>
+          </div>
+        ))}
+        {/* Legacy selectedCard support */}
+        {selectedCard && !activeFilters.some(f => f.type === selectedCard.type && f.value === selectedCard.value) && (
           <div className="flex items-center gap-1.5 px-3 py-1 bg-indigo-50 border border-indigo-200 rounded-md text-sm text-indigo-700 font-medium">
             <span>Filter: {selectedCard.label}</span>
             <button
@@ -352,6 +452,20 @@ const Leads = () => {
               ✕
             </button>
           </div>
+        )}
+        {/* Clear all filters button */}
+        {(activeFilters.length > 0 || selectedCard) && (
+          <button
+            onClick={() => {
+              setActiveFilters([]);
+              setSelectedCard(null);
+              setPage(0);
+            }}
+            className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 rounded border border-gray-300 cursor-pointer"
+            title="Clear all filters"
+          >
+            Clear All
+          </button>
         )}
         {/* Allot Lead */}
         <button

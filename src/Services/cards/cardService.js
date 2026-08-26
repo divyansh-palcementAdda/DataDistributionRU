@@ -55,3 +55,30 @@ export const getCourseTypesBreakdown = async (params = {}) => {
     }
 };
 
+export const getUnallottedCount = async (filterRequest = {}) => {
+    try {
+        const response = await axiosInstance.get(ApiRoutes.Dashboard.unallottedCount, { params: filterRequest });
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
+export const getAvailedCount = async (filterRequest = {}) => {
+    try {
+        const response = await axiosInstance.get(ApiRoutes.Dashboard.availedCount, { params: filterRequest });
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
+export const getAllottedCount = async (filterRequest = {}) => {
+    try {
+        const response = await axiosInstance.get(ApiRoutes.Dashboard.allottedCount, { params: filterRequest });
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+

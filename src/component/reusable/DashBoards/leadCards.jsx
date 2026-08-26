@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getLeadStatusBreakdown } from '../../../Services/cards/cardService';
 
-const LeadCards = ({ onCardClick, activeFilters = [], courseTypeId, leadSourceId, boardId, gradeId, counselorId, departmentId }) => {
+const LeadCards = ({ onCardClick, activeFilters = [], courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId }) => {
   const [leadData, setLeadData] = useState([]);
 
   useEffect(() => {
@@ -12,9 +12,11 @@ const LeadCards = ({ onCardClick, activeFilters = [], courseTypeId, leadSourceId
         if (leadSourceId) params.leadSourceId = leadSourceId;
         if (boardId) params.boardId = boardId;
         if (gradeId) params.gradeId = gradeId;
-        if (counselorId) params.counselorId = counselorId;
+        if (assignedUserIds) params.assignedUserIds = assignedUserIds;
         if (departmentId) params.departmentId = departmentId;
+        console.log('LeadCards fetching with params:', params);
         const response = await getLeadStatusBreakdown(params);
+        console.log('LeadCards response:', response);
         setLeadData(response.data?.data || []);
       } catch (error) {
         console.error('Error fetching lead status breakdown:', error);
@@ -22,7 +24,7 @@ const LeadCards = ({ onCardClick, activeFilters = [], courseTypeId, leadSourceId
     };
 
     fetchLeadStatusData();
-  }, [courseTypeId, leadSourceId, boardId, gradeId, counselorId, departmentId]);
+  }, [courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId]);
   // Responsive styles
   const gridStyle = {
     display: 'grid',

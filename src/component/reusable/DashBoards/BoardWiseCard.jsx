@@ -20,7 +20,7 @@ const COLORS = [
   { iconBg: '#FEF9C3',              iconStroke: '#CA8A04' },
 ];
 
-const BoardWiseCard = ({ data, onCardClick, activeFilters = [] }) => {
+const BoardWiseCard = ({ data, onCardClick, activeFilters = [], courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId }) => {
   // API returns an array: [{id, name, code, count, percentage}, ...]
   const [boardData, setBoardData] = useState([]);
 
@@ -33,8 +33,15 @@ const BoardWiseCard = ({ data, onCardClick, activeFilters = [] }) => {
 
     const fetchBoardData = async () => {
       try {
-        const filterRequest = {};
-        const response = await getBoardBreakdown({ filterRequest: JSON.stringify(filterRequest) });
+        const params = {};
+        if (courseTypeId) params.courseTypeId = courseTypeId;
+        if (leadSourceId) params.leadSourceId = leadSourceId;
+        if (boardId) params.boardId = boardId;
+        if (gradeId) params.gradeId = gradeId;
+        if (assignedUserIds) params.assignedUserIds = assignedUserIds;
+        if (departmentId) params.departmentId = departmentId;
+        
+        const response = await getBoardBreakdown(params);
         const payload = response?.data?.data ?? response?.data ?? response ?? [];
         // Normalise: always store as an array
         setBoardData(Array.isArray(payload) ? payload : Object.values(payload));
@@ -44,7 +51,7 @@ const BoardWiseCard = ({ data, onCardClick, activeFilters = [] }) => {
     };
 
     fetchBoardData();
-  }, [data]);
+  }, [data, courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId]);
 
   // Accept both array (new) and object (legacy) formats
   const items = Array.isArray(boardData)

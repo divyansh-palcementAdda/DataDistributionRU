@@ -9,7 +9,7 @@ import { reassignLeads, reassignDistributeLeads, reassignFollowUps, reassignDist
  * Props:
  *  - isOpen            : bool
  *  - onClose           : fn
- *  - currentCounselorId: string - the current counselor's ID (for filtering)
+ *  - currentAssignedUserId: string - the current assigned user's ID (for filtering)
  *  - selectedRows      : Set - selected lead/followup IDs from table
  *  - dataType          : string - 'leads' or 'followups'
  *  - showToast         : fn(message, type) — optional toast notifier
@@ -18,7 +18,7 @@ import { reassignLeads, reassignDistributeLeads, reassignFollowUps, reassignDist
 const ReassignModal = ({ 
   isOpen, 
   onClose, 
-  currentCounselorId, 
+  currentAssignedUserId, 
   selectedRows,
   dataType = 'leads',
   showToast,
@@ -65,7 +65,7 @@ const ReassignModal = ({
           Array.isArray(body?.data?.content) ? body.data.content :
           Array.isArray(body) ? body : [];
         // Filter out current counselor from the list
-        const filteredUsers = list.filter(user => (user.id || user.userId) !== currentCounselorId);
+        const filteredUsers = list.filter(user => (user.id || user.userId) !== currentAssignedUserId);
         setUsers(filteredUsers);
         setSingleSelectedUserId('');
       } catch (err) {
@@ -76,7 +76,7 @@ const ReassignModal = ({
     };
 
     fetchUsers();
-  }, [isOpen, currentCounselorId]);
+  }, [isOpen, currentAssignedUserId]);
 
   // ── helpers ────────────────────────────────────────────────
   const toggleUser = (id) => {
@@ -120,7 +120,7 @@ const ReassignModal = ({
       if (dataType === 'followups') {
         // Use follow-up specific API for follow-ups
         payload = {
-          sourceUserId: currentCounselorId,
+          sourceUserId: currentAssignedUserId,
           assignments: [
             {
               targetUserId: singleSelectedUserId,
@@ -135,7 +135,7 @@ const ReassignModal = ({
       } else {
         // Use existing lead reassign API for leads
         payload = {
-          sourceUserId: currentCounselorId,
+          sourceUserId: currentAssignedUserId,
           assignments: [
             {
               targetUserId: singleSelectedUserId,
@@ -221,7 +221,7 @@ const ReassignModal = ({
       if (dataType === 'followups') {
         // Use follow-up distribute API for follow-ups
         payload = {
-          sourceUserId: currentCounselorId,
+          sourceUserId: currentAssignedUserId,
           assignments: assignments,
           reason: reason,
           allowWorkloadOverride: false
@@ -230,7 +230,7 @@ const ReassignModal = ({
       } else {
         // Use existing lead distribute API for leads
         payload = {
-          sourceUserId: currentCounselorId,
+          sourceUserId: currentAssignedUserId,
           assignments: assignments,
           reason: reason,
           reassignRelatedPendingFollowUps: true

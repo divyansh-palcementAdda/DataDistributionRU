@@ -10,7 +10,7 @@ const AllottedIcon = () => (
   </svg>
 );
 
-const AllottedCard = ({ data, onCardClick, activeFilters = [], filterRequest = {} }) => {
+const AllottedCard = ({ data, onCardClick, activeFilters = [], filterRequest = {}, courseTypeId, leadSourceId, boardId, gradeId, counselorId, departmentId, statusId }) => {
   const [allottedData, setAllottedData] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -23,7 +23,19 @@ const AllottedCard = ({ data, onCardClick, activeFilters = [], filterRequest = {
     const fetchAllottedCount = async () => {
       try {
         setLoading(true);
-        const response = await getAllottedCount(filterRequest);
+        const params = {};
+        if (courseTypeId) params.courseTypeId = courseTypeId;
+        if (leadSourceId) params.leadSourceId = leadSourceId;
+        if (boardId) params.boardId = boardId;
+        if (gradeId) params.gradeId = gradeId;
+        if (counselorId) params.counselorId = counselorId;
+        if (departmentId) params.departmentId = departmentId;
+        if (statusId) params.statusId = statusId;
+        
+        // Merge with filterRequest if provided
+        const finalParams = { ...params, ...filterRequest };
+        
+        const response = await getAllottedCount(finalParams);
         const payload = response?.data?.data ?? response?.data ?? response;
         setAllottedData(payload);
       } catch (error) {
@@ -35,7 +47,7 @@ const AllottedCard = ({ data, onCardClick, activeFilters = [], filterRequest = {
     };
 
     fetchAllottedCount();
-  }, [data, filterRequest]);
+  }, [data, filterRequest, courseTypeId, leadSourceId, boardId, gradeId, counselorId, departmentId, statusId]);
 
   const count = allottedData?.count ?? 0;
   const type = allottedData?.type ?? 'Allotted';

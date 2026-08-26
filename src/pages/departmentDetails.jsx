@@ -3,11 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { FiArrowLeft, FiLayers, FiUsers, FiUser, FiCalendar, FiEdit, FiEye, FiMessageSquare, FiUserPlus } from 'react-icons/fi';
 import { getDepartmentById, getDepartmentUsers, getDepartmentHods, getDepartmentCounsellors } from '../Services/department/departmentService';
 import {
+    getLeadStatusBreakdown,
     getLeadSourceBreakdown,
     getGradeBreakdown,
     getBoardBreakdown,
     getCourseTypesBreakdown,
 } from '../Services/cards/cardService';
+
 import axiosInstance from '../axiosInstance/axios';
 import ApiRoutes from '../apiRoutes/allApiRoutes';
 import LeadCards from '../component/reusable/DashBoards/leadCards';
@@ -15,6 +17,9 @@ import LeadSource from '../component/reusable/DashBoards/leadSource';
 import CategorywiseCard from '../component/reusable/DashBoards/categorywiseCard';
 import BoardWiseCard from '../component/reusable/DashBoards/BoardWiseCard';
 import GradWiseCard from '../component/reusable/DashBoards/gradWiseCard';
+import AllottedCard from '../component/reusable/DashBoards/allottedCard';
+import AvailedCard from '../component/reusable/DashBoards/availedCard';
+import UnallottedCard from '../component/reusable/DashBoards/UnallottedCard';
 import ReusableTable from '../component/reusable/table';
 import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import AddDepartmentModal from '../component/reusable/department/addDepartmentModel';
@@ -169,6 +174,9 @@ const fetchLeadsForCard = async (activeFilters, departmentId, page, size, sortBy
             case 'courseType':  params.courseTypeId = filter.value; break;
             case 'board':       params.boardId      = filter.value; break;
             case 'grade':       params.gradeId      = filter.value; break;
+            case 'allotted':    params.isAllotted   = true; break;
+            case 'availed':      params.isAvailed     = true; break;
+            case 'unallotted':   params.isUnallotted  = true; break;
             default:             break;
         }
     });
@@ -207,6 +215,7 @@ const DepartmentDetails = () => {
 
     // filter / table state - support multiple active filters
     const [activeFilters, setActiveFilters] = useState([]); // Array of { type, value, label }
+    const [filterRequest, setFilterRequest] = useState({});
     const [tableData, setTableData]                     = useState([]);
     const [tableLoading, setTableLoading]               = useState(false);
 
@@ -347,6 +356,34 @@ const DepartmentDetails = () => {
         setTablePage(0);
         setSelectedRows(new Set());
     };
+
+    // ── update filterRequest when activeFilters change for cards ──
+    useEffect(() => {
+        const newFilterRequest = { departmentId: id };
+        activeFilters.forEach(filter => {
+            switch (filter.type) {
+                case 'unallotted':
+                    newFilterRequest.allotted = false;
+                    break;
+                case 'availed':
+                    newFilterRequest.availed = true;
+                    break;
+                case 'allotted':
+                    newFilterRequest.allotted = true;
+                    break;
+                default:
+                    break;
+            }
+        });
+        setFilterRequest(newFilterRequest);
+    }, [activeFilters, id]);
+
+    // ── initialize filterRequest with departmentId ──
+    useEffect(() => {
+        if (id) {
+            setFilterRequest({ departmentId: id });
+        }
+    }, [id]);
 
     // ── get current filter label for display ──
     const getFilterLabel = () => {
@@ -796,6 +833,29 @@ const DepartmentDetails = () => {
                     onCardClick={handleCardClick}
                     activeFilters={activeFilters}
                 />
+                
+                {/* New Allotted/Availed/Unallotted Cards */}
+                <div style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '12px', marginTop: '16px' }}>
+                    <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#0F172A', marginBottom: '16px' }}>Lead Assignment Statistics</h3>
+                    <AllottedCard
+                        onCardClick={handleCardClick}
+                        activeFilters={activeFilters}
+                        filterRequest={filterRequest}
+                        departmentId={id}
+                    />
+                    <AvailedCard
+                        onCardClick={handleCardClick}
+                        activeFilters={activeFilters}
+                        filterRequest={filterRequest}
+                        departmentId={id}
+                    />
+                    <UnallottedCard
+                        onCardClick={handleCardClick}
+                        activeFilters={activeFilters}
+                        filterRequest={filterRequest}
+                        departmentId={id}
+                    />
+                </div>
             </div>
 
             {/* ── Filtered Lead Table ── */}
@@ -953,6 +1013,15 @@ const DepartmentDetails = () => {
                 }),
                 ...(activeFilters.some(f => f.type === 'grade') && { 
                     gradeIds: activeFilters.filter(f => f.type === 'grade').map(f => f.value) 
+                }),
+                ...(activeFilters.some(f => f.type === 'allotted') && { 
+                    isAllotted: true 
+                }),
+                ...(activeFilters.some(f => f.type === 'availed') && { 
+                    isAvailed: true 
+                }),
+                ...(activeFilters.some(f => f.type === 'unallotted') && { 
+                    isUnallotted: true 
                 }),
             }}
             showToast={(msg, type) => console.log(`[${type}]`, msg)}

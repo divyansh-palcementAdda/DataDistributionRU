@@ -9,7 +9,7 @@ const UnallottedIcon = () => (
   </svg>
 );
 
-const UnallottedCard = ({ data, onCardClick, activeFilters = [], filterRequest = {} }) => {
+const UnallottedCard = ({ data, onCardClick, activeFilters = [], filterRequest = {}, courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId, statusId }) => {
   const [unallottedData, setUnallottedData] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -22,7 +22,19 @@ const UnallottedCard = ({ data, onCardClick, activeFilters = [], filterRequest =
     const fetchUnallottedCount = async () => {
       try {
         setLoading(true);
-        const response = await getUnallottedCount(filterRequest);
+        const params = {};
+        if (courseTypeId) params.courseTypeId = courseTypeId;
+        if (leadSourceId) params.leadSourceId = leadSourceId;
+        if (boardId) params.boardId = boardId;
+        if (gradeId) params.gradeId = gradeId;
+        if (assignedUserIds) params.assignedUserIds = assignedUserIds;
+        if (departmentId) params.departmentId = departmentId;
+        if (statusId) params.statusId = statusId;
+        
+        // Merge with filterRequest if provided
+        const finalParams = { ...params, ...filterRequest };
+        
+        const response = await getUnallottedCount(finalParams);
         const payload = response?.data?.data ?? response?.data ?? response;
         setUnallottedData(payload);
       } catch (error) {
@@ -34,7 +46,7 @@ const UnallottedCard = ({ data, onCardClick, activeFilters = [], filterRequest =
     };
 
     fetchUnallottedCount();
-  }, [data, filterRequest]);
+  }, [data, filterRequest, courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId, statusId]);
 
   const count = unallottedData?.count ?? 0;
   const type = unallottedData?.type ?? 'Unallotted';

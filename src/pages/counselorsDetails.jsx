@@ -17,6 +17,9 @@ import LeadSource from '../component/reusable/DashBoards/leadSource';
 import CategorywiseCard from '../component/reusable/DashBoards/categorywiseCard';
 import BoardWiseCard from '../component/reusable/DashBoards/BoardWiseCard';
 import GradWiseCard from '../component/reusable/DashBoards/gradWiseCard';
+import UnallottedCard from '../component/reusable/DashBoards/UnallottedCard';
+import AvailedCard from '../component/reusable/DashBoards/availedCard';
+import AllottedCard from '../component/reusable/DashBoards/allottedCard';
 import ReusableTable from '../component/reusable/table';
 import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import AssignLeadModal from '../component/reusable/Leads/AssignLeadModal';
@@ -374,6 +377,9 @@ const fetchLeadsForCard = async (activeFilters, counselorId, page, size, sortBy,
             case 'courseType':  params.courseTypeId = filter.value; break;
             case 'board':       params.boardId      = filter.value; break;
             case 'grade':       params.gradeId      = filter.value; break;
+            case 'unallotted':  params.allotted     = false;        break;
+            case 'availed':     params.availed      = true;         break;
+            case 'allotted':    params.allotted     = true;         break;
             default:             break;
         }
     });
@@ -473,6 +479,9 @@ const CounselorDetails = () => {
     const [tableData, setTableData] = useState([]);
     const [tableLoading, setTableLoading] = useState(false);
 
+    // filter request for cards
+    const [filterRequest, setFilterRequest] = useState({ assignedUserIds: id });
+
     // server-side pagination & sorting
     const [tablePage, setTablePage] = useState(0);
     const [tableSize, setTableSize] = useState(10);
@@ -548,7 +557,7 @@ const CounselorDetails = () => {
     useEffect(() => {
         if (!id) return;
         const fetchDashboardData = async () => {
-            const params = { counselorId: id };
+            const params = { assignedUserIds: id };
             try {
                 const [sourceRes, courseTypeRes, boardRes, gradeRes] = await Promise.all([
                     getLeadSourceBreakdown(params).catch(() => null),
@@ -582,6 +591,48 @@ const CounselorDetails = () => {
                 setTableLoading(false);
             });
     }, [activeFilters, id, tablePage, tableSize, tableSortBy, tableSortDir]);
+
+    // ── update filterRequest when activeFilters change for cards ──
+    useEffect(() => {
+        const newFilterRequest = { assignedUserIds: id };
+        activeFilters.forEach(filter => {
+            switch (filter.type) {
+                case 'unallotted':
+                    newFilterRequest.allotted = false;
+                    break;
+                case 'availed':
+                    newFilterRequest.availed = true;
+                    break;
+                case 'allotted':
+                    newFilterRequest.allotted = true;
+                    break;
+                case 'leadStatus':
+                    if (!newFilterRequest.leadStatusIds) newFilterRequest.leadStatusIds = [];
+                    newFilterRequest.leadStatusIds.push(filter.value);
+                    break;
+                case 'leadSource':
+                    if (!newFilterRequest.leadSourceIds) newFilterRequest.leadSourceIds = [];
+                    newFilterRequest.leadSourceIds.push(filter.value);
+                    break;
+                case 'courseType':
+                    if (!newFilterRequest.courseTypeIds) newFilterRequest.courseTypeIds = [];
+                    newFilterRequest.courseTypeIds.push(filter.value);
+                    break;
+                case 'board':
+                    if (!newFilterRequest.boardIds) newFilterRequest.boardIds = [];
+                    newFilterRequest.boardIds.push(filter.value);
+                    break;
+                case 'grade':
+                    if (!newFilterRequest.gradeIds) newFilterRequest.gradeIds = [];
+                    newFilterRequest.gradeIds.push(filter.value);
+                    break;
+                // Note: counselor filter is handled by the base assignedUserIds
+                default:
+                    break;
+            }
+        });
+        setFilterRequest(newFilterRequest);
+    }, [activeFilters, id]);
 
     // ── fetch follow-ups when component mounts or pagination changes ──
     useEffect(() => {
@@ -972,27 +1023,49 @@ const CounselorDetails = () => {
                         <LeadCards
                             onCardClick={handleCardClick}
                             activeFilters={activeFilters}
-                            counselorId={id}
+                            assignedUserIds={id}
                         />
                         <LeadSource
                             data={dashData.leadSource}
                             onCardClick={handleCardClick}
                             activeFilters={activeFilters}
+                            assignedUserIds={id}
                         />
                         <CategorywiseCard
                             data={dashData.courseType}
                             onCardClick={handleCardClick}
                             activeFilters={activeFilters}
+                            assignedUserIds={id}
                         />
                         <BoardWiseCard
                             data={dashData.board}
                             onCardClick={handleCardClick}
                             activeFilters={activeFilters}
+                            assignedUserIds={id}
                         />
                         <GradWiseCard
                             data={dashData.grade}
                             onCardClick={handleCardClick}
                             activeFilters={activeFilters}
+                            assignedUserIds={id}
+                        />
+                        <UnallottedCard
+                            onCardClick={handleCardClick}
+                            activeFilters={activeFilters}
+                            filterRequest={filterRequest}
+                            assignedUserIds={id}
+                        />
+                        <AvailedCard
+                            onCardClick={handleCardClick}
+                            activeFilters={activeFilters}
+                            filterRequest={filterRequest}
+                            assignedUserIds={id}
+                        />
+                        <AllottedCard
+                            onCardClick={handleCardClick}
+                            activeFilters={activeFilters}
+                            filterRequest={filterRequest}
+                            assignedUserIds={id}
                         />
                     </div>
 
@@ -1301,20 +1374,29 @@ const CounselorDetails = () => {
                         onClose={() => setIsAssignModalOpen(false)}
                         filters={{
                             assignedUserIds: id ? [id] : [],
-                            ...(activeFilters.some(f => f.type === 'leadStatus') && { 
-                                leadStatusIds: activeFilters.filter(f => f.type === 'leadStatus').map(f => f.value) 
+                            ...(activeFilters.some(f => f.type === 'leadStatus') && {
+                                leadStatusIds: activeFilters.filter(f => f.type === 'leadStatus').map(f => f.value)
                             }),
-                            ...(activeFilters.some(f => f.type === 'leadSource') && { 
-                                leadSourceIds: activeFilters.filter(f => f.type === 'leadSource').map(f => f.value) 
+                            ...(activeFilters.some(f => f.type === 'leadSource') && {
+                                leadSourceIds: activeFilters.filter(f => f.type === 'leadSource').map(f => f.value)
                             }),
-                            ...(activeFilters.some(f => f.type === 'courseType') && { 
-                                courseTypeIds: activeFilters.filter(f => f.type === 'courseType').map(f => f.value) 
+                            ...(activeFilters.some(f => f.type === 'courseType') && {
+                                courseTypeIds: activeFilters.filter(f => f.type === 'courseType').map(f => f.value)
                             }),
-                            ...(activeFilters.some(f => f.type === 'board') && { 
-                                boardIds: activeFilters.filter(f => f.type === 'board').map(f => f.value) 
+                            ...(activeFilters.some(f => f.type === 'board') && {
+                                boardIds: activeFilters.filter(f => f.type === 'board').map(f => f.value)
                             }),
-                            ...(activeFilters.some(f => f.type === 'grade') && { 
-                                gradeIds: activeFilters.filter(f => f.type === 'grade').map(f => f.value) 
+                            ...(activeFilters.some(f => f.type === 'grade') && {
+                                gradeIds: activeFilters.filter(f => f.type === 'grade').map(f => f.value)
+                            }),
+                            ...(activeFilters.some(f => f.type === 'unallotted') && {
+                                allotted: false
+                            }),
+                            ...(activeFilters.some(f => f.type === 'availed') && {
+                                availed: true
+                            }),
+                            ...(activeFilters.some(f => f.type === 'allotted') && {
+                                allotted: true
                             }),
                         }}
                         showToast={(msg, type) => console.log(`[${type}]`, msg)}
@@ -1324,7 +1406,7 @@ const CounselorDetails = () => {
                     <ReassignModal
                         isOpen={isReassignModalOpen}
                         onClose={() => setIsReassignModalOpen(false)}
-                        currentCounselorId={id}
+                        currentAssignedUserId={id}
                         selectedRows={reassignDataType === 'leads' ? 
                             (showReassignableLeads ? reassignableLeadsSelectedRows : selectedRows) : 
                             reassignableFollowUpsSelectedRows}

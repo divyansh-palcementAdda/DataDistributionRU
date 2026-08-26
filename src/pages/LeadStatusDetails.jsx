@@ -15,6 +15,9 @@ import LeadSource from '../component/reusable/DashBoards/leadSource';
 import CategorywiseCard from '../component/reusable/DashBoards/categorywiseCard';
 import BoardWiseCard from '../component/reusable/DashBoards/BoardWiseCard';
 import GradWiseCard from '../component/reusable/DashBoards/gradWiseCard';
+import AllottedCard from '../component/reusable/DashBoards/allottedCard';
+import AvailedCard from '../component/reusable/DashBoards/availedCard';
+import UnallottedCard from '../component/reusable/DashBoards/UnallottedCard';
 import ReusableTable from '../component/reusable/table';
 import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import AssignLeadModal from '../component/reusable/Leads/AssignLeadModal';
@@ -155,6 +158,9 @@ const fetchLeadsForCard = async (activeFilters, statusId, page, size, sortBy, so
             case 'courseType':  params.courseTypeId = filter.value; break;
             case 'board':       params.boardId      = filter.value; break;
             case 'grade':       params.gradeId      = filter.value; break;
+            case 'allotted':    params.isAllotted   = true; break;
+            case 'availed':      params.isAvailed     = true; break;
+            case 'unallotted':   params.isUnallotted  = true; break;
             default:             break;
         }
     });
@@ -188,6 +194,7 @@ const LeadStatusDetails = () => {
 
     // filter / table state - support multiple active filters
     const [activeFilters, setActiveFilters] = useState([]); // Array of { type, value, label }
+    const [filterRequest, setFilterRequest] = useState({});
     const [tableData, setTableData]                     = useState([]);
     const [tableLoading, setTableLoading]               = useState(false);
 
@@ -304,6 +311,34 @@ const LeadStatusDetails = () => {
         setTablePage(0);
         setSelectedRows(new Set());
     };
+
+    // ── update filterRequest when activeFilters change for cards ──
+    useEffect(() => {
+        const newFilterRequest = { statusId: id };
+        activeFilters.forEach(filter => {
+            switch (filter.type) {
+                case 'unallotted':
+                    newFilterRequest.allotted = false;
+                    break;
+                case 'availed':
+                    newFilterRequest.availed = true;
+                    break;
+                case 'allotted':
+                    newFilterRequest.allotted = true;
+                    break;
+                default:
+                    break;
+            }
+        });
+        setFilterRequest(newFilterRequest);
+    }, [activeFilters, id]);
+
+    // ── initialize filterRequest with statusId ──
+    useEffect(() => {
+        if (id) {
+            setFilterRequest({ statusId: id });
+        }
+    }, [id]);
 
     // ── get current filter label for display ──
     const getFilterLabel = () => {
@@ -499,6 +534,29 @@ const LeadStatusDetails = () => {
                     onCardClick={handleCardClick}
                     activeFilters={activeFilters}
                 />
+                
+                {/* New Allotted/Availed/Unallotted Cards */}
+                <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mt-6">
+                    <h3 className="text-base font-bold text-gray-900 mb-4">Lead Assignment Statistics</h3>
+                    <AllottedCard
+                        onCardClick={handleCardClick}
+                        activeFilters={activeFilters}
+                        filterRequest={filterRequest}
+                        statusId={id}
+                    />
+                    <AvailedCard
+                        onCardClick={handleCardClick}
+                        activeFilters={activeFilters}
+                        filterRequest={filterRequest}
+                        statusId={id}
+                    />
+                    <UnallottedCard
+                        onCardClick={handleCardClick}
+                        activeFilters={activeFilters}
+                        filterRequest={filterRequest}
+                        statusId={id}
+                    />
+                </div>
             </div>
 
             {/* ── Filtered Lead Table ── */}
@@ -637,6 +695,9 @@ const LeadStatusDetails = () => {
                     if (filter.type === 'courseType')  acc.courseTypeIds  = [...(acc.courseTypeIds || []), filter.value];
                     if (filter.type === 'board')       acc.boardIds       = [...(acc.boardIds || []), filter.value];
                     if (filter.type === 'grade')       acc.gradeIds       = [...(acc.gradeIds || []), filter.value];
+                    if (filter.type === 'allotted')    acc.isAllotted     = true;
+                    if (filter.type === 'availed')      acc.isAvailed       = true;
+                    if (filter.type === 'unallotted')   acc.isUnallotted    = true;
                     return acc;
                 }, {}),
             }}

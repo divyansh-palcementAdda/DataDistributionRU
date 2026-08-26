@@ -8,7 +8,7 @@ const AvailedIcon = () => (
   </svg>
 );
 
-const AvailedCard = ({ data, onCardClick, activeFilters = [], filterRequest = {} }) => {
+const AvailedCard = ({ data, onCardClick, activeFilters = [], filterRequest = {}, courseTypeId, leadSourceId, boardId, gradeId, counselorId, departmentId, statusId }) => {
   const [availedData, setAvailedData] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -21,7 +21,19 @@ const AvailedCard = ({ data, onCardClick, activeFilters = [], filterRequest = {}
     const fetchAvailedCount = async () => {
       try {
         setLoading(true);
-        const response = await getAvailedCount(filterRequest);
+        const params = {};
+        if (courseTypeId) params.courseTypeId = courseTypeId;
+        if (leadSourceId) params.leadSourceId = leadSourceId;
+        if (boardId) params.boardId = boardId;
+        if (gradeId) params.gradeId = gradeId;
+        if (counselorId) params.counselorId = counselorId;
+        if (departmentId) params.departmentId = departmentId;
+        if (statusId) params.statusId = statusId;
+        
+        // Merge with filterRequest if provided
+        const finalParams = { ...params, ...filterRequest };
+        
+        const response = await getAvailedCount(finalParams);
         const payload = response?.data?.data ?? response?.data ?? response;
         setAvailedData(payload);
       } catch (error) {
@@ -33,7 +45,7 @@ const AvailedCard = ({ data, onCardClick, activeFilters = [], filterRequest = {}
     };
 
     fetchAvailedCount();
-  }, [data, filterRequest]);
+  }, [data, filterRequest, courseTypeId, leadSourceId, boardId, gradeId, counselorId, departmentId, statusId]);
 
   const count = availedData?.count ?? 0;
   const type = availedData?.type ?? 'Availed';

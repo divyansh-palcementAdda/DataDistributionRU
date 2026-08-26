@@ -14,6 +14,9 @@ import LeadCards from '../component/reusable/DashBoards/leadCards';
 import CategorywiseCard from '../component/reusable/DashBoards/categorywiseCard';
 import BoardWiseCard from '../component/reusable/DashBoards/BoardWiseCard';
 import GradWiseCard from '../component/reusable/DashBoards/gradWiseCard';
+import UnallottedCard from '../component/reusable/DashBoards/UnallottedCard';
+import AvailedCard from '../component/reusable/DashBoards/availedCard';
+import AllottedCard from '../component/reusable/DashBoards/allottedCard';
 import ReusableTable from '../component/reusable/table';
 import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import AssignLeadModal from '../component/reusable/Leads/AssignLeadModal';
@@ -154,6 +157,10 @@ const fetchLeadsForCard = async (activeFilters, leadSourceId, page, size, sortBy
             case 'courseType':  params.courseTypeId  = filter.value; break;
             case 'board':       params.boardId       = filter.value; break;
             case 'grade':       params.gradeId       = filter.value; break;
+            case 'unallotted':  params.allotted      = false;        break;
+            case 'availed':     params.availed       = true;         break;
+            case 'allotted':    params.allotted      = true;         break;
+            // Note: leadSource filter is handled by the base sourceId parameter
             default:             break;
         }
     });
@@ -186,6 +193,9 @@ const DataSourceDetails = () => {
     const [activeFilters, setActiveFilters] = useState([]); // Array of { type, value, label }
     const [tableData, setTableData] = useState([]);
     const [tableLoading, setTableLoading] = useState(false);
+
+    // filter request for cards
+    const [filterRequest, setFilterRequest] = useState({ leadSourceId: id });
 
     // server-side pagination & sorting
     const [tablePage, setTablePage]                   = useState(0);
@@ -262,6 +272,44 @@ const DataSourceDetails = () => {
                 setTableLoading(false);
             });
     }, [activeFilters, id, tablePage, tableSize, tableSortBy, tableSortDir]);
+
+    // ── update filterRequest when activeFilters change for cards ──
+    useEffect(() => {
+        const newFilterRequest = { leadSourceId: id };
+        activeFilters.forEach(filter => {
+            switch (filter.type) {
+                case 'unallotted':
+                    newFilterRequest.allotted = false;
+                    break;
+                case 'availed':
+                    newFilterRequest.availed = true;
+                    break;
+                case 'allotted':
+                    newFilterRequest.allotted = true;
+                    break;
+                case 'leadStatus':
+                    if (!newFilterRequest.leadStatusIds) newFilterRequest.leadStatusIds = [];
+                    newFilterRequest.leadStatusIds.push(filter.value);
+                    break;
+                case 'board':
+                    if (!newFilterRequest.boardIds) newFilterRequest.boardIds = [];
+                    newFilterRequest.boardIds.push(filter.value);
+                    break;
+                case 'grade':
+                    if (!newFilterRequest.gradeIds) newFilterRequest.gradeIds = [];
+                    newFilterRequest.gradeIds.push(filter.value);
+                    break;
+                case 'courseType':
+                    if (!newFilterRequest.courseTypeIds) newFilterRequest.courseTypeIds = [];
+                    newFilterRequest.courseTypeIds.push(filter.value);
+                    break;
+                // Note: leadSource filter is handled by the base leadSourceId
+                default:
+                    break;
+            }
+        });
+        setFilterRequest(newFilterRequest);
+    }, [activeFilters, id]);
 
     // Card click handler - toggle filters on/off
     const handleCardClick = (card) => {
@@ -526,16 +574,37 @@ const DataSourceDetails = () => {
                     data={dashData.courseType}
                     onCardClick={handleCardClick}
                     activeFilters={activeFilters}
+                    leadSourceId={id}
                 />
                 <BoardWiseCard
                     data={dashData.board}
                     onCardClick={handleCardClick}
                     activeFilters={activeFilters}
+                    leadSourceId={id}
                 />
                 <GradWiseCard
                     data={dashData.grade}
                     onCardClick={handleCardClick}
                     activeFilters={activeFilters}
+                    leadSourceId={id}
+                />
+                <UnallottedCard
+                    onCardClick={handleCardClick}
+                    activeFilters={activeFilters}
+                    filterRequest={filterRequest}
+                    leadSourceId={id}
+                />
+                <AvailedCard
+                    onCardClick={handleCardClick}
+                    activeFilters={activeFilters}
+                    filterRequest={filterRequest}
+                    leadSourceId={id}
+                />
+                <AllottedCard
+                    onCardClick={handleCardClick}
+                    activeFilters={activeFilters}
+                    filterRequest={filterRequest}
+                    leadSourceId={id}
                 />
             </div>
             {true && (
@@ -674,17 +743,26 @@ const DataSourceDetails = () => {
             onClose={() => setIsAssignModalOpen(false)}
             filters={{
                 leadSourceIds: id ? [id] : [],
-                ...(activeFilters.some(f => f.type === 'leadStatus') && { 
-                    leadStatusIds: activeFilters.filter(f => f.type === 'leadStatus').map(f => f.value) 
+                ...(activeFilters.some(f => f.type === 'leadStatus') && {
+                    leadStatusIds: activeFilters.filter(f => f.type === 'leadStatus').map(f => f.value)
                 }),
-                ...(activeFilters.some(f => f.type === 'courseType') && { 
-                    courseTypeIds: activeFilters.filter(f => f.type === 'courseType').map(f => f.value) 
+                ...(activeFilters.some(f => f.type === 'courseType') && {
+                    courseTypeIds: activeFilters.filter(f => f.type === 'courseType').map(f => f.value)
                 }),
-                ...(activeFilters.some(f => f.type === 'board') && { 
-                    boardIds: activeFilters.filter(f => f.type === 'board').map(f => f.value) 
+                ...(activeFilters.some(f => f.type === 'board') && {
+                    boardIds: activeFilters.filter(f => f.type === 'board').map(f => f.value)
                 }),
-                ...(activeFilters.some(f => f.type === 'grade') && { 
-                    gradeIds: activeFilters.filter(f => f.type === 'grade').map(f => f.value) 
+                ...(activeFilters.some(f => f.type === 'grade') && {
+                    gradeIds: activeFilters.filter(f => f.type === 'grade').map(f => f.value)
+                }),
+                ...(activeFilters.some(f => f.type === 'unallotted') && {
+                    allotted: false
+                }),
+                ...(activeFilters.some(f => f.type === 'availed') && {
+                    availed: true
+                }),
+                ...(activeFilters.some(f => f.type === 'allotted') && {
+                    allotted: true
                 }),
             }}
             showToast={(msg, type) => console.log(`[${type}]`, msg)}

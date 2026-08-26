@@ -13,6 +13,15 @@ const UnallottedCard = ({ data, onCardClick, activeFilters = [], filterRequest =
   const [unallottedData, setUnallottedData] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // Check if user is Super Admin or Admin
+  const userRole = localStorage.getItem('userRole');
+  const isAdminOrSuperAdmin = userRole === 'SUPER_ADMIN' || userRole === 'ADMIN';
+
+  // Don't render the card if user is not Super Admin or Admin
+  if (!isAdminOrSuperAdmin) {
+    return null;
+  }
+
   useEffect(() => {
     if (data !== undefined) {
       setUnallottedData(data);

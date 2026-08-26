@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { FiEye, FiMessageSquare, FiUserPlus } from 'react-icons/fi';
 import { useAppContext } from '../AppContext';
+import { usePermissions } from '../PermissionContext';
 import { getLeadStatusById } from '../Services/leadStatus/leadStatusService';
 import {
     getLeadSourceBreakdown,
@@ -23,7 +24,7 @@ import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import AssignLeadModal from '../component/reusable/Leads/AssignLeadModal';
 
 // ─── Lead table columns ───────────────────────────────────────────────────────
-const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, currentData) => [
+const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, currentData, hasPermission) => [
     {
         key: 'checkbox',
         header: (
@@ -31,7 +32,8 @@ const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, cu
                 type="checkbox"
                 checked={currentData.length > 0 && currentData.every(r => selectedRows.has(r.id ?? r.leadId))}
                 onChange={(e) => onToggleAll(e.target.checked, currentData)}
-                style={{ width: '15px', height: '15px', cursor: 'pointer', accentColor: '#4f46e5' }}
+                disabled={!hasPermission('LEAD_ASSIGN')}
+                style={{ width: '15px', height: '15px', cursor: hasPermission('LEAD_ASSIGN') ? 'pointer' : 'not-allowed', accentColor: '#4f46e5' }}
                 title="Select All"
             />
         ),
@@ -44,7 +46,8 @@ const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, cu
                     checked={selectedRows.has(rowId)}
                     onChange={() => onToggleRow(rowId)}
                     onClick={(e) => e.stopPropagation()}
-                    style={{ width: '15px', height: '15px', cursor: 'pointer', accentColor: '#4f46e5' }}
+                    disabled={!hasPermission('LEAD_ASSIGN')}
+                    style={{ width: '15px', height: '15px', cursor: hasPermission('LEAD_ASSIGN') ? 'pointer' : 'not-allowed', accentColor: '#4f46e5' }}
                 />
             );
         },
@@ -182,6 +185,7 @@ const fetchLeadsForCard = async (activeFilters, statusId, page, size, sortBy, so
 // ─── Main Component ───────────────────────────────────────────────────────────
 const LeadStatusDetails = () => {
     const { navTo } = useAppContext();
+    const { hasPermission } = usePermissions();
     const { id } = useParams();
 
     // detail state
@@ -602,19 +606,21 @@ const LeadStatusDetails = () => {
                         )}
                     </div>
                     <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => setIsAssignModalOpen(true)}
-                            disabled={selectedRows.size === 0}
-                            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all shadow-sm"
-                            style={{
-                                backgroundColor: selectedRows.size === 0 ? 'var(--gray-200, #e5e7eb)' : '#4f46e5',
-                                color: selectedRows.size === 0 ? 'var(--gray-400, #9ca3af)' : '#fff',
-                                cursor: selectedRows.size === 0 ? 'not-allowed' : 'pointer',
-                            }}
-                        >
-                            <FiUserPlus size={13} />
-                            Allot Leads{selectedRows.size > 0 ? ` (${selectedRows.size})` : ''}
-                        </button>
+                        {hasPermission('LEAD_ASSIGN') && (
+                            <button
+                                onClick={() => setIsAssignModalOpen(true)}
+                                disabled={selectedRows.size === 0}
+                                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all shadow-sm"
+                                style={{
+                                    backgroundColor: selectedRows.size === 0 ? 'var(--gray-200, #e5e7eb)' : '#4f46e5',
+                                    color: selectedRows.size === 0 ? 'var(--gray-400, #9ca3af)' : '#fff',
+                                    cursor: selectedRows.size === 0 ? 'not-allowed' : 'pointer',
+                                }}
+                            >
+                                <FiUserPlus size={13} />
+                                Allot Leads{selectedRows.size > 0 ? ` (${selectedRows.size})` : ''}
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -626,7 +632,7 @@ const LeadStatusDetails = () => {
                     ) : (
                         <div className="card">
                             <ReusableTable
-                                columns={buildLeadColumns(tablePage, tableSize, selectedRows, handleToggleRow, handleToggleAll, tableData)}
+                                columns={buildLeadColumns(tablePage, tableSize, selectedRows, handleToggleRow, handleToggleAll, tableData, hasPermission)}
                                 data={tableData}
                                 isServerSide={true}
                                 totalElements={tableTotalElements}

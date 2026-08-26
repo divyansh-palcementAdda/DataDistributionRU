@@ -19,6 +19,8 @@ import SystemCards from '../../component/reusable/DashBoards/SystemCards';
 import CategorywiseCard from '../../component/reusable/DashBoards/categorywiseCard';
 import BoardWiseCard from '../../component/reusable/DashBoards/BoardWiseCard';
 import GradWiseCard from '../../component/reusable/DashBoards/gradWiseCard';
+import AllottedCard from '../../component/reusable/DashBoards/allottedCard';
+import AvailedCard from '../../component/reusable/DashBoards/availedCard';
 import { getLeadSourceBreakdown, getGradeBreakdown, getBoardBreakdown } from '../../Services/cards/cardService';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend);
@@ -90,6 +92,7 @@ const CallersDashboard = () => {
   const [leadsData, setLeadsData] = useState([]);
   const [allLeadsData, setAllLeadsData] = useState([]);
   const [activeFilters, setActiveFilters] = useState([]);
+  const [filterRequest, setFilterRequest] = useState({});
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
   const [totalElements, setTotalElements] = useState(0);
@@ -409,6 +412,45 @@ const CallersDashboard = () => {
     }
   };
 
+  // Update filterRequest when activeFilters changes
+  useEffect(() => {
+    const newFilterRequest = {};
+    activeFilters.forEach(filter => {
+      switch (filter.type) {
+        case 'availed':
+          newFilterRequest.availed = true;
+          break;
+        case 'allotted':
+          newFilterRequest.allotted = true;
+          break;
+        case 'leadStatus':
+          if (!newFilterRequest.leadStatusIds) newFilterRequest.leadStatusIds = [];
+          newFilterRequest.leadStatusIds.push(filter.value);
+          break;
+        case 'board':
+          if (!newFilterRequest.boardIds) newFilterRequest.boardIds = [];
+          newFilterRequest.boardIds.push(filter.value);
+          break;
+        case 'grade':
+          if (!newFilterRequest.gradeIds) newFilterRequest.gradeIds = [];
+          newFilterRequest.gradeIds.push(filter.value);
+          break;
+        case 'courseType':
+          if (!newFilterRequest.courseTypeIds) newFilterRequest.courseTypeIds = [];
+          newFilterRequest.courseTypeIds.push(filter.value);
+          break;
+        case 'leadSource':
+          if (!newFilterRequest.leadSourceIds) newFilterRequest.leadSourceIds = [];
+          newFilterRequest.leadSourceIds.push(filter.value);
+          break;
+        default:
+          break;
+      }
+    });
+    setFilterRequest(newFilterRequest);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeFilters]);
+
   const handleSort = (columnKey, direction) => {
     // Map frontend column keys to backend field names (using camelCase from API response)
     const fieldMapping = {
@@ -483,6 +525,16 @@ const CallersDashboard = () => {
         data={gradWiseData}
         onCardClick={handleCardClick}
         activeFilters={activeFilters}
+      />
+      <AllottedCard 
+        onCardClick={handleCardClick}
+        activeFilters={activeFilters}
+        filterRequest={filterRequest}
+      />
+      <AvailedCard 
+        onCardClick={handleCardClick}
+        activeFilters={activeFilters}
+        filterRequest={filterRequest}
       />
 
       {/* ── Charts Row ── */}

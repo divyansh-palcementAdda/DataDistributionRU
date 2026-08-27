@@ -226,11 +226,12 @@ const LeadSource = () => {
             header: 'Status',
             sortable: true,
             render: (value, row) => (
-                <CustomToggle
-                    checked={value}
-                    onChange={() => handleToggle(row)}
-                    disabled={!hasPermission('LEADSOURCE_UPDATE')}
-                />
+                hasPermission('LEADSOURCE_UPDATE') ? (
+                    <CustomToggle
+                        checked={value}
+                        onChange={() => handleToggle(row)}
+                    />
+                ) : null
             ),
         },
         {
@@ -271,18 +272,19 @@ const LeadSource = () => {
                     </h1>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
-                    <button
-                        className="btn btn-primary btn-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                        style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: !hasPermission('LEADSOURCE_CREATE') ? 'not-allowed' : 'pointer' }}
-                        onClick={() => setIsAddLeadSourceModalOpen(true)}
-                        disabled={!hasPermission('LEADSOURCE_CREATE')}
-                    >
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <line x1="12" y1="5" x2="12" y2="19" />
-                            <line x1="5" y1="12" x2="19" y2="12" />
-                        </svg>
-                        Add Lead Source
-                    </button>
+                    {hasPermission('LEADSOURCE_CREATE') && (
+                        <button
+                            className="btn btn-primary btn-sm"
+                            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                            onClick={() => setIsAddLeadSourceModalOpen(true)}
+                        >
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <line x1="12" y1="5" x2="12" y2="19" />
+                                <line x1="5" y1="12" x2="19" y2="12" />
+                            </svg>
+                            Add Lead Source
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -345,9 +347,9 @@ const LeadSource = () => {
                                 ? `No lead sources match "${search}".`
                                 : 'No lead sources found. Add one to get started.'
                         }
-                        onView={handleView}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
+                        onView={canReadLeadSource() ? handleView : undefined}
+                        onEdit={hasPermission('LEADSOURCE_UPDATE') ? handleEdit : undefined}
+                        onDelete={hasPermission('LEADSOURCE_DELETE') ? handleDelete : undefined}
                         isServerSide={true}
                         totalElements={totalElements}
                         totalPages={totalPages}
@@ -361,9 +363,6 @@ const LeadSource = () => {
                         sortBy={sortBy}
                         sortDirection={sortDirection.toLowerCase()}
                         onSort={handleSort}
-                        onViewDisabled={!canReadLeadSource()}
-                        onEditDisabled={!hasPermission('LEADSOURCE_UPDATE')}
-                        onDeleteDisabled={!hasPermission('LEADSOURCE_DELETE')}
                     />
                 )}
             </div>

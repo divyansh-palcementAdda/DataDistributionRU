@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { FiEye, FiMessageSquare, FiUserPlus } from 'react-icons/fi';
 import { useAppContext } from '../AppContext';
+import { usePermissions } from '../PermissionContext';
 import { getCounselorById } from '../Services/Counselors/counselors';
 import {
     getLeadStatusBreakdown,
@@ -26,10 +27,10 @@ import AssignLeadModal from '../component/reusable/Leads/AssignLeadModal';
 import ReassignModal from '../component/reusable/Leads/ReassignModal';
 
 // ─── Lead table columns ───────────────────────────────────────────────────────
-const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, currentData) => [
+const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, currentData, hasPermission) => [
     {
         key: 'checkbox',
-        header: (
+        header: hasPermission('LEAD_ASSIGN') ? (
             <input
                 type="checkbox"
                 checked={currentData.length > 0 && currentData.every(r => selectedRows.has(r.id ?? r.leadId))}
@@ -37,9 +38,10 @@ const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, cu
                 style={{ width: '15px', height: '15px', cursor: 'pointer', accentColor: '#4f46e5' }}
                 title="Select All"
             />
-        ),
+        ) : null,
         sortable: false,
         render: (value, row) => {
+            if (!hasPermission('LEAD_ASSIGN')) return null;
             const rowId = row.id ?? row.leadId;
             return (
                 <input
@@ -465,6 +467,7 @@ const CounselorDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { showToast } = useAppContext();
+    const { hasPermission } = usePermissions();
 
     // detail state
     const [details, setDetails] = useState(null);
@@ -1140,7 +1143,7 @@ const CounselorDetails = () => {
                         ) : (
                             <div className="card">
                                 <ReusableTable
-                                    columns={buildLeadColumns(tablePage, tableSize, selectedRows, handleToggleRow, handleToggleAll, tableData)}
+                                    columns={buildLeadColumns(tablePage, tableSize, selectedRows, handleToggleRow, handleToggleAll, tableData, hasPermission)}
                                     data={tableData}
                                     isServerSide={true}
                                     totalElements={tableTotalElements}
@@ -1223,7 +1226,7 @@ const CounselorDetails = () => {
                             ) : (
                                 <div className="card">
                                     <ReusableTable
-                                        columns={buildLeadColumns(reassignableLeadsPage, reassignableLeadsSize, reassignableLeadsSelectedRows, handleReassignableLeadsToggleRow, handleReassignableLeadsToggleAll, reassignableLeadsData)}
+                                        columns={buildLeadColumns(reassignableLeadsPage, reassignableLeadsSize, reassignableLeadsSelectedRows, handleReassignableLeadsToggleRow, handleReassignableLeadsToggleAll, reassignableLeadsData, hasPermission)}
                                         data={reassignableLeadsData}
                                         isServerSide={true}
                                         totalElements={reassignableLeadsTotalElements}

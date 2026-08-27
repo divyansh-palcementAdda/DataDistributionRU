@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
+import { usePermissions } from '../PermissionContext';
 import ReusableTable from '../component/reusable/table';
 import { getAllCounselors } from '../Services/Counselors/counselors';
 import { getLowDataUsers, getUsersNotLoggedIn, getFollowupUsersNotLoggedIn11am } from '../Services/Dashboard/Dashboard';
@@ -34,6 +35,7 @@ const Counselors = () => {
   const { showToast } = useAppContext();
   const navigate = useNavigate();
   const location = useLocation();
+  const { hasPermission, canCreate, canRead } = usePermissions();
 
   // Special modes — navigated from dashboard cards
   const lowDataMode = location.state?.lowDataMode === true;
@@ -546,17 +548,19 @@ const Counselors = () => {
           )}
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
-          <button
-            className="btn btn-primary btn-sm"
-            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-            onClick={handleOpenAddUserModal}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            Add Counselor
-          </button>
+          {hasPermission('COUNSELOR_CREATE') && (
+            <button
+              className="btn btn-primary btn-sm"
+              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+              onClick={handleOpenAddUserModal}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Add Counselor
+            </button>
+          )}
         </div>
       </div>
 

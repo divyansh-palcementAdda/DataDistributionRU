@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FiDatabase, FiEye, FiChevronDown } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import CategorywiseCard from '../component/reusable/DashBoards/categorywiseCard';
 import BreakdownModal from '../component/reusable/BreakdownModal';
 
-
 const Datasegregation = () => {
   const navigate = useNavigate();
+  // const { hasPermission } = usePermissions();
   const [modalOpen, setModalOpen] = useState(false);
   const [modalData, setModalData] = useState(null);
   const [modalTitle, setModalTitle] = useState('');
@@ -90,14 +90,14 @@ const Datasegregation = () => {
                       <span className="text-amber-500">Not Assign: 45</span>
                     </div>
                     <div className="flex gap-2">
-                      <button 
+                      <button
                         onClick={() => handleView('google')}
                         className="text-blue-600 hover:text-blue-800 text-xs flex items-center gap-1"
                       >
                         <FiEye size={14} />
                         View
                       </button>
-                      <button 
+                      <button
                         onClick={() => handleShowBreakdown('Google', {
                           connected: 120,
                           notConnected: 30,

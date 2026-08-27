@@ -346,44 +346,44 @@ const Leads = () => {
         </div>
         <div className="flex gap-2">
           {/* Bulk Upload */}
-          <button
-            className="btn btn-secondary btn-sm flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-            onClick={() => setIsBulkUploadOpen(true)}
-            disabled={!hasPermission('LEAD_CREATE')}
-            style={{ cursor: !hasPermission('LEAD_CREATE') ? 'not-allowed' : 'pointer' }}
-          >
-            <svg
-              width="13"
-              height="13"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
+          {hasPermission('LEAD_CREATE') && (
+            <button
+              className="btn btn-secondary btn-sm flex items-center gap-1.5"
+              onClick={() => setIsBulkUploadOpen(true)}
             >
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
-            </svg>
-            Export
-          </button>
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+              </svg>
+              Export
+            </button>
+          )}
           {/* Add Lead */}
-          <button
-            className="btn btn-primary btn-sm flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-            onClick={() => openAddLeadModal()}
-            disabled={!hasPermission('LEAD_CREATE')}
-            style={{ cursor: !hasPermission('LEAD_CREATE') ? 'not-allowed' : 'pointer' }}
-          >
-            <svg
-              width="13"
-              height="13"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
+          {hasPermission('LEAD_CREATE') && (
+            <button
+              className="btn btn-primary btn-sm flex items-center gap-1.5"
+              onClick={() => openAddLeadModal()}
             >
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            Add Lead
-          </button>
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Add Lead
+            </button>
+          )}
         </div>
       </div>
 
@@ -468,32 +468,32 @@ const Leads = () => {
           </button>
         )}
         {/* Allot Lead */}
-        <button
-          className="btn btn-secondary btn-sm flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-          onClick={() => {
-            if (selectedIds.length > 0) {
-              openAllotModal(selectedIds);
-            } else {
-              showToast('Please select leads to allot', 'warning');
-            }
-          }}
-          disabled={!hasPermission('LEAD_ASSIGN')}
-          style={{ cursor: !hasPermission('LEAD_ASSIGN') ? 'not-allowed' : 'pointer' }}
-        >
-          <svg
-            width="13"
-            height="13"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
+        {hasPermission('LEAD_ASSIGN') && (
+          <button
+            className="btn btn-secondary btn-sm flex items-center gap-1.5"
+            onClick={() => {
+              if (selectedIds.length > 0) {
+                openAllotModal(selectedIds);
+              } else {
+                showToast('Please select leads to allot', 'warning');
+              }
+            }}
           >
-            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-            <circle cx="9" cy="7" r="4" />
-            <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
-          </svg>
-          Allot Lead
-        </button>
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+            </svg>
+            Allot Lead
+          </button>
+        )}
         <button
           className="btn btn-ghost btn-sm flex items-center gap-1.5"
         >
@@ -520,18 +520,18 @@ const Leads = () => {
             columns={[
               {
                 key: 'select',
-                header: (
+                header: hasPermission('LEAD_ASSIGN') ? (
                   <input
                     type="checkbox"
                     checked={selectAll}
                     onChange={(e) => handleSelectAll(e.target.checked)}
                     className="cursor-pointer"
-                    disabled={!hasPermission('LEAD_ASSIGN')}
-                    style={{ cursor: !hasPermission('LEAD_ASSIGN') ? 'not-allowed' : 'pointer' }}
                   />
-                ),
+                ) : null,
                 sortable: false,
                 render: (value, row) => {
+                  if (!hasPermission('LEAD_ASSIGN')) return null;
+                  
                   const rowId = typeof row.id === 'object' ? row.id?.id : row.id;
                   const rowLeadId = typeof row.leadId === 'object' ? row.leadId?.id : row.leadId;
                   const idToUse = rowId || rowLeadId;
@@ -542,8 +542,6 @@ const Leads = () => {
                       checked={selectedIds.includes(idToUse)}
                       onChange={(e) => handleSelectRow(idToUse, e.target.checked)}
                       className="cursor-pointer"
-                      disabled={!hasPermission('LEAD_ASSIGN')}
-                      style={{ cursor: !hasPermission('LEAD_ASSIGN') ? 'not-allowed' : 'pointer' }}
                     />
                   );
                 },
@@ -707,130 +705,130 @@ const Leads = () => {
                   >
                     <FiMessageSquare size={18} />
                   </button>
-                  <button
-                    className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="View"
-                    onClick={async () => {
-                      const leadId = safeRow?.id ?? safeRow?.leadId;
-                      try {
-                        // Fetch lead details to check conditions
-                        const res = await getLeadById(leadId);
-                        const leadDetails = res?.data?.data;
+                  {(hasPermission('LEAD_READ') || hasPermission('LEAD_VIEW')) && (
+                    <button
+                      className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer"
+                      title="View"
+                      onClick={async () => {
+                        const leadId = safeRow?.id ?? safeRow?.leadId;
+                        try {
+                          // Fetch lead details to check conditions
+                          const res = await getLeadById(leadId);
+                          const leadDetails = res?.data?.data;
 
-                        // Get current user from localStorage
-                        const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
-                        const currentUserId = userInfo?.id || userInfo?.userId;
+                          // Get current user from localStorage
+                          const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+                          const currentUserId = userInfo?.id || userInfo?.userId;
 
-                        // Check conditions
-                        const shouldCallAvail = 
-                          (leadDetails?.isAvailed === false || leadDetails?.isAvailed === null) &&
-                          (leadDetails?.assignedTo === null || leadDetails?.assignedTo?.id === currentUserId);
+                          // Check conditions
+                          const shouldCallAvail = 
+                            (leadDetails?.isAvailed === false || leadDetails?.isAvailed === null) &&
+                            (leadDetails?.assignedTo === null || leadDetails?.assignedTo?.id === currentUserId);
 
 
-                        if (shouldCallAvail) {
-                          await availLead(leadId);
-                          showToast('Lead marked as availed successfully');
-                          fetchLeads();
+                          if (shouldCallAvail) {
+                            await availLead(leadId);
+                            showToast('Lead marked as availed successfully');
+                            fetchLeads();
+                          }
+                        } catch (error) {
+                          console.error('Error:', error);
+                          // Still navigate even if avail API fails
                         }
-                      } catch (error) {
-                        console.error('Error:', error);
-                        // Still navigate even if avail API fails
-                      }
-                      navTo(`lead-detail/${leadId}`);
-                    }}
-                    disabled={!hasPermission('LEAD_READ') && !hasPermission('LEAD_VIEW')}
-                    style={{ cursor: (!hasPermission('LEAD_READ') && !hasPermission('LEAD_VIEW')) ? 'not-allowed' : 'pointer' }}
-                  >
-                    <FiEye size={18} />
-                  </button>
-                  <button
-                    className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Edit"
-                    onClick={async () => {
-                      const leadId = safeRow?.id ?? safeRow?.leadId;
-                      try {
-                        // Fetch full lead detail so we get proper IDs for all fields
-                        const res = await getLeadById(leadId);
-                        const full = res?.data?.success ? res.data.data : safeRow;
+                        navTo(`lead-detail/${leadId}`);
+                      }}
+                    >
+                      <FiEye size={18} />
+                    </button>
+                  )}
+                  {hasPermission('LEAD_UPDATE') && (
+                    <button
+                      className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer"
+                      title="Edit"
+                      onClick={async () => {
+                        const leadId = safeRow?.id ?? safeRow?.leadId;
+                        try {
+                          // Fetch full lead detail so we get proper IDs for all fields
+                          const res = await getLeadById(leadId);
+                          const full = res?.data?.success ? res.data.data : safeRow;
 
-                        const editData = {
-                          id: full.id ?? full.leadId,
-                          leadId: full.id ?? full.leadId,
-                          fullName: full.fullName || '',
-                          phoneNumber: full.phoneNumber || '',
-                          alternatePhoneNumber: full.alternatePhoneNumber || '',
-                          email: full.email || '',
-                          country: typeof full.country === 'object' ? full.country?.name || '' : full.country || '',
-                          state: typeof full.state === 'object' ? full.state?.name || '' : full.state || '',
-                          city: typeof full.city === 'object' ? full.city?.name || '' : full.city || '',
-                          sourceDetails: full.sourceDetails || '',
-                          remarks: full.remarks || '',
-                          nextFollowUpDate: full.nextFollowUpDate || '',
-                          active: full.active !== undefined ? full.active : true,
-                          // courseId — could be full.course.id or full.courseId
-                          courseId: String(
-                            full.course?.id ?? full.courseId ?? ''
-                          ),
-                          // registeredCourse
-                          registeredCourseId: String(
-                            full.registeredCourse?.id ?? full.registeredCourseId ?? ''
-                          ),
-                          // board
-                          boardId: String(
-                            full.board?.id ?? full.boardId ?? ''
-                          ),
-                          // grade
-                          gradeId: String(
-                            full.grade?.id ?? full.gradeId ?? ''
-                          ),
-                          // category / courseType
-                          courseTypeId: String(
-                            full.courseType?.id ?? full.interestedCourseTypes?.[0]?.id ?? full.courseTypeId ?? ''
-                          ),
-                          // assignedTo
-                          assignedToUserId: String(
-                            full.assignedTo?.id ?? full.assignedToUserId ?? ''
-                          ),
-                          // status
-                          statusId: String(
-                            full.currentStatus?.id ?? full.statusId ?? ''
-                          ),
-                          // leadSources array
-                          leadSourceIds: Array.isArray(full.leadSources)
-                            ? full.leadSources.map(s => String(typeof s === 'object' ? s.id : s)).filter(Boolean)
-                            : Array.isArray(full.leadSourceIds)
-                              ? full.leadSourceIds.map(String)
-                              : (full.source?.id ? [String(full.source.id)] : []),
-                          // interestedCourses array
-                          interestedCourseIds: Array.isArray(full.interestedCourses)
-                            ? full.interestedCourses.map(c => String(typeof c === 'object' ? c.id : c)).filter(Boolean)
-                            : Array.isArray(full.interestedCourseIds)
-                              ? full.interestedCourseIds.map(String)
-                              : [],
-                        };
+                          const editData = {
+                            id: full.id ?? full.leadId,
+                            leadId: full.id ?? full.leadId,
+                            fullName: full.fullName || '',
+                            phoneNumber: full.phoneNumber || '',
+                            alternatePhoneNumber: full.alternatePhoneNumber || '',
+                            email: full.email || '',
+                            country: typeof full.country === 'object' ? full.country?.name || '' : full.country || '',
+                            state: typeof full.state === 'object' ? full.state?.name || '' : full.state || '',
+                            city: typeof full.city === 'object' ? full.city?.name || '' : full.city || '',
+                            sourceDetails: full.sourceDetails || '',
+                            remarks: full.remarks || '',
+                            nextFollowUpDate: full.nextFollowUpDate || '',
+                            active: full.active !== undefined ? full.active : true,
+                            // courseId — could be full.course.id or full.courseId
+                            courseId: String(
+                              full.course?.id ?? full.courseId ?? ''
+                            ),
+                            // registeredCourse
+                            registeredCourseId: String(
+                              full.registeredCourse?.id ?? full.registeredCourseId ?? ''
+                            ),
+                            // board
+                            boardId: String(
+                              full.board?.id ?? full.boardId ?? ''
+                            ),
+                            // grade
+                            gradeId: String(
+                              full.grade?.id ?? full.gradeId ?? ''
+                            ),
+                            // category / courseType
+                            courseTypeId: String(
+                              full.courseType?.id ?? full.interestedCourseTypes?.[0]?.id ?? full.courseTypeId ?? ''
+                            ),
+                            // assignedTo
+                            assignedToUserId: String(
+                              full.assignedTo?.id ?? full.assignedToUserId ?? ''
+                            ),
+                            // status
+                            statusId: String(
+                              full.currentStatus?.id ?? full.statusId ?? ''
+                            ),
+                            // leadSources array
+                            leadSourceIds: Array.isArray(full.leadSources)
+                              ? full.leadSources.map(s => String(typeof s === 'object' ? s.id : s)).filter(Boolean)
+                              : Array.isArray(full.leadSourceIds)
+                                ? full.leadSourceIds.map(String)
+                                : (full.source?.id ? [String(full.source.id)] : []),
+                            // interestedCourses array
+                            interestedCourseIds: Array.isArray(full.interestedCourses)
+                              ? full.interestedCourses.map(c => String(typeof c === 'object' ? c.id : c)).filter(Boolean)
+                              : Array.isArray(full.interestedCourseIds)
+                                ? full.interestedCourseIds.map(String)
+                                : [],
+                          };
 
-                        openAddLeadModal(editData);
-                      } catch (err) {
-                        console.error('Failed to fetch lead for edit', err);
-                        showToast('Failed to load lead data', 'error');
-                      }
-                    }}
-                    disabled={!hasPermission('LEAD_UPDATE')}
-                    style={{ cursor: !hasPermission('LEAD_UPDATE') ? 'not-allowed' : 'pointer' }}
-                  >
-                    <FiEdit size={18} />
-                  </button>
-                  <button
-                    className="text-red-500 hover:text-red-700 transition bg-transparent border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Delete"
-                    onClick={() => {
-                      openDeleteModal(safeRow);
-                    }}
-                    disabled={!hasPermission('LEAD_DELETE')}
-                    style={{ cursor: !hasPermission('LEAD_DELETE') ? 'not-allowed' : 'pointer' }}
-                  >
-                    <FiTrash2 size={18} />
-                  </button>
+                          openAddLeadModal(editData);
+                        } catch (err) {
+                          console.error('Failed to fetch lead for edit', err);
+                          showToast('Failed to load lead data', 'error');
+                        }
+                      }}
+                    >
+                      <FiEdit size={18} />
+                    </button>
+                  )}
+                  {hasPermission('LEAD_DELETE') && (
+                    <button
+                      className="text-red-500 hover:text-red-700 transition bg-transparent border-none cursor-pointer"
+                      title="Delete"
+                      onClick={() => {
+                        openDeleteModal(safeRow);
+                      }}
+                    >
+                      <FiTrash2 size={18} />
+                    </button>
+                  )}
                 </div>
               );
             }}

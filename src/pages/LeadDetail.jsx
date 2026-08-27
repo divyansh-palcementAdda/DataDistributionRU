@@ -311,19 +311,19 @@ const LeadDetail = () => {
           </div>
         </div>
         <div className="flex gap-2">
-          <CustomButton
-            variant="secondary"
-            onClick={() => openAddLeadModal()}
-            className="text-xs py-1.5 px-3 flex items-center gap-1.5"
-            disabled={!hasPermission('LEAD_CREATE')}
-            style={{ cursor: !hasPermission('LEAD_CREATE') ? 'not-allowed' : 'pointer' }}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            Add Lead
-          </CustomButton>
+          {hasPermission('LEAD_CREATE') && (
+            <CustomButton
+              variant="secondary"
+              onClick={() => openAddLeadModal()}
+              className="text-xs py-1.5 px-3 flex items-center gap-1.5"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Add Lead
+            </CustomButton>
+          )}
           <CustomButton
             variant="primary"
             onClick={() => setIsScheduleModalOpen(true)}
@@ -348,44 +348,44 @@ const LeadDetail = () => {
             {/* Card Header with Edit Button */}
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-sm font-bold text-gray-700">Lead Info</h3>
-              <button
-                onClick={() => {
-                  const editPayload = {
-                    id: leadDetails.id ?? leadDetails.leadId,
-                    leadId: leadDetails.id ?? leadDetails.leadId,
-                    fullName: leadDetails.fullName || '',
-                    phoneNumber: leadDetails.phoneNumber || '',
-                    alternatePhoneNumber: leadDetails.alternatePhoneNumber || '',
-                    email: leadDetails.email || '',
-                    city: leadDetails.city || '',
-                    state: leadDetails.state || '',
-                    country: leadDetails.country || '',
-                    leadSourceIds: leadDetails.leadSources?.map((s) => s.id) || [],
-                    sourceDetails: leadDetails.sourceDetails || '',
-                    interestedCourseIds: leadDetails.interestedCourses?.map((c) => c.id) || [],
-                    courseId: leadDetails.course?.id || '',
-                    registeredCourseId: leadDetails.registeredCourse?.id || '',
-                    boardId: leadDetails.board?.id || '',
-                    gradeId: leadDetails.grade?.id || '',
-                    remarks: leadDetails.remarks || '',
-                    assignedToUserId: leadDetails.assignedTo?.id || '',
-                    statusId: leadDetails.currentStatus?.id || '',
-                    active: leadDetails.active !== undefined ? leadDetails.active : true,
-                    nextFollowUpDate: leadDetails.nextFollowUpDate || '',
-                  };
-                  openAddLeadModal(editPayload);
-                }}
-                className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-50 disabled:hover:text-blue-600"
-                title="Edit Lead"
-                disabled={!hasPermission('LEAD_UPDATE')}
-                style={{ cursor: !hasPermission('LEAD_UPDATE') ? 'not-allowed' : 'pointer' }}
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                </svg>
-                Edit
-              </button>
+              {hasPermission('LEAD_UPDATE') && (
+                <button
+                  onClick={() => {
+                    const editPayload = {
+                      id: leadDetails.id ?? leadDetails.leadId,
+                      leadId: leadDetails.id ?? leadDetails.leadId,
+                      fullName: leadDetails.fullName || '',
+                      phoneNumber: leadDetails.phoneNumber || '',
+                      alternatePhoneNumber: leadDetails.alternatePhoneNumber || '',
+                      email: leadDetails.email || '',
+                      city: leadDetails.city || '',
+                      state: leadDetails.state || '',
+                      country: leadDetails.country || '',
+                      leadSourceIds: leadDetails.leadSources?.map((s) => s.id) || [],
+                      sourceDetails: leadDetails.sourceDetails || '',
+                      interestedCourseIds: leadDetails.interestedCourses?.map((c) => c.id) || [],
+                      courseId: leadDetails.course?.id || '',
+                      registeredCourseId: leadDetails.registeredCourse?.id || '',
+                      boardId: leadDetails.board?.id || '',
+                      gradeId: leadDetails.grade?.id || '',
+                      remarks: leadDetails.remarks || '',
+                      assignedToUserId: leadDetails.assignedTo?.id || '',
+                      statusId: leadDetails.currentStatus?.id || '',
+                      active: leadDetails.active !== undefined ? leadDetails.active : true,
+                      nextFollowUpDate: leadDetails.nextFollowUpDate || '',
+                    };
+                    openAddLeadModal(editPayload);
+                  }}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-lg transition-colors"
+                  title="Edit Lead"
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                  Edit
+                </button>
+              )}
             </div>
 
             {/* Avatar + Name */}

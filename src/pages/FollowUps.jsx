@@ -1,7 +1,9 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
-import { useAppContext } from "../AppContext";
-import ReusableTable from "../component/reusable/table";
-import { getAllFollowups } from "../Services/followUp/followService";
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAppContext } from '../AppContext';
+import { usePermissions } from '../PermissionContext';
+import ReusableTable from '../component/reusable/table';
+import { getAllFollowups } from '../Services/followUp/followService';
 import FollowupFormModal from "../component/reusable/FollowupFormModal";
 import LeadCards from "../component/reusable/DashBoards/leadCards";
 import ScheduleModal from "../component/reusable/Leads/scheduleModel";
@@ -36,6 +38,7 @@ const getStatusClass = (value) => {
 
 const FollowUps = () => {
   const { showToast, navTo } = useAppContext();
+  const { hasPermission } = usePermissions();
 
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -217,18 +220,22 @@ const FollowUps = () => {
       header: "Actions",
       render: (_, row) => (
         <div className="flex gap-2">
-          <button
-            className="btn btn-sm btn-primary"
-            onClick={() => handleViewLead(row)}
-          >
-            View
-          </button>
-          <button
-            className="btn btn-sm btn-outline"
-            onClick={() => handleReschedule(row)}
-          >
-            Reschedule
-          </button>
+          {hasPermission('FOLLOWUP_READ') && (
+            <button
+              className="btn btn-sm btn-primary"
+              onClick={() => handleViewLead(row)}
+            >
+              View
+            </button>
+          )}
+          {hasPermission('FOLLOWUP_UPDATE') && (
+            <button
+              className="btn btn-sm btn-outline"
+              onClick={() => handleReschedule(row)}
+            >
+              Reschedule
+            </button>
+          )}
         </div>
       ),
     },

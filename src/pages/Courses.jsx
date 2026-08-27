@@ -14,14 +14,6 @@ const Courses = () => {
   const { canCreate, canUpdate, canDelete, canRead, hasPermission } = usePermissions();
   const [courses, setCourses] = useState([]);
 
-  // Debug: Check permissions
-  console.log('Permissions check:', {
-    canReadCourse: hasPermission('COURSE_VIEW'),
-    canUpdateCourse: hasPermission('COURSE_UPDATE'),
-    canDeleteCourse: hasPermission('COURSE_DELETE'),
-    canCreateCourse: hasPermission('COURSE_CREATE')
-  });
-
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -78,6 +70,10 @@ const Courses = () => {
   }, [currentPage, rowsPerPage, debouncedSearch, sortBy, sortDirection]);
 
   const handleToggleStatus = async (id, currentStatus) => {
+    if (!hasPermission('COURSE_UPDATE')) {
+      toast.error('You do not have permission to update course status');
+      return;
+    }
     try {
       await toggleCourseStatus(id);
       toast.success("Status updated successfully");
@@ -127,10 +123,12 @@ const Courses = () => {
       key: "status",
       header: "Status",
       render: (status, row) => (
-        <Toggle
-          checked={status === 'ACTIVE' || status === true}
-          onChange={() => handleToggleStatus(row.id, status)}
-        />
+        hasPermission('COURSE_UPDATE') ? (
+          <Toggle
+            checked={status === 'ACTIVE' || status === true}
+            onChange={() => handleToggleStatus(row.id, status)}
+          />
+        ) : null
       )
     }
   ];
@@ -154,15 +152,15 @@ const Courses = () => {
           className="border border-gray-300 rounded-lg px-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
 
-        <CustomButton
-          variant="primary"
-          onClick={() => { setEditData(null); setIsAddModalOpen(true); }}
-          className="text-sm py-2 px-4 shadow-sm hover:shadow-md transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={!hasPermission('COURSE_CREATE')}
-          style={{ cursor: !hasPermission('COURSE_CREATE') ? 'not-allowed' : 'pointer' }}
-        >
-          + Add Course
-        </CustomButton>
+        {hasPermission('COURSE_CREATE') && (
+          <CustomButton
+            variant="primary"
+            onClick={() => { setEditData(null); setIsAddModalOpen(true); }}
+            className="text-sm py-2 px-4 shadow-sm hover:shadow-md transition-shadow"
+          >
+            + Add Course
+          </CustomButton>
+        )}
       </div>
 
       {/* Main Content Area */}
@@ -181,18 +179,15 @@ const Courses = () => {
           sortDirection={sortDirection}
           onSort={handleSort}
           emptyMessage={loading ? "Loading..." : "No courses found"}
-          onView={(row) => navigate(`/course-details/${row.id}`)}
-          onEdit={(row) => {
+          onView={hasPermission('COURSE_VIEW') ? (row) => navigate(`/course-details/${row.id}`) : undefined}
+          onEdit={hasPermission('COURSE_UPDATE') ? (row) => {
             setEditData(row);
             setIsAddModalOpen(true);
-          }}
-          onDelete={(row) => {
+          } : undefined}
+          onDelete={hasPermission('COURSE_DELETE') ? (row) => {
             setItemToDelete(row);
             setIsDeleteModalOpen(true);
-          }}
-          onViewDisabled={!hasPermission('COURSE_VIEW')}
-          onEditDisabled={!hasPermission('COURSE_UPDATE')}
-          onDeleteDisabled={!hasPermission('COURSE_DELETE')}
+          } : undefined}
         />
       </div>
 

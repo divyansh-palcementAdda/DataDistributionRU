@@ -64,6 +64,10 @@ const Boards = () => {
   }, [currentPage, rowsPerPage, debouncedSearch, sortBy, sortDirection]);
 
   const handleToggleStatus = async (id, currentStatus) => {
+    if (!hasPermission('BOARD_UPDATE')) {
+      toast.error('You do not have permission to update board status');
+      return;
+    }
     try {
       const response = await toggleBoardStatus(id);
       if (response.success) {
@@ -121,10 +125,12 @@ const Boards = () => {
       key: "status",
       header: "Status",
       render: (status, row) => (
-        <Toggle
-          checked={row.active === true || status === 'ACTIVE'}
-          onChange={() => handleToggleStatus(row.id, status)}
-        />
+        hasPermission('BOARD_UPDATE') ? (
+          <Toggle
+            checked={row.active === true || status === 'ACTIVE'}
+            onChange={() => handleToggleStatus(row.id, status)}
+          />
+        ) : null
       )
     }
   ];
@@ -146,15 +152,15 @@ const Boards = () => {
           className="border border-gray-300 rounded-lg px-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
 
-        <CustomButton
-          variant="primary"
-          onClick={() => { setEditData(null); setIsAddModalOpen(true); }}
-          className="text-sm py-2 px-4 shadow-sm hover:shadow-md transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={!hasPermission('BOARD_CREATE')}
-          style={{ cursor: !hasPermission('BOARD_CREATE') ? 'not-allowed' : 'pointer' }}
-        >
-          + Add Board
-        </CustomButton>
+        {hasPermission('BOARD_CREATE') && (
+          <CustomButton
+            variant="primary"
+            onClick={() => { setEditData(null); setIsAddModalOpen(true); }}
+            className="text-sm py-2 px-4 shadow-sm hover:shadow-md transition-shadow"
+          >
+            + Add Board
+          </CustomButton>
+        )}
       </div>
 
       {/* Main Content Area */}
@@ -173,18 +179,15 @@ const Boards = () => {
           sortDirection={sortDirection}
           onSort={handleSort}
           emptyMessage={loading ? "Loading..." : "No boards found"}
-          onView={(row) => navigate(`/board-details/${row.id}`)}
-          onEdit={(row) => {
+          onView={hasPermission('BOARD_VIEW') ? (row) => navigate(`/board-details/${row.id}`) : undefined}
+          onEdit={hasPermission('BOARD_UPDATE') ? (row) => {
             setEditData(row);
             setIsAddModalOpen(true);
-          }}
-          onDelete={(row) => {
+          } : undefined}
+          onDelete={hasPermission('BOARD_DELETE') ? (row) => {
             setItemToDelete(row);
             setIsDeleteModalOpen(true);
-          }}
-          onViewDisabled={!hasPermission('BOARD_VIEW')}
-          onEditDisabled={!hasPermission('BOARD_UPDATE')}
-          onDeleteDisabled={!hasPermission('BOARD_DELETE')}
+          } : undefined}
         />
       </div>
 

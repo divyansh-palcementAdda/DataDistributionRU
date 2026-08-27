@@ -130,11 +130,12 @@ const CourseType = () => {
             key: "status",
             header: "Status",
             render: (status, row) => (
-                <Toggle
-                    checked={status === 'ACTIVE' || status === true}
-                    onChange={() => handleToggleStatus(row.id, status)}
-                    disabled={!hasPermission('COURSE_TYPE_UPDATE')}
-                />
+                hasPermission('COURSE_TYPE_UPDATE') ? (
+                    <Toggle
+                        checked={status === 'ACTIVE' || status === true}
+                        onChange={() => handleToggleStatus(row.id, status)}
+                    />
+                ) : null
             )
         }
     ];
@@ -157,15 +158,15 @@ const CourseType = () => {
                 />
 
 
-                <CustomButton
-                    variant="primary"
-                    onClick={() => { setEditData(null); setIsAddModalOpen(true); }}
-                    className="text-sm py-2 px-4 shadow-sm hover:shadow-md transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
-                    disabled={!hasPermission('COURSE_TYPE_CREATE')}
-                    style={{ cursor: !hasPermission('COURSE_TYPE_CREATE') ? 'not-allowed' : 'pointer' }}
-                >
-                    + Add Category Type
-                </CustomButton>
+                {hasPermission('COURSE_TYPE_CREATE') && (
+                    <CustomButton
+                        variant="primary"
+                        onClick={() => { setEditData(null); setIsAddModalOpen(true); }}
+                        className="text-sm py-2 px-4 shadow-sm hover:shadow-md transition-shadow"
+                    >
+                        + Add Category Type
+                    </CustomButton>
+                )}
             </div>
 
             {/* Main Content Area */}

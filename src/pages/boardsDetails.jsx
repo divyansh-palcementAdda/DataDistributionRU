@@ -26,18 +26,18 @@ import AssignLeadModal from '../component/reusable/Leads/AssignLeadModal';
 const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, currentData, hasPermission) => [
     {
         key: 'checkbox',
-        header: (
+        header: hasPermission('LEAD_ASSIGN') ? (
             <input
                 type="checkbox"
                 checked={currentData.length > 0 && currentData.every(r => selectedRows.has(r.id ?? r.leadId))}
                 onChange={(e) => onToggleAll(e.target.checked, currentData)}
-                disabled={!hasPermission('LEAD_ASSIGN')}
-                style={{ width: '15px', height: '15px', cursor: hasPermission('LEAD_ASSIGN') ? 'pointer' : 'not-allowed', accentColor: '#4f46e5' }}
+                style={{ width: '15px', height: '15px', cursor: 'pointer', accentColor: '#4f46e5' }}
                 title="Select All"
             />
-        ),
+        ) : null,
         sortable: false,
         render: (value, row) => {
+            if (!hasPermission('LEAD_ASSIGN')) return null;
             const rowId = row.id ?? row.leadId;
             return (
                 <input
@@ -45,8 +45,7 @@ const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, cu
                     checked={selectedRows.has(rowId)}
                     onChange={() => onToggleRow(rowId)}
                     onClick={(e) => e.stopPropagation()}
-                    disabled={!hasPermission('LEAD_ASSIGN')}
-                    style={{ width: '15px', height: '15px', cursor: hasPermission('LEAD_ASSIGN') ? 'pointer' : 'not-allowed', accentColor: '#4f46e5' }}
+                    style={{ width: '15px', height: '15px', cursor: 'pointer', accentColor: '#4f46e5' }}
                 />
             );
         },

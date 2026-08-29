@@ -429,10 +429,10 @@ const HeadDashboard = () => {
   return (
     <div>
       {/* Page Header */}
-      <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px' }}>
+      <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px', background: 'linear-gradient(135deg, #435fff, #a571ff)', padding: '20px', borderRadius: '12px' }}>
         <div>
-          <h1 style={{ fontSize: '22px', fontWeight: '700', color: 'var(--gray-900)' }}>Head Dashboard</h1>
-          <p style={{ fontSize: '13px', color: 'var(--gray-500)', marginTop: '4px' }}>
+          <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#ffffff' }}>Head Dashboard</h1>
+          <p style={{ fontSize: '13px', color: '#e0e7ff', marginTop: '4px' }}>
             Manage your allotted leads and distribute to callers
           </p>
         </div>

@@ -470,11 +470,11 @@ const CallersDashboard = () => {
   return (
     <div>
       {/* Page Header */}
-      <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px' }}>
+      <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px', background: 'linear-gradient(135deg, #435fff, #a571ff)', padding: '20px', borderRadius: '12px' }}>
         <div>
-          <h1 style={{ fontSize: '22px', fontWeight: '700', color: 'var(--gray-900)' }}>Caller Dashboard</h1>
-          <p style={{ fontSize: '13px', color: 'var(--gray-500)', marginTop: '4px' }}>
-            Welcome back,  Here&apos;s your allotment overview.
+          <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#ffffff' }}>Caller Dashboard</h1>
+          <p style={{ fontSize: '13px', color: '#e0e7ff', marginTop: '4px' }}>
+            Welcome back! Here&apos;s your allotment overview.
           </p>
         </div>
         {/* <div style={{ display: 'flex', gap: '8px' }}>

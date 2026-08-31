@@ -326,12 +326,17 @@ const Dashboard = () => {
 
   
 
-
-
-
-
   return (
     <div>
+      <style>{`
+        .recent-activity-scroll::-webkit-scrollbar {
+          display: none;
+        }
+        .recent-activity-scroll {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
       {/* Page Header */}
       <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px', background: 'linear-gradient(135deg, #435fff, #a571ff)', padding: '20px', borderRadius: '12px' }}>
         <div>
@@ -618,27 +623,29 @@ const Dashboard = () => {
           </div>
 
           {/* ── Reusable Dashboard Cards ── */}
+          <div style={{ display: 'flex', flexDirection: 'row', gap: '20px' }}>
+            <UnallottedCard 
+              onCardClick={handleCardClick}
+              activeFilters={activeFilters}
+              filterRequest={filterRequest}
+            />
+            <AvailedCard 
+              onCardClick={handleCardClick}
+              activeFilters={activeFilters}
+              filterRequest={filterRequest}
+            />
+            <AllottedCard 
+              onCardClick={handleCardClick}
+              activeFilters={activeFilters}
+              filterRequest={filterRequest}
+            />
+          </div>
           <LeadCards data={leadCardsData} />
           <LeadSource data={leadSourceData} />
           <SystemCards data={systemCardsData} />
           <CategorywiseCard />
           <BoardWiseCard data={boardWiseData} />
           <GradWiseCard data={gradWiseData} />
-          <UnallottedCard 
-            onCardClick={handleCardClick}
-            activeFilters={activeFilters}
-            filterRequest={filterRequest}
-          />
-          <AvailedCard 
-            onCardClick={handleCardClick}
-            activeFilters={activeFilters}
-            filterRequest={filterRequest}
-          />
-          <AllottedCard 
-            onCardClick={handleCardClick}
-            activeFilters={activeFilters}
-            filterRequest={filterRequest}
-          />
         </div>
 
         {/* Right Column: Recent Activity */}
@@ -653,8 +660,11 @@ const Dashboard = () => {
             height: '750px',
             overflowY: 'auto',
             display: 'flex',
-            flexDirection: 'column'
-          }}>
+            flexDirection: 'column',
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none'
+          }}
+          className="recent-activity-scroll">
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -814,7 +824,7 @@ const Dashboard = () => {
           </div>
 
           {/* ── Lead Status Card (Current Distribution) ── */}
-          <div className="card">
+          {/* <div className="card">
             <div className="card-header">
               <div>
                 <div className="card-title">Lead Status</div>
@@ -824,7 +834,7 @@ const Dashboard = () => {
             <div style={{ height: '220px' }}>
               <Doughnut data={statusChartData} options={statusChartOptions} />
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
 

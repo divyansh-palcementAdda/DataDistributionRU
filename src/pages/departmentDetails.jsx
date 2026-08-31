@@ -736,7 +736,7 @@ const DepartmentDetails = () => {
             )}
 
             {/* ── HODs Section ── */}
-            {hods && hods.length > 0 && (
+            {/* {hods && hods.length > 0 && (
                 <div style={{ backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px solid #E2E8F0', padding: '24px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                     <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0F172A', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <FiUser style={{ color: '#7C3AED', fontSize: '18px' }} />
@@ -766,10 +766,10 @@ const DepartmentDetails = () => {
                         ))}
                     </div>
                 </div>
-            )}
+            )} */}
 
             {/* ── Counsellors Section ── */}
-            {counsellors && counsellors.length > 0 && (
+            {/* {counsellors && counsellors.length > 0 && (
                 <div style={{ backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px solid #E2E8F0', padding: '24px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
                     <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0F172A', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <FiUsers style={{ color: '#2563EB', fontSize: '18px' }} />
@@ -801,7 +801,7 @@ const DepartmentDetails = () => {
                         ))}
                     </div>
                 </div>
-            )}
+            )} */}
 
             {/* ── No Staff Message ── */}
             {(!hods || hods.length === 0) && (!counsellors || counsellors.length === 0) && (
@@ -811,6 +811,31 @@ const DepartmentDetails = () => {
                 </div>
             )}
 
+
+      
+       <div style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '12px', marginTop: '16px' }}>
+                    <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#0F172A', marginBottom: '16px' }}>Lead Assignment Statistics</h3>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+                        <AllottedCard
+                            onCardClick={handleCardClick}
+                            activeFilters={activeFilters}
+                            filterRequest={filterRequest}
+                            departmentId={id}
+                        />
+                        <AvailedCard
+                            onCardClick={handleCardClick}
+                            activeFilters={activeFilters}
+                            filterRequest={filterRequest}
+                            departmentId={id}
+                        />
+                        <UnallottedCard
+                            onCardClick={handleCardClick}
+                            activeFilters={activeFilters}
+                            filterRequest={filterRequest}
+                            departmentId={id}
+                        />
+                    </div>
+                </div>
             {/* ── Dashboard Cards (BOTTOM) ── */}
             <div style={{ marginBottom: '24px' }}>
                 <LeadCards
@@ -840,27 +865,7 @@ const DepartmentDetails = () => {
                 />
                 
                 {/* New Allotted/Availed/Unallotted Cards */}
-                <div style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '12px', marginTop: '16px' }}>
-                    <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#0F172A', marginBottom: '16px' }}>Lead Assignment Statistics</h3>
-                    <AllottedCard
-                        onCardClick={handleCardClick}
-                        activeFilters={activeFilters}
-                        filterRequest={filterRequest}
-                        departmentId={id}
-                    />
-                    <AvailedCard
-                        onCardClick={handleCardClick}
-                        activeFilters={activeFilters}
-                        filterRequest={filterRequest}
-                        departmentId={id}
-                    />
-                    <UnallottedCard
-                        onCardClick={handleCardClick}
-                        activeFilters={activeFilters}
-                        filterRequest={filterRequest}
-                        departmentId={id}
-                    />
-                </div>
+               
             </div>
 
             {/* ── Filtered Lead Table ── */}

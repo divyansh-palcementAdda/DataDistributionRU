@@ -59,12 +59,14 @@ const FollowUps = () => {
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [selectedFollowup, setSelectedFollowup] = useState(null);
   const [activeTab, setActiveTab] = useState("PENDING");
+  const [selectedLeadStatusId, setSelectedLeadStatusId] = useState(null);
 
   const debounceRef = useRef(null);
 
   const handleCardClick = (filter) => {
     if (filter.type === 'leadStatus') {
-      setActiveTab(filter.value);
+      setSelectedLeadStatusId(prev => prev === filter.value ? null : filter.value);
+      setPage(0);
     }
   };
 
@@ -123,6 +125,7 @@ const FollowUps = () => {
         sortDirection: sortDirection.toUpperCase(),
         search,
         status: activeTab === "ALL" ? "" : activeTab,
+        leadStatusIds: selectedLeadStatusId ? [selectedLeadStatusId] : [],
       });
 
       const apiData = res?.data ?? res ?? {};
@@ -151,6 +154,7 @@ const FollowUps = () => {
     sortDirection,
     search,
     activeTab,
+    selectedLeadStatusId,
     showToast,
   ]);
 
@@ -261,7 +265,10 @@ const FollowUps = () => {
       </div>
 
       {/* ── Stat Cards ── */}
-      <LeadCards onCardClick={handleCardClick} />
+      <LeadCards 
+        onCardClick={handleCardClick} 
+        activeFilters={selectedLeadStatusId ? [{ type: 'leadStatus', value: selectedLeadStatusId }] : []}
+      />
 
       {/* Search */}
       <div

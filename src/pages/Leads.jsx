@@ -3,6 +3,7 @@ import { FiEye, FiEdit, FiTrash2 } from 'react-icons/fi';
 import { statusConfig } from '../mockData';
 import { getAllLeads, deleteLead, getLeadById, availLead } from '../Services/lead/leadService';
 import { getAllCourses } from '../Services/course/course';
+import { getLeadStatusesDropdown } from '../Services/drop-down/dropDownService';
 import { useAppContext } from '../AppContext';
 import { usePermissions } from '../PermissionContext';
 import { useLocation } from 'react-router-dom';
@@ -27,6 +28,8 @@ const Leads = () => {
   const [filterStatus, setFilterStatus] = useState('');
   const [filterCounselor, setFilterCounselor] = useState('All Counselors');
   const [filterCourse, setFilterCourse] = useState('All Courses');
+  const [filterLeadStatus, setFilterLeadStatus] = useState('');
+  const [filterLeadStatusName, setFilterLeadStatusName] = useState('');
   const [selectedCard, setSelectedCard] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
@@ -67,6 +70,7 @@ const Leads = () => {
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortDirection, setSortDirection] = useState('desc');
   const [coursesData, setCoursesData] = useState([]);
+  const [leadStatusesData, setLeadStatusesData] = useState([]);
 
   // Calculate stat cards data for LeadCards component
   const leadCardsData = useMemo(() => {
@@ -204,6 +208,12 @@ const Leads = () => {
       delete converted.leadSourceIds;
     }
     
+    // Convert leadStatusHistoryIds → leadStatusHistoryId or leadStatusHistoryIds
+    if (converted.leadStatusHistoryIds?.length === 1) {
+      converted.leadStatusHistoryId = converted.leadStatusHistoryIds[0];
+      delete converted.leadStatusHistoryIds;
+    }
+    
     return converted;
   };
 
@@ -221,6 +231,10 @@ const Leads = () => {
         // Card filter — statusId send karo agar koi card selected hai (for backward compatibility)
         ...(selectedCard?.type === 'leadStatus' && selectedCard?.value
           ? { statusId: selectedCard.value }
+          : {}),
+        // Lead Status dropdown filter
+        ...(filterLeadStatus
+          ? { leadStatusHistoryIds: [filterLeadStatus] }
           : {}),
       };
       const res = await getAllLeads(params);
@@ -254,12 +268,25 @@ const Leads = () => {
     }
   };
 
+  const fetchLeadStatuses = async () => {
+    try {
+      const res = await getLeadStatusesDropdown();
+      if (res?.success) {
+        const leadStatuses = res.data;
+        setLeadStatusesData(leadStatuses);
+      } else {
+      }
+    } catch (error) {
+      console.error("Failed to fetch lead statuses", error);
+    }
+  };
+
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
       fetchLeads();
     }, 500);
     return () => clearTimeout(delayDebounceFn);
-  }, [page, size, search, sortBy, sortDirection, leadRefreshTrigger, selectedCard, filterRequest]);
+  }, [page, size, search, sortBy, sortDirection, leadRefreshTrigger, selectedCard, filterRequest, filterLeadStatus]);
 
   // Update filterRequest when activeFilters changes
   useEffect(() => {
@@ -310,6 +337,7 @@ const Leads = () => {
 
   useEffect(() => {
     fetchCourses();
+    fetchLeadStatuses();
   }, []);
 
   // Check for filters passed from navigation (e.g., from adminDashboard)
@@ -477,6 +505,23 @@ const Leads = () => {
           value={search}
           onChange={(e) => { setSearch(e.target.value); }}
         />
+        <select
+          className="form-control max-w-[200px]"
+          value={filterLeadStatus}
+          onChange={(e) => { 
+            const selectedStatus = leadStatusesData.find(s => s.id === e.target.value);
+            setFilterLeadStatus(e.target.value); 
+            setFilterLeadStatusName(selectedStatus?.name || '');
+            setPage(0); 
+          }}
+        >
+          <option value="">Lead Status*</option>
+          {leadStatusesData.map((status) => (
+            <option key={status.id} value={status.id}>
+              {status.name}
+            </option>
+          ))}
+        </select>
         {/* Active card filter badges */}
         {activeFilters.map((filter, index) => (
           <div 
@@ -509,12 +554,27 @@ const Leads = () => {
             </button>
           </div>
         )}
+        {/* Lead Status filter badge */}
+        {filterLeadStatus && (
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-indigo-50 border border-indigo-200 rounded-md text-sm text-indigo-700 font-medium">
+            <span>Lead Status: {filterLeadStatusName}</span>
+            <button
+              onClick={() => { setFilterLeadStatus(''); setFilterLeadStatusName(''); setPage(0); }}
+              className="ml-1 text-indigo-400 hover:text-indigo-700 bg-transparent border-none cursor-pointer leading-none"
+              title="Clear filter"
+            >
+              ✕
+            </button>
+          </div>
+        )}
         {/* Clear all filters button */}
-        {(activeFilters.length > 0 || selectedCard) && (
+        {(activeFilters.length > 0 || selectedCard || filterLeadStatus) && (
           <button
             onClick={() => {
               setActiveFilters([]);
               setSelectedCard(null);
+              setFilterLeadStatus('');
+              setFilterLeadStatusName('');
               setPage(0);
             }}
             className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 rounded border border-gray-300 cursor-pointer"

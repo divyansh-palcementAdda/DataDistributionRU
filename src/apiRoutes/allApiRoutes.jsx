@@ -173,6 +173,18 @@ const ApiRoutes = {
         getUsers: '/api/departments/{id}/users',
         getHods: '/api/departments/{id}/hods',
         getCounsellors: '/api/departments/{id}/counsellors'
+    },
+
+    Dropdowns: {
+        boards: '/api/dropdowns/boards',
+        courseTypes: '/api/dropdowns/course-types',
+        courses: '/api/dropdowns/courses',
+        departments: '/api/dropdowns/departments',
+        grades: '/api/dropdowns/grades',
+        leadSources: '/api/dropdowns/lead-sources',
+        leadStatuses: '/api/dropdowns/lead-statuses',
+        roles: '/api/dropdowns/roles',
+        users: '/api/dropdowns/users'
     }
 }
 

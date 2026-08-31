@@ -170,20 +170,86 @@ const fetchLeadsForCard = async (activeFilters, departmentId, page, size, sortBy
         sortDirection: sortDirection || 'desc',
     };
 
-    // Support multiple filters - accumulate all active filter values
+    // Smart conversion function: array to singular/plural based on length
+    const convertFilterRequest = (request) => {
+        const converted = { ...request };
+        
+        // Convert leadStatusIds → statusId or statusIds
+        if (converted.leadStatusIds?.length === 1) {
+            converted.statusId = converted.leadStatusIds[0];
+            delete converted.leadStatusIds;
+        }
+        
+        // Convert boardIds → boardId or boardIds
+        if (converted.boardIds?.length === 1) {
+            converted.boardId = converted.boardIds[0];
+            delete converted.boardIds;
+        }
+        
+        // Convert gradeIds → gradeId or gradeIds
+        if (converted.gradeIds?.length === 1) {
+            converted.gradeId = converted.gradeIds[0];
+            delete converted.gradeIds;
+        }
+        
+        // Convert courseTypeIds → courseTypeId or courseTypeIds
+        if (converted.courseTypeIds?.length === 1) {
+            converted.courseTypeId = converted.courseTypeIds[0];
+            delete converted.courseTypeIds;
+        }
+        
+        // Convert leadSourceIds → leadSourceId or leadSourceIds
+        if (converted.leadSourceIds?.length === 1) {
+            converted.leadSourceId = converted.leadSourceIds[0];
+            delete converted.leadSourceIds;
+        }
+        
+        return converted;
+    };
+
+    // Build filterRequest from activeFilters
+    const filterRequest = {};
     activeFilters.forEach(filter => {
         switch (filter.type) {
-            case 'leadStatus':  params.statusId     = filter.value; break;
-            case 'leadSource':  params.sourceId     = filter.value; break;
-            case 'courseType':  params.courseTypeId = filter.value; break;
-            case 'board':       params.boardId      = filter.value; break;
-            case 'grade':       params.gradeId      = filter.value; break;
+            case 'leadStatus':
+                if (!filterRequest.leadStatusIds) filterRequest.leadStatusIds = [];
+                if (!filterRequest.leadStatusIds.includes(filter.value)) {
+                    filterRequest.leadStatusIds.push(filter.value);
+                }
+                break;
+            case 'leadSource':
+                if (!filterRequest.leadSourceIds) filterRequest.leadSourceIds = [];
+                if (!filterRequest.leadSourceIds.includes(filter.value)) {
+                    filterRequest.leadSourceIds.push(filter.value);
+                }
+                break;
+            case 'courseType':
+                if (!filterRequest.courseTypeIds) filterRequest.courseTypeIds = [];
+                if (!filterRequest.courseTypeIds.includes(filter.value)) {
+                    filterRequest.courseTypeIds.push(filter.value);
+                }
+                break;
+            case 'board':
+                if (!filterRequest.boardIds) filterRequest.boardIds = [];
+                if (!filterRequest.boardIds.includes(filter.value)) {
+                    filterRequest.boardIds.push(filter.value);
+                }
+                break;
+            case 'grade':
+                if (!filterRequest.gradeIds) filterRequest.gradeIds = [];
+                if (!filterRequest.gradeIds.includes(filter.value)) {
+                    filterRequest.gradeIds.push(filter.value);
+                }
+                break;
             case 'allotted':    params.isAllotted   = true; break;
             case 'availed':      params.isAvailed     = true; break;
             case 'unallotted':   params.isUnallotted  = true; break;
             default:             break;
         }
     });
+
+    // Apply smart conversion to filterRequest
+    Object.assign(params, convertFilterRequest(filterRequest));
 
     try {
         const res = await axiosInstance.get(ApiRoutes.Lead.getAllLeads, { params });

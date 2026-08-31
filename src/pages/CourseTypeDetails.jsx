@@ -152,19 +152,45 @@ const fetchLeadsForCard = async (activeFilters, courseTypeId, page, size, sortBy
         sortDirection: sortDirection || 'desc',
     };
 
-    // Support multiple filters - accumulate all active filter values
-    activeFilters.forEach(filter => {
-        switch (filter.type) {
-            case 'leadStatus':   params.statusId = filter.value;  break;
-            case 'leadSource':   params.sourceId = filter.value;  break;
-            case 'board':        params.boardId  = filter.value;  break;
-            case 'grade':        params.gradeId  = filter.value;  break;
-            case 'unallotted':   params.allotted = false;         break;
-            case 'availed':      params.availed = true;           break;
-            case 'allotted':     params.allotted = true;          break;
-            default:             break;
+    // Smart conversion function: array to singular/plural based on length
+    const convertFilterRequest = (request) => {
+        const converted = { ...request };
+        
+        // Convert leadStatusIds → statusId or statusIds
+        if (converted.leadStatusIds?.length === 1) {
+            converted.statusId = converted.leadStatusIds[0];
+            delete converted.leadStatusIds;
         }
-    });
+        
+        // Convert boardIds → boardId or boardIds
+        if (converted.boardIds?.length === 1) {
+            converted.boardId = converted.boardIds[0];
+            delete converted.boardIds;
+        }
+        
+        // Convert gradeIds → gradeId or gradeIds
+        if (converted.gradeIds?.length === 1) {
+            converted.gradeId = converted.gradeIds[0];
+            delete converted.gradeIds;
+        }
+        
+        // Convert courseTypeIds → courseTypeId or courseTypeIds
+        if (converted.courseTypeIds?.length === 1) {
+            converted.courseTypeId = converted.courseTypeIds[0];
+            delete converted.courseTypeIds;
+        }
+        
+        // Convert leadSourceIds → leadSourceId or leadSourceIds
+        if (converted.leadSourceIds?.length === 1) {
+            converted.leadSourceId = converted.leadSourceIds[0];
+            delete converted.leadSourceIds;
+        }
+        
+        return converted;
+    };
+
+    // Use filterRequest with smart conversion instead of direct assignment
+    Object.assign(params, convertFilterRequest(filterRequest));
 
     try {
         const res = await axiosInstance.get(ApiRoutes.Lead.getAllLeads, { params });
@@ -298,19 +324,27 @@ const CourseTypeDetails = () => {
                     break;
                 case 'leadStatus':
                     if (!newFilterRequest.leadStatusIds) newFilterRequest.leadStatusIds = [];
-                    newFilterRequest.leadStatusIds.push(filter.value);
+                    if (!newFilterRequest.leadStatusIds.includes(filter.value)) {
+                        newFilterRequest.leadStatusIds.push(filter.value);
+                    }
                     break;
                 case 'board':
                     if (!newFilterRequest.boardIds) newFilterRequest.boardIds = [];
-                    newFilterRequest.boardIds.push(filter.value);
+                    if (!newFilterRequest.boardIds.includes(filter.value)) {
+                        newFilterRequest.boardIds.push(filter.value);
+                    }
                     break;
                 case 'grade':
                     if (!newFilterRequest.gradeIds) newFilterRequest.gradeIds = [];
-                    newFilterRequest.gradeIds.push(filter.value);
+                    if (!newFilterRequest.gradeIds.includes(filter.value)) {
+                        newFilterRequest.gradeIds.push(filter.value);
+                    }
                     break;
                 case 'leadSource':
                     if (!newFilterRequest.leadSourceIds) newFilterRequest.leadSourceIds = [];
-                    newFilterRequest.leadSourceIds.push(filter.value);
+                    if (!newFilterRequest.leadSourceIds.includes(filter.value)) {
+                        newFilterRequest.leadSourceIds.push(filter.value);
+                    }
                     break;
                 default:
                     break;

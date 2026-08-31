@@ -187,6 +187,43 @@ const CallersDashboard = () => {
     }
   }, []);
 
+  // Smart conversion function: array to singular/plural based on length
+  const convertFilterRequest = (request) => {
+    const converted = { ...request };
+    
+    // Convert leadStatusIds → statusId or statusIds
+    if (converted.leadStatusIds?.length === 1) {
+      converted.statusId = converted.leadStatusIds[0];
+      delete converted.leadStatusIds;
+    }
+    
+    // Convert boardIds → boardId or boardIds
+    if (converted.boardIds?.length === 1) {
+      converted.boardId = converted.boardIds[0];
+      delete converted.boardIds;
+    }
+    
+    // Convert gradeIds → gradeId or gradeIds
+    if (converted.gradeIds?.length === 1) {
+      converted.gradeId = converted.gradeIds[0];
+      delete converted.gradeIds;
+    }
+    
+    // Convert courseTypeIds → courseTypeId or courseTypeIds
+    if (converted.courseTypeIds?.length === 1) {
+      converted.courseTypeId = converted.courseTypeIds[0];
+      delete converted.courseTypeIds;
+    }
+    
+    // Convert leadSourceIds → leadSourceId or leadSourceIds
+    if (converted.leadSourceIds?.length === 1) {
+      converted.leadSourceId = converted.leadSourceIds[0];
+      delete converted.leadSourceIds;
+    }
+    
+    return converted;
+  };
+
   // Fetch leads from API for table (caller's leads with filtering)
   const fetchLeads = useCallback(async () => {
     setLoading(true);
@@ -198,8 +235,8 @@ const CallersDashboard = () => {
         sortDirection: sortDirection || undefined,
         // Filter for leads allotted to current caller
         assignedTo: currentCaller,
-        // Add filterRequest parameters
-        ...filterRequest,
+        // Add filterRequest parameters with smart conversion
+        ...convertFilterRequest(filterRequest),
       };
       
       const res = await getAllLeads(params);

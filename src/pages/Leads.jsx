@@ -170,6 +170,43 @@ const Leads = () => {
     setPage(0); // filter change hone par page reset
   };
 
+  // Smart conversion function: array to singular/plural based on length
+  const convertFilterRequest = (request) => {
+    const converted = { ...request };
+    
+    // Convert leadStatusIds → statusId or statusIds
+    if (converted.leadStatusIds?.length === 1) {
+      converted.statusId = converted.leadStatusIds[0];
+      delete converted.leadStatusIds;
+    }
+    
+    // Convert boardIds → boardId or boardIds
+    if (converted.boardIds?.length === 1) {
+      converted.boardId = converted.boardIds[0];
+      delete converted.boardIds;
+    }
+    
+    // Convert gradeIds → gradeId or gradeIds
+    if (converted.gradeIds?.length === 1) {
+      converted.gradeId = converted.gradeIds[0];
+      delete converted.gradeIds;
+    }
+    
+    // Convert courseTypeIds → courseTypeId or courseTypeIds
+    if (converted.courseTypeIds?.length === 1) {
+      converted.courseTypeId = converted.courseTypeIds[0];
+      delete converted.courseTypeIds;
+    }
+    
+    // Convert leadSourceIds → leadSourceId or leadSourceIds
+    if (converted.leadSourceIds?.length === 1) {
+      converted.leadSourceId = converted.leadSourceIds[0];
+      delete converted.leadSourceIds;
+    }
+    
+    return converted;
+  };
+
   const fetchLeads = async () => {
     setLoading(true);
     try {
@@ -179,8 +216,8 @@ const Leads = () => {
         search: search || undefined,
         sortBy: sortBy || undefined,
         sortDirection: sortDirection || undefined,
-        // Add filterRequest parameters
-        ...filterRequest,
+        // Add filterRequest parameters with smart conversion
+        ...convertFilterRequest(filterRequest),
         // Card filter — statusId send karo agar koi card selected hai (for backward compatibility)
         ...(selectedCard?.type === 'leadStatus' && selectedCard?.value
           ? { statusId: selectedCard.value }

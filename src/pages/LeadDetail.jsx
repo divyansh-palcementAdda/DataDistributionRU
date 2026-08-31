@@ -416,7 +416,7 @@ const LeadDetail = () => {
                 </p>
 
                 <div className="flex flex-wrap gap-2">
-                   Assign To : {leadDetails.assignedTo || 'N/A'}
+                   Assign To : {assignedToName}
                 </div>
               </div>
             </div>

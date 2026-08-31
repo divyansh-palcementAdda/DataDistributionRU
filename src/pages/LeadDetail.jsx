@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
+import { usePermissions } from '../PermissionContext';
 import CustomButton from '../component/reusable/CustomButton';
 import ScheduleModal from "../component/reusable/Leads/scheduleModel";
+import CallModal from '../component/reusable/CallModal';
 import WhatsAppModal from '../component/reusable/WhatsAppModal';
 import EmailModal from '../component/reusable/EmailModal';
 import ReusableTable from '../component/reusable/table';
-import { createLeadSchedule, getLeadById, getLeadInfoPanel, sendLeadWhatsApp, sendLeadEmail } from '../Services/lead/leadService';
+import { createLeadSchedule, getLeadById, getLeadInfoPanel, sendLeadWhatsApp, sendLeadEmail, changeLeadStatus, getLeadStatusHistory } from '../Services/lead/leadService';
 import { getAllCourses } from '../Services/course/course';
 
 const BASE_URL = import.meta.env.VITE_BASE_URL || '';
@@ -14,7 +16,9 @@ const BASE_URL = import.meta.env.VITE_BASE_URL || '';
 const LeadDetail = () => {
   const { id } = useParams();
   const { navTo, showToast, openAddLeadModal } = useAppContext();
+  const { hasPermission } = usePermissions();
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [isCallModalOpen, setIsCallModalOpen] = useState(false);
   const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [leadDetails, setLeadDetails] = useState(null);
@@ -24,6 +28,8 @@ const LeadDetail = () => {
   const [coursesLoading, setCoursesLoading] = useState(false);
   const [communicationConfig, setCommunicationConfig] = useState(null);
   const [configLoading, setConfigLoading] = useState(false);
+  const [statusHistory, setStatusHistory] = useState([]);
+  const [statusHistoryLoading, setStatusHistoryLoading] = useState(false);
 
   // Searchable course dropdown state
   const [courseSearch, setCourseSearch] = useState('');
@@ -115,6 +121,28 @@ const LeadDetail = () => {
     fetchInfoPanel();
   }, [selectedCourse]);
 
+  useEffect(() => {
+    const fetchStatusHistory = async () => {
+      if (id) {
+        setStatusHistoryLoading(true);
+        try {
+          const res = await getLeadStatusHistory(id, { page: 0, size: 50, sortBy: 'changedAt', sortDirection: 'desc' });
+          if (res?.data?.success && res?.data?.data?.content) {
+            setStatusHistory(res.data.data.content);
+          } else {
+            setStatusHistory([]);
+          }
+        } catch (err) {
+          console.error("Failed to fetch status history", err);
+          setStatusHistory([]);
+        } finally {
+          setStatusHistoryLoading(false);
+        }
+      }
+    };
+    fetchStatusHistory();
+  }, [id]);
+
   const initials = (() => {
     const fullName = leadDetails?.fullName;
     return fullName ? fullName.substring(0, 2).toUpperCase() : '--';
@@ -148,16 +176,6 @@ const LeadDetail = () => {
     }
   };
 
-  // Status history: only current status from API
-  const statusHistory = leadDetails?.currentStatus
-    ? [{
-        status: leadDetails.currentStatus,
-        changedAt: leadDetails.updatedAt || leadDetails.createdAt,
-        changedBy: leadDetails.createdBy,
-        remarks: leadDetails.remarks || '-',
-      }]
-    : [];
-
   const statusHistoryColumns = [
     {
       key: 'sno',
@@ -168,7 +186,8 @@ const LeadDetail = () => {
       key: 'status',
       header: 'Status',
       render: (value, row, index) => {
-        const statusValue = typeof value === 'object' ? value?.name || value?.code || '-' : value || '-';
+        const statusObj = row?.newStatus || row?.currentStatus || row?.status;
+        const statusValue = typeof statusObj === 'object' ? statusObj?.name || statusObj?.code || '-' : statusObj || '-';
         return (
           <div className="flex items-center gap-2">
             <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(statusValue)}`}>
@@ -194,12 +213,12 @@ const LeadDetail = () => {
       render: (value, row) =>
         row?.changedBy?.firstName && row?.changedBy?.lastName
           ? `${row.changedBy.firstName} ${row.changedBy.lastName}`
-          : row?.changedBy?.username || '-',
+          : row?.changedBy?.username || row?.changedBy || '-',
     },
     {
       key: 'remarks',
       header: 'Remarks',
-      render: (value) => value || '-',
+      render: (value, row) => row?.feedback || row?.remarks || value || '-',
     },
   ];
 
@@ -208,6 +227,19 @@ const LeadDetail = () => {
       const response = await createLeadSchedule(id, formData);
       if (response?.data?.success) {
         showToast('Follow-up scheduled successfully');
+        
+        // Background API call to change lead status
+        if (formData.leadStatus && formData.leadStatusCode) {
+          try {
+            await changeLeadStatus(id, {
+              newStatusId: formData.leadStatus,
+              statusCode: formData.leadStatusCode,
+              feedback: formData.remarks || ""
+            });
+          } catch (error) {
+            console.error('Error changing lead status in background:', error);
+          }
+        }
       } else {
         showToast(response?.data?.message || 'Unable to schedule follow-up');
       }
@@ -281,17 +313,19 @@ const LeadDetail = () => {
           </div>
         </div>
         <div className="flex gap-2">
-          <CustomButton
-            variant="secondary"
-            onClick={() => openAddLeadModal()}
-            className="text-xs py-1.5 px-3 flex items-center gap-1.5"
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            Add Lead
-          </CustomButton>
+          {hasPermission('LEAD_CREATE') && (
+            <CustomButton
+              variant="secondary"
+              onClick={() => openAddLeadModal()}
+              className="text-xs py-1.5 px-3 flex items-center gap-1.5"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Add Lead
+            </CustomButton>
+          )}
           <CustomButton
             variant="primary"
             onClick={() => setIsScheduleModalOpen(true)}
@@ -313,45 +347,59 @@ const LeadDetail = () => {
           {/* Lead Info Card */}
           <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm w-full">
 
-            {/* Card Header with Edit Button */}
+            {/* Card Header with Edit and Call Buttons */}
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-sm font-bold text-gray-700">Lead Info</h3>
-              <button
-                onClick={() => {
-                  const editPayload = {
-                    id: leadDetails.id ?? leadDetails.leadId,
-                    leadId: leadDetails.id ?? leadDetails.leadId,
-                    fullName: leadDetails.fullName || '',
-                    phoneNumber: leadDetails.phoneNumber || '',
-                    alternatePhoneNumber: leadDetails.alternatePhoneNumber || '',
-                    email: leadDetails.email || '',
-                    city: leadDetails.city || '',
-                    state: leadDetails.state || '',
-                    country: leadDetails.country || '',
-                    leadSourceIds: leadDetails.leadSources?.map((s) => s.id) || [],
-                    sourceDetails: leadDetails.sourceDetails || '',
-                    interestedCourseIds: leadDetails.interestedCourses?.map((c) => c.id) || [],
-                    courseId: leadDetails.course?.id || '',
-                    registeredCourseId: leadDetails.registeredCourse?.id || '',
-                    boardId: leadDetails.board?.id || '',
-                    gradeId: leadDetails.grade?.id || '',
-                    remarks: leadDetails.remarks || '',
-                    assignedToUserId: leadDetails.assignedTo?.id || '',
-                    statusId: leadDetails.currentStatus?.id || '',
-                    active: leadDetails.active !== undefined ? leadDetails.active : true,
-                    nextFollowUpDate: leadDetails.nextFollowUpDate || '',
-                  };
-                  openAddLeadModal(editPayload);
-                }}
-                className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-lg transition-colors"
-                title="Edit Lead"
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                </svg>
-                Edit
-              </button>
+              <div className="flex gap-2">
+                {hasPermission('LEAD_UPDATE') && (
+                  <button
+                    onClick={() => {
+                      const editPayload = {
+                        id: leadDetails.id ?? leadDetails.leadId,
+                        leadId: leadDetails.id ?? leadDetails.leadId,
+                        fullName: leadDetails.fullName || '',
+                        phoneNumber: leadDetails.phoneNumber || '',
+                        alternatePhoneNumber: leadDetails.alternatePhoneNumber || '',
+                        email: leadDetails.email || '',
+                        city: leadDetails.city || '',
+                        state: leadDetails.state || '',
+                        country: leadDetails.country || '',
+                        leadSourceIds: leadDetails.leadSources?.map((s) => s.id) || [],
+                        sourceDetails: leadDetails.sourceDetails || '',
+                        interestedCourseIds: leadDetails.interestedCourses?.map((c) => c.id) || [],
+                        courseId: leadDetails.course?.id || '',
+                        registeredCourseId: leadDetails.registeredCourse?.id || '',
+                        boardId: leadDetails.board?.id || '',
+                        gradeId: leadDetails.grade?.id || '',
+                        remarks: leadDetails.remarks || '',
+                        assignedToUserId: leadDetails.assignedTo?.id || '',
+                        statusId: leadDetails.currentStatus?.id || '',
+                        active: leadDetails.active !== undefined ? leadDetails.active : true,
+                        nextFollowUpDate: leadDetails.nextFollowUpDate || '',
+                      };
+                      openAddLeadModal(editPayload);
+                    }}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-lg transition-colors"
+                    title="Edit Lead"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    </svg>
+                    Edit
+                  </button>
+                )}
+                <button
+                  onClick={() => setIsCallModalOpen(true)}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-green-600 bg-green-50 hover:bg-green-100 border border-green-200 px-3 py-1.5 rounded-lg transition-colors"
+                  title="Call Lead"
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                  </svg>
+                  Call
+                </button>
+              </div>
             </div>
 
             {/* Avatar + Name */}
@@ -364,27 +412,11 @@ const LeadDetail = () => {
                   {leadDetails.fullName || 'N/A'}
                 </h2>
                 <p className="text-sm text-gray-500 mb-3">
-                  {leadDetails.phoneNumber || 'N/A'}{leadDetails.email ? ` · ${leadDetails.email}` : ''}
+                  {leadDetails.leadCode || 'N/A'}{leadDetails.nextFollowUpDate ? ` · Next Follow up Date ${formatDate(leadDetails.nextFollowUpDate)}` : ''}
                 </p>
+
                 <div className="flex flex-wrap gap-2">
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wide ${getStatusColor(leadDetails.currentStatus)}`}>
-                    {statusName}
-                  </span>
-                  {leadDetails.course?.courseName && (
-                    <span className="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-100 uppercase tracking-wide">
-                      {leadDetails.course.courseName}
-                    </span>
-                  )}
-                  {leadDetails.leadSources?.length > 0 && (
-                    <span className="bg-gray-50 text-gray-500 text-[10px] font-medium px-2 py-0.5 rounded-full border border-gray-100">
-                      Source: {leadDetails.leadSources[0]?.name || 'N/A'}
-                    </span>
-                  )}
-                  {leadDetails.leadCode && (
-                    <span className="bg-yellow-50 text-yellow-600 text-[10px] font-medium px-2 py-0.5 rounded-full border border-yellow-100">
-                      {leadDetails.leadCode}
-                    </span>
-                  )}
+                   Assign To : {assignedToName}
                 </div>
               </div>
             </div>
@@ -392,21 +424,24 @@ const LeadDetail = () => {
             {/* Quick Info Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               {[
+                { label: 'Phone Number', value: leadDetails.phoneNumber || 'N/A' },
+                { label: 'Alternate Phone', value: leadDetails.alternatePhoneNumber || 'N/A' },
+                { label: 'Email', value: leadDetails.email || 'N/A' },
                 { label: 'City', value: leadDetails.city || 'N/A' },
                 { label: 'State', value: leadDetails.state || 'N/A' },
                 { label: 'Country', value: leadDetails.country || 'N/A' },
-                { label: 'Status', value: statusName },
-                { label: 'Lead Date', value: formatDate(leadDetails.createdAt) },
-                { label: 'Lead Code', value: leadDetails.leadCode || 'N/A' },
-                {
-                  label: 'Next Follow-up',
-                  value: formatDate(leadDetails.nextFollowUpDate),
-                },
-                {
-                  label: 'Last Contacted',
-                  value: leadDetails.lastContactedAt ? formatDate(leadDetails.lastContactedAt) : '-',
-                },
-                { label: 'Assigned To', value: assignedToName },
+                // { label: 'Status', value: statusName },
+                // { label: 'Lead Date', value: formatDate(leadDetails.createdAt) },
+                // { label: 'Lead Code', value: leadDetails.leadCode || 'N/A' },
+                // {
+                //   label: 'Next Follow-up',
+                //   value: formatDate(leadDetails.nextFollowUpDate),
+                // },
+                // {
+                //   label: 'Last Contacted',
+                //   value: leadDetails.lastContactedAt ? formatDate(leadDetails.lastContactedAt) : '-',
+                // },
+                // { label: 'Assigned To', value: assignedToName },
               ].map((item, idx) => (
                 <div key={idx} className="bg-gray-50 p-3 rounded-lg border border-gray-100">
                   <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{item.label}</div>
@@ -448,25 +483,34 @@ const LeadDetail = () => {
                   )}
                 </div>
 
-                {/* Board */}
+                {/* Specialization */}
                 <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Board</div>
+                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Specialization</div>
                   <div className="text-xs font-semibold text-gray-800">
-                    {leadDetails.board?.name || 'N/A'}
+                    {leadDetails.board?.name || leadDetails.grade?.name || 'N/A'}
                   </div>
                   {leadDetails.board?.code && (
                     <div className="text-[9px] text-gray-400 mt-0.5">{leadDetails.board.code}</div>
                   )}
-                </div>
-
-                {/* Grade */}
-                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Grade</div>
-                  <div className="text-xs font-semibold text-gray-800">
-                    {leadDetails.grade?.name || 'N/A'}
-                  </div>
                   {leadDetails.grade?.code && (
                     <div className="text-[9px] text-gray-400 mt-0.5">{leadDetails.grade.code}</div>
+                  )}
+                </div>
+
+                {/* Source */}
+                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Source</div>
+                  <div className="text-xs font-semibold text-gray-800">
+                    {leadDetails.sourceDetails || 'N/A'}
+                  </div>
+                  {leadDetails.leadSources?.length > 0 && (
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {leadDetails.leadSources.map((source) => (
+                        <span key={source.id} className="text-[9px] bg-blue-50 text-blue-500 px-1.5 py-0.5 rounded border border-blue-100">
+                          {source.name}
+                        </span>
+                      ))}
+                    </div>
                   )}
                 </div>
               </div>
@@ -494,33 +538,10 @@ const LeadDetail = () => {
               )}
             </div>
 
-            {/* Contact Information */}
-            <div className="mt-5 pt-5 border-t border-gray-100">
-              <h3 className="text-sm font-bold text-gray-800 mb-4">Contact Information</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Phone Number</div>
-                  <div className="text-xs font-semibold text-gray-800">{leadDetails.phoneNumber || 'N/A'}</div>
-                </div>
-                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Alternate Phone</div>
-                  <div className="text-xs font-semibold text-gray-800">{leadDetails.alternatePhoneNumber || 'N/A'}</div>
-                </div>
-                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Email</div>
-                  <div className="text-xs font-semibold text-gray-800">{leadDetails.email || 'N/A'}</div>
-                </div>
-                {leadDetails.sourceDetails && (
-                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Source Details</div>
-                    <div className="text-xs font-semibold text-gray-800">{leadDetails.sourceDetails}</div>
-                  </div>
-                )}
-              </div>
-            </div>
+          
 
             {/* Lead Sources */}
-            {leadDetails.leadSources?.length > 0 && (
+            {/* {leadDetails.leadSources?.length > 0 && (
               <div className="mt-5 pt-5 border-t border-gray-100">
                 <h3 className="text-sm font-bold text-gray-800 mb-4">Lead Sources</h3>
                 <div className="flex flex-wrap gap-2">
@@ -531,10 +552,10 @@ const LeadDetail = () => {
                   ))}
                 </div>
               </div>
-            )}
+            )} */}
 
             {/* Created By */}
-            {leadDetails.createdBy && (
+            {/* {leadDetails.createdBy && (
               <div className="mt-5 pt-5 border-t border-gray-100">
                 <h3 className="text-sm font-bold text-gray-800 mb-4">Created By</h3>
                 <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
@@ -542,16 +563,25 @@ const LeadDetail = () => {
                   <div className="text-[10px] text-gray-500 mt-1">{leadDetails.createdBy.email || 'N/A'}</div>
                 </div>
               </div>
-            )}
+            )} */}
 
             {/* Lead Status History */}
             <div className="mt-5 pt-5 border-t border-gray-100">
               <h3 className="text-sm font-bold text-gray-800 mb-4">Lead Status History</h3>
-              <ReusableTable
-                columns={statusHistoryColumns}
-                data={statusHistory}
-                emptyMessage="No status history available"
-              />
+              {statusHistoryLoading ? (
+                <div className="flex items-center justify-center py-8 gap-2 text-gray-500 text-sm">
+                  <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                  </svg>
+                  Loading status history...
+                </div>
+              ) : (
+                <ReusableTable
+                  columns={statusHistoryColumns}
+                  data={statusHistory}
+                  emptyMessage="No status history available"
+                />
+              )}
             </div>
           </div>
         </div>
@@ -714,41 +744,91 @@ const LeadDetail = () => {
               <div className="mt-4 bg-gradient-to-br from-green-50 to-teal-50 border border-green-100 rounded-lg p-4">
                 <h4 className="text-sm font-bold text-green-800 mb-3">Details</h4>
                 <div className="space-y-2">
-                  {Object.entries(communicationConfig).map(([key, value]) => (
-                    <div key={key} className="bg-white p-2 rounded border border-gray-100">
-                      <div className="text-[9px] font-bold text-gray-400 uppercase">{key}</div>
-                      <div className="text-xs font-semibold text-gray-700 break-all">
-                        {key === 'imageUrl' && typeof value === 'string' ? (
-                          <img 
-                            src={`${BASE_URL}${value}`} 
-                            alt="Course image" 
-                            className="mt-1 rounded border border-gray-200 max-w-full h-auto"
-                            onError={(e) => {
-                              e.target.style.display = 'none';
-                            }}
-                          />
-                        ) : key === 'availableImages' && Array.isArray(value) ? (
-                          <div className="mt-1 grid grid-cols-2 gap-2">
-                            {value.map((img, idx) => (
-                              <img
-                                key={idx}
-                                src={`${BASE_URL}${img.imageUrl || img}`}
-                                alt={`Available image ${idx + 1}`}
-                                className="rounded border border-gray-200 max-w-full h-auto"
-                                onError={(e) => {
-                                  e.target.style.display = 'none';
-                                }}
-                              />
-                            ))}
-                          </div>
-                        ) : typeof value === 'object' ? (
-                          JSON.stringify(value)
-                        ) : (
-                          String(value)
-                        )}
+                  {/* Lead Name */}
+                  {communicationConfig.leadFullName && (
+                    <div className="bg-white p-2 rounded border border-gray-100">
+                      <div className="text-[9px] font-bold text-gray-400 uppercase">Lead Name</div>
+                      <div className="text-xs font-semibold text-gray-700">{communicationConfig.leadFullName}</div>
+                    </div>
+                  )}
+
+                  {/* Course Info */}
+                  {communicationConfig.course && (
+                    <div className="bg-white p-2 rounded border border-gray-100">
+                      <div className="text-[9px] font-bold text-gray-400 uppercase">Course</div>
+                      <div className="text-xs font-semibold text-gray-700">{communicationConfig.course.courseName}</div>
+                      <div className="text-[10px] text-gray-500 mt-0.5">{communicationConfig.course.courseCode}</div>
+                    </div>
+                  )}
+
+                  {/* Template Info */}
+                  {communicationConfig.template && (
+                    <div className="bg-white p-2 rounded border border-gray-100">
+                      <div className="text-[9px] font-bold text-gray-400 uppercase">Template</div>
+                      <div className="text-xs font-semibold text-gray-700">{communicationConfig.template.name}</div>
+                      <div className="text-[10px] text-gray-500 mt-0.5">Channel: {communicationConfig.template.channel}</div>
+                    </div>
+                  )}
+
+                  {/* Active Image */}
+                  {communicationConfig.activeImage && (
+                    <div className="bg-white p-2 rounded border border-gray-100">
+                      <div className="text-[9px] font-bold text-gray-400 uppercase">Active Image</div>
+                      <div className="text-xs font-semibold text-gray-700">{communicationConfig.activeImage.displayName}</div>
+                      {communicationConfig.activeImage.imageUrl && (
+                        <img 
+                          src={`${BASE_URL}${communicationConfig.activeImage.imageUrl}`} 
+                          alt="Active image" 
+                          className="mt-2 rounded border border-gray-200 max-w-full h-auto"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                          }}
+                        />
+                      )}
+                    </div>
+                  )}
+
+                  {/* Rendered Content */}
+                  {communicationConfig.renderedContent && (
+                    <div className="bg-white p-2 rounded border border-gray-100">
+                      <div className="text-[9px] font-bold text-gray-400 uppercase">Content</div>
+                      <div className="text-xs font-semibold text-gray-700">{communicationConfig.renderedContent}</div>
+                    </div>
+                  )}
+
+                  {/* USPs */}
+                  {communicationConfig.usps && communicationConfig.usps.length > 0 && (
+                    <div className="bg-white p-2 rounded border border-gray-100">
+                      <div className="text-[9px] font-bold text-gray-400 uppercase">USPs</div>
+                      <div className="mt-1 space-y-1">
+                        {communicationConfig.usps.map((usp, idx) => (
+                          <div key={idx} className="text-xs text-gray-700">• {usp.content}</div>
+                        ))}
                       </div>
                     </div>
-                  ))}
+                  )}
+
+                  {/* Available Images */}
+                  {communicationConfig.availableImages && communicationConfig.availableImages.length > 0 && (
+                    <div className="bg-white p-2 rounded border border-gray-100">
+                      <div className="text-[9px] font-bold text-gray-400 uppercase">Available Images</div>
+                      <div className="mt-1 grid grid-cols-2 gap-2">
+                        {communicationConfig.availableImages.map((img, idx) => (
+                          <div key={idx}>
+                            <div className="text-xs text-gray-700 mb-1">{img.displayName}</div>
+                            <img
+                              src={`${BASE_URL}${img.imageUrl}`}
+                              alt={img.displayName}
+                              className="rounded border border-gray-200 max-w-full h-auto"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : selectedCourse ? (
@@ -762,6 +842,13 @@ const LeadDetail = () => {
         isOpen={isScheduleModalOpen}
         onClose={() => setIsScheduleModalOpen(false)}
         onSubmit={handleScheduleSubmit}
+      />
+
+      <CallModal
+        isOpen={isCallModalOpen}
+        onClose={() => setIsCallModalOpen(false)}
+        studentData={leadDetails}
+        onScheduleOpen={() => setIsScheduleModalOpen(true)}
       />
 
       <WhatsAppModal

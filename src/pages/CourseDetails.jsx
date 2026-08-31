@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
+import { usePermissions } from '../PermissionContext';
 import { getCourseById } from '../Services/course/course';
 import {
     getCourseImages,
@@ -727,6 +728,7 @@ const CommunicationTab = ({ courseId, templates, images }) => {
 // ─── Main Component ─────────────────────────────────────────────────────────────
 const CourseDetails = () => {
     const { navTo } = useAppContext();
+    const { hasPermission } = usePermissions();
     const [details, setDetails] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -1177,13 +1179,15 @@ const CourseDetails = () => {
                             <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
                                 <h3 className="text-base font-bold text-gray-800">Image Management</h3>
                                 <div className="flex items-center gap-3">
-                                    <CustomButton
-                                        variant="primary"
-                                        className="text-xs px-3 py-1.5"
-                                        onClick={() => setImageModal({ open: true, editData: null })}
-                                    >
-                                        + Upload Image
-                                    </CustomButton>
+                                    {hasPermission('COURSE_UPDATE') && (
+                                        <CustomButton
+                                            variant="primary"
+                                            className="text-xs px-3 py-1.5"
+                                            onClick={() => setImageModal({ open: true, editData: null })}
+                                        >
+                                            + Upload Image
+                                        </CustomButton>
+                                    )}
                                 </div>
                             </div>
 
@@ -1194,8 +1198,8 @@ const CourseDetails = () => {
                                     columns={imageColumns}
                                     data={images}
                                     emptyMessage="No images found for this course."
-                                    onEdit={(row) => setImageModal({ open: true, editData: row })}
-                                    onDelete={(row) => setDeleteModal({ open: true, imageId: row.id })}
+                                    onEdit={hasPermission('COURSE_UPDATE') ? (row) => setImageModal({ open: true, editData: row }) : undefined}
+                                    onDelete={hasPermission('COURSE_UPDATE') ? (row) => setDeleteModal({ open: true, imageId: row.id }) : undefined}
                                 />
                             )}
                         </div>
@@ -1265,13 +1269,15 @@ const CourseDetails = () => {
                         <div className="mt-6 max-w-5xl">
                             <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
                                 <h3 className="text-base font-bold text-gray-800">Template Management</h3>
-                                <CustomButton
-                                    variant="primary"
-                                    className="text-xs px-3 py-1.5"
-                                    onClick={() => setTemplateModal({ open: true, editData: null })}
-                                >
-                                    + Add Template
-                                </CustomButton>
+                                {hasPermission('COURSE_UPDATE') && (
+                                    <CustomButton
+                                        variant="primary"
+                                        className="text-xs px-3 py-1.5"
+                                        onClick={() => setTemplateModal({ open: true, editData: null })}
+                                    >
+                                        + Add Template
+                                    </CustomButton>
+                                )}
                             </div>
 
                             {templatesLoading ? (

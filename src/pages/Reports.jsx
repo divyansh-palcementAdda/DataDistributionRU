@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useAppContext } from '../AppContext';
+import { usePermissions } from '../PermissionContext';
+import ReusableTable from '../component/reusable/table';
 import CustomButton from '../component/reusable/CustomButton';
-import { funnelData, counselors, courses } from '../mockData';
+
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -15,6 +18,28 @@ import {
 import { Bar, Doughnut, Line } from 'react-chartjs-2';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend, LineElement, PointElement);
+
+// Mock data for charts
+const counselors = [
+  { name: 'John Doe', allotted: 150, registered: 120 },
+  { name: 'Jane Smith', allotted: 180, registered: 145 },
+  { name: 'Bob Johnson', allotted: 95, registered: 78 },
+  { name: 'Alice Brown', allotted: 200, registered: 175 },
+];
+
+const funnelData = [
+  { label: 'Leads', val: 1000, pct: 100, color: '#2563EB' },
+  { label: 'Contacted', val: 750, pct: 75, color: '#7C3AED' },
+  { label: 'Qualified', val: 500, pct: 50, color: '#EC4899' },
+  { label: 'Converted', val: 250, pct: 25, color: '#22C55E' },
+];
+
+const courses = [
+  { name: 'Engineering', enrolled: 320, color: '#2563EB' },
+  { name: 'Medical', enrolled: 245, color: '#7C3AED' },
+  { name: 'Arts', enrolled: 180, color: '#EC4899' },
+  { name: 'Commerce', enrolled: 102, color: '#F59E0B' },
+];
 
 // Chart data and options (adapted from techonly-crm.html)
 const sourceChartData = {
@@ -99,6 +124,7 @@ const counselorPerfChartOptions = {
 };
 
 const Reports = () => {
+  const { hasPermission } = usePermissions();
   const [timeRange, setTimeRange] = useState('Last 30 days');
 
   return (
@@ -119,12 +145,14 @@ const Reports = () => {
             <option>Last 90 days</option>
             <option>This Year</option>
           </select>
-          <CustomButton variant="secondary" size="sm" className="flex items-center gap-1.5 text-xs py-1.5 px-3">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
-            </svg>
-            Export PDF
-          </CustomButton>
+          {hasPermission('REPORT_EXPORT') && (
+            <CustomButton variant="secondary" size="sm" className="flex items-center gap-1.5 text-xs py-1.5 px-3">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+              </svg>
+              Export PDF
+            </CustomButton>
+          )}
         </div>
       </div>
 

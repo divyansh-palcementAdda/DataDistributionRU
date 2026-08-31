@@ -20,6 +20,9 @@ const ApiRoutes = {
         sendEmail: '/api/leads/{leadId}/course-template/email',
         reassign: '/api/leads/reassign',
         reassignDistribute: '/api/leads/reassign/distribute',
+        changeStatus: '/api/leads/{id}/change-status',
+        statusHistory: '/api/leads/{id}/status-history',
+        avail: '/api/leads/{id}/avail',
     },
     Lead_Source: {
         create: '/api/lead-sources',
@@ -149,6 +152,10 @@ const ApiRoutes = {
         lowDataUsers: '/api/dashboard/low-data-users',
         usersNotLoggedIn: '/api/dashboard/users-not-logged-in',
         followupUsersNotLoggedIn11am: '/api/dashboard/followup-users-not-logged-in-11am',
+        //its all cards 
+        unallottedCount: '/api/dashboard/leads/unallotted/count',
+        availedCount: '/api/dashboard/leads/availed/count',
+        allottedCount: '/api/dashboard/leads/allotted/count',
     },
 
     Distribution: {
@@ -166,6 +173,18 @@ const ApiRoutes = {
         getUsers: '/api/departments/{id}/users',
         getHods: '/api/departments/{id}/hods',
         getCounsellors: '/api/departments/{id}/counsellors'
+    },
+
+    Dropdowns: {
+        boards: '/api/dropdowns/boards',
+        courseTypes: '/api/dropdowns/course-types',
+        courses: '/api/dropdowns/courses',
+        departments: '/api/dropdowns/departments',
+        grades: '/api/dropdowns/grades',
+        leadSources: '/api/dropdowns/lead-sources',
+        leadStatuses: '/api/dropdowns/lead-statuses',
+        roles: '/api/dropdowns/roles',
+        users: '/api/dropdowns/users'
     }
 }
 

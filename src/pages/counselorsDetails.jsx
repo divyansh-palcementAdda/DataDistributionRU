@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { FiEye, FiMessageSquare, FiUserPlus } from 'react-icons/fi';
 import { useAppContext } from '../AppContext';
+import { usePermissions } from '../PermissionContext';
 import { getCounselorById } from '../Services/Counselors/counselors';
 import {
     getLeadStatusBreakdown,
@@ -17,16 +18,19 @@ import LeadSource from '../component/reusable/DashBoards/leadSource';
 import CategorywiseCard from '../component/reusable/DashBoards/categorywiseCard';
 import BoardWiseCard from '../component/reusable/DashBoards/BoardWiseCard';
 import GradWiseCard from '../component/reusable/DashBoards/gradWiseCard';
+import UnallottedCard from '../component/reusable/DashBoards/UnallottedCard';
+import AvailedCard from '../component/reusable/DashBoards/availedCard';
+import AllottedCard from '../component/reusable/DashBoards/allottedCard';
 import ReusableTable from '../component/reusable/table';
 import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import AssignLeadModal from '../component/reusable/Leads/AssignLeadModal';
 import ReassignModal from '../component/reusable/Leads/ReassignModal';
 
 // ─── Lead table columns ───────────────────────────────────────────────────────
-const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, currentData) => [
+const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, currentData, hasPermission) => [
     {
         key: 'checkbox',
-        header: (
+        header: hasPermission('LEAD_ASSIGN') ? (
             <input
                 type="checkbox"
                 checked={currentData.length > 0 && currentData.every(r => selectedRows.has(r.id ?? r.leadId))}
@@ -34,9 +38,10 @@ const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, cu
                 style={{ width: '15px', height: '15px', cursor: 'pointer', accentColor: '#4f46e5' }}
                 title="Select All"
             />
-        ),
+        ) : null,
         sortable: false,
         render: (value, row) => {
+            if (!hasPermission('LEAD_ASSIGN')) return null;
             const rowId = row.id ?? row.leadId;
             return (
                 <input
@@ -366,17 +371,45 @@ const fetchLeadsForCard = async (activeFilters, counselorId, page, size, sortBy,
         sortDirection: sortDirection || 'desc',
     };
 
-    // Support multiple filters - accumulate all active filter values
-    activeFilters.forEach(filter => {
-        switch (filter.type) {
-            case 'leadStatus':  params.statusId     = filter.value; break;
-            case 'leadSource':  params.sourceId     = filter.value; break;
-            case 'courseType':  params.courseTypeId = filter.value; break;
-            case 'board':       params.boardId      = filter.value; break;
-            case 'grade':       params.gradeId      = filter.value; break;
-            default:             break;
+    // Smart conversion function: array to singular/plural based on length
+    const convertFilterRequest = (request) => {
+        const converted = { ...request };
+        
+        // Convert leadStatusIds → statusId or statusIds
+        if (converted.leadStatusIds?.length === 1) {
+            converted.statusId = converted.leadStatusIds[0];
+            delete converted.leadStatusIds;
         }
-    });
+        
+        // Convert boardIds → boardId or boardIds
+        if (converted.boardIds?.length === 1) {
+            converted.boardId = converted.boardIds[0];
+            delete converted.boardIds;
+        }
+        
+        // Convert gradeIds → gradeId or gradeIds
+        if (converted.gradeIds?.length === 1) {
+            converted.gradeId = converted.gradeIds[0];
+            delete converted.gradeIds;
+        }
+        
+        // Convert courseTypeIds → courseTypeId or courseTypeIds
+        if (converted.courseTypeIds?.length === 1) {
+            converted.courseTypeId = converted.courseTypeIds[0];
+            delete converted.courseTypeIds;
+        }
+        
+        // Convert leadSourceIds → leadSourceId or leadSourceIds
+        if (converted.leadSourceIds?.length === 1) {
+            converted.leadSourceId = converted.leadSourceIds[0];
+            delete converted.leadSourceIds;
+        }
+        
+        return converted;
+    };
+
+    // Use filterRequest with smart conversion instead of direct assignment
+    Object.assign(params, convertFilterRequest(filterRequest));
 
     try {
         const res = await axiosInstance.get(ApiRoutes.Lead.getAllLeads, { params });
@@ -425,6 +458,7 @@ const fetchReassignableLeads = async (assignedUserId, page = 0, size = 10) => {
             params: { assignedUserId, page, size }
         });
         const d = res?.data?.data || res?.data || {};
+        console.log(d,"this is data of D")
         return {
             content:       d.content       ?? (Array.isArray(d) ? d : []),
             totalElements: d.totalElements ?? 0,
@@ -458,6 +492,7 @@ const CounselorDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { showToast } = useAppContext();
+    const { hasPermission } = usePermissions();
 
     // detail state
     const [details, setDetails] = useState(null);
@@ -471,6 +506,9 @@ const CounselorDetails = () => {
     const [activeFilters, setActiveFilters] = useState([]); // Array of { type, value, label }
     const [tableData, setTableData] = useState([]);
     const [tableLoading, setTableLoading] = useState(false);
+
+    // filter request for cards
+    const [filterRequest, setFilterRequest] = useState({ assignedUserIds: id });
 
     // server-side pagination & sorting
     const [tablePage, setTablePage] = useState(0);
@@ -547,7 +585,7 @@ const CounselorDetails = () => {
     useEffect(() => {
         if (!id) return;
         const fetchDashboardData = async () => {
-            const params = { counselorId: id };
+            const params = { assignedUserIds: id };
             try {
                 const [sourceRes, courseTypeRes, boardRes, gradeRes] = await Promise.all([
                     getLeadSourceBreakdown(params).catch(() => null),
@@ -581,6 +619,58 @@ const CounselorDetails = () => {
                 setTableLoading(false);
             });
     }, [activeFilters, id, tablePage, tableSize, tableSortBy, tableSortDir]);
+
+    // ── update filterRequest when activeFilters change for cards ──
+    useEffect(() => {
+        const newFilterRequest = { assignedUserIds: id };
+        activeFilters.forEach(filter => {
+            switch (filter.type) {
+                case 'unallotted':
+                    newFilterRequest.allotted = false;
+                    break;
+                case 'availed':
+                    newFilterRequest.availed = true;
+                    break;
+                case 'allotted':
+                    newFilterRequest.allotted = true;
+                    break;
+                case 'leadStatus':
+                    if (!newFilterRequest.leadStatusIds) newFilterRequest.leadStatusIds = [];
+                    if (!newFilterRequest.leadStatusIds.includes(filter.value)) {
+                        newFilterRequest.leadStatusIds.push(filter.value);
+                    }
+                    break;
+                case 'leadSource':
+                    if (!newFilterRequest.leadSourceIds) newFilterRequest.leadSourceIds = [];
+                    if (!newFilterRequest.leadSourceIds.includes(filter.value)) {
+                        newFilterRequest.leadSourceIds.push(filter.value);
+                    }
+                    break;
+                case 'courseType':
+                    if (!newFilterRequest.courseTypeIds) newFilterRequest.courseTypeIds = [];
+                    if (!newFilterRequest.courseTypeIds.includes(filter.value)) {
+                        newFilterRequest.courseTypeIds.push(filter.value);
+                    }
+                    break;
+                case 'board':
+                    if (!newFilterRequest.boardIds) newFilterRequest.boardIds = [];
+                    if (!newFilterRequest.boardIds.includes(filter.value)) {
+                        newFilterRequest.boardIds.push(filter.value);
+                    }
+                    break;
+                case 'grade':
+                    if (!newFilterRequest.gradeIds) newFilterRequest.gradeIds = [];
+                    if (!newFilterRequest.gradeIds.includes(filter.value)) {
+                        newFilterRequest.gradeIds.push(filter.value);
+                    }
+                    break;
+                // Note: counselor filter is handled by the base assignedUserIds
+                default:
+                    break;
+            }
+        });
+        setFilterRequest(newFilterRequest);
+    }, [activeFilters, id]);
 
     // ── fetch follow-ups when component mounts or pagination changes ──
     useEffect(() => {
@@ -907,13 +997,27 @@ const CounselorDetails = () => {
                                     </div>
                                 </div>
 
-                                {/* Role */}
+                                {/* Department */}
                                 <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
                                     <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">
-                                        Role
+                                        Department
                                     </div>
                                     <div className="text-sm font-semibold text-gray-800">
-                                        {details?.role?.name || details?.role || 'N/A'}
+                                        {details?.departments && details.departments.length > 0
+                                            ? details.departments.map(dept => dept.name).join(', ')
+                                            : details?.department || 'N/A'}
+                                    </div>
+                                </div>
+
+                                {/* Roles */}
+                                <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                                    <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">
+                                        Roles
+                                    </div>
+                                    <div className="text-sm font-semibold text-gray-800">
+                                        {details?.roles && details.roles.length > 0
+                                            ? details.roles.join(', ')
+                                            : details?.role?.name || details?.role || 'N/A'}
                                     </div>
                                 </div>
 
@@ -924,6 +1028,18 @@ const CounselorDetails = () => {
                                     </div>
                                     <div className="text-sm font-semibold text-gray-800">
                                         {details?.username || details?.userName || 'N/A'}
+                                    </div>
+                                </div>
+
+                                {/* Last Login */}
+                                <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                                    <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">
+                                        Last Login
+                                    </div>
+                                    <div className="text-sm font-semibold text-gray-800">
+                                        {details?.lastLogin
+                                            ? new Date(details.lastLogin).toLocaleString()
+                                            : 'N/A'}
                                     </div>
                                 </div>
 
@@ -968,30 +1084,55 @@ const CounselorDetails = () => {
 
                     {/* ── Dashboard Cards ── */}
                     <div className="mb-8 mt-6">
+                        {/* Allocation Cards in single row */}
+                        <div className="flex flex-wrap gap-4 mb-6">
+                            <AllottedCard
+                                onCardClick={handleCardClick}
+                                activeFilters={activeFilters}
+                                filterRequest={filterRequest}
+                                assignedUserIds={id}
+                            />
+                            <UnallottedCard
+                                onCardClick={handleCardClick}
+                                activeFilters={activeFilters}
+                                filterRequest={filterRequest}
+                                assignedUserIds={id}
+                            />
+                            <AvailedCard
+                                onCardClick={handleCardClick}
+                                activeFilters={activeFilters}
+                                filterRequest={filterRequest}
+                                assignedUserIds={id}
+                            />
+                        </div>
                         <LeadCards
                             onCardClick={handleCardClick}
                             activeFilters={activeFilters}
-                            counselorId={id}
+                            assignedUserIds={id}
                         />
                         <LeadSource
                             data={dashData.leadSource}
                             onCardClick={handleCardClick}
                             activeFilters={activeFilters}
+                            assignedUserIds={id}
                         />
                         <CategorywiseCard
                             data={dashData.courseType}
                             onCardClick={handleCardClick}
                             activeFilters={activeFilters}
+                            assignedUserIds={id}
                         />
                         <BoardWiseCard
                             data={dashData.board}
                             onCardClick={handleCardClick}
                             activeFilters={activeFilters}
+                            assignedUserIds={id}
                         />
                         <GradWiseCard
                             data={dashData.grade}
                             onCardClick={handleCardClick}
                             activeFilters={activeFilters}
+                            assignedUserIds={id}
                         />
                     </div>
 
@@ -1066,7 +1207,7 @@ const CounselorDetails = () => {
                         ) : (
                             <div className="card">
                                 <ReusableTable
-                                    columns={buildLeadColumns(tablePage, tableSize, selectedRows, handleToggleRow, handleToggleAll, tableData)}
+                                    columns={buildLeadColumns(tablePage, tableSize, selectedRows, handleToggleRow, handleToggleAll, tableData, hasPermission)}
                                     data={tableData}
                                     isServerSide={true}
                                     totalElements={tableTotalElements}
@@ -1149,7 +1290,7 @@ const CounselorDetails = () => {
                             ) : (
                                 <div className="card">
                                     <ReusableTable
-                                        columns={buildLeadColumns(reassignableLeadsPage, reassignableLeadsSize, reassignableLeadsSelectedRows, handleReassignableLeadsToggleRow, handleReassignableLeadsToggleAll, reassignableLeadsData)}
+                                        columns={buildLeadColumns(reassignableLeadsPage, reassignableLeadsSize, reassignableLeadsSelectedRows, handleReassignableLeadsToggleRow, handleReassignableLeadsToggleAll, reassignableLeadsData, hasPermission)}
                                         data={reassignableLeadsData}
                                         isServerSide={true}
                                         totalElements={reassignableLeadsTotalElements}
@@ -1300,20 +1441,29 @@ const CounselorDetails = () => {
                         onClose={() => setIsAssignModalOpen(false)}
                         filters={{
                             assignedUserIds: id ? [id] : [],
-                            ...(activeFilters.some(f => f.type === 'leadStatus') && { 
-                                leadStatusIds: activeFilters.filter(f => f.type === 'leadStatus').map(f => f.value) 
+                            ...(activeFilters.some(f => f.type === 'leadStatus') && {
+                                leadStatusIds: activeFilters.filter(f => f.type === 'leadStatus').map(f => f.value)
                             }),
-                            ...(activeFilters.some(f => f.type === 'leadSource') && { 
-                                leadSourceIds: activeFilters.filter(f => f.type === 'leadSource').map(f => f.value) 
+                            ...(activeFilters.some(f => f.type === 'leadSource') && {
+                                leadSourceIds: activeFilters.filter(f => f.type === 'leadSource').map(f => f.value)
                             }),
-                            ...(activeFilters.some(f => f.type === 'courseType') && { 
-                                courseTypeIds: activeFilters.filter(f => f.type === 'courseType').map(f => f.value) 
+                            ...(activeFilters.some(f => f.type === 'courseType') && {
+                                courseTypeIds: activeFilters.filter(f => f.type === 'courseType').map(f => f.value)
                             }),
-                            ...(activeFilters.some(f => f.type === 'board') && { 
-                                boardIds: activeFilters.filter(f => f.type === 'board').map(f => f.value) 
+                            ...(activeFilters.some(f => f.type === 'board') && {
+                                boardIds: activeFilters.filter(f => f.type === 'board').map(f => f.value)
                             }),
-                            ...(activeFilters.some(f => f.type === 'grade') && { 
-                                gradeIds: activeFilters.filter(f => f.type === 'grade').map(f => f.value) 
+                            ...(activeFilters.some(f => f.type === 'grade') && {
+                                gradeIds: activeFilters.filter(f => f.type === 'grade').map(f => f.value)
+                            }),
+                            ...(activeFilters.some(f => f.type === 'unallotted') && {
+                                allotted: false
+                            }),
+                            ...(activeFilters.some(f => f.type === 'availed') && {
+                                availed: true
+                            }),
+                            ...(activeFilters.some(f => f.type === 'allotted') && {
+                                allotted: true
                             }),
                         }}
                         showToast={(msg, type) => console.log(`[${type}]`, msg)}
@@ -1323,7 +1473,7 @@ const CounselorDetails = () => {
                     <ReassignModal
                         isOpen={isReassignModalOpen}
                         onClose={() => setIsReassignModalOpen(false)}
-                        currentCounselorId={id}
+                        currentAssignedUserId={id}
                         selectedRows={reassignDataType === 'leads' ? 
                             (showReassignableLeads ? reassignableLeadsSelectedRows : selectedRows) : 
                             reassignableFollowUpsSelectedRows}

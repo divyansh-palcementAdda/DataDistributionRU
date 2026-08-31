@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { FiEye, FiMessageSquare, FiUserPlus } from 'react-icons/fi';
 import { useAppContext } from '../AppContext';
+import { usePermissions } from '../PermissionContext';
 import { getBoardById } from '../Services/Boards/boardsService';
 import {
     getLeadSourceBreakdown,
@@ -14,15 +15,18 @@ import LeadCards from '../component/reusable/DashBoards/leadCards';
 import LeadSource from '../component/reusable/DashBoards/leadSource';
 import CategorywiseCard from '../component/reusable/DashBoards/categorywiseCard';
 import GradWiseCard from '../component/reusable/DashBoards/gradWiseCard';
+import UnallottedCard from '../component/reusable/DashBoards/UnallottedCard';
+import AvailedCard from '../component/reusable/DashBoards/availedCard';
+import AllottedCard from '../component/reusable/DashBoards/allottedCard';
 import ReusableTable from '../component/reusable/table';
 import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import AssignLeadModal from '../component/reusable/Leads/AssignLeadModal';
 
 // ─── Lead table columns ───────────────────────────────────────────────────────
-const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, currentData) => [
+const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, currentData, hasPermission) => [
     {
         key: 'checkbox',
-        header: (
+        header: hasPermission('LEAD_ASSIGN') ? (
             <input
                 type="checkbox"
                 checked={currentData.length > 0 && currentData.every(r => selectedRows.has(r.id ?? r.leadId))}
@@ -30,9 +34,10 @@ const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, cu
                 style={{ width: '15px', height: '15px', cursor: 'pointer', accentColor: '#4f46e5' }}
                 title="Select All"
             />
-        ),
+        ) : null,
         sortable: false,
         render: (value, row) => {
+            if (!hasPermission('LEAD_ASSIGN')) return null;
             const rowId = row.id ?? row.leadId;
             return (
                 <input
@@ -147,16 +152,45 @@ const fetchLeadsForCard = async (activeFilters, boardId, page, size, sortBy, sor
         sortDirection: sortDirection || 'desc',
     };
 
-    // Support multiple filters - accumulate all active filter values
-    activeFilters.forEach(filter => {
-        switch (filter.type) {
-            case 'leadStatus':  params.statusId     = filter.value; break;
-            case 'leadSource':  params.sourceId     = filter.value; break;
-            case 'courseType':  params.courseTypeId = filter.value; break;
-            case 'grade':       params.gradeId      = filter.value; break;
-            default:             break;
+    // Smart conversion function: array to singular/plural based on length
+    const convertFilterRequest = (request) => {
+        const converted = { ...request };
+        
+        // Convert leadStatusIds → statusId or statusIds
+        if (converted.leadStatusIds?.length === 1) {
+            converted.statusId = converted.leadStatusIds[0];
+            delete converted.leadStatusIds;
         }
-    });
+        
+        // Convert boardIds → boardId or boardIds
+        if (converted.boardIds?.length === 1) {
+            converted.boardId = converted.boardIds[0];
+            delete converted.boardIds;
+        }
+        
+        // Convert gradeIds → gradeId or gradeIds
+        if (converted.gradeIds?.length === 1) {
+            converted.gradeId = converted.gradeIds[0];
+            delete converted.gradeIds;
+        }
+        
+        // Convert courseTypeIds → courseTypeId or courseTypeIds
+        if (converted.courseTypeIds?.length === 1) {
+            converted.courseTypeId = converted.courseTypeIds[0];
+            delete converted.courseTypeIds;
+        }
+        
+        // Convert leadSourceIds → leadSourceId or leadSourceIds
+        if (converted.leadSourceIds?.length === 1) {
+            converted.leadSourceId = converted.leadSourceIds[0];
+            delete converted.leadSourceIds;
+        }
+        
+        return converted;
+    };
+
+    // Use filterRequest with smart conversion instead of direct assignment
+    Object.assign(params, convertFilterRequest(filterRequest));
 
     try {
         const res = await axiosInstance.get(ApiRoutes.Lead.getAllLeads, { params });
@@ -175,6 +209,7 @@ const fetchLeadsForCard = async (activeFilters, boardId, page, size, sortBy, sor
 // ─── Main Component ───────────────────────────────────────────────────────────
 const BoardDetails = () => {
     const { navTo } = useAppContext();
+    const { hasPermission } = usePermissions();
     const { id } = useParams();
 
     // detail state
@@ -189,6 +224,9 @@ const BoardDetails = () => {
     const [activeFilters, setActiveFilters] = useState([]); // Array of { type, value, label }
     const [tableData, setTableData]                     = useState([]);
     const [tableLoading, setTableLoading]               = useState(false);
+
+    // filter request for cards
+    const [filterRequest, setFilterRequest] = useState({ boardId: id });
 
     // server-side pagination & sorting
     const [tablePage, setTablePage]                     = useState(0);
@@ -264,6 +302,52 @@ const BoardDetails = () => {
                 setTableLoading(false);
             });
     }, [activeFilters, id, tablePage, tableSize, tableSortBy, tableSortDir]);
+
+    // ── update filterRequest when activeFilters change for cards ──
+    useEffect(() => {
+        const newFilterRequest = { boardId: id };
+        activeFilters.forEach(filter => {
+            switch (filter.type) {
+                case 'unallotted':
+                    newFilterRequest.allotted = false;
+                    break;
+                case 'availed':
+                    newFilterRequest.availed = true;
+                    break;
+                case 'allotted':
+                    newFilterRequest.allotted = true;
+                    break;
+                case 'leadStatus':
+                    if (!newFilterRequest.leadStatusIds) newFilterRequest.leadStatusIds = [];
+                    if (!newFilterRequest.leadStatusIds.includes(filter.value)) {
+                        newFilterRequest.leadStatusIds.push(filter.value);
+                    }
+                    break;
+                case 'leadSource':
+                    if (!newFilterRequest.leadSourceIds) newFilterRequest.leadSourceIds = [];
+                    if (!newFilterRequest.leadSourceIds.includes(filter.value)) {
+                        newFilterRequest.leadSourceIds.push(filter.value);
+                    }
+                    break;
+                case 'courseType':
+                    if (!newFilterRequest.courseTypeIds) newFilterRequest.courseTypeIds = [];
+                    if (!newFilterRequest.courseTypeIds.includes(filter.value)) {
+                        newFilterRequest.courseTypeIds.push(filter.value);
+                    }
+                    break;
+                case 'grade':
+                    if (!newFilterRequest.gradeIds) newFilterRequest.gradeIds = [];
+                    if (!newFilterRequest.gradeIds.includes(filter.value)) {
+                        newFilterRequest.gradeIds.push(filter.value);
+                    }
+                    break;
+                // Note: board filter is handled by the base boardId
+                default:
+                    break;
+            }
+        });
+        setFilterRequest(newFilterRequest);
+    }, [activeFilters, id]);
 
     // ── card click handler - toggle filters on/off ──
     const handleCardClick = (card) => {
@@ -456,6 +540,30 @@ const BoardDetails = () => {
             {/* ── Dashboard Cards (BOTTOM) ── */}
             {!loading && !error && (
                 <div className="mb-8">
+                    {/* Allotted, Availed, Unallotted Cards Row */}
+                    <div className="flex flex-wrap gap-4 mb-8">
+                        <AllottedCard
+                            onCardClick={handleCardClick}
+                            activeFilters={activeFilters}
+                            filterRequest={filterRequest}
+                            boardId={id}
+                        />
+
+                        <AvailedCard
+                            onCardClick={handleCardClick}
+                            activeFilters={activeFilters}
+                            filterRequest={filterRequest}
+                            boardId={id}
+                        />
+
+                        <UnallottedCard
+                            onCardClick={handleCardClick}
+                            activeFilters={activeFilters}
+                            filterRequest={filterRequest}
+                            boardId={id}
+                        />
+                    </div>
+
                     <LeadCards
                         onCardClick={handleCardClick}
                         activeFilters={activeFilters}
@@ -465,16 +573,19 @@ const BoardDetails = () => {
                         data={dashData.leadSource}
                         onCardClick={handleCardClick}
                         activeFilters={activeFilters}
+                        boardId={id}
                     />
                     <CategorywiseCard
                         data={dashData.courseType}
                         onCardClick={handleCardClick}
                         activeFilters={activeFilters}
+                        boardId={id}
                     />
                     <GradWiseCard
                         data={dashData.grade}
                         onCardClick={handleCardClick}
                         activeFilters={activeFilters}
+                        boardId={id}
                     />
                 </div>
             )}
@@ -523,19 +634,21 @@ const BoardDetails = () => {
                             )}
                         </div>
                         <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => setIsAssignModalOpen(true)}
-                                disabled={selectedRows.size === 0}
-                                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all shadow-sm"
-                                style={{
-                                    backgroundColor: selectedRows.size === 0 ? 'var(--gray-200, #e5e7eb)' : '#4f46e5',
-                                    color: selectedRows.size === 0 ? 'var(--gray-400, #9ca3af)' : '#fff',
-                                    cursor: selectedRows.size === 0 ? 'not-allowed' : 'pointer',
-                                }}
-                            >
-                                <FiUserPlus size={13} />
-                                Allot Leads{selectedRows.size > 0 ? ` (${selectedRows.size})` : ''}
-                            </button>
+                            {hasPermission('LEAD_ASSIGN') && (
+                                <button
+                                    onClick={() => setIsAssignModalOpen(true)}
+                                    disabled={selectedRows.size === 0}
+                                    className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all shadow-sm"
+                                    style={{
+                                        backgroundColor: selectedRows.size === 0 ? 'var(--gray-200, #e5e7eb)' : '#4f46e5',
+                                        color: selectedRows.size === 0 ? 'var(--gray-400, #9ca3af)' : '#fff',
+                                        cursor: selectedRows.size === 0 ? 'not-allowed' : 'pointer',
+                                    }}
+                                >
+                                    <FiUserPlus size={13} />
+                                    Allot Leads{selectedRows.size > 0 ? ` (${selectedRows.size})` : ''}
+                                </button>
+                            )}
                         </div>
                     </div>
 
@@ -547,7 +660,7 @@ const BoardDetails = () => {
                     ) : (
                         <div className="card">
                             <ReusableTable
-                                columns={buildLeadColumns(tablePage, tableSize, selectedRows, handleToggleRow, handleToggleAll, tableData)}
+                                columns={buildLeadColumns(tablePage, tableSize, selectedRows, handleToggleRow, handleToggleAll, tableData, hasPermission)}
                                 data={tableData}
                                 isServerSide={true}
                                 totalElements={tableTotalElements}
@@ -612,17 +725,26 @@ const BoardDetails = () => {
             onClose={() => setIsAssignModalOpen(false)}
             filters={{
                 boardIds: id ? [id] : [],
-                ...(activeFilters.some(f => f.type === 'leadStatus') && { 
-                    leadStatusIds: activeFilters.filter(f => f.type === 'leadStatus').map(f => f.value) 
+                ...(activeFilters.some(f => f.type === 'leadStatus') && {
+                    leadStatusIds: activeFilters.filter(f => f.type === 'leadStatus').map(f => f.value)
                 }),
-                ...(activeFilters.some(f => f.type === 'leadSource') && { 
-                    leadSourceIds: activeFilters.filter(f => f.type === 'leadSource').map(f => f.value) 
+                ...(activeFilters.some(f => f.type === 'leadSource') && {
+                    leadSourceIds: activeFilters.filter(f => f.type === 'leadSource').map(f => f.value)
                 }),
-                ...(activeFilters.some(f => f.type === 'courseType') && { 
-                    courseTypeIds: activeFilters.filter(f => f.type === 'courseType').map(f => f.value) 
+                ...(activeFilters.some(f => f.type === 'courseType') && {
+                    courseTypeIds: activeFilters.filter(f => f.type === 'courseType').map(f => f.value)
                 }),
-                ...(activeFilters.some(f => f.type === 'grade') && { 
-                    gradeIds: activeFilters.filter(f => f.type === 'grade').map(f => f.value) 
+                ...(activeFilters.some(f => f.type === 'grade') && {
+                    gradeIds: activeFilters.filter(f => f.type === 'grade').map(f => f.value)
+                }),
+                ...(activeFilters.some(f => f.type === 'unallotted') && {
+                    allotted: false
+                }),
+                ...(activeFilters.some(f => f.type === 'availed') && {
+                    availed: true
+                }),
+                ...(activeFilters.some(f => f.type === 'allotted') && {
+                    allotted: true
                 }),
             }}
             showToast={(msg, type) => console.log(`[${type}]`, msg)}

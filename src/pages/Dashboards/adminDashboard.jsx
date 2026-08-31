@@ -19,6 +19,9 @@ import SystemCards from '../../component/reusable/DashBoards/SystemCards';
 import CategorywiseCard from '../../component/reusable/DashBoards/categorywiseCard';
 import BoardWiseCard from '../../component/reusable/DashBoards/BoardWiseCard';
 import GradWiseCard from '../../component/reusable/DashBoards/gradWiseCard';
+import UnallottedCard from '../../component/reusable/DashBoards/UnallottedCard';
+import AvailedCard from '../../component/reusable/DashBoards/availedCard';
+import AllottedCard from '../../component/reusable/DashBoards/allottedCard';
 import { getLeadSourceBreakdown, getGradeBreakdown, getBoardBreakdown } from '../../Services/cards/cardService';
 import { getRecentActivity, getDashboardSummary } from '../../Services/Dashboard/Dashboard';
 
@@ -111,6 +114,9 @@ const Dashboard = () => {
 
   const [recentActivityData, setRecentActivityData] = useState([]);
   const [dashboardSummaryData, setDashboardSummaryData] = useState(null);
+
+  const [activeFilters, setActiveFilters] = useState([]);
+  const [filterRequest, setFilterRequest] = useState({});
 
   // Fetch lead source data from API
   useEffect(() => {
@@ -262,14 +268,128 @@ const Dashboard = () => {
     };
   }, [leads]);
 
+  const handleCardClick = (cardInfo) => {
+    const existingFilterIndex = activeFilters.findIndex(
+      f => f.type === cardInfo.type && f.value === cardInfo.value
+    );
+    
+    let newFilters;
+    if (existingFilterIndex !== -1) {
+      newFilters = activeFilters.filter((_, index) => index !== existingFilterIndex);
+    } else {
+      newFilters = activeFilters.filter(f => f.type !== cardInfo.type).concat(cardInfo);
+    }
+    
+    setActiveFilters(newFilters);
+    
+    // Navigate to Leads page with filter (Leads.jsx will handle smart conversion)
+    setTimeout(() => {
+      navigate('/leads', { state: { activeFilters: newFilters } });
+    }, 100);
+  };
+
+  // Smart conversion function: array to singular/plural based on length
+  const convertFilterRequest = (request) => {
+    const converted = { ...request };
+    
+    // Convert leadStatusIds → statusId or statusIds
+    if (converted.leadStatusIds?.length === 1) {
+      converted.statusId = converted.leadStatusIds[0];
+      delete converted.leadStatusIds;
+    }
+    
+    // Convert boardIds → boardId or boardIds
+    if (converted.boardIds?.length === 1) {
+      converted.boardId = converted.boardIds[0];
+      delete converted.boardIds;
+    }
+    
+    // Convert gradeIds → gradeId or gradeIds
+    if (converted.gradeIds?.length === 1) {
+      converted.gradeId = converted.gradeIds[0];
+      delete converted.gradeIds;
+    }
+    
+    // Convert courseTypeIds → courseTypeId or courseTypeIds
+    if (converted.courseTypeIds?.length === 1) {
+      converted.courseTypeId = converted.courseTypeIds[0];
+      delete converted.courseTypeIds;
+    }
+    
+    // Convert leadSourceIds → leadSourceId or leadSourceIds
+    if (converted.leadSourceIds?.length === 1) {
+      converted.leadSourceId = converted.leadSourceIds[0];
+      delete converted.leadSourceIds;
+    }
+    
+    return converted;
+  };
+
+  // Update filterRequest when activeFilters changes
+  useEffect(() => {
+    const newFilterRequest = {};
+    activeFilters.forEach(filter => {
+      switch (filter.type) {
+        case 'unallotted':
+          newFilterRequest.allotted = false;
+          break;
+        case 'availed':
+          newFilterRequest.availed = true;
+          break;
+        case 'allotted':
+          newFilterRequest.allotted = true;
+          break;
+        case 'leadStatus':
+          if (!newFilterRequest.leadStatusIds) newFilterRequest.leadStatusIds = [];
+          if (!newFilterRequest.leadStatusIds.includes(filter.value)) {
+            newFilterRequest.leadStatusIds.push(filter.value);
+          }
+          break;
+        case 'board':
+          if (!newFilterRequest.boardIds) newFilterRequest.boardIds = [];
+          if (!newFilterRequest.boardIds.includes(filter.value)) {
+            newFilterRequest.boardIds.push(filter.value);
+          }
+          break;
+        case 'grade':
+          if (!newFilterRequest.gradeIds) newFilterRequest.gradeIds = [];
+          if (!newFilterRequest.gradeIds.includes(filter.value)) {
+            newFilterRequest.gradeIds.push(filter.value);
+          }
+          break;
+        case 'courseType':
+          if (!newFilterRequest.courseTypeIds) newFilterRequest.courseTypeIds = [];
+          if (!newFilterRequest.courseTypeIds.includes(filter.value)) {
+            newFilterRequest.courseTypeIds.push(filter.value);
+          }
+          break;
+        case 'leadSource':
+          if (!newFilterRequest.leadSourceIds) newFilterRequest.leadSourceIds = [];
+          if (!newFilterRequest.leadSourceIds.includes(filter.value)) {
+            newFilterRequest.leadSourceIds.push(filter.value);
+          }
+          break;
+        default:
+          break;
+      }
+    });
+    setFilterRequest(newFilterRequest);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeFilters]);
+
   
-
-
-
-
 
   return (
     <div>
+      <style>{`
+        .recent-activity-scroll::-webkit-scrollbar {
+          display: none;
+        }
+        .recent-activity-scroll {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
       {/* Page Header */}
       <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px', background: 'linear-gradient(135deg, #435fff, #a571ff)', padding: '20px', borderRadius: '12px' }}>
         <div>
@@ -556,12 +676,52 @@ const Dashboard = () => {
           </div>
 
           {/* ── Reusable Dashboard Cards ── */}
-          <LeadCards data={leadCardsData} />
-          <LeadSource data={leadSourceData} />
-          <SystemCards data={systemCardsData} />
-          <CategorywiseCard />
-          <BoardWiseCard data={boardWiseData} />
-          <GradWiseCard data={gradWiseData} />
+          <div style={{ display: 'flex', flexDirection: 'row', gap: '20px' }}>
+            <UnallottedCard 
+              onCardClick={handleCardClick}
+              activeFilters={activeFilters}
+              filterRequest={filterRequest}
+            />
+            <AvailedCard 
+              onCardClick={handleCardClick}
+              activeFilters={activeFilters}
+              filterRequest={filterRequest}
+            />
+            <AllottedCard 
+              onCardClick={handleCardClick}
+              activeFilters={activeFilters}
+              filterRequest={filterRequest}
+            />
+          </div>
+          <LeadCards 
+            data={leadCardsData} 
+            onCardClick={handleCardClick}
+            activeFilters={activeFilters}
+          />
+          <LeadSource 
+            data={leadSourceData} 
+            onCardClick={handleCardClick}
+            activeFilters={activeFilters}
+          />
+          <SystemCards 
+            data={systemCardsData} 
+            onCardClick={handleCardClick}
+            activeFilters={activeFilters}
+          />
+          <CategorywiseCard 
+            onCardClick={handleCardClick}
+            activeFilters={activeFilters}
+          />
+          <BoardWiseCard 
+            data={boardWiseData} 
+            onCardClick={handleCardClick}
+            activeFilters={activeFilters}
+          />
+          <GradWiseCard 
+            data={gradWiseData} 
+            onCardClick={handleCardClick}
+            activeFilters={activeFilters}
+          />
         </div>
 
         {/* Right Column: Recent Activity */}
@@ -576,8 +736,11 @@ const Dashboard = () => {
             height: '750px',
             overflowY: 'auto',
             display: 'flex',
-            flexDirection: 'column'
-          }}>
+            flexDirection: 'column',
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none'
+          }}
+          className="recent-activity-scroll">
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -737,7 +900,7 @@ const Dashboard = () => {
           </div>
 
           {/* ── Lead Status Card (Current Distribution) ── */}
-          <div className="card">
+          {/* <div className="card">
             <div className="card-header">
               <div>
                 <div className="card-title">Lead Status</div>
@@ -747,7 +910,7 @@ const Dashboard = () => {
             <div style={{ height: '220px' }}>
               <Doughnut data={statusChartData} options={statusChartOptions} />
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
 

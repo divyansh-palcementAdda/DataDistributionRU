@@ -175,15 +175,15 @@ const UserManagement = () => {
     <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden animate-fadeIn">
       <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
         <h2 className="text-sm font-semibold text-gray-800">User Management</h2>
-        <CustomButton
-          variant="primary"
-          onClick={handleOpenAddUserModal}
-          className="text-xs py-1.5 px-3 disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={!hasPermission('USER_CREATE')}
-          style={{ cursor: !hasPermission('USER_CREATE') ? 'not-allowed' : 'pointer' }}
-        >
-          + Add User
-        </CustomButton>
+        {hasPermission('USER_CREATE') && (
+          <CustomButton
+            variant="primary"
+            onClick={handleOpenAddUserModal}
+            className="text-xs py-1.5 px-3"
+          >
+            + Add User
+          </CustomButton>
+        )}
       </div>
       {loadingUsers ? (
         <div className="py-8 text-center text-sm text-gray-500">Loading users...</div>
@@ -192,12 +192,9 @@ const UserManagement = () => {
           <ReusableTable
             columns={userColumns}
             data={Array.isArray(users) ? users : []}
-            onEdit={handleOpenEditUserModal}
-            onDelete={handleOpenDeleteUserModal}
-            onView={handleOpenViewUserModal}
-            onEditDisabled={!hasPermission('USER_UPDATE')}
-            onDeleteDisabled={!hasPermission('USER_DELETE')}
-            onViewDisabled={!canReadUser()}
+            onEdit={hasPermission('USER_UPDATE') ? handleOpenEditUserModal : undefined}
+            onDelete={hasPermission('USER_DELETE') ? handleOpenDeleteUserModal : undefined}
+            onView={canReadUser() ? handleOpenViewUserModal : undefined}
           />
         </div>
       )}

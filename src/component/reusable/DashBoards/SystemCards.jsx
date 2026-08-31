@@ -1,6 +1,6 @@
 import React from 'react';
 
-const SystemCards = ({ data = {} }) => {
+const SystemCards = ({ data = {}, onCardClick, activeFilters = [] }) => {
   // Responsive styles
   const gridStyle = {
     display: 'grid',
@@ -16,6 +16,7 @@ const SystemCards = ({ data = {} }) => {
       color: 'blue',
       iconBg: 'var(--primary-light)',
       iconStroke: 'var(--primary)',
+      filterType: 'allLeads',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
@@ -30,6 +31,7 @@ const SystemCards = ({ data = {} }) => {
       color: 'teal',
       iconBg: '#E0F2F1',
       iconStroke: '#009688',
+      filterType: 'allSources',
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <circle cx="12" cy="12" r="10" />
@@ -51,28 +53,48 @@ const SystemCards = ({ data = {} }) => {
         Admin Management
       </h2>
       <div className="system-cards-responsive-grid" style={gridStyle}>
-        {cardConfig.map((card) => (
-          <div
-            key={card.key}
-            style={{
-              background: '#ffffff',
-              borderRadius: '12px',
-              padding: '12px',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
-              border: '1px solid #e5e7eb',
-              transition: 'all 0.3s ease',
-              cursor: 'pointer',
-              height: '100px',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-4px)';
-              e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.12)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.08)';
-            }}
-          >
+        {cardConfig.map((card) => {
+          const isSelected = activeFilters.some(f => f.type === card.filterType);
+          return (
+            <div
+              key={card.key}
+              onClick={() => onCardClick && onCardClick({ type: card.filterType, value: true, label: card.label })}
+              style={{
+                background: '#ffffff',
+                borderRadius: '12px',
+                padding: '12px',
+                boxShadow: isSelected
+                  ? '0 0 0 2px #6366f1, 0 4px 16px rgba(99,102,241,0.18)'
+                  : '0 2px 8px rgba(0, 0, 0, 0.08)',
+                border: isSelected ? '2px solid #6366f1' : '1px solid #e5e7eb',
+                transition: 'all 0.3s ease',
+                cursor: 'pointer',
+                height: '100px',
+                position: 'relative',
+                overflow: 'hidden',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                if (!isSelected) e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.12)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                if (!isSelected) e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.08)';
+              }}
+            >
+              {/* Active indicator badge */}
+              {isSelected && (
+                <div style={{
+                  position: 'absolute', top: '6px', right: '6px',
+                  background: '#6366f1', borderRadius: '50%',
+                  width: '18px', height: '18px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1,
+                }}>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+              )}
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -123,7 +145,8 @@ const SystemCards = ({ data = {} }) => {
               </div>
             </div>
           </div>
-        ))}
+          );
+        })}
       </div>
       <style>{`
         @media (max-width: 1200px) {

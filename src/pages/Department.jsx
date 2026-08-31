@@ -488,18 +488,18 @@ const Department = () => {
                         </div>
                     </CustomButton>
 
-                    <CustomButton
-                        variant="primary"
-                        onClick={() => {
-                            setEditData(null);
-                            setIsAddModalOpen(true);
-                        }}
-                        className="shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={!hasPermission('DEPARTMENT_CREATE')}
-                        style={{ cursor: !hasPermission('DEPARTMENT_CREATE') ? 'not-allowed' : 'pointer' }}
-                    >
-                        + Add Department
-                    </CustomButton>
+                    {hasPermission('DEPARTMENT_CREATE') && (
+                        <CustomButton
+                            variant="primary"
+                            onClick={() => {
+                                setEditData(null);
+                                setIsAddModalOpen(true);
+                            }}
+                            className="shadow-sm hover:shadow-md"
+                        >
+                            + Add Department
+                        </CustomButton>
+                    )}
                 </div>
             </div>
 

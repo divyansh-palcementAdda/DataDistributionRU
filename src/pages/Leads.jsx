@@ -1,15 +1,19 @@
 import { useState, useMemo, useEffect } from 'react';
-import { FiEye, FiEdit, FiTrash2, FiMessageSquare } from 'react-icons/fi';
+import { FiEye, FiEdit, FiTrash2 } from 'react-icons/fi';
 import { statusConfig } from '../mockData';
-import { getAllLeads, deleteLead, getLeadById } from '../Services/lead/leadService';
+import { getAllLeads, deleteLead, getLeadById, availLead } from '../Services/lead/leadService';
 import { getAllCourses } from '../Services/course/course';
 import { useAppContext } from '../AppContext';
 import { usePermissions } from '../PermissionContext';
+import { useLocation } from 'react-router-dom';
 import ReusableTable from '../component/reusable/table';
-import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
+// import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import DeleteModal from "../component/reusable/deleteModel"
 import AssignLeadModal from '../component/reusable/Leads/AssignLeadModal';
 import LeadCards from '../component/reusable/DashBoards/leadCards';
+import UnallottedCard from '../component/reusable/DashBoards/UnallottedCard';
+import AvailedCard from '../component/reusable/DashBoards/availedCard';
+import AllottedCard from '../component/reusable/DashBoards/allottedCard';
 import BulkUploadModal from '../component/reusable/Leads/BulkUploadModal';
 import PreviewDistributionModal from '../component/reusable/Leads/PreviewDistributionModal';
 
@@ -17,6 +21,7 @@ import PreviewDistributionModal from '../component/reusable/Leads/PreviewDistrib
 const Leads = () => {
   const { openAddLeadModal, navTo, showToast, leadRefreshTrigger } = useAppContext();
   const { canCreate, canUpdate, canDelete, canView, hasPermission } = usePermissions();
+  const location = useLocation();
 
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -25,6 +30,8 @@ const Leads = () => {
   const [selectedCard, setSelectedCard] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
+  const [activeFilters, setActiveFilters] = useState([]);
+  const [filterRequest, setFilterRequest] = useState({});
 
   const handleSelectAll = (checked) => {
     setSelectAll(checked);
@@ -141,12 +148,63 @@ const Leads = () => {
 
   const handleCardClick = (cardInfo) => {
     // Toggle: same card click kare toh filter clear ho jaye
+    const existingFilterIndex = activeFilters.findIndex(
+      f => f.type === cardInfo.type && f.value === cardInfo.value
+    );
+    
+    if (existingFilterIndex !== -1) {
+      setActiveFilters(activeFilters.filter((_, index) => index !== existingFilterIndex));
+    } else {
+      setActiveFilters(
+        activeFilters.filter(f => f.type !== cardInfo.type).concat(cardInfo)
+      );
+    }
+    
+    // Also update selectedCard for backward compatibility with LeadCards
     if (selectedCard?.type === cardInfo.type && selectedCard?.value === cardInfo.value) {
       setSelectedCard(null);
     } else {
       setSelectedCard(cardInfo);
     }
+    
     setPage(0); // filter change hone par page reset
+  };
+
+  // Smart conversion function: array to singular/plural based on length
+  const convertFilterRequest = (request) => {
+    const converted = { ...request };
+    
+    // Convert leadStatusIds → statusId or statusIds
+    if (converted.leadStatusIds?.length === 1) {
+      converted.statusId = converted.leadStatusIds[0];
+      delete converted.leadStatusIds;
+    }
+    
+    // Convert boardIds → boardId or boardIds
+    if (converted.boardIds?.length === 1) {
+      converted.boardId = converted.boardIds[0];
+      delete converted.boardIds;
+    }
+    
+    // Convert gradeIds → gradeId or gradeIds
+    if (converted.gradeIds?.length === 1) {
+      converted.gradeId = converted.gradeIds[0];
+      delete converted.gradeIds;
+    }
+    
+    // Convert courseTypeIds → courseTypeId or courseTypeIds
+    if (converted.courseTypeIds?.length === 1) {
+      converted.courseTypeId = converted.courseTypeIds[0];
+      delete converted.courseTypeIds;
+    }
+    
+    // Convert leadSourceIds → leadSourceId or leadSourceIds
+    if (converted.leadSourceIds?.length === 1) {
+      converted.leadSourceId = converted.leadSourceIds[0];
+      delete converted.leadSourceIds;
+    }
+    
+    return converted;
   };
 
   const fetchLeads = async () => {
@@ -158,7 +216,9 @@ const Leads = () => {
         search: search || undefined,
         sortBy: sortBy || undefined,
         sortDirection: sortDirection || undefined,
-        // Card filter — statusId send karo agar koi card selected hai
+        // Add filterRequest parameters with smart conversion
+        ...convertFilterRequest(filterRequest),
+        // Card filter — statusId send karo agar koi card selected hai (for backward compatibility)
         ...(selectedCard?.type === 'leadStatus' && selectedCard?.value
           ? { statusId: selectedCard.value }
           : {}),
@@ -199,14 +259,71 @@ const Leads = () => {
       fetchLeads();
     }, 500);
     return () => clearTimeout(delayDebounceFn);
-  }, [page, size, search, sortBy, sortDirection, leadRefreshTrigger, selectedCard]);
+  }, [page, size, search, sortBy, sortDirection, leadRefreshTrigger, selectedCard, filterRequest]);
+
+  // Update filterRequest when activeFilters changes
+  useEffect(() => {
+    const newFilterRequest = {};
+    activeFilters.forEach(filter => {
+      switch (filter.type) {
+        case 'unallotted':
+          newFilterRequest.allotted = false;
+          break;
+        case 'availed':
+          newFilterRequest.availed = true;
+          break;
+        case 'allotted':
+          newFilterRequest.allotted = true;
+          break;
+        case 'leadStatus':
+          if (!newFilterRequest.leadStatusIds) newFilterRequest.leadStatusIds = [];
+          newFilterRequest.leadStatusIds.push(filter.value);
+          break;
+        case 'board':
+          if (!newFilterRequest.boardIds) newFilterRequest.boardIds = [];
+          newFilterRequest.boardIds.push(filter.value);
+          break;
+        case 'grade':
+          if (!newFilterRequest.gradeIds) newFilterRequest.gradeIds = [];
+          newFilterRequest.gradeIds.push(filter.value);
+          break;
+        case 'courseType':
+          if (!newFilterRequest.courseTypeIds) newFilterRequest.courseTypeIds = [];
+          newFilterRequest.courseTypeIds.push(filter.value);
+          break;
+        case 'leadSource':
+          if (!newFilterRequest.leadSourceIds) newFilterRequest.leadSourceIds = [];
+          newFilterRequest.leadSourceIds.push(filter.value);
+          break;
+        case 'allLeads':
+          // No specific filter needed, just show all leads
+          break;
+        case 'allSources':
+          // No specific filter needed, just show all leads
+          break;
+        default:
+          break;
+      }
+    });
+    setFilterRequest(newFilterRequest);
+  }, [activeFilters]);
 
   useEffect(() => {
     fetchCourses();
   }, []);
 
-  const [isRemarkModalOpen, setIsRemarkModalOpen] = useState(false);
-  const [selectedLeadForRemark, setSelectedLeadForRemark] = useState(null);
+  // Check for filters passed from navigation (e.g., from adminDashboard)
+  useEffect(() => {
+    if (location.state?.activeFilters && Array.isArray(location.state.activeFilters)) {
+      setActiveFilters(location.state.activeFilters);
+      // Clear the state after applying
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
+
+  // Remark system commented out
+  // const [isRemarkModalOpen, setIsRemarkModalOpen] = useState(false);
+  // const [selectedLeadForRemark, setSelectedLeadForRemark] = useState(null);
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isAllotModalOpen, setIsAllotModalOpen] = useState(false);
@@ -214,21 +331,22 @@ const Leads = () => {
   const [usersData, setUsersData] = useState([]);
   
 
-  const openRemarkModal = (lead) => {
-    setSelectedLeadForRemark(lead);
-    setIsRemarkModalOpen(true);
-  };
+  // Remark system functions commented out
+  // const openRemarkModal = (lead) => {
+  //   setSelectedLeadForRemark(lead);
+  //   setIsRemarkModalOpen(true);
+  // };
 
-  const closeRemarkModal = () => {
-    setIsRemarkModalOpen(false);
-    setSelectedLeadForRemark(null);
-  };
+  // const closeRemarkModal = () => {
+  //   setIsRemarkModalOpen(false);
+  //   setSelectedLeadForRemark(null);
+  // };
 
-  const handleSaveRemark = async (lead, remark) => {
-    showToast(`Remark saved for ${lead.fullName || lead.name}`);
-    // After saving the remark, refetch the leads to show updated data
-    await fetchLeads();
-  };
+  // const handleSaveRemark = async (lead, remark) => {
+  //   showToast(`Remark saved for ${lead.fullName || lead.name}`);
+  //   // After saving the remark, refetch the leads to show updated data
+  //   await fetchLeads();
+  // };
 
   const openAllotModal = (leadOrIds) => {
     setSelectedLeadForAllot(leadOrIds);
@@ -284,45 +402,64 @@ const Leads = () => {
         </div>
         <div className="flex gap-2">
           {/* Bulk Upload */}
-          <button
-            className="btn btn-secondary btn-sm flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-            onClick={() => setIsBulkUploadOpen(true)}
-            disabled={!hasPermission('LEAD_CREATE')}
-            style={{ cursor: !hasPermission('LEAD_CREATE') ? 'not-allowed' : 'pointer' }}
-          >
-            <svg
-              width="13"
-              height="13"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
+          {hasPermission('LEAD_CREATE') && (
+            <button
+              className="btn btn-secondary btn-sm flex items-center gap-1.5"
+              onClick={() => setIsBulkUploadOpen(true)}
             >
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
-            </svg>
-            Export
-          </button>
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+              </svg>
+              Import
+            </button>
+          )}
           {/* Add Lead */}
-          <button
-            className="btn btn-primary btn-sm flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
-            onClick={() => openAddLeadModal()}
-            disabled={!hasPermission('LEAD_CREATE')}
-            style={{ cursor: !hasPermission('LEAD_CREATE') ? 'not-allowed' : 'pointer' }}
-          >
-            <svg
-              width="13"
-              height="13"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
+          {hasPermission('LEAD_CREATE') && (
+            <button
+              className="btn btn-primary btn-sm flex items-center gap-1.5"
+              onClick={() => openAddLeadModal()}
             >
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            Add Lead
-          </button>
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              Add Lead
+            </button>
+          )}
         </div>
+      </div>
+
+      {/* ── New Lead Status Cards ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }}>
+        <UnallottedCard 
+          onCardClick={handleCardClick}
+          activeFilters={activeFilters}
+          filterRequest={filterRequest}
+        />
+        <AvailedCard 
+          onCardClick={handleCardClick}
+          activeFilters={activeFilters}
+          filterRequest={filterRequest}
+        />
+        <AllottedCard 
+          onCardClick={handleCardClick}
+          activeFilters={activeFilters}
+          filterRequest={filterRequest}
+        />
       </div>
 
       {/* ── Stat Cards ── */}
@@ -340,8 +477,27 @@ const Leads = () => {
           value={search}
           onChange={(e) => { setSearch(e.target.value); }}
         />
-        {/* Active card filter badge */}
-        {selectedCard && (
+        {/* Active card filter badges */}
+        {activeFilters.map((filter, index) => (
+          <div 
+            key={`${filter.type}-${filter.value}-${index}`}
+            className="flex items-center gap-1.5 px-3 py-1 bg-indigo-50 border border-indigo-200 rounded-md text-sm text-indigo-700 font-medium"
+          >
+            <span>{filter.label}</span>
+            <button
+              onClick={() => {
+                setActiveFilters(activeFilters.filter((_, i) => i !== index));
+                setPage(0);
+              }}
+              className="ml-1 text-indigo-400 hover:text-indigo-700 bg-transparent border-none cursor-pointer leading-none"
+              title="Clear filter"
+            >
+              ✕
+            </button>
+          </div>
+        ))}
+        {/* Legacy selectedCard support */}
+        {selectedCard && !activeFilters.some(f => f.type === selectedCard.type && f.value === selectedCard.value) && (
           <div className="flex items-center gap-1.5 px-3 py-1 bg-indigo-50 border border-indigo-200 rounded-md text-sm text-indigo-700 font-medium">
             <span>Filter: {selectedCard.label}</span>
             <button
@@ -353,31 +509,47 @@ const Leads = () => {
             </button>
           </div>
         )}
-        {/* Allot Lead */}
-        <button
-          className="btn btn-secondary btn-sm flex items-center gap-1.5"
-          onClick={() => {
-            if (selectedIds.length > 0) {
-              openAllotModal(selectedIds);
-            } else {
-              showToast('Please select leads to allot', 'warning');
-            }
-          }}
-        >
-          <svg
-            width="13"
-            height="13"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
+        {/* Clear all filters button */}
+        {(activeFilters.length > 0 || selectedCard) && (
+          <button
+            onClick={() => {
+              setActiveFilters([]);
+              setSelectedCard(null);
+              setPage(0);
+            }}
+            className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 rounded border border-gray-300 cursor-pointer"
+            title="Clear all filters"
           >
-            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-            <circle cx="9" cy="7" r="4" />
-            <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
-          </svg>
-          Allot Lead
-        </button>
+            Clear All
+          </button>
+        )}
+        {/* Allot Lead */}
+        {hasPermission('LEAD_ASSIGN') && (
+          <button
+            className="btn btn-secondary btn-sm flex items-center gap-1.5"
+            onClick={() => {
+              if (selectedIds.length > 0) {
+                openAllotModal(selectedIds);
+              } else {
+                showToast('Please select leads to allot', 'warning');
+              }
+            }}
+          >
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+            </svg>
+            Allot Lead
+          </button>
+        )}
         <button
           className="btn btn-ghost btn-sm flex items-center gap-1.5"
         >
@@ -404,16 +576,18 @@ const Leads = () => {
             columns={[
               {
                 key: 'select',
-                header: (
+                header: hasPermission('LEAD_ASSIGN') ? (
                   <input
                     type="checkbox"
                     checked={selectAll}
                     onChange={(e) => handleSelectAll(e.target.checked)}
                     className="cursor-pointer"
                   />
-                ),
+                ) : null,
                 sortable: false,
                 render: (value, row) => {
+                  if (!hasPermission('LEAD_ASSIGN')) return null;
+                  
                   const rowId = typeof row.id === 'object' ? row.id?.id : row.id;
                   const rowLeadId = typeof row.leadId === 'object' ? row.leadId?.id : row.leadId;
                   const idToUse = rowId || rowLeadId;
@@ -580,110 +754,138 @@ const Leads = () => {
 
               return (
                 <div className="flex justify-center items-center gap-3">
-                  <button
+                  {/* Remark button commented out */}
+                  {/* <button
                     className="text-blue-500 hover:text-blue-700 transition bg-transparent border-none cursor-pointer"
                     title="Remark"
                     onClick={() => openRemarkModal(safeRow)}
                   >
                     <FiMessageSquare size={18} />
-                  </button>
-                  <button
-                    className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="View"
-                    onClick={() => navTo(`lead-detail/${safeRow?.id ?? safeRow?.leadId}`)}
-                    disabled={!hasPermission('LEAD_READ') && !hasPermission('LEAD_VIEW')}
-                    style={{ cursor: (!hasPermission('LEAD_READ') && !hasPermission('LEAD_VIEW')) ? 'not-allowed' : 'pointer' }}
-                  >
-                    <FiEye size={18} />
-                  </button>
-                  <button
-                    className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Edit"
-                    onClick={async () => {
-                      const leadId = safeRow?.id ?? safeRow?.leadId;
-                      try {
-                        // Fetch full lead detail so we get proper IDs for all fields
-                        const res = await getLeadById(leadId);
-                        const full = res?.data?.success ? res.data.data : safeRow;
+                  </button> */}
+                  {(hasPermission('LEAD_READ') || hasPermission('LEAD_VIEW')) && (
+                    <button
+                      className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer"
+                      title="View"
+                      onClick={async () => {
+                        const leadId = safeRow?.id ?? safeRow?.leadId;
+                        try {
+                          // Fetch lead details to check conditions
+                          const res = await getLeadById(leadId);
+                          const leadDetails = res?.data?.data;
 
-                        const editData = {
-                          id: full.id ?? full.leadId,
-                          leadId: full.id ?? full.leadId,
-                          fullName: full.fullName || '',
-                          phoneNumber: full.phoneNumber || '',
-                          alternatePhoneNumber: full.alternatePhoneNumber || '',
-                          email: full.email || '',
-                          country: typeof full.country === 'object' ? full.country?.name || '' : full.country || '',
-                          state: typeof full.state === 'object' ? full.state?.name || '' : full.state || '',
-                          city: typeof full.city === 'object' ? full.city?.name || '' : full.city || '',
-                          sourceDetails: full.sourceDetails || '',
-                          remarks: full.remarks || '',
-                          nextFollowUpDate: full.nextFollowUpDate || '',
-                          active: full.active !== undefined ? full.active : true,
-                          // courseId — could be full.course.id or full.courseId
-                          courseId: String(
-                            full.course?.id ?? full.courseId ?? ''
-                          ),
-                          // registeredCourse
-                          registeredCourseId: String(
-                            full.registeredCourse?.id ?? full.registeredCourseId ?? ''
-                          ),
-                          // board
-                          boardId: String(
-                            full.board?.id ?? full.boardId ?? ''
-                          ),
-                          // grade
-                          gradeId: String(
-                            full.grade?.id ?? full.gradeId ?? ''
-                          ),
-                          // category / courseType
-                          courseTypeId: String(
-                            full.courseType?.id ?? full.interestedCourseTypes?.[0]?.id ?? full.courseTypeId ?? ''
-                          ),
-                          // assignedTo
-                          assignedToUserId: String(
-                            full.assignedTo?.id ?? full.assignedToUserId ?? ''
-                          ),
-                          // status
-                          statusId: String(
-                            full.currentStatus?.id ?? full.statusId ?? ''
-                          ),
-                          // leadSources array
-                          leadSourceIds: Array.isArray(full.leadSources)
-                            ? full.leadSources.map(s => String(typeof s === 'object' ? s.id : s)).filter(Boolean)
-                            : Array.isArray(full.leadSourceIds)
-                              ? full.leadSourceIds.map(String)
-                              : (full.source?.id ? [String(full.source.id)] : []),
-                          // interestedCourses array
-                          interestedCourseIds: Array.isArray(full.interestedCourses)
-                            ? full.interestedCourses.map(c => String(typeof c === 'object' ? c.id : c)).filter(Boolean)
-                            : Array.isArray(full.interestedCourseIds)
-                              ? full.interestedCourseIds.map(String)
-                              : [],
-                        };
+                          // Get current user from localStorage
+                          const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+                          const currentUserId = userInfo?.id || userInfo?.userId;
 
-                        openAddLeadModal(editData);
-                      } catch (err) {
-                        console.error('Failed to fetch lead for edit', err);
-                        showToast('Failed to load lead data', 'error');
-                      }
-                    }}
-                    disabled={!hasPermission('LEAD_UPDATE')}
-                    style={{ cursor: !hasPermission('LEAD_UPDATE') ? 'not-allowed' : 'pointer' }}
-                  >
-                    <FiEdit size={18} />
-                  </button>
-                  <button
-                    className="text-red-500 hover:text-red-700 transition bg-transparent border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    title="Delete"
-                    onClick={() => {
-                      openDeleteModal(safeRow);
-                    }}
-                    disabled={!hasPermission('LEAD_DELETE')}
-                    style={{ cursor: !hasPermission('LEAD_DELETE') ? 'not-allowed' : 'pointer' }}
-                  >
-                    <FiTrash2 size={18} />
-                  </button>
+                          // Check conditions
+                          const shouldCallAvail = 
+                            (leadDetails?.isAvailed === false || leadDetails?.isAvailed === null) &&
+                            (leadDetails?.assignedTo === null || leadDetails?.assignedTo?.id === currentUserId);
+
+
+                          if (shouldCallAvail) {
+                            await availLead(leadId);
+                            showToast('Lead marked as availed successfully');
+                            fetchLeads();
+                          }
+                        } catch (error) {
+                          console.error('Error:', error);
+                          // Still navigate even if avail API fails
+                        }
+                        navTo(`lead-detail/${leadId}`);
+                      }}
+                    >
+                      <FiEye size={18} />
+                    </button>
+                  )}
+                  {hasPermission('LEAD_UPDATE') && (
+                    <button
+                      className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer"
+                      title="Edit"
+                      onClick={async () => {
+                        const leadId = safeRow?.id ?? safeRow?.leadId;
+                        try {
+                          // Fetch full lead detail so we get proper IDs for all fields
+                          const res = await getLeadById(leadId);
+                          const full = res?.data?.success ? res.data.data : safeRow;
+
+                          const editData = {
+                            id: full.id ?? full.leadId,
+                            leadId: full.id ?? full.leadId,
+                            fullName: full.fullName || '',
+                            phoneNumber: full.phoneNumber || '',
+                            alternatePhoneNumber: full.alternatePhoneNumber || '',
+                            email: full.email || '',
+                            country: typeof full.country === 'object' ? full.country?.name || '' : full.country || '',
+                            state: typeof full.state === 'object' ? full.state?.name || '' : full.state || '',
+                            city: typeof full.city === 'object' ? full.city?.name || '' : full.city || '',
+                            sourceDetails: full.sourceDetails || '',
+                            remarks: full.remarks || '',
+                            nextFollowUpDate: full.nextFollowUpDate || '',
+                            active: full.active !== undefined ? full.active : true,
+                            // courseId — could be full.course.id or full.courseId
+                            courseId: String(
+                              full.course?.id ?? full.courseId ?? ''
+                            ),
+                            // registeredCourse
+                            registeredCourseId: String(
+                              full.registeredCourse?.id ?? full.registeredCourseId ?? ''
+                            ),
+                            // board
+                            boardId: String(
+                              full.board?.id ?? full.boardId ?? ''
+                            ),
+                            // grade
+                            gradeId: String(
+                              full.grade?.id ?? full.gradeId ?? ''
+                            ),
+                            // category / courseType
+                            courseTypeId: String(
+                              full.courseType?.id ?? full.interestedCourseTypes?.[0]?.id ?? full.courseTypeId ?? ''
+                            ),
+                            // assignedTo
+                            assignedToUserId: String(
+                              full.assignedTo?.id ?? full.assignedToUserId ?? ''
+                            ),
+                            // status
+                            statusId: String(
+                              full.currentStatus?.id ?? full.statusId ?? ''
+                            ),
+                            // leadSources array
+                            leadSourceIds: Array.isArray(full.leadSources)
+                              ? full.leadSources.map(s => String(typeof s === 'object' ? s.id : s)).filter(Boolean)
+                              : Array.isArray(full.leadSourceIds)
+                                ? full.leadSourceIds.map(String)
+                                : (full.source?.id ? [String(full.source.id)] : []),
+                            // interestedCourses array
+                            interestedCourseIds: Array.isArray(full.interestedCourses)
+                              ? full.interestedCourses.map(c => String(typeof c === 'object' ? c.id : c)).filter(Boolean)
+                              : Array.isArray(full.interestedCourseIds)
+                                ? full.interestedCourseIds.map(String)
+                                : [],
+                          };
+
+                          openAddLeadModal(editData);
+                        } catch (err) {
+                          console.error('Failed to fetch lead for edit', err);
+                          showToast('Failed to load lead data', 'error');
+                        }
+                      }}
+                    >
+                      <FiEdit size={18} />
+                    </button>
+                  )}
+                  {hasPermission('LEAD_DELETE') && (
+                    <button
+                      className="text-red-500 hover:text-red-700 transition bg-transparent border-none cursor-pointer"
+                      title="Delete"
+                      onClick={() => {
+                        openDeleteModal(safeRow);
+                      }}
+                    >
+                      <FiTrash2 size={18} />
+                    </button>
+                  )}
                 </div>
               );
             }}
@@ -694,14 +896,14 @@ const Leads = () => {
       </div>
 
 
-      {/* Lead Remark Modal */}
-      <LeadRemarkModal
+      {/* Lead Remark Modal - commented out */}
+      {/* <LeadRemarkModal
         isOpen={isRemarkModalOpen}
         onClose={closeRemarkModal}
         lead={selectedLeadForRemark}
         followUpId={selectedLeadForRemark?.followUpId || selectedLeadForRemark?.nextFollowUpId || selectedLeadForRemark?.followupId}
         onSave={handleSaveRemark}
-      />
+      /> */}
       <DeleteModal
         isOpen={isDeleteModalOpen}
         onClose={closeDeleteModal}

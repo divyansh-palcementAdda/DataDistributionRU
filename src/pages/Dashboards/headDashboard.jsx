@@ -18,6 +18,9 @@ import CategorywiseCard from '../../component/reusable/DashBoards/categorywiseCa
 import GradWiseCard from '../../component/reusable/DashBoards/gradWiseCard';
 import LeadCards from '../../component/reusable/DashBoards/leadCards';
 import LeadSource from '../../component/reusable/DashBoards/leadSource';
+import UnallottedCard from '../../component/reusable/DashBoards/UnallottedCard';
+import AvailedCard from '../../component/reusable/DashBoards/availedCard';
+import AllottedCard from '../../component/reusable/DashBoards/allottedCard';
 import { getAllLeads } from '../../Services/lead/leadService';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend);
@@ -92,6 +95,7 @@ const HeadDashboard = () => {
   const [leadsData, setLeadsData] = useState([]);
   const [allLeadsData, setAllLeadsData] = useState([]); // For stats and other components
   const [activeFilters, setActiveFilters] = useState([]); // Array of active filters
+  const [filterRequest, setFilterRequest] = useState({});
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
   const [totalElements, setTotalElements] = useState(0);
@@ -120,6 +124,43 @@ const HeadDashboard = () => {
     }
   }, []);
 
+  // Smart conversion function: array to singular/plural based on length
+  const convertFilterRequest = (request) => {
+    const converted = { ...request };
+    
+    // Convert leadStatusIds → statusId or statusIds
+    if (converted.leadStatusIds?.length === 1) {
+      converted.statusId = converted.leadStatusIds[0];
+      delete converted.leadStatusIds;
+    }
+    
+    // Convert boardIds → boardId or boardIds
+    if (converted.boardIds?.length === 1) {
+      converted.boardId = converted.boardIds[0];
+      delete converted.boardIds;
+    }
+    
+    // Convert gradeIds → gradeId or gradeIds
+    if (converted.gradeIds?.length === 1) {
+      converted.gradeId = converted.gradeIds[0];
+      delete converted.gradeIds;
+    }
+    
+    // Convert courseTypeIds → courseTypeId or courseTypeIds
+    if (converted.courseTypeIds?.length === 1) {
+      converted.courseTypeId = converted.courseTypeIds[0];
+      delete converted.courseTypeIds;
+    }
+    
+    // Convert leadSourceIds → leadSourceId or leadSourceIds
+    if (converted.leadSourceIds?.length === 1) {
+      converted.leadSourceId = converted.leadSourceIds[0];
+      delete converted.leadSourceIds;
+    }
+    
+    return converted;
+  };
+
   // Fetch leads from API for table (unallotted leads with card filtering)
   const fetchLeads = useCallback(async () => {
     setLoading(true);
@@ -131,30 +172,9 @@ const HeadDashboard = () => {
         sortDirection: sortDirection || undefined,
         // Filter for leads not allotted (allotted to Head)
         assignedTo: null,
+        // Add filterRequest parameters with smart conversion
+        ...convertFilterRequest(filterRequest),
       };
-      
-      // Add filters based on activeFilters array
-      activeFilters.forEach(filter => {
-        switch (filter.type) {
-          case 'leadStatus':
-            params.statusId = filter.value;
-            break;
-          case 'board':
-            params.boardId = filter.value;
-            break;
-          case 'grade':
-            params.gradeId = filter.value;
-            break;
-          case 'courseType':
-            params.courseTypeId = filter.value;
-            break;
-          case 'leadSource':
-            params.leadSourceId = filter.value;
-            break;
-          default:
-            break;
-        }
-      });
       
       const res = await getAllLeads(params);
       if (res?.data?.success) {
@@ -168,7 +188,7 @@ const HeadDashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, size, sortBy, sortDirection, activeFilters]);
+  }, [page, size, sortBy, sortDirection, filterRequest]);
 
   useEffect(() => {
     fetchAllLeads();
@@ -364,6 +384,48 @@ const HeadDashboard = () => {
     }
   };
 
+  // Update filterRequest when activeFilters changes
+  useEffect(() => {
+    const newFilterRequest = {};
+    activeFilters.forEach(filter => {
+      switch (filter.type) {
+        case 'unallotted':
+          newFilterRequest.allotted = false;
+          break;
+        case 'availed':
+          newFilterRequest.availed = true;
+          break;
+        case 'allotted':
+          newFilterRequest.allotted = true;
+          break;
+        case 'leadStatus':
+          if (!newFilterRequest.leadStatusIds) newFilterRequest.leadStatusIds = [];
+          newFilterRequest.leadStatusIds.push(filter.value);
+          break;
+        case 'board':
+          if (!newFilterRequest.boardIds) newFilterRequest.boardIds = [];
+          newFilterRequest.boardIds.push(filter.value);
+          break;
+        case 'grade':
+          if (!newFilterRequest.gradeIds) newFilterRequest.gradeIds = [];
+          newFilterRequest.gradeIds.push(filter.value);
+          break;
+        case 'courseType':
+          if (!newFilterRequest.courseTypeIds) newFilterRequest.courseTypeIds = [];
+          newFilterRequest.courseTypeIds.push(filter.value);
+          break;
+        case 'leadSource':
+          if (!newFilterRequest.leadSourceIds) newFilterRequest.leadSourceIds = [];
+          newFilterRequest.leadSourceIds.push(filter.value);
+          break;
+        default:
+          break;
+      }
+    });
+    setFilterRequest(newFilterRequest);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeFilters]);
+
   const handleSort = (columnKey, direction) => {
     // Map frontend column keys to backend field names (using camelCase from API response)
     const fieldMapping = {
@@ -383,10 +445,10 @@ const HeadDashboard = () => {
   return (
     <div>
       {/* Page Header */}
-      <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px' }}>
+      <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px', background: 'linear-gradient(135deg, #435fff, #a571ff)', padding: '20px', borderRadius: '12px' }}>
         <div>
-          <h1 style={{ fontSize: '22px', fontWeight: '700', color: 'var(--gray-900)' }}>Head Dashboard</h1>
-          <p style={{ fontSize: '13px', color: 'var(--gray-500)', marginTop: '4px' }}>
+          <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#ffffff' }}>Head Dashboard</h1>
+          <p style={{ fontSize: '13px', color: '#e0e7ff', marginTop: '4px' }}>
             Manage your allotted leads and distribute to callers
           </p>
         </div>
@@ -407,11 +469,25 @@ const HeadDashboard = () => {
       </div> */}
 
       {/* ── Reusable Dashboard Cards ── */}
-       <LeadCards 
+      {/* Availed and Allotted Cards in Flex Row */}
+      <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
+        <AvailedCard 
+          onCardClick={handleCardClick}
+          activeFilters={activeFilters}
+          filterRequest={filterRequest}
+        />
+        <AllottedCard 
+          onCardClick={handleCardClick}
+          activeFilters={activeFilters}
+          filterRequest={filterRequest}
+        />
+      </div>
+      
+      <LeadCards 
         onCardClick={handleCardClick}
         activeFilters={activeFilters}
       />
-      <SystemCards data={systemData} />
+      {/* <SystemCards data={systemData} /> */}
       <BoardWiseCard 
         onCardClick={handleCardClick}
         activeFilters={activeFilters}
@@ -427,6 +503,11 @@ const HeadDashboard = () => {
       <LeadSource 
         onCardClick={handleCardClick}
         activeFilters={activeFilters}
+      />
+      <UnallottedCard 
+        onCardClick={handleCardClick}
+        activeFilters={activeFilters}
+        filterRequest={filterRequest}
       />
      
 

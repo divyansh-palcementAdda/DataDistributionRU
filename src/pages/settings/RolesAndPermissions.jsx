@@ -444,13 +444,12 @@ const RolesAndPermissions = () => {
     <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden animate-fadeIn">
       <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
         <h2 className="text-sm font-semibold text-gray-800">Roles & Permissions</h2>
-        {selectedRoleForPermissions && (
+        {selectedRoleForPermissions && hasPermission('PERMISSION_UPDATE') && (
           <CustomButton
             variant="primary"
             onClick={handleSaveRolePermissions}
-            disabled={isSavingPermissions || !hasPermission('PERMISSION_UPDATE')}
+            disabled={isSavingPermissions}
             className="text-xs py-1.5 px-3 disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{ cursor: (!hasPermission('PERMISSION_UPDATE') || isSavingPermissions) ? 'not-allowed' : 'pointer' }}
           >
             {isSavingPermissions ? 'Saving...' : 'Save Permissions'}
           </CustomButton>
@@ -461,15 +460,15 @@ const RolesAndPermissions = () => {
         <div className="w-1/2 border-r border-gray-200">
           <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
             <h3 className="text-xs font-semibold text-gray-700">All Roles</h3>
-            <CustomButton
-              variant="primary"
-              onClick={handleOpenAddRoleModal}
-              className="text-xs py-1 px-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={!hasPermission('ROLE_CREATE')}
-              style={{ cursor: !hasPermission('ROLE_CREATE') ? 'not-allowed' : 'pointer' }}
-            >
-              + Add
-            </CustomButton>
+            {hasPermission('ROLE_CREATE') && (
+              <CustomButton
+                variant="primary"
+                onClick={handleOpenAddRoleModal}
+                className="text-xs py-1 px-2"
+              >
+                + Add
+              </CustomButton>
+            )}
           </div>
           {loadingRoles ? (
             <div className="py-8 text-center text-sm text-gray-500">Loading roles...</div>
@@ -500,34 +499,34 @@ const RolesAndPermissions = () => {
                             <span className="font-medium text-gray-900 text-sm">{role.name || 'Unnamed role'}</span>
                           </div>
                           <div className="flex items-center gap-1">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenEditRoleModal(role);
-                              }}
-                              className="p-1.5 rounded hover:bg-blue-100 text-gray-500 hover:text-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-500"
-                              title="Edit Role"
-                              disabled={!hasPermission('ROLE_UPDATE')}
-                              style={{ cursor: !hasPermission('ROLE_UPDATE') ? 'not-allowed' : 'pointer' }}
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenDeleteRoleModal(role);
-                              }}
-                              className="p-1.5 rounded hover:bg-red-100 text-gray-500 hover:text-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-500"
-                              title="Delete Role"
-                              disabled={!hasPermission('ROLE_DELETE')}
-                              style={{ cursor: !hasPermission('ROLE_DELETE') ? 'not-allowed' : 'pointer' }}
-                            >
-                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
+                            {hasPermission('ROLE_UPDATE') && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenEditRoleModal(role);
+                                }}
+                                className="p-1.5 rounded hover:bg-blue-100 text-gray-500 hover:text-blue-600 transition-colors"
+                                title="Edit Role"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                              </button>
+                            )}
+                            {hasPermission('ROLE_DELETE') && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleOpenDeleteRoleModal(role);
+                                }}
+                                className="p-1.5 rounded hover:bg-red-100 text-gray-500 hover:text-red-600 transition-colors"
+                                title="Delete Role"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </button>
+                            )}
                           </div>
                         </div>
                         {role.description && (
@@ -591,12 +590,12 @@ const RolesAndPermissions = () => {
                           return (
                             <div
                               key={permissionId}
-                              onClick={() => handleTogglePermission(permissionId)}
-                              className={`p-3 rounded-lg cursor-pointer transition-all border ${
+                              onClick={hasPermission('PERMISSION_UPDATE') ? () => handleTogglePermission(permissionId) : undefined}
+                              className={`p-3 rounded-lg transition-all border ${
                                 isSelected
                                   ? 'bg-blue-50 border-blue-200 shadow-sm'
                                   : 'bg-white border-gray-200 hover:border-blue-300 hover:bg-gray-50'
-                              } ${!hasPermission('PERMISSION_UPDATE') ? 'cursor-not-allowed opacity-60' : ''}`}
+                              } ${!hasPermission('PERMISSION_UPDATE') ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
                             >
                               <div className="flex items-center gap-3">
                                 <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
@@ -622,34 +621,34 @@ const RolesAndPermissions = () => {
                                   )}
                                 </div>
                                 <div className="flex items-center gap-1">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleOpenEditPermissionModal(permission);
-                                    }}
-                                    className="p-1.5 rounded hover:bg-blue-100 text-gray-500 hover:text-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-500"
-                                    title="Edit Permission"
-                                    disabled={!hasPermission('PERMISSION_UPDATE')}
-                                    style={{ cursor: !hasPermission('PERMISSION_UPDATE') ? 'not-allowed' : 'pointer' }}
-                                  >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                    </svg>
-                                  </button>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleOpenDeletePermissionModal(permission);
-                                    }}
-                                    className="p-1.5 rounded hover:bg-red-100 text-gray-500 hover:text-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:hover:text-gray-500"
-                                    title="Delete Permission"
-                                    disabled={!hasPermission('PERMISSION_DELETE')}
-                                    style={{ cursor: !hasPermission('PERMISSION_DELETE') ? 'not-allowed' : 'pointer' }}
-                                  >
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                  </button>
+                                  {hasPermission('PERMISSION_UPDATE') && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleOpenEditPermissionModal(permission);
+                                      }}
+                                      className="p-1.5 rounded hover:bg-blue-100 text-gray-500 hover:text-blue-600 transition-colors"
+                                      title="Edit Permission"
+                                    >
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                      </svg>
+                                    </button>
+                                  )}
+                                  {hasPermission('PERMISSION_DELETE') && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleOpenDeletePermissionModal(permission);
+                                      }}
+                                      className="p-1.5 rounded hover:bg-red-100 text-gray-500 hover:text-red-600 transition-colors"
+                                      title="Delete Permission"
+                                    >
+                                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                      </svg>
+                                    </button>
+                                  )}
                                 </div>
                               </div>
                             </div>

@@ -43,6 +43,10 @@ import Notifications from "./pages/settings/Notifications";
 import CRMConfig from "./pages/settings/CRMConfig";
 import RolesAndPermissions from "./pages/settings/RolesAndPermissions";
 
+import Datasegregation from "./pages/Data-segregation";
+import DatasegregationDetail from "./pages/datasegregationDetail";
+
+
 // Reusable Components / Standalone Pages
 import StudentForm from "./component/reusable/studentForm";
 import QRCodePage from "./component/reusable/qrCode";
@@ -73,10 +77,10 @@ const Allroutes = () => {
         <Route path="/reports" element={<Reports />} />
         <Route path="/courses" element={<Courses />} />
         <Route path="/settings" element={<Settings />}>
-          <Route path="user-management" element={<UserManagement />} />
-          <Route path="notifications" element={<Notifications />} />
-          <Route path="crm-config" element={<CRMConfig />} />
-          <Route path="roles-permissions" element={<RolesAndPermissions />} />
+        <Route path="user-management" element={<UserManagement />} />
+        <Route path="notifications" element={<Notifications />} />
+        <Route path="crm-config" element={<CRMConfig />} />
+        <Route path="roles-permissions" element={<RolesAndPermissions />} />
         </Route>
         <Route path="/lead-source" element={<Leadsourse />} />
         <Route path="/lead-source-details/:id" element={<DataSourceDetails />} />
@@ -92,6 +96,8 @@ const Allroutes = () => {
         <Route path="/department" element={<Department />} />
         <Route path="/departments" element={<Department />} />
         <Route path="/department-details/:id" element={<DepartmentDetails />} />
+        <Route path="/data-segregation" element={<Datasegregation />} />
+        <Route path="/data-segregation-details/:id" element={<DatasegregationDetail />} />
       </Route>
 
       {/* Standalone Route for Student Form from QR */}

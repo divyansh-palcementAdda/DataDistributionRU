@@ -188,3 +188,36 @@ export const reassignDistributeFollowUps = async (payload) => {
         throw error;
     }
 };
+
+// Change lead status — POST /api/leads/{id}/change-status
+export const changeLeadStatus = async (id, data) => {
+    try {
+        const url = ApiRoutes.Lead.changeStatus.replace("{id}", id);
+        const response = await axiosInstance.post(url, data);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
+// Get lead status history — GET /api/leads/{id}/status-history
+export const getLeadStatusHistory = async (id, params = {}) => {
+    try {
+        const url = ApiRoutes.Lead.statusHistory.replace("{id}", id);
+        const response = await axiosInstance.get(url, { params });
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
+// Mark a lead as availed — POST /api/leads/{id}/avail
+export const availLead = async (id) => {
+    try {
+        const url = ApiRoutes.Lead.avail.replace("{id}", id);
+        const response = await axiosInstance.post(url);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};

@@ -19,6 +19,8 @@ import SystemCards from '../../component/reusable/DashBoards/SystemCards';
 import CategorywiseCard from '../../component/reusable/DashBoards/categorywiseCard';
 import BoardWiseCard from '../../component/reusable/DashBoards/BoardWiseCard';
 import GradWiseCard from '../../component/reusable/DashBoards/gradWiseCard';
+import AllottedCard from '../../component/reusable/DashBoards/allottedCard';
+import AvailedCard from '../../component/reusable/DashBoards/availedCard';
 import { getLeadSourceBreakdown, getGradeBreakdown, getBoardBreakdown } from '../../Services/cards/cardService';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend);
@@ -90,6 +92,7 @@ const CallersDashboard = () => {
   const [leadsData, setLeadsData] = useState([]);
   const [allLeadsData, setAllLeadsData] = useState([]);
   const [activeFilters, setActiveFilters] = useState([]);
+  const [filterRequest, setFilterRequest] = useState({});
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
   const [totalElements, setTotalElements] = useState(0);
@@ -184,6 +187,43 @@ const CallersDashboard = () => {
     }
   }, []);
 
+  // Smart conversion function: array to singular/plural based on length
+  const convertFilterRequest = (request) => {
+    const converted = { ...request };
+    
+    // Convert leadStatusIds → statusId or statusIds
+    if (converted.leadStatusIds?.length === 1) {
+      converted.statusId = converted.leadStatusIds[0];
+      delete converted.leadStatusIds;
+    }
+    
+    // Convert boardIds → boardId or boardIds
+    if (converted.boardIds?.length === 1) {
+      converted.boardId = converted.boardIds[0];
+      delete converted.boardIds;
+    }
+    
+    // Convert gradeIds → gradeId or gradeIds
+    if (converted.gradeIds?.length === 1) {
+      converted.gradeId = converted.gradeIds[0];
+      delete converted.gradeIds;
+    }
+    
+    // Convert courseTypeIds → courseTypeId or courseTypeIds
+    if (converted.courseTypeIds?.length === 1) {
+      converted.courseTypeId = converted.courseTypeIds[0];
+      delete converted.courseTypeIds;
+    }
+    
+    // Convert leadSourceIds → leadSourceId or leadSourceIds
+    if (converted.leadSourceIds?.length === 1) {
+      converted.leadSourceId = converted.leadSourceIds[0];
+      delete converted.leadSourceIds;
+    }
+    
+    return converted;
+  };
+
   // Fetch leads from API for table (caller's leads with filtering)
   const fetchLeads = useCallback(async () => {
     setLoading(true);
@@ -195,30 +235,9 @@ const CallersDashboard = () => {
         sortDirection: sortDirection || undefined,
         // Filter for leads allotted to current caller
         assignedTo: currentCaller,
+        // Add filterRequest parameters with smart conversion
+        ...convertFilterRequest(filterRequest),
       };
-      
-      // Add filters based on activeFilters array
-      activeFilters.forEach(filter => {
-        switch (filter.type) {
-          case 'leadStatus':
-            params.statusId = filter.value;
-            break;
-          case 'board':
-            params.boardId = filter.value;
-            break;
-          case 'grade':
-            params.gradeId = filter.value;
-            break;
-          case 'courseType':
-            params.courseTypeId = filter.value;
-            break;
-          case 'leadSource':
-            params.leadSourceId = filter.value;
-            break;
-          default:
-            break;
-        }
-      });
       
       const res = await getAllLeads(params);
       if (res?.data?.success) {
@@ -232,7 +251,7 @@ const CallersDashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, size, sortBy, sortDirection, activeFilters, currentCaller]);
+  }, [page, size, sortBy, sortDirection, filterRequest, currentCaller]);
 
   useEffect(() => {
     fetchAllLeads();
@@ -409,6 +428,45 @@ const CallersDashboard = () => {
     }
   };
 
+  // Update filterRequest when activeFilters changes
+  useEffect(() => {
+    const newFilterRequest = {};
+    activeFilters.forEach(filter => {
+      switch (filter.type) {
+        case 'availed':
+          newFilterRequest.availed = true;
+          break;
+        case 'allotted':
+          newFilterRequest.allotted = true;
+          break;
+        case 'leadStatus':
+          if (!newFilterRequest.leadStatusIds) newFilterRequest.leadStatusIds = [];
+          newFilterRequest.leadStatusIds.push(filter.value);
+          break;
+        case 'board':
+          if (!newFilterRequest.boardIds) newFilterRequest.boardIds = [];
+          newFilterRequest.boardIds.push(filter.value);
+          break;
+        case 'grade':
+          if (!newFilterRequest.gradeIds) newFilterRequest.gradeIds = [];
+          newFilterRequest.gradeIds.push(filter.value);
+          break;
+        case 'courseType':
+          if (!newFilterRequest.courseTypeIds) newFilterRequest.courseTypeIds = [];
+          newFilterRequest.courseTypeIds.push(filter.value);
+          break;
+        case 'leadSource':
+          if (!newFilterRequest.leadSourceIds) newFilterRequest.leadSourceIds = [];
+          newFilterRequest.leadSourceIds.push(filter.value);
+          break;
+        default:
+          break;
+      }
+    });
+    setFilterRequest(newFilterRequest);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeFilters]);
+
   const handleSort = (columnKey, direction) => {
     // Map frontend column keys to backend field names (using camelCase from API response)
     const fieldMapping = {
@@ -428,14 +486,14 @@ const CallersDashboard = () => {
   return (
     <div>
       {/* Page Header */}
-      <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px' }}>
+      <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px', background: 'linear-gradient(135deg, #435fff, #a571ff)', padding: '20px', borderRadius: '12px' }}>
         <div>
-          <h1 style={{ fontSize: '22px', fontWeight: '700', color: 'var(--gray-900)' }}>Caller Dashboard</h1>
-          <p style={{ fontSize: '13px', color: 'var(--gray-500)', marginTop: '4px' }}>
+          <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#ffffff' }}>Counselor Dashboard</h1>
+          <p style={{ fontSize: '13px', color: '#e0e7ff', marginTop: '4px' }}>
             Welcome back,  Here&apos;s your allotment overview.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        {/* <div style={{ display: 'flex', gap: '8px' }}>
           <button className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="3" y="4" width="18" height="18" rx="2" />
@@ -443,7 +501,7 @@ const CallersDashboard = () => {
             </svg>
             Today
           </button>
-        </div>
+        </div> */}
       </div>
 
       {/* ── Stat Cards ── */}
@@ -460,6 +518,20 @@ const CallersDashboard = () => {
       </div> */}
 
       {/* ── Reusable Dashboard Cards ── */}
+      {/* Availed and Allotted Cards in Flex Row */}
+      <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
+        <AllottedCard 
+          onCardClick={handleCardClick}
+          activeFilters={activeFilters}
+          filterRequest={filterRequest}
+        />
+        <AvailedCard 
+          onCardClick={handleCardClick}
+          activeFilters={activeFilters}
+          filterRequest={filterRequest}
+        />
+      </div>
+      
       <LeadCards 
         onCardClick={handleCardClick}
         activeFilters={activeFilters}
@@ -469,7 +541,7 @@ const CallersDashboard = () => {
         onCardClick={handleCardClick}
         activeFilters={activeFilters}
       />
-      <SystemCards data={systemCardsData} />
+      {/* <SystemCards data={systemCardsData} /> */}
       <CategorywiseCard 
         onCardClick={handleCardClick}
         activeFilters={activeFilters}
@@ -486,8 +558,8 @@ const CallersDashboard = () => {
       />
 
       {/* ── Charts Row ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', marginBottom: '20px' }}>
-        {/* Status Distribution Chart */}
+      {/* <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', marginBottom: '20px' }}>
+      
         <div className="card">
           <div className="card-header">
             <div>
@@ -499,7 +571,7 @@ const CallersDashboard = () => {
             <Doughnut data={statusChartData} options={statusChartOptions} />
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* ── My Allotted Leads Table ── */}
       <div className="card" ref={tableSectionRef}>

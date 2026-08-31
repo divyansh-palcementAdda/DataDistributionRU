@@ -141,22 +141,6 @@ const LeadStatus = () => {
       render: (value) => (typeof value === "object" && value !== null ? value?.description || "-" : value || "-"),
     },
     {
-      key: "sentimentCategory",
-      header: "Sentiment",
-      render: (sentiment) => {
-        const sentimentColors = {
-          POSITIVE: "bg-green-100 text-green-800",
-          NEGATIVE: "bg-red-100 text-red-800",
-          NEUTRAL: "bg-gray-100 text-gray-800"
-        };
-        return (
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${sentimentColors[sentiment] || sentimentColors.NEUTRAL}`}>
-            {sentiment}
-          </span>
-        );
-      }
-    },
-    {
       key: "displayOrder",
       header: "Display Order",
       render: (order) => <span className="font-medium">{order}</span>
@@ -165,11 +149,12 @@ const LeadStatus = () => {
       key: "active",
       header: "Status",
       render: (active, row) => (
-        <Toggle
-          checked={active === true || row.status === 'ACTIVE'}
-          onChange={() => handleToggleStatus(row.id, row.status)}
-          disabled={!hasPermission('LEAD_STATUS_UPDATE')}
-        />
+        hasPermission('LEAD_STATUS_UPDATE') ? (
+          <Toggle
+            checked={active === true || row.status === 'ACTIVE'}
+            onChange={() => handleToggleStatus(row.id, row.status)}
+          />
+        ) : null
       )
     }
   ];
@@ -193,15 +178,15 @@ const LeadStatus = () => {
           className="border border-gray-300 rounded-lg px-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
 
-        <CustomButton
-          variant="primary"
-          onClick={() => { setEditData(null); setIsAddModalOpen(true); }}
-          className="text-sm py-2 px-4 shadow-sm hover:shadow-md transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={!hasPermission('LEAD_STATUS_CREATE')}
-          style={{ cursor: !hasPermission('LEAD_STATUS_CREATE') ? 'not-allowed' : 'pointer' }}
-        >
-          + Add Lead Status
-        </CustomButton>
+        {hasPermission('LEAD_STATUS_CREATE') && (
+          <CustomButton
+            variant="primary"
+            onClick={() => { setEditData(null); setIsAddModalOpen(true); }}
+            className="text-sm py-2 px-4 shadow-sm hover:shadow-md transition-shadow"
+          >
+            + Add Lead Status
+          </CustomButton>
+        )}
       </div>
 
       {/* Main Content Area */}
@@ -222,39 +207,39 @@ const LeadStatus = () => {
           emptyMessage={loading ? "Loading..." : "No lead statuses found"}
           actions={(row) => (
             <div className="flex justify-center items-center gap-3">
-              <button
-                className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                title="View"
-                onClick={() => navigate(`/lead-status-details/${row.id}`)}
-                disabled={!canReadLeadStatus()}
-                style={{ cursor: !canReadLeadStatus() ? 'not-allowed' : 'pointer' }}
-              >
-                <FiEye size={18} />
-              </button>
-              <button
-                className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Edit"
-                onClick={() => {
-                  setEditData(row);
-                  setIsAddModalOpen(true);
-                }}
-                disabled={!hasPermission('LEAD_STATUS_UPDATE')}
-                style={{ cursor: !hasPermission('LEAD_STATUS_UPDATE') ? 'not-allowed' : 'pointer' }}
-              >
-                <FiEdit size={18} />
-              </button>
-              <button
-                className="text-gray-500 hover:text-red-600 transition bg-transparent border-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Delete"
-                onClick={() => {
-                  setItemToDelete(row);
-                  setIsDeleteModalOpen(true);
-                }}
-                disabled={!hasPermission('LEAD_STATUS_DELETE')}
-                style={{ cursor: !hasPermission('LEAD_STATUS_DELETE') ? 'not-allowed' : 'pointer' }}
-              >
-                <FiTrash2 size={18} />
-              </button>
+              {canReadLeadStatus() && (
+                <button
+                  className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer"
+                  title="View"
+                  onClick={() => navigate(`/lead-status-details/${row.id}`)}
+                >
+                  <FiEye size={18} />
+                </button>
+              )}
+              {hasPermission('LEAD_STATUS_UPDATE') && (
+                <button
+                  className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer"
+                  title="Edit"
+                  onClick={() => {
+                    setEditData(row);
+                    setIsAddModalOpen(true);
+                  }}
+                >
+                  <FiEdit size={18} />
+                </button>
+              )}
+              {hasPermission('LEAD_STATUS_DELETE') && (
+                <button
+                  className="text-gray-500 hover:text-red-600 transition bg-transparent border-none cursor-pointer"
+                  title="Delete"
+                  onClick={() => {
+                    setItemToDelete(row);
+                    setIsDeleteModalOpen(true);
+                  }}
+                >
+                  <FiTrash2 size={18} />
+                </button>
+              )}
             </div>
           )}
         />

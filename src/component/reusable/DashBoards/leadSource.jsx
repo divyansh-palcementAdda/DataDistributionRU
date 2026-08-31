@@ -20,7 +20,7 @@ const COLORS = [
   { iconBg: '#FCE7F3',              iconStroke: '#DB2777' },
 ];
 
-const LeadSource = ({ data, onCardClick, activeFilters = [] }) => {
+const LeadSource = ({ data, onCardClick, activeFilters = [], courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId }) => {
   // API returns an array: [{id, name, code, count, percentage}, ...]
   const [sourceData, setSourceData] = useState([]);
 
@@ -33,8 +33,15 @@ const LeadSource = ({ data, onCardClick, activeFilters = [] }) => {
 
     const fetchSourceData = async () => {
       try {
-        const filterRequest = {};
-        const response = await getLeadSourceBreakdown({ filterRequest: JSON.stringify(filterRequest) });
+        const params = {};
+        if (courseTypeId) params.courseTypeId = courseTypeId;
+        if (leadSourceId) params.leadSourceId = leadSourceId;
+        if (boardId) params.boardId = boardId;
+        if (gradeId) params.gradeId = gradeId;
+        if (assignedUserIds) params.assignedUserIds = assignedUserIds;
+        if (departmentId) params.departmentId = departmentId;
+        
+        const response = await getLeadSourceBreakdown(params);
         const payload = response?.data?.data ?? response?.data ?? response ?? [];
         // Normalise: always store as an array
         setSourceData(Array.isArray(payload) ? payload : Object.values(payload));
@@ -44,7 +51,7 @@ const LeadSource = ({ data, onCardClick, activeFilters = [] }) => {
     };
 
     fetchSourceData();
-  }, [data]);
+  }, [data, courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId]);
 
   // Accept both array (new) and object (legacy) formats
   const items = Array.isArray(sourceData)

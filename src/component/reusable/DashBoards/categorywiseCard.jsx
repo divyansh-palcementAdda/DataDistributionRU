@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getCourseTypesBreakdown } from '../../../Services/cards/cardService';
 
-const CategorywiseCard = ({ data, onCardClick, activeFilters = [] }) => {
+const CategorywiseCard = ({ data, onCardClick, activeFilters = [], courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId }) => {
   // API returns an array: [{id, name, code, count, percentage}, ...]
   const [courseTypesData, setCourseTypesData] = useState([]);
 
@@ -14,8 +14,15 @@ const CategorywiseCard = ({ data, onCardClick, activeFilters = [] }) => {
 
     const fetchCourseTypes = async () => {
       try {
-        const filterRequest = {};
-        const response = await getCourseTypesBreakdown({ filterRequest: JSON.stringify(filterRequest) });
+        const params = {};
+        if (courseTypeId) params.courseTypeId = courseTypeId;
+        if (leadSourceId) params.leadSourceId = leadSourceId;
+        if (boardId) params.boardId = boardId;
+        if (gradeId) params.gradeId = gradeId;
+        if (assignedUserIds) params.assignedUserIds = assignedUserIds;
+        if (departmentId) params.departmentId = departmentId;
+        
+        const response = await getCourseTypesBreakdown(params);
         const payload = response?.data?.data ?? response?.data ?? response ?? [];
         // Normalise: always store as an array
         setCourseTypesData(Array.isArray(payload) ? payload : Object.values(payload));
@@ -25,7 +32,7 @@ const CategorywiseCard = ({ data, onCardClick, activeFilters = [] }) => {
     };
 
     fetchCourseTypes();
-  }, [data]);
+  }, [data, courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId]);
 
   // Responsive styles
   const gridStyle = {

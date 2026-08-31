@@ -12,6 +12,7 @@ export const getAllFollowups = async ({
     status = "",
     userId = "",
     leadId = "",
+    leadStatusIds = "",
 }) => {
     try {
         const followUpRoute =
@@ -31,6 +32,7 @@ export const getAllFollowups = async ({
                     status,
                     userId,
                     leadId,
+                    leadStatusIds: Array.isArray(leadStatusIds) ? leadStatusIds.join(',') : leadStatusIds,
                 },
             }
         );

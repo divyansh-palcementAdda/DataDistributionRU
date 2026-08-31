@@ -1,14 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { FiUploadCloud, FiX, FiFile, FiAlertCircle, FiDownload } from 'react-icons/fi';
 import CustomButton from '../CustomButton';
-import { getAllCourseType } from '../../../Services/courseTypes/courseTypeService';
-import { getAllCourses } from '../../../Services/course/course';
-import gradsService from '../../../Services/Grads/gradsService';
-import { getAllBoards } from '../../../Services/Boards/boardsService';
-import { getAllLeadSource } from '../../../Services/leadsource/leadSourceService';
-import { getAllLeadStatus } from '../../../Services/leadStatus/leadStatusService';
-import { getAllDepartments } from '../../../Services/department/departmentService';
-import { getAllUser } from '../../../Services/user/user';
+import {
+  getCourseTypesDropdown,
+  getGradesDropdown,
+  getBoardsDropdown,
+  getLeadSourcesDropdown,
+  getLeadStatusesDropdown,
+  getDepartmentsDropdown,
+  getUsersDropdown
+} from '../../../Services/drop-down/dropDownService';
 import axiosInstance from '../../../axiosInstance/axios';
 
 /**
@@ -75,55 +76,55 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
     setDataLoading(true);
     try {
       const [ctRes, gradeRes, boardRes, lsRes, lsStatusRes, deptRes, userRes] = await Promise.allSettled([
-        getAllCourseType({ size: 100 }),
-        gradsService.getAllGrades({ size: 100 }),
-        getAllBoards({ size: 100 }),
-        getAllLeadSource({ size: 100 }),
-        getAllLeadStatus({ size: 100 }),
-        getAllDepartments({ size: 100 }),
-        getAllUser({ size: 100 }),
+        getCourseTypesDropdown(),
+        getGradesDropdown(),
+        getBoardsDropdown(),
+        getLeadSourcesDropdown(),
+        getLeadStatusesDropdown(),
+        getDepartmentsDropdown(),
+        getUsersDropdown(),
       ]);
 
       /* course types */
       if (ctRes.status === 'fulfilled') {
         const d = ctRes.value;
-        setCourseTypes(d?.data?.content || d?.content || []);
+        setCourseTypes(d?.data || []);
       }
 
       /* grades */
       if (gradeRes.status === 'fulfilled') {
         const d = gradeRes.value;
-        setGrades(d?.data?.content || d?.content || []);
+        setGrades(d?.data || []);
       }
 
       /* boards */
       if (boardRes.status === 'fulfilled') {
         const d = boardRes.value;
-        setBoards(d?.data?.content || d?.content || []);
+        setBoards(d?.data || []);
       }
 
       /* lead sources */
       if (lsRes.status === 'fulfilled') {
         const d = lsRes.value;
-        setLeadSources(d?.data?.data?.content || d?.data?.content || d?.content || []);
+        setLeadSources(d?.data || []);
       }
 
       /* lead statuses */
       if (lsStatusRes.status === 'fulfilled') {
         const d = lsStatusRes.value;
-        setLeadStatuses(d?.data?.content || d?.content || []);
+        setLeadStatuses(d?.data || []);
       }
 
       /* departments */
       if (deptRes.status === 'fulfilled') {
         const d = deptRes.value;
-        setDepartments(d?.data?.content || d?.content || []);
+        setDepartments(d?.data || []);
       }
 
       /* users */
       if (userRes.status === 'fulfilled') {
         const d = userRes.value;
-        setUsers(d?.data?.data?.content || d?.data?.content || []);
+        setUsers(d?.data || []);
       }
     } catch (err) {
       console.error('Failed to load master data', err);
@@ -234,7 +235,7 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
         <option value="">{placeholder}</option>
         {options.map((opt) => (
           <option key={opt[valueKey]} value={opt[valueKey]}>
-            {opt[labelKey] || opt.courseName || opt.firstName + ' ' + (opt.lastName || '')}
+            {opt[labelKey] || opt.name || opt.fullName || `${opt.firstName || ''} ${opt.lastName || ''}`.trim() || opt.username}
           </option>
         ))}
       </select>
@@ -474,7 +475,7 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
                   <option value="">— Select User —</option>
                   {users.map((u) => (
                     <option key={u.id || u.userId} value={u.id || u.userId}>
-                      {u.firstName} {u.lastName || ''}
+                      {u.fullName || `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.username}
                     </option>
                   ))}
                 </select>

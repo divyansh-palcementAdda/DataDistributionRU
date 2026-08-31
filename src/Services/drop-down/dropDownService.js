@@ -96,6 +96,28 @@ const getUsersDropdown = async (role = '', departmentId = '', search = '') => {
     }
 };
 
+// api for Schedule Follow Up modal Speacilly  status drop down - lead status drop down 
+
+const getFollowupStatusesDropdown = async () => {
+    try {
+        const response = await axiosInstance.get(ApiRoutes.Dropdowns.followupStatuses);
+        return response.data;
+    } catch (error) {
+        return error;
+    }
+};
+
+const getFollowupLeadStatusesDropdown = async () => {
+    try {
+        const response = await axiosInstance.get(ApiRoutes.Dropdowns.followupLeadStatuses);
+        return response.data;
+    } catch (error) {
+        return error;
+    }
+};
+
+
+
 export {
     getBoardsDropdown,
     getCourseTypesDropdown,
@@ -105,5 +127,7 @@ export {
     getLeadSourcesDropdown,
     getLeadStatusesDropdown,
     getRolesDropdown,
-    getUsersDropdown
+    getUsersDropdown,
+    getFollowupStatusesDropdown,
+    getFollowupLeadStatusesDropdown
 };

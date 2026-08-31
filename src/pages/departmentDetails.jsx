@@ -584,15 +584,17 @@ const DepartmentDetails = () => {
                         <p style={{ margin: '2px 0 0', fontSize: '13px', color: '#64748B' }}>View comprehensive department information</p>
                     </div>
                 </div>
-                <button
-                    onClick={() => setIsEditModalOpen(true)}
-                    style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #2563EB', backgroundColor: '#2563EB', color: '#FFFFFF', fontSize: '13px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s' }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1D4ED8'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563EB'}
-                >
-                    <FiEdit style={{ fontSize: '14px' }} />
-                    Edit Department
-                </button>
+                {hasPermission('DEPARTMENT_UPDATE') && (
+                    <button
+                        onClick={() => setIsEditModalOpen(true)}
+                        style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #2563EB', backgroundColor: '#2563EB', color: '#FFFFFF', fontSize: '13px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s' }}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1D4ED8'}
+                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563EB'}
+                    >
+                        <FiEdit style={{ fontSize: '14px' }} />
+                        Edit Department
+                    </button>
+                )}
             </div>
 
             {/* ── Detail Card (TOP) ── */}

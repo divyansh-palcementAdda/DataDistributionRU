@@ -12,6 +12,8 @@ const ApiRoutes = {
         sourceWiseStats: '/api/leads/stats/source-wise',
         //schedule lead ......
         leadSchedule: '/api/leads/{id}/followups',
+        // get lead follow-ups
+        getFollowUps: '/api/leads/{id}/followups',
         // mark a lead .
         markLead: '/api/leads/followups/{followUpId}/complete',
         completeFollowUp: '/api/leads/followups/{followUpId}/complete',
@@ -156,6 +158,7 @@ const ApiRoutes = {
         unallottedCount: '/api/dashboard/leads/unallotted/count',
         availedCount: '/api/dashboard/leads/availed/count',
         allottedCount: '/api/dashboard/leads/allotted/count',
+        followupStatusCounts: '/api/dashboard/followups/status-counts',
     },
 
     Distribution: {
@@ -184,7 +187,9 @@ const ApiRoutes = {
         leadSources: '/api/dropdowns/lead-sources',
         leadStatuses: '/api/dropdowns/lead-statuses',
         roles: '/api/dropdowns/roles',
-        users: '/api/dropdowns/users'
+        users: '/api/dropdowns/users',
+        followupStatuses: '/api/dropdowns/followup-statuses',
+        followupLeadStatuses: '/api/dropdowns/followup-lead-statuses'
     }
 }
 

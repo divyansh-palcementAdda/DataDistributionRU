@@ -5,7 +5,7 @@ import { usePermissions } from '../PermissionContext';
 import ReusableTable from '../component/reusable/table';
 import { getAllFollowups } from '../Services/followUp/followService';
 import FollowupFormModal from "../component/reusable/FollowupFormModal";
-import LeadCards from "../component/reusable/DashBoards/leadCards";
+import FollowUpCards from "../component/reusable/DashBoards/followUpCards";
 import ScheduleModal from "../component/reusable/Leads/scheduleModel";
 
 const formatFollowUpDate = (value) => {
@@ -58,13 +58,15 @@ const FollowUps = () => {
   const [isFollowupModalOpen, setIsFollowupModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [selectedFollowup, setSelectedFollowup] = useState(null);
-  const [activeTab, setActiveTab] = useState("PENDING");
+  const [activeTab, setActiveTab] = useState("ALL");
+  const [selectedLeadStatusId, setSelectedLeadStatusId] = useState(null);
 
   const debounceRef = useRef(null);
 
   const handleCardClick = (filter) => {
     if (filter.type === 'leadStatus') {
-      setActiveTab(filter.value);
+      setSelectedLeadStatusId(prev => prev === filter.value ? null : filter.value);
+      setPage(0);
     }
   };
 
@@ -123,6 +125,7 @@ const FollowUps = () => {
         sortDirection: sortDirection.toUpperCase(),
         search,
         status: activeTab === "ALL" ? "" : activeTab,
+        leadStatusIds: selectedLeadStatusId ? [selectedLeadStatusId] : [],
       });
 
       const apiData = res?.data ?? res ?? {};
@@ -151,6 +154,7 @@ const FollowUps = () => {
     sortDirection,
     search,
     activeTab,
+    selectedLeadStatusId,
     showToast,
   ]);
 
@@ -215,30 +219,22 @@ const FollowUps = () => {
           : row?.createdBy?.username || "-",
     },
 
-    // {
-    //   key: "actions",
-    //   header: "Actions",
-    //   render: (_, row) => (
-    //     <div className="flex gap-2">
-    //       {hasPermission('FOLLOWUP_READ') && (
-    //         <button
-    //           className="btn btn-sm btn-primary"
-    //           onClick={() => handleViewLead(row)}
-    //         >
-    //           View
-    //         </button>
-    //       )}
-    //       {hasPermission('FOLLOWUP_UPDATE') && (
-    //         <button
-    //           className="btn btn-sm btn-outline"
-    //           onClick={() => handleReschedule(row)}
-    //         >
-    //           Reschedule
-    //         </button>
-    //       )}
-    //     </div>
-    //   ),
-    // },
+    {
+      key: "actions",
+      header: "Actions",
+      render: (_, row) => (
+        <div className="flex gap-2">
+          {hasPermission('FOLLOWUP_VIEW') && (
+            <button
+              className="btn btn-sm btn-primary"
+              onClick={() => handleViewLead(row)}
+            >
+              View
+            </button>
+          )}
+        </div>
+      ),
+    },
   ];
 
   return (
@@ -269,7 +265,10 @@ const FollowUps = () => {
       </div>
 
       {/* ── Stat Cards ── */}
-      <LeadCards onCardClick={handleCardClick} />
+      <FollowUpCards 
+        onCardClick={handleCardClick} 
+        activeFilters={selectedLeadStatusId ? [{ type: 'leadStatus', value: selectedLeadStatusId }] : []}
+      />
 
       {/* Search */}
       <div

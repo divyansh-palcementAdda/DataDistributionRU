@@ -1,57 +1,37 @@
 import React, { useState, useEffect } from "react";
-import { getAllLeadStatus } from "../../../Services/leadStatus/leadStatusService";
+import { getFollowupStatusesDropdown, getFollowupLeadStatusesDropdown } from "../../../Services/drop-down/dropDownService";
 
 const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
     const [formData, setFormData] = useState({
         followUpDate: "",
         remarks: "",
-        status: "PENDING",
+        status: "",
+        statusCode: "",
         leadStatus: "",
         leadStatusCode: "",
     });
     const [leadStatuses, setLeadStatuses] = useState([]);
-    
-    const allowedLeadStatuses = [
-        "Form Follow-Up",
-        "Counseling Follow-Up", 
-        "Registered",
-        "Form Not Interested",
-        "Continuous Form Follow-Up",
-        "Continuous Follow-Up",
-        "Interested Follow-Up",
-        "Go To Form Follow-Up",
-        "Counseling Not Interested"
-    ];
+    const [statuses, setStatuses] = useState([]);
 
     useEffect(() => {
-        const fetchLeadStatuses = async () => {
+        const fetchDropdowns = async () => {
             try {
-                const response = await getAllLeadStatus({
-                    page: 0,
-                    size: 100,
-                    sortBy: "displayOrder",
-                    sortDirection: "ASC",
-                    search: ""
-                });
-                const allStatuses = response.data?.content || response.content || response.data || [];
-                console.log("All statuses from API:", allStatuses.map(s => s.name));
-                console.log("Allowed statuses:", allowedLeadStatuses);
-                
-                const filteredStatuses = allStatuses.filter(status => 
-                    allowedLeadStatuses.some(allowed => 
-                        allowed.toLowerCase() === status.name.toLowerCase()
-                    )
-                );
-                console.log("Filtered statuses:", filteredStatuses.map(s => s.name));
-                setLeadStatuses(filteredStatuses);
+                const [statusesResponse, leadStatusesResponse] = await Promise.all([
+                    getFollowupStatusesDropdown(),
+                    getFollowupLeadStatusesDropdown()
+                ]);
+
+                setStatuses(statusesResponse?.data || []);
+                setLeadStatuses(leadStatusesResponse?.data || []);
             } catch (error) {
-                console.error("Error fetching lead statuses:", error);
+                console.error("Error fetching dropdowns:", error);
+                setStatuses([]);
                 setLeadStatuses([]);
             }
         };
 
         if (isOpen) {
-            fetchLeadStatuses();
+            fetchDropdowns();
         }
     }, [isOpen]);
 
@@ -64,6 +44,13 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
                 ...prev,
                 [name]: value,
                 leadStatusCode: selectedStatus?.code || "",
+            }));
+        } else if (name === "status") {
+            const selectedStatus = statuses.find(status => status.id === value);
+            setFormData((prev) => ({
+                ...prev,
+                [name]: value,
+                statusCode: selectedStatus?.code || "",
             }));
         } else {
             setFormData((prev) => ({
@@ -86,7 +73,8 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
         setFormData({
             followUpDate: "",
             remarks: "",
-            status: "PENDING",
+            status: "",
+            statusCode: "",
             leadStatus: "",
             leadStatusCode: "",
         });
@@ -121,7 +109,7 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
                         </label>
 
                         <input
-                            type="datetime-local"
+                            type="date"
                             name="followUpDate"
                             value={formData.followUpDate}
                             onChange={handleChange}
@@ -155,9 +143,12 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
                             onChange={handleChange}
                             className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-blue-500"
                         >
-                            <option value="PENDING">PENDING</option>
-                            <option value="COMPLETED">COMPLETED</option>
-                            <option value="CANCELLED">CANCELLED</option>
+                            <option value="">Select Status</option>
+                            {statuses.map((status) => (
+                                <option key={status.id} value={status.id}>
+                                    {status.name}
+                                </option>
+                            ))}
                         </select>
                     </div>
 

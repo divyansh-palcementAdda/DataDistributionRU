@@ -25,6 +25,12 @@ const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen }) => {
         onClose();
     };
 
+    const handleMarkAsNotConnected = () => {
+        setIsConnected(false);
+        setShowInterestButtons(false);
+        onClose();
+    };
+
     return (
         <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 px-4">
             <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
@@ -95,10 +101,10 @@ const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen }) => {
                 <div className="flex justify-end gap-3 border-t p-5">
                     <CustomButton
                         variant="secondary"
-                        onClick={onClose}
+                        onClick={handleMarkAsNotConnected}
                         className="px-4 py-2"
                     >
-                        Close
+                        Mark as not connected
                     </CustomButton>
                     
                     {!isConnected && (

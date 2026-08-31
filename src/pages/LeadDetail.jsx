@@ -8,7 +8,7 @@ import CallModal from '../component/reusable/CallModal';
 import WhatsAppModal from '../component/reusable/WhatsAppModal';
 import EmailModal from '../component/reusable/EmailModal';
 import ReusableTable from '../component/reusable/table';
-import { createLeadSchedule, getLeadById, getLeadInfoPanel, sendLeadWhatsApp, sendLeadEmail, changeLeadStatus, getLeadStatusHistory } from '../Services/lead/leadService';
+import { createLeadSchedule, getLeadById, getLeadInfoPanel, sendLeadWhatsApp, sendLeadEmail, changeLeadStatus, getLeadStatusHistory, getLeadFollowUps } from '../Services/lead/leadService';
 import { getAllCourses } from '../Services/course/course';
 
 const BASE_URL = import.meta.env.VITE_BASE_URL || '';
@@ -30,6 +30,8 @@ const LeadDetail = () => {
   const [configLoading, setConfigLoading] = useState(false);
   const [statusHistory, setStatusHistory] = useState([]);
   const [statusHistoryLoading, setStatusHistoryLoading] = useState(false);
+  const [followUps, setFollowUps] = useState([]);
+  const [followUpsLoading, setFollowUpsLoading] = useState(false);
 
   // Searchable course dropdown state
   const [courseSearch, setCourseSearch] = useState('');
@@ -143,6 +145,28 @@ const LeadDetail = () => {
     fetchStatusHistory();
   }, [id]);
 
+  useEffect(() => {
+    const fetchFollowUps = async () => {
+      if (id) {
+        setFollowUpsLoading(true);
+        try {
+          const res = await getLeadFollowUps(id);
+          if (res?.data?.success && res?.data?.data) {
+            setFollowUps(res.data.data);
+          } else {
+            setFollowUps([]);
+          }
+        } catch (err) {
+          console.error("Failed to fetch follow-ups", err);
+          setFollowUps([]);
+        } finally {
+          setFollowUpsLoading(false);
+        }
+      }
+    };
+    fetchFollowUps();
+  }, [id]);
+
   const initials = (() => {
     const fullName = leadDetails?.fullName;
     return fullName ? fullName.substring(0, 2).toUpperCase() : '--';
@@ -156,6 +180,8 @@ const LeadDetail = () => {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
       });
     } catch {
       return '-';
@@ -219,6 +245,62 @@ const LeadDetail = () => {
       key: 'remarks',
       header: 'Remarks',
       render: (value, row) => row?.feedback || row?.remarks || value || '-',
+    },
+  ];
+
+  const followUpsColumns = [
+    {
+      key: 'sno',
+      header: 'S.No',
+      render: (_, __, index) => index + 1,
+    },
+    {
+      key: 'followUpDate',
+      header: 'Follow-up Date',
+      render: (value) => formatDate(value),
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (value) => {
+        const statusValue = value || '-';
+        let statusColor = 'bg-gray-100 text-gray-700';
+        if (statusValue === 'PENDING') statusColor = 'bg-yellow-100 text-yellow-700';
+        if (statusValue === 'COMPLETED') statusColor = 'bg-green-100 text-green-700';
+        if (statusValue === 'CANCELLED') statusColor = 'bg-red-100 text-red-700';
+        return (
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColor}`}>
+            {statusValue}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'completed',
+      header: 'Completed',
+      render: (value) => (
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${value ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+          {value ? 'Yes' : 'No'}
+        </span>
+      ),
+    },
+    {
+      key: 'completedAt',
+      header: 'Completed At',
+      render: (value) => formatDate(value),
+    },
+    {
+      key: 'createdBy',
+      header: 'Created By',
+      render: (value, row) =>
+        row?.createdBy?.firstName && row?.createdBy?.lastName
+          ? `${row.createdBy.firstName} ${row.createdBy.lastName}`
+          : row?.createdBy?.username || row?.createdBy || '-',
+    },
+    {
+      key: 'remarks',
+      header: 'Remarks',
+      render: (value) => value || '-',
     },
   ];
 
@@ -430,6 +512,7 @@ const LeadDetail = () => {
                 { label: 'City', value: leadDetails.city || 'N/A' },
                 { label: 'State', value: leadDetails.state || 'N/A' },
                 { label: 'Country', value: leadDetails.country || 'N/A' },
+                { label: 'Department', value: leadDetails.department?.name || 'N/A' },
                 // { label: 'Status', value: statusName },
                 // { label: 'Lead Date', value: formatDate(leadDetails.createdAt) },
                 // { label: 'Lead Code', value: leadDetails.leadCode || 'N/A' },
@@ -580,6 +663,25 @@ const LeadDetail = () => {
                   columns={statusHistoryColumns}
                   data={statusHistory}
                   emptyMessage="No status history available"
+                />
+              )}
+            </div>
+
+            {/* Lead Follow-ups */}
+            <div className="mt-5 pt-5 border-t border-gray-100">
+              <h3 className="text-sm font-bold text-gray-800 mb-4">Follow-ups</h3>
+              {followUpsLoading ? (
+                <div className="flex items-center justify-center py-8 gap-2 text-gray-500 text-sm">
+                  <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                  </svg>
+                  Loading follow-ups...
+                </div>
+              ) : (
+                <ReusableTable
+                  columns={followUpsColumns}
+                  data={followUps}
+                  emptyMessage="No follow-ups available"
                 />
               )}
             </div>

@@ -211,6 +211,17 @@ export const getLeadStatusHistory = async (id, params = {}) => {
     }
 };
 
+// Get lead follow-ups — GET /api/leads/{id}/followups
+export const getLeadFollowUps = async (id, params = {}) => {
+    try {
+        const url = ApiRoutes.Lead.getFollowUps.replace("{id}", id);
+        const response = await axiosInstance.get(url, { params });
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
 // Mark a lead as availed — POST /api/leads/{id}/avail
 export const availLead = async (id) => {
     try {

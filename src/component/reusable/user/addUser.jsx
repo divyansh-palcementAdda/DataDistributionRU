@@ -3,8 +3,7 @@ import CustomButton from '../CustomButton';
 import CustomInput from '../CustomInput';
 import Toggle from '../custumToggle';
 import { addUser, updateUser } from '../../../Services/user/user';
-import { getAllRoles } from '../../../Services/role/roleService';
-import { getAllDepartments } from '../../../Services/department/departmentService';
+import { getRolesDropdown, getDepartmentsDropdown } from '../../../Services/drop-down/dropDownService';
 import { useAppContext } from '../../../AppContext';
 
 const HOD_ACCESS_TYPES = ['FULL_ACCESS', 'READ_ONLY', 'NO_ACCESS'];
@@ -29,7 +28,7 @@ const AddUserModal = ({ isOpen, onClose, onSuccess, initialData, defaultRole }) 
         roles: defaultRole ? [defaultRole] : [],
         active: true,
         locked: false,
-        emailVerified: false
+        emailVerified: true
     });
 
     // Populate form data when initialData changes (edit mode)
@@ -54,7 +53,7 @@ const AddUserModal = ({ isOpen, onClose, onSuccess, initialData, defaultRole }) 
                 roles: initialData.roles || (defaultRole ? [defaultRole] : []),
                 active: initialData.active !== undefined ? initialData.active : true,
                 locked: initialData.locked !== undefined ? initialData.locked : false,
-                emailVerified: initialData.emailVerified !== undefined ? initialData.emailVerified : false
+                emailVerified: initialData.emailVerified !== undefined ? initialData.emailVerified : true
             });
         } else {
             setFormData({
@@ -69,7 +68,7 @@ const AddUserModal = ({ isOpen, onClose, onSuccess, initialData, defaultRole }) 
                 roles: defaultRole ? [defaultRole] : [],
                 active: true,
                 locked: false,
-                emailVerified: false
+                emailVerified: true
             });
         }
     }, [initialData, defaultRole]);
@@ -81,9 +80,9 @@ const AddUserModal = ({ isOpen, onClose, onSuccess, initialData, defaultRole }) 
     useEffect(() => {
         const fetchRoles = async () => {
             try {
-                const response = await getAllRoles();
-                if (response?.data?.data && Array.isArray(response.data.data)) {
-                    const filtered = response.data.data.filter(
+                const response = await getRolesDropdown();
+                if (response?.data && Array.isArray(response.data)) {
+                    const filtered = response.data.filter(
                         (role) => !['ADMIN', 'SUPER_ADMIN'].includes(role.name?.toUpperCase())
                     );
                     setRoles(filtered);
@@ -103,8 +102,8 @@ const AddUserModal = ({ isOpen, onClose, onSuccess, initialData, defaultRole }) 
 
         const fetchDepartments = async () => {
             try {
-                const response = await getAllDepartments({ size: 100 });
-                const list = response?.content ?? response?.data?.content ?? [];
+                const response = await getDepartmentsDropdown();
+                const list = response?.data ?? [];
                 setDepartments(Array.isArray(list) ? list : []);
             } catch (error) {
                 console.error('Failed to fetch departments', error);

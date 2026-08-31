@@ -135,30 +135,9 @@ const HeadDashboard = () => {
         sortDirection: sortDirection || undefined,
         // Filter for leads not allotted (allotted to Head)
         assignedTo: null,
+        // Add filterRequest parameters
+        ...filterRequest,
       };
-      
-      // Add filters based on activeFilters array
-      activeFilters.forEach(filter => {
-        switch (filter.type) {
-          case 'leadStatus':
-            params.statusId = filter.value;
-            break;
-          case 'board':
-            params.boardId = filter.value;
-            break;
-          case 'grade':
-            params.gradeId = filter.value;
-            break;
-          case 'courseType':
-            params.courseTypeId = filter.value;
-            break;
-          case 'leadSource':
-            params.leadSourceId = filter.value;
-            break;
-          default:
-            break;
-        }
-      });
       
       const res = await getAllLeads(params);
       if (res?.data?.success) {
@@ -172,7 +151,7 @@ const HeadDashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, size, sortBy, sortDirection, activeFilters]);
+  }, [page, size, sortBy, sortDirection, filterRequest]);
 
   useEffect(() => {
     fetchAllLeads();
@@ -453,7 +432,21 @@ const HeadDashboard = () => {
       </div> */}
 
       {/* ── Reusable Dashboard Cards ── */}
-       <LeadCards 
+      {/* Availed and Allotted Cards in Flex Row */}
+      <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
+        <AvailedCard 
+          onCardClick={handleCardClick}
+          activeFilters={activeFilters}
+          filterRequest={filterRequest}
+        />
+        <AllottedCard 
+          onCardClick={handleCardClick}
+          activeFilters={activeFilters}
+          filterRequest={filterRequest}
+        />
+      </div>
+      
+      <LeadCards 
         onCardClick={handleCardClick}
         activeFilters={activeFilters}
       />
@@ -475,16 +468,6 @@ const HeadDashboard = () => {
         activeFilters={activeFilters}
       />
       <UnallottedCard 
-        onCardClick={handleCardClick}
-        activeFilters={activeFilters}
-        filterRequest={filterRequest}
-      />
-      <AvailedCard 
-        onCardClick={handleCardClick}
-        activeFilters={activeFilters}
-        filterRequest={filterRequest}
-      />
-      <AllottedCard 
         onCardClick={handleCardClick}
         activeFilters={activeFilters}
         filterRequest={filterRequest}

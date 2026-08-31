@@ -273,13 +273,19 @@ const Dashboard = () => {
       f => f.type === cardInfo.type && f.value === cardInfo.value
     );
     
+    let newFilters;
     if (existingFilterIndex !== -1) {
-      setActiveFilters(activeFilters.filter((_, index) => index !== existingFilterIndex));
+      newFilters = activeFilters.filter((_, index) => index !== existingFilterIndex);
     } else {
-      setActiveFilters(
-        activeFilters.filter(f => f.type !== cardInfo.type).concat(cardInfo)
-      );
+      newFilters = activeFilters.filter(f => f.type !== cardInfo.type).concat(cardInfo);
     }
+    
+    setActiveFilters(newFilters);
+    
+    // Navigate to Leads page with filter
+    setTimeout(() => {
+      navigate('/leads', { state: { activeFilters: newFilters } });
+    }, 100);
   };
 
   // Update filterRequest when activeFilters changes
@@ -640,12 +646,35 @@ const Dashboard = () => {
               filterRequest={filterRequest}
             />
           </div>
-          <LeadCards data={leadCardsData} />
-          <LeadSource data={leadSourceData} />
-          <SystemCards data={systemCardsData} />
-          <CategorywiseCard />
-          <BoardWiseCard data={boardWiseData} />
-          <GradWiseCard data={gradWiseData} />
+          <LeadCards 
+            data={leadCardsData} 
+            onCardClick={handleCardClick}
+            activeFilters={activeFilters}
+          />
+          <LeadSource 
+            data={leadSourceData} 
+            onCardClick={handleCardClick}
+            activeFilters={activeFilters}
+          />
+          <SystemCards 
+            data={systemCardsData} 
+            onCardClick={handleCardClick}
+            activeFilters={activeFilters}
+          />
+          <CategorywiseCard 
+            onCardClick={handleCardClick}
+            activeFilters={activeFilters}
+          />
+          <BoardWiseCard 
+            data={boardWiseData} 
+            onCardClick={handleCardClick}
+            activeFilters={activeFilters}
+          />
+          <GradWiseCard 
+            data={gradWiseData} 
+            onCardClick={handleCardClick}
+            activeFilters={activeFilters}
+          />
         </div>
 
         {/* Right Column: Recent Activity */}

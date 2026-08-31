@@ -198,30 +198,9 @@ const CallersDashboard = () => {
         sortDirection: sortDirection || undefined,
         // Filter for leads allotted to current caller
         assignedTo: currentCaller,
+        // Add filterRequest parameters
+        ...filterRequest,
       };
-      
-      // Add filters based on activeFilters array
-      activeFilters.forEach(filter => {
-        switch (filter.type) {
-          case 'leadStatus':
-            params.statusId = filter.value;
-            break;
-          case 'board':
-            params.boardId = filter.value;
-            break;
-          case 'grade':
-            params.gradeId = filter.value;
-            break;
-          case 'courseType':
-            params.courseTypeId = filter.value;
-            break;
-          case 'leadSource':
-            params.leadSourceId = filter.value;
-            break;
-          default:
-            break;
-        }
-      });
       
       const res = await getAllLeads(params);
       if (res?.data?.success) {
@@ -235,7 +214,7 @@ const CallersDashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, size, sortBy, sortDirection, activeFilters, currentCaller]);
+  }, [page, size, sortBy, sortDirection, filterRequest, currentCaller]);
 
   useEffect(() => {
     fetchAllLeads();
@@ -472,7 +451,7 @@ const CallersDashboard = () => {
       {/* Page Header */}
       <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px', background: 'linear-gradient(135deg, #435fff, #a571ff)', padding: '20px', borderRadius: '12px' }}>
         <div>
-          <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#ffffff' }}>Caller Dashboard</h1>
+          <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#ffffff' }}>Counselor Dashboard</h1>
           <p style={{ fontSize: '13px', color: '#e0e7ff', marginTop: '4px' }}>
             Welcome back,  Here&apos;s your allotment overview.
           </p>
@@ -502,6 +481,20 @@ const CallersDashboard = () => {
       </div> */}
 
       {/* ── Reusable Dashboard Cards ── */}
+      {/* Availed and Allotted Cards in Flex Row */}
+      <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
+        <AllottedCard 
+          onCardClick={handleCardClick}
+          activeFilters={activeFilters}
+          filterRequest={filterRequest}
+        />
+        <AvailedCard 
+          onCardClick={handleCardClick}
+          activeFilters={activeFilters}
+          filterRequest={filterRequest}
+        />
+      </div>
+      
       <LeadCards 
         onCardClick={handleCardClick}
         activeFilters={activeFilters}
@@ -526,20 +519,10 @@ const CallersDashboard = () => {
         onCardClick={handleCardClick}
         activeFilters={activeFilters}
       />
-      <AllottedCard 
-        onCardClick={handleCardClick}
-        activeFilters={activeFilters}
-        filterRequest={filterRequest}
-      />
-      <AvailedCard 
-        onCardClick={handleCardClick}
-        activeFilters={activeFilters}
-        filterRequest={filterRequest}
-      />
 
       {/* ── Charts Row ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', marginBottom: '20px' }}>
-        {/* Status Distribution Chart */}
+      {/* <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', marginBottom: '20px' }}>
+      
         <div className="card">
           <div className="card-header">
             <div>
@@ -551,7 +534,7 @@ const CallersDashboard = () => {
             <Doughnut data={statusChartData} options={statusChartOptions} />
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* ── My Allotted Leads Table ── */}
       <div className="card" ref={tableSectionRef}>

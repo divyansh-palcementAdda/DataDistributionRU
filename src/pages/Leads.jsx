@@ -5,6 +5,7 @@ import { getAllLeads, deleteLead, getLeadById, availLead } from '../Services/lea
 import { getAllCourses } from '../Services/course/course';
 import { useAppContext } from '../AppContext';
 import { usePermissions } from '../PermissionContext';
+import { useLocation } from 'react-router-dom';
 import ReusableTable from '../component/reusable/table';
 // import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import DeleteModal from "../component/reusable/deleteModel"
@@ -20,6 +21,7 @@ import PreviewDistributionModal from '../component/reusable/Leads/PreviewDistrib
 const Leads = () => {
   const { openAddLeadModal, navTo, showToast, leadRefreshTrigger } = useAppContext();
   const { canCreate, canUpdate, canDelete, canView, hasPermission } = usePermissions();
+  const location = useLocation();
 
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -256,6 +258,12 @@ const Leads = () => {
           if (!newFilterRequest.leadSourceIds) newFilterRequest.leadSourceIds = [];
           newFilterRequest.leadSourceIds.push(filter.value);
           break;
+        case 'allLeads':
+          // No specific filter needed, just show all leads
+          break;
+        case 'allSources':
+          // No specific filter needed, just show all leads
+          break;
         default:
           break;
       }
@@ -266,6 +274,15 @@ const Leads = () => {
   useEffect(() => {
     fetchCourses();
   }, []);
+
+  // Check for filters passed from navigation (e.g., from adminDashboard)
+  useEffect(() => {
+    if (location.state?.activeFilters && Array.isArray(location.state.activeFilters)) {
+      setActiveFilters(location.state.activeFilters);
+      // Clear the state after applying
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   // Remark system commented out
   // const [isRemarkModalOpen, setIsRemarkModalOpen] = useState(false);

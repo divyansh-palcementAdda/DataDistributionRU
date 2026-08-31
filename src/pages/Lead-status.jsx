@@ -141,22 +141,6 @@ const LeadStatus = () => {
       render: (value) => (typeof value === "object" && value !== null ? value?.description || "-" : value || "-"),
     },
     {
-      key: "sentimentCategory",
-      header: "Sentiment",
-      render: (sentiment) => {
-        const sentimentColors = {
-          POSITIVE: "bg-green-100 text-green-800",
-          NEGATIVE: "bg-red-100 text-red-800",
-          NEUTRAL: "bg-gray-100 text-gray-800"
-        };
-        return (
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${sentimentColors[sentiment] || sentimentColors.NEUTRAL}`}>
-            {sentiment}
-          </span>
-        );
-      }
-    },
-    {
       key: "displayOrder",
       header: "Display Order",
       render: (order) => <span className="font-medium">{order}</span>

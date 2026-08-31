@@ -517,6 +517,27 @@ const LeadStatusDetails = () => {
 
             {/* ── Dashboard Cards (BOTTOM) ── */}
             <div className="mb-8">
+                {/* Allocation Cards in single row */}
+                <div className="flex flex-wrap gap-4 mb-6">
+                    <AllottedCard
+                        onCardClick={handleCardClick}
+                        activeFilters={activeFilters}
+                        filterRequest={filterRequest}
+                        statusId={id}
+                    />
+                    <UnallottedCard
+                        onCardClick={handleCardClick}
+                        activeFilters={activeFilters}
+                        filterRequest={filterRequest}
+                        statusId={id}
+                    />
+                    <AvailedCard
+                        onCardClick={handleCardClick}
+                        activeFilters={activeFilters}
+                        filterRequest={filterRequest}
+                        statusId={id}
+                    />
+                </div>
                 <LeadSource
                     data={dashData.leadSource}
                     onCardClick={handleCardClick}
@@ -537,29 +558,6 @@ const LeadStatusDetails = () => {
                     onCardClick={handleCardClick}
                     activeFilters={activeFilters}
                 />
-                
-                {/* New Allotted/Availed/Unallotted Cards */}
-                <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mt-6">
-                    <h3 className="text-base font-bold text-gray-900 mb-4">Lead Assignment Statistics</h3>
-                    <AllottedCard
-                        onCardClick={handleCardClick}
-                        activeFilters={activeFilters}
-                        filterRequest={filterRequest}
-                        statusId={id}
-                    />
-                    <AvailedCard
-                        onCardClick={handleCardClick}
-                        activeFilters={activeFilters}
-                        filterRequest={filterRequest}
-                        statusId={id}
-                    />
-                    <UnallottedCard
-                        onCardClick={handleCardClick}
-                        activeFilters={activeFilters}
-                        filterRequest={filterRequest}
-                        statusId={id}
-                    />
-                </div>
             </div>
 
             {/* ── Filtered Lead Table ── */}

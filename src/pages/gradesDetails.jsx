@@ -511,6 +511,30 @@ const GradesDetails = () => {
             {/* ── Dashboard Cards (BOTTOM) ── */}
             {!loading && !error && (
                 <div className="mb-8">
+                    {/* Allotted, Availed, Unallotted Cards Row */}
+                    <div className="flex flex-wrap gap-4 mb-8">
+                        <AllottedCard
+                            onCardClick={handleCardClick}
+                            activeFilters={activeFilters}
+                            filterRequest={filterRequest}
+                            gradeId={id}
+                        />
+
+                        <AvailedCard
+                            onCardClick={handleCardClick}
+                            activeFilters={activeFilters}
+                            filterRequest={filterRequest}
+                            gradeId={id}
+                        />
+
+                        <UnallottedCard
+                            onCardClick={handleCardClick}
+                            activeFilters={activeFilters}
+                            filterRequest={filterRequest}
+                            gradeId={id}
+                        />
+                    </div>
+
                     <LeadCards
                         onCardClick={handleCardClick}
                         activeFilters={activeFilters}
@@ -532,24 +556,6 @@ const GradesDetails = () => {
                         data={dashData.board}
                         onCardClick={handleCardClick}
                         activeFilters={activeFilters}
-                        gradeId={id}
-                    />
-                    <UnallottedCard
-                        onCardClick={handleCardClick}
-                        activeFilters={activeFilters}
-                        filterRequest={filterRequest}
-                        gradeId={id}
-                    />
-                    <AvailedCard
-                        onCardClick={handleCardClick}
-                        activeFilters={activeFilters}
-                        filterRequest={filterRequest}
-                        gradeId={id}
-                    />
-                    <AllottedCard
-                        onCardClick={handleCardClick}
-                        activeFilters={activeFilters}
-                        filterRequest={filterRequest}
                         gradeId={id}
                     />
                 </div>

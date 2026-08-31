@@ -568,6 +568,30 @@ const DataSourceDetails = () => {
 
             {/* Dashboard Cards */}
             <div className="mb-8">
+                {/* Allotted, Availed, Unallotted Cards Row */}
+                <div className="flex flex-wrap gap-4 mb-8">
+                    <AllottedCard
+                        onCardClick={handleCardClick}
+                        activeFilters={activeFilters}
+                        filterRequest={filterRequest}
+                        leadSourceId={id}
+                    />
+
+                    <AvailedCard
+                        onCardClick={handleCardClick}
+                        activeFilters={activeFilters}
+                        filterRequest={filterRequest}
+                        leadSourceId={id}
+                    />
+
+                    <UnallottedCard
+                        onCardClick={handleCardClick}
+                        activeFilters={activeFilters}
+                        filterRequest={filterRequest}
+                        leadSourceId={id}
+                    />
+                </div>
+
                 <LeadCards
                     onCardClick={handleCardClick}
                     activeFilters={activeFilters}
@@ -589,24 +613,6 @@ const DataSourceDetails = () => {
                     data={dashData.grade}
                     onCardClick={handleCardClick}
                     activeFilters={activeFilters}
-                    leadSourceId={id}
-                />
-                <UnallottedCard
-                    onCardClick={handleCardClick}
-                    activeFilters={activeFilters}
-                    filterRequest={filterRequest}
-                    leadSourceId={id}
-                />
-                <AvailedCard
-                    onCardClick={handleCardClick}
-                    activeFilters={activeFilters}
-                    filterRequest={filterRequest}
-                    leadSourceId={id}
-                />
-                <AllottedCard
-                    onCardClick={handleCardClick}
-                    activeFilters={activeFilters}
-                    filterRequest={filterRequest}
                     leadSourceId={id}
                 />
             </div>

@@ -523,6 +523,30 @@ const CourseTypeDetails = () => {
 
             {/* ── Dashboard Cards ── */}
             <div className="mb-8">
+                {/* Allotted, Availed, Unallotted Cards Row */}
+                <div className="flex flex-wrap gap-4 mb-8">
+                    <AllottedCard
+                        onCardClick={handleCardClick}
+                        activeFilters={activeFilters}
+                        filterRequest={filterRequest}
+                        courseTypeId={id}
+                    />
+
+                    <AvailedCard
+                        onCardClick={handleCardClick}
+                        activeFilters={activeFilters}
+                        filterRequest={filterRequest}
+                        courseTypeId={id}
+                    />
+
+                    <UnallottedCard
+                        onCardClick={handleCardClick}
+                        activeFilters={activeFilters}
+                        filterRequest={filterRequest}
+                        courseTypeId={id}
+                    />
+                </div>
+
                 <LeadCards
                     onCardClick={handleCardClick}
                     activeFilters={activeFilters}
@@ -545,27 +569,6 @@ const CourseTypeDetails = () => {
                     data={dashData.grade}
                     onCardClick={handleCardClick}
                     activeFilters={activeFilters}
-                />
-
-                <UnallottedCard
-                    onCardClick={handleCardClick}
-                    activeFilters={activeFilters}
-                    filterRequest={filterRequest}
-                    courseTypeId={id}
-                />
-
-                <AvailedCard
-                    onCardClick={handleCardClick}
-                    activeFilters={activeFilters}
-                    filterRequest={filterRequest}
-                    courseTypeId={id}
-                />
-
-                <AllottedCard
-                    onCardClick={handleCardClick}
-                    activeFilters={activeFilters}
-                    filterRequest={filterRequest}
-                    courseTypeId={id}
                 />
             </div>
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { FiEye, FiMessageSquare, FiUserPlus } from 'react-icons/fi';
 import { useAppContext } from '../AppContext';
@@ -962,13 +962,27 @@ const CounselorDetails = () => {
                                     </div>
                                 </div>
 
-                                {/* Role */}
+                                {/* Department */}
                                 <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
                                     <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">
-                                        Role
+                                        Department
                                     </div>
                                     <div className="text-sm font-semibold text-gray-800">
-                                        {details?.role?.name || details?.role || 'N/A'}
+                                        {details?.departments && details.departments.length > 0
+                                            ? details.departments.map(dept => dept.name).join(', ')
+                                            : details?.department || 'N/A'}
+                                    </div>
+                                </div>
+
+                                {/* Roles */}
+                                <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                                    <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">
+                                        Roles
+                                    </div>
+                                    <div className="text-sm font-semibold text-gray-800">
+                                        {details?.roles && details.roles.length > 0
+                                            ? details.roles.join(', ')
+                                            : details?.role?.name || details?.role || 'N/A'}
                                     </div>
                                 </div>
 
@@ -979,6 +993,18 @@ const CounselorDetails = () => {
                                     </div>
                                     <div className="text-sm font-semibold text-gray-800">
                                         {details?.username || details?.userName || 'N/A'}
+                                    </div>
+                                </div>
+
+                                {/* Last Login */}
+                                <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                                    <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">
+                                        Last Login
+                                    </div>
+                                    <div className="text-sm font-semibold text-gray-800">
+                                        {details?.lastLogin
+                                            ? new Date(details.lastLogin).toLocaleString()
+                                            : 'N/A'}
                                     </div>
                                 </div>
 
@@ -1023,6 +1049,27 @@ const CounselorDetails = () => {
 
                     {/* ── Dashboard Cards ── */}
                     <div className="mb-8 mt-6">
+                        {/* Allocation Cards in single row */}
+                        <div className="flex flex-wrap gap-4 mb-6">
+                            <AllottedCard
+                                onCardClick={handleCardClick}
+                                activeFilters={activeFilters}
+                                filterRequest={filterRequest}
+                                assignedUserIds={id}
+                            />
+                            <UnallottedCard
+                                onCardClick={handleCardClick}
+                                activeFilters={activeFilters}
+                                filterRequest={filterRequest}
+                                assignedUserIds={id}
+                            />
+                            <AvailedCard
+                                onCardClick={handleCardClick}
+                                activeFilters={activeFilters}
+                                filterRequest={filterRequest}
+                                assignedUserIds={id}
+                            />
+                        </div>
                         <LeadCards
                             onCardClick={handleCardClick}
                             activeFilters={activeFilters}
@@ -1050,24 +1097,6 @@ const CounselorDetails = () => {
                             data={dashData.grade}
                             onCardClick={handleCardClick}
                             activeFilters={activeFilters}
-                            assignedUserIds={id}
-                        />
-                        <UnallottedCard
-                            onCardClick={handleCardClick}
-                            activeFilters={activeFilters}
-                            filterRequest={filterRequest}
-                            assignedUserIds={id}
-                        />
-                        <AvailedCard
-                            onCardClick={handleCardClick}
-                            activeFilters={activeFilters}
-                            filterRequest={filterRequest}
-                            assignedUserIds={id}
-                        />
-                        <AllottedCard
-                            onCardClick={handleCardClick}
-                            activeFilters={activeFilters}
-                            filterRequest={filterRequest}
                             assignedUserIds={id}
                         />
                     </div>

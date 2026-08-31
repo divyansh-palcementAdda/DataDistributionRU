@@ -506,6 +506,30 @@ const BoardDetails = () => {
             {/* ── Dashboard Cards (BOTTOM) ── */}
             {!loading && !error && (
                 <div className="mb-8">
+                    {/* Allotted, Availed, Unallotted Cards Row */}
+                    <div className="flex flex-wrap gap-4 mb-8">
+                        <AllottedCard
+                            onCardClick={handleCardClick}
+                            activeFilters={activeFilters}
+                            filterRequest={filterRequest}
+                            boardId={id}
+                        />
+
+                        <AvailedCard
+                            onCardClick={handleCardClick}
+                            activeFilters={activeFilters}
+                            filterRequest={filterRequest}
+                            boardId={id}
+                        />
+
+                        <UnallottedCard
+                            onCardClick={handleCardClick}
+                            activeFilters={activeFilters}
+                            filterRequest={filterRequest}
+                            boardId={id}
+                        />
+                    </div>
+
                     <LeadCards
                         onCardClick={handleCardClick}
                         activeFilters={activeFilters}
@@ -527,24 +551,6 @@ const BoardDetails = () => {
                         data={dashData.grade}
                         onCardClick={handleCardClick}
                         activeFilters={activeFilters}
-                        boardId={id}
-                    />
-                    <UnallottedCard
-                        onCardClick={handleCardClick}
-                        activeFilters={activeFilters}
-                        filterRequest={filterRequest}
-                        boardId={id}
-                    />
-                    <AvailedCard
-                        onCardClick={handleCardClick}
-                        activeFilters={activeFilters}
-                        filterRequest={filterRequest}
-                        boardId={id}
-                    />
-                    <AllottedCard
-                        onCardClick={handleCardClick}
-                        activeFilters={activeFilters}
-                        filterRequest={filterRequest}
                         boardId={id}
                     />
                 </div>

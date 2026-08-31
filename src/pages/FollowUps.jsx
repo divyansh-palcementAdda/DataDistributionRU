@@ -215,30 +215,30 @@ const FollowUps = () => {
           : row?.createdBy?.username || "-",
     },
 
-    {
-      key: "actions",
-      header: "Actions",
-      render: (_, row) => (
-        <div className="flex gap-2">
-          {hasPermission('FOLLOWUP_READ') && (
-            <button
-              className="btn btn-sm btn-primary"
-              onClick={() => handleViewLead(row)}
-            >
-              View
-            </button>
-          )}
-          {hasPermission('FOLLOWUP_UPDATE') && (
-            <button
-              className="btn btn-sm btn-outline"
-              onClick={() => handleReschedule(row)}
-            >
-              Reschedule
-            </button>
-          )}
-        </div>
-      ),
-    },
+    // {
+    //   key: "actions",
+    //   header: "Actions",
+    //   render: (_, row) => (
+    //     <div className="flex gap-2">
+    //       {hasPermission('FOLLOWUP_READ') && (
+    //         <button
+    //           className="btn btn-sm btn-primary"
+    //           onClick={() => handleViewLead(row)}
+    //         >
+    //           View
+    //         </button>
+    //       )}
+    //       {hasPermission('FOLLOWUP_UPDATE') && (
+    //         <button
+    //           className="btn btn-sm btn-outline"
+    //           onClick={() => handleReschedule(row)}
+    //         >
+    //           Reschedule
+    //         </button>
+    //       )}
+    //     </div>
+    //   ),
+    // },
   ];
 
   return (

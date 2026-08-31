@@ -412,27 +412,11 @@ const LeadDetail = () => {
                   {leadDetails.fullName || 'N/A'}
                 </h2>
                 <p className="text-sm text-gray-500 mb-3">
-                  {leadDetails.phoneNumber || 'N/A'}{leadDetails.email ? ` · ${leadDetails.email}` : ''}
+                  {leadDetails.leadCode || 'N/A'}{leadDetails.nextFollowUpDate ? ` · Next Follow up Date ${formatDate(leadDetails.nextFollowUpDate)}` : ''}
                 </p>
+
                 <div className="flex flex-wrap gap-2">
-                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wide ${getStatusColor(leadDetails.currentStatus)}`}>
-                    {statusName}
-                  </span>
-                  {leadDetails.course?.courseName && (
-                    <span className="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded-full border border-blue-100 uppercase tracking-wide">
-                      {leadDetails.course.courseName}
-                    </span>
-                  )}
-                  {leadDetails.leadSources?.length > 0 && (
-                    <span className="bg-gray-50 text-gray-500 text-[10px] font-medium px-2 py-0.5 rounded-full border border-gray-100">
-                      Source: {leadDetails.leadSources[0]?.name || 'N/A'}
-                    </span>
-                  )}
-                  {leadDetails.leadCode && (
-                    <span className="bg-yellow-50 text-yellow-600 text-[10px] font-medium px-2 py-0.5 rounded-full border border-yellow-100">
-                      {leadDetails.leadCode}
-                    </span>
-                  )}
+                   Assign To : {leadDetails.assignedTo || 'N/A'}
                 </div>
               </div>
             </div>
@@ -440,21 +424,24 @@ const LeadDetail = () => {
             {/* Quick Info Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
               {[
+                { label: 'Phone Number', value: leadDetails.phoneNumber || 'N/A' },
+                { label: 'Alternate Phone', value: leadDetails.alternatePhoneNumber || 'N/A' },
+                { label: 'Email', value: leadDetails.email || 'N/A' },
                 { label: 'City', value: leadDetails.city || 'N/A' },
                 { label: 'State', value: leadDetails.state || 'N/A' },
                 { label: 'Country', value: leadDetails.country || 'N/A' },
-                { label: 'Status', value: statusName },
-                { label: 'Lead Date', value: formatDate(leadDetails.createdAt) },
-                { label: 'Lead Code', value: leadDetails.leadCode || 'N/A' },
-                {
-                  label: 'Next Follow-up',
-                  value: formatDate(leadDetails.nextFollowUpDate),
-                },
-                {
-                  label: 'Last Contacted',
-                  value: leadDetails.lastContactedAt ? formatDate(leadDetails.lastContactedAt) : '-',
-                },
-                { label: 'Assigned To', value: assignedToName },
+                // { label: 'Status', value: statusName },
+                // { label: 'Lead Date', value: formatDate(leadDetails.createdAt) },
+                // { label: 'Lead Code', value: leadDetails.leadCode || 'N/A' },
+                // {
+                //   label: 'Next Follow-up',
+                //   value: formatDate(leadDetails.nextFollowUpDate),
+                // },
+                // {
+                //   label: 'Last Contacted',
+                //   value: leadDetails.lastContactedAt ? formatDate(leadDetails.lastContactedAt) : '-',
+                // },
+                // { label: 'Assigned To', value: assignedToName },
               ].map((item, idx) => (
                 <div key={idx} className="bg-gray-50 p-3 rounded-lg border border-gray-100">
                   <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{item.label}</div>
@@ -496,25 +483,34 @@ const LeadDetail = () => {
                   )}
                 </div>
 
-                {/* Board */}
+                {/* Specialization */}
                 <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Board</div>
+                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Specialization</div>
                   <div className="text-xs font-semibold text-gray-800">
-                    {leadDetails.board?.name || 'N/A'}
+                    {leadDetails.board?.name || leadDetails.grade?.name || 'N/A'}
                   </div>
                   {leadDetails.board?.code && (
                     <div className="text-[9px] text-gray-400 mt-0.5">{leadDetails.board.code}</div>
                   )}
-                </div>
-
-                {/* Grade */}
-                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Grade</div>
-                  <div className="text-xs font-semibold text-gray-800">
-                    {leadDetails.grade?.name || 'N/A'}
-                  </div>
                   {leadDetails.grade?.code && (
                     <div className="text-[9px] text-gray-400 mt-0.5">{leadDetails.grade.code}</div>
+                  )}
+                </div>
+
+                {/* Source */}
+                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Source</div>
+                  <div className="text-xs font-semibold text-gray-800">
+                    {leadDetails.sourceDetails || 'N/A'}
+                  </div>
+                  {leadDetails.leadSources?.length > 0 && (
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {leadDetails.leadSources.map((source) => (
+                        <span key={source.id} className="text-[9px] bg-blue-50 text-blue-500 px-1.5 py-0.5 rounded border border-blue-100">
+                          {source.name}
+                        </span>
+                      ))}
+                    </div>
                   )}
                 </div>
               </div>
@@ -542,33 +538,10 @@ const LeadDetail = () => {
               )}
             </div>
 
-            {/* Contact Information */}
-            <div className="mt-5 pt-5 border-t border-gray-100">
-              <h3 className="text-sm font-bold text-gray-800 mb-4">Contact Information</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Phone Number</div>
-                  <div className="text-xs font-semibold text-gray-800">{leadDetails.phoneNumber || 'N/A'}</div>
-                </div>
-                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Alternate Phone</div>
-                  <div className="text-xs font-semibold text-gray-800">{leadDetails.alternatePhoneNumber || 'N/A'}</div>
-                </div>
-                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Email</div>
-                  <div className="text-xs font-semibold text-gray-800">{leadDetails.email || 'N/A'}</div>
-                </div>
-                {leadDetails.sourceDetails && (
-                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Source Details</div>
-                    <div className="text-xs font-semibold text-gray-800">{leadDetails.sourceDetails}</div>
-                  </div>
-                )}
-              </div>
-            </div>
+          
 
             {/* Lead Sources */}
-            {leadDetails.leadSources?.length > 0 && (
+            {/* {leadDetails.leadSources?.length > 0 && (
               <div className="mt-5 pt-5 border-t border-gray-100">
                 <h3 className="text-sm font-bold text-gray-800 mb-4">Lead Sources</h3>
                 <div className="flex flex-wrap gap-2">
@@ -579,10 +552,10 @@ const LeadDetail = () => {
                   ))}
                 </div>
               </div>
-            )}
+            )} */}
 
             {/* Created By */}
-            {leadDetails.createdBy && (
+            {/* {leadDetails.createdBy && (
               <div className="mt-5 pt-5 border-t border-gray-100">
                 <h3 className="text-sm font-bold text-gray-800 mb-4">Created By</h3>
                 <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
@@ -590,7 +563,7 @@ const LeadDetail = () => {
                   <div className="text-[10px] text-gray-500 mt-1">{leadDetails.createdBy.email || 'N/A'}</div>
                 </div>
               </div>
-            )}
+            )} */}
 
             {/* Lead Status History */}
             <div className="mt-5 pt-5 border-t border-gray-100">

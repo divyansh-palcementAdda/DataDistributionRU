@@ -5,7 +5,7 @@ import { usePermissions } from '../PermissionContext';
 import ReusableTable from '../component/reusable/table';
 import { getAllFollowups } from '../Services/followUp/followService';
 import FollowupFormModal from "../component/reusable/FollowupFormModal";
-import LeadCards from "../component/reusable/DashBoards/leadCards";
+import FollowUpCards from "../component/reusable/DashBoards/followUpCards";
 import ScheduleModal from "../component/reusable/Leads/scheduleModel";
 
 const formatFollowUpDate = (value) => {
@@ -265,7 +265,7 @@ const FollowUps = () => {
       </div>
 
       {/* ── Stat Cards ── */}
-      <LeadCards 
+      <FollowUpCards 
         onCardClick={handleCardClick} 
         activeFilters={selectedLeadStatusId ? [{ type: 'leadStatus', value: selectedLeadStatusId }] : []}
       />

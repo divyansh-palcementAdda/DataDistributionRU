@@ -82,3 +82,12 @@ export const getAllottedCount = async (filterRequest = {}) => {
     }
 };
 
+export const getFollowupStatusCounts = async (params = {}) => {
+    try {
+        const response = await axiosInstance.get(ApiRoutes.Dashboard.followupStatusCounts, { params });
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+

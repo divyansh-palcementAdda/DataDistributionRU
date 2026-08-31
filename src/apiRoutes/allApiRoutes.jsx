@@ -158,6 +158,7 @@ const ApiRoutes = {
         unallottedCount: '/api/dashboard/leads/unallotted/count',
         availedCount: '/api/dashboard/leads/availed/count',
         allottedCount: '/api/dashboard/leads/allotted/count',
+        followupStatusCounts: '/api/dashboard/followups/status-counts',
     },
 
     Distribution: {
@@ -186,7 +187,9 @@ const ApiRoutes = {
         leadSources: '/api/dropdowns/lead-sources',
         leadStatuses: '/api/dropdowns/lead-statuses',
         roles: '/api/dropdowns/roles',
-        users: '/api/dropdowns/users'
+        users: '/api/dropdowns/users',
+        followupStatuses: '/api/dropdowns/followup-statuses',
+        followupLeadStatuses: '/api/dropdowns/followup-lead-statuses'
     }
 }
 

@@ -4,6 +4,7 @@ import { useAppContext } from '../AppContext';
 import { usePermissions } from '../PermissionContext';
 import CustomButton from '../component/reusable/CustomButton';
 import ScheduleModal from "../component/reusable/Leads/scheduleModel";
+import CallModal from '../component/reusable/CallModal';
 import WhatsAppModal from '../component/reusable/WhatsAppModal';
 import EmailModal from '../component/reusable/EmailModal';
 import ReusableTable from '../component/reusable/table';
@@ -17,6 +18,7 @@ const LeadDetail = () => {
   const { navTo, showToast, openAddLeadModal } = useAppContext();
   const { hasPermission } = usePermissions();
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [isCallModalOpen, setIsCallModalOpen] = useState(false);
   const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [leadDetails, setLeadDetails] = useState(null);
@@ -345,47 +347,59 @@ const LeadDetail = () => {
           {/* Lead Info Card */}
           <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm w-full">
 
-            {/* Card Header with Edit Button */}
+            {/* Card Header with Edit and Call Buttons */}
             <div className="flex items-center justify-between mb-5">
               <h3 className="text-sm font-bold text-gray-700">Lead Info</h3>
-              {hasPermission('LEAD_UPDATE') && (
+              <div className="flex gap-2">
+                {hasPermission('LEAD_UPDATE') && (
+                  <button
+                    onClick={() => {
+                      const editPayload = {
+                        id: leadDetails.id ?? leadDetails.leadId,
+                        leadId: leadDetails.id ?? leadDetails.leadId,
+                        fullName: leadDetails.fullName || '',
+                        phoneNumber: leadDetails.phoneNumber || '',
+                        alternatePhoneNumber: leadDetails.alternatePhoneNumber || '',
+                        email: leadDetails.email || '',
+                        city: leadDetails.city || '',
+                        state: leadDetails.state || '',
+                        country: leadDetails.country || '',
+                        leadSourceIds: leadDetails.leadSources?.map((s) => s.id) || [],
+                        sourceDetails: leadDetails.sourceDetails || '',
+                        interestedCourseIds: leadDetails.interestedCourses?.map((c) => c.id) || [],
+                        courseId: leadDetails.course?.id || '',
+                        registeredCourseId: leadDetails.registeredCourse?.id || '',
+                        boardId: leadDetails.board?.id || '',
+                        gradeId: leadDetails.grade?.id || '',
+                        remarks: leadDetails.remarks || '',
+                        assignedToUserId: leadDetails.assignedTo?.id || '',
+                        statusId: leadDetails.currentStatus?.id || '',
+                        active: leadDetails.active !== undefined ? leadDetails.active : true,
+                        nextFollowUpDate: leadDetails.nextFollowUpDate || '',
+                      };
+                      openAddLeadModal(editPayload);
+                    }}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-lg transition-colors"
+                    title="Edit Lead"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    </svg>
+                    Edit
+                  </button>
+                )}
                 <button
-                  onClick={() => {
-                    const editPayload = {
-                      id: leadDetails.id ?? leadDetails.leadId,
-                      leadId: leadDetails.id ?? leadDetails.leadId,
-                      fullName: leadDetails.fullName || '',
-                      phoneNumber: leadDetails.phoneNumber || '',
-                      alternatePhoneNumber: leadDetails.alternatePhoneNumber || '',
-                      email: leadDetails.email || '',
-                      city: leadDetails.city || '',
-                      state: leadDetails.state || '',
-                      country: leadDetails.country || '',
-                      leadSourceIds: leadDetails.leadSources?.map((s) => s.id) || [],
-                      sourceDetails: leadDetails.sourceDetails || '',
-                      interestedCourseIds: leadDetails.interestedCourses?.map((c) => c.id) || [],
-                      courseId: leadDetails.course?.id || '',
-                      registeredCourseId: leadDetails.registeredCourse?.id || '',
-                      boardId: leadDetails.board?.id || '',
-                      gradeId: leadDetails.grade?.id || '',
-                      remarks: leadDetails.remarks || '',
-                      assignedToUserId: leadDetails.assignedTo?.id || '',
-                      statusId: leadDetails.currentStatus?.id || '',
-                      active: leadDetails.active !== undefined ? leadDetails.active : true,
-                      nextFollowUpDate: leadDetails.nextFollowUpDate || '',
-                    };
-                    openAddLeadModal(editPayload);
-                  }}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-lg transition-colors"
-                  title="Edit Lead"
+                  onClick={() => setIsCallModalOpen(true)}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-green-600 bg-green-50 hover:bg-green-100 border border-green-200 px-3 py-1.5 rounded-lg transition-colors"
+                  title="Call Lead"
                 >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
                   </svg>
-                  Edit
+                  Call
                 </button>
-              )}
+              </div>
             </div>
 
             {/* Avatar + Name */}
@@ -757,41 +771,91 @@ const LeadDetail = () => {
               <div className="mt-4 bg-gradient-to-br from-green-50 to-teal-50 border border-green-100 rounded-lg p-4">
                 <h4 className="text-sm font-bold text-green-800 mb-3">Details</h4>
                 <div className="space-y-2">
-                  {Object.entries(communicationConfig).map(([key, value]) => (
-                    <div key={key} className="bg-white p-2 rounded border border-gray-100">
-                      <div className="text-[9px] font-bold text-gray-400 uppercase">{key}</div>
-                      <div className="text-xs font-semibold text-gray-700 break-all">
-                        {key === 'imageUrl' && typeof value === 'string' ? (
-                          <img 
-                            src={`${BASE_URL}${value}`} 
-                            alt="Course image" 
-                            className="mt-1 rounded border border-gray-200 max-w-full h-auto"
-                            onError={(e) => {
-                              e.target.style.display = 'none';
-                            }}
-                          />
-                        ) : key === 'availableImages' && Array.isArray(value) ? (
-                          <div className="mt-1 grid grid-cols-2 gap-2">
-                            {value.map((img, idx) => (
-                              <img
-                                key={idx}
-                                src={`${BASE_URL}${img.imageUrl || img}`}
-                                alt={`Available image ${idx + 1}`}
-                                className="rounded border border-gray-200 max-w-full h-auto"
-                                onError={(e) => {
-                                  e.target.style.display = 'none';
-                                }}
-                              />
-                            ))}
-                          </div>
-                        ) : typeof value === 'object' ? (
-                          JSON.stringify(value)
-                        ) : (
-                          String(value)
-                        )}
+                  {/* Lead Name */}
+                  {communicationConfig.leadFullName && (
+                    <div className="bg-white p-2 rounded border border-gray-100">
+                      <div className="text-[9px] font-bold text-gray-400 uppercase">Lead Name</div>
+                      <div className="text-xs font-semibold text-gray-700">{communicationConfig.leadFullName}</div>
+                    </div>
+                  )}
+
+                  {/* Course Info */}
+                  {communicationConfig.course && (
+                    <div className="bg-white p-2 rounded border border-gray-100">
+                      <div className="text-[9px] font-bold text-gray-400 uppercase">Course</div>
+                      <div className="text-xs font-semibold text-gray-700">{communicationConfig.course.courseName}</div>
+                      <div className="text-[10px] text-gray-500 mt-0.5">{communicationConfig.course.courseCode}</div>
+                    </div>
+                  )}
+
+                  {/* Template Info */}
+                  {communicationConfig.template && (
+                    <div className="bg-white p-2 rounded border border-gray-100">
+                      <div className="text-[9px] font-bold text-gray-400 uppercase">Template</div>
+                      <div className="text-xs font-semibold text-gray-700">{communicationConfig.template.name}</div>
+                      <div className="text-[10px] text-gray-500 mt-0.5">Channel: {communicationConfig.template.channel}</div>
+                    </div>
+                  )}
+
+                  {/* Active Image */}
+                  {communicationConfig.activeImage && (
+                    <div className="bg-white p-2 rounded border border-gray-100">
+                      <div className="text-[9px] font-bold text-gray-400 uppercase">Active Image</div>
+                      <div className="text-xs font-semibold text-gray-700">{communicationConfig.activeImage.displayName}</div>
+                      {communicationConfig.activeImage.imageUrl && (
+                        <img 
+                          src={`${BASE_URL}${communicationConfig.activeImage.imageUrl}`} 
+                          alt="Active image" 
+                          className="mt-2 rounded border border-gray-200 max-w-full h-auto"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                          }}
+                        />
+                      )}
+                    </div>
+                  )}
+
+                  {/* Rendered Content */}
+                  {communicationConfig.renderedContent && (
+                    <div className="bg-white p-2 rounded border border-gray-100">
+                      <div className="text-[9px] font-bold text-gray-400 uppercase">Content</div>
+                      <div className="text-xs font-semibold text-gray-700">{communicationConfig.renderedContent}</div>
+                    </div>
+                  )}
+
+                  {/* USPs */}
+                  {communicationConfig.usps && communicationConfig.usps.length > 0 && (
+                    <div className="bg-white p-2 rounded border border-gray-100">
+                      <div className="text-[9px] font-bold text-gray-400 uppercase">USPs</div>
+                      <div className="mt-1 space-y-1">
+                        {communicationConfig.usps.map((usp, idx) => (
+                          <div key={idx} className="text-xs text-gray-700">• {usp.content}</div>
+                        ))}
                       </div>
                     </div>
-                  ))}
+                  )}
+
+                  {/* Available Images */}
+                  {communicationConfig.availableImages && communicationConfig.availableImages.length > 0 && (
+                    <div className="bg-white p-2 rounded border border-gray-100">
+                      <div className="text-[9px] font-bold text-gray-400 uppercase">Available Images</div>
+                      <div className="mt-1 grid grid-cols-2 gap-2">
+                        {communicationConfig.availableImages.map((img, idx) => (
+                          <div key={idx}>
+                            <div className="text-xs text-gray-700 mb-1">{img.displayName}</div>
+                            <img
+                              src={`${BASE_URL}${img.imageUrl}`}
+                              alt={img.displayName}
+                              className="rounded border border-gray-200 max-w-full h-auto"
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : selectedCourse ? (
@@ -805,6 +869,13 @@ const LeadDetail = () => {
         isOpen={isScheduleModalOpen}
         onClose={() => setIsScheduleModalOpen(false)}
         onSubmit={handleScheduleSubmit}
+      />
+
+      <CallModal
+        isOpen={isCallModalOpen}
+        onClose={() => setIsCallModalOpen(false)}
+        studentData={leadDetails}
+        onScheduleOpen={() => setIsScheduleModalOpen(true)}
       />
 
       <WhatsAppModal

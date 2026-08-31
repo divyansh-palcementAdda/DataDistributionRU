@@ -1,12 +1,12 @@
 import { useState, useMemo, useEffect } from 'react';
-import { FiEye, FiEdit, FiTrash2, FiMessageSquare } from 'react-icons/fi';
+import { FiEye, FiEdit, FiTrash2 } from 'react-icons/fi';
 import { statusConfig } from '../mockData';
 import { getAllLeads, deleteLead, getLeadById, availLead } from '../Services/lead/leadService';
 import { getAllCourses } from '../Services/course/course';
 import { useAppContext } from '../AppContext';
 import { usePermissions } from '../PermissionContext';
 import ReusableTable from '../component/reusable/table';
-import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
+// import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import DeleteModal from "../component/reusable/deleteModel"
 import AssignLeadModal from '../component/reusable/Leads/AssignLeadModal';
 import LeadCards from '../component/reusable/DashBoards/leadCards';
@@ -267,8 +267,9 @@ const Leads = () => {
     fetchCourses();
   }, []);
 
-  const [isRemarkModalOpen, setIsRemarkModalOpen] = useState(false);
-  const [selectedLeadForRemark, setSelectedLeadForRemark] = useState(null);
+  // Remark system commented out
+  // const [isRemarkModalOpen, setIsRemarkModalOpen] = useState(false);
+  // const [selectedLeadForRemark, setSelectedLeadForRemark] = useState(null);
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isAllotModalOpen, setIsAllotModalOpen] = useState(false);
@@ -276,21 +277,22 @@ const Leads = () => {
   const [usersData, setUsersData] = useState([]);
   
 
-  const openRemarkModal = (lead) => {
-    setSelectedLeadForRemark(lead);
-    setIsRemarkModalOpen(true);
-  };
+  // Remark system functions commented out
+  // const openRemarkModal = (lead) => {
+  //   setSelectedLeadForRemark(lead);
+  //   setIsRemarkModalOpen(true);
+  // };
 
-  const closeRemarkModal = () => {
-    setIsRemarkModalOpen(false);
-    setSelectedLeadForRemark(null);
-  };
+  // const closeRemarkModal = () => {
+  //   setIsRemarkModalOpen(false);
+  //   setSelectedLeadForRemark(null);
+  // };
 
-  const handleSaveRemark = async (lead, remark) => {
-    showToast(`Remark saved for ${lead.fullName || lead.name}`);
-    // After saving the remark, refetch the leads to show updated data
-    await fetchLeads();
-  };
+  // const handleSaveRemark = async (lead, remark) => {
+  //   showToast(`Remark saved for ${lead.fullName || lead.name}`);
+  //   // After saving the remark, refetch the leads to show updated data
+  //   await fetchLeads();
+  // };
 
   const openAllotModal = (leadOrIds) => {
     setSelectedLeadForAllot(leadOrIds);
@@ -387,12 +389,6 @@ const Leads = () => {
         </div>
       </div>
 
-      {/* ── Stat Cards ── */}
-      <LeadCards
-        onCardClick={handleCardClick}
-        selectedCard={selectedCard}
-      />
-      
       {/* ── New Lead Status Cards ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }}>
         <UnallottedCard 
@@ -411,6 +407,12 @@ const Leads = () => {
           filterRequest={filterRequest}
         />
       </div>
+
+      {/* ── Stat Cards ── */}
+      <LeadCards
+        onCardClick={handleCardClick}
+        selectedCard={selectedCard}
+      />
 
       {/* ── Filter Bar ── */}
       <div className="flex gap-2 flex-wrap mb-4">
@@ -698,13 +700,14 @@ const Leads = () => {
 
               return (
                 <div className="flex justify-center items-center gap-3">
-                  <button
+                  {/* Remark button commented out */}
+                  {/* <button
                     className="text-blue-500 hover:text-blue-700 transition bg-transparent border-none cursor-pointer"
                     title="Remark"
                     onClick={() => openRemarkModal(safeRow)}
                   >
                     <FiMessageSquare size={18} />
-                  </button>
+                  </button> */}
                   {(hasPermission('LEAD_READ') || hasPermission('LEAD_VIEW')) && (
                     <button
                       className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer"
@@ -839,14 +842,14 @@ const Leads = () => {
       </div>
 
 
-      {/* Lead Remark Modal */}
-      <LeadRemarkModal
+      {/* Lead Remark Modal - commented out */}
+      {/* <LeadRemarkModal
         isOpen={isRemarkModalOpen}
         onClose={closeRemarkModal}
         lead={selectedLeadForRemark}
         followUpId={selectedLeadForRemark?.followUpId || selectedLeadForRemark?.nextFollowUpId || selectedLeadForRemark?.followupId}
         onSave={handleSaveRemark}
-      />
+      /> */}
       <DeleteModal
         isOpen={isDeleteModalOpen}
         onClose={closeDeleteModal}

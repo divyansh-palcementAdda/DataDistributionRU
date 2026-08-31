@@ -12,6 +12,8 @@ const ApiRoutes = {
         sourceWiseStats: '/api/leads/stats/source-wise',
         //schedule lead ......
         leadSchedule: '/api/leads/{id}/followups',
+        // get lead follow-ups
+        getFollowUps: '/api/leads/{id}/followups',
         // mark a lead .
         markLead: '/api/leads/followups/{followUpId}/complete',
         completeFollowUp: '/api/leads/followups/{followUpId}/complete',

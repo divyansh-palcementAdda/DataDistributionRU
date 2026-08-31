@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useCallback, useRef } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { leads, statusConfig } from '../../mockData';
 import {
   Chart as ChartJS,
@@ -10,8 +10,8 @@ import {
   Legend,
 } from 'chart.js';
 import { useAppContext } from '../../AppContext';
+import { useNavigate } from 'react-router-dom';
 import { Doughnut } from 'react-chartjs-2';
-import ReusableTable from '../../component/reusable/table';
 import BoardWiseCard from '../../component/reusable/DashBoards/BoardWiseCard';
 import SystemCards from '../../component/reusable/DashBoards/SystemCards';
 import CategorywiseCard from '../../component/reusable/DashBoards/categorywiseCard';
@@ -87,28 +87,18 @@ const ArrowUp = () => (
 
 const HeadDashboard = () => {
   const { navTo } = useAppContext();
+  const navigate = useNavigate();
   const [selectedLeads, setSelectedLeads] = useState([]);
   const [allotModalOpen, setAllotModalOpen] = useState(false);
   const [selectedCaller, setSelectedCaller] = useState('');
   
   // API State
-  const [leadsData, setLeadsData] = useState([]);
   const [allLeadsData, setAllLeadsData] = useState([]); // For stats and other components
   const [activeFilters, setActiveFilters] = useState([]); // Array of active filters
   const [filterRequest, setFilterRequest] = useState({});
-  const [page, setPage] = useState(0);
-  const [size, setSize] = useState(10);
-  const [totalElements, setTotalElements] = useState(0);
-  const [totalPages, setTotalPages] = useState(0);
-  const [loading, setLoading] = useState(false);
-  const [sortBy, setSortBy] = useState('createdAt');
-  const [sortDirection, setSortDirection] = useState('desc');
-  
-  // Ref for table section
-  const tableSectionRef = useRef(null);
 
   // Fetch all leads for stats and other components
-  const fetchAllLeads = useCallback(async () => {
+  const fetchAllLeads = async () => {
     try {
       const params = {
         page: 0,
@@ -122,84 +112,14 @@ const HeadDashboard = () => {
     } catch (error) {
       console.error("Failed to fetch all leads", error);
     }
-  }, []);
-
-  // Smart conversion function: array to singular/plural based on length
-  const convertFilterRequest = (request) => {
-    const converted = { ...request };
-    
-    // Convert leadStatusIds → statusId or statusIds
-    if (converted.leadStatusIds?.length === 1) {
-      converted.statusId = converted.leadStatusIds[0];
-      delete converted.leadStatusIds;
-    }
-    
-    // Convert boardIds → boardId or boardIds
-    if (converted.boardIds?.length === 1) {
-      converted.boardId = converted.boardIds[0];
-      delete converted.boardIds;
-    }
-    
-    // Convert gradeIds → gradeId or gradeIds
-    if (converted.gradeIds?.length === 1) {
-      converted.gradeId = converted.gradeIds[0];
-      delete converted.gradeIds;
-    }
-    
-    // Convert courseTypeIds → courseTypeId or courseTypeIds
-    if (converted.courseTypeIds?.length === 1) {
-      converted.courseTypeId = converted.courseTypeIds[0];
-      delete converted.courseTypeIds;
-    }
-    
-    // Convert leadSourceIds → leadSourceId or leadSourceIds
-    if (converted.leadSourceIds?.length === 1) {
-      converted.leadSourceId = converted.leadSourceIds[0];
-      delete converted.leadSourceIds;
-    }
-    
-    return converted;
   };
-
-  // Fetch leads from API for table (unallotted leads with card filtering)
-  const fetchLeads = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = {
-        page: page,
-        size: size,
-        sortBy: sortBy || undefined,
-        sortDirection: sortDirection || undefined,
-        // Filter for leads not allotted (allotted to Head)
-        assignedTo: null,
-        // Add filterRequest parameters with smart conversion
-        ...convertFilterRequest(filterRequest),
-      };
-      
-      const res = await getAllLeads(params);
-      if (res?.data?.success) {
-        const content = res.data.data.content;
-        setLeadsData(content);
-        setTotalElements(res.data.data.totalElements);
-        setTotalPages(res.data.data.totalPages);
-      }
-    } catch (error) {
-      console.error("Failed to fetch leads", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, size, sortBy, sortDirection, filterRequest]);
 
   useEffect(() => {
     fetchAllLeads();
-    fetchLeads();
-  }, [fetchAllLeads, fetchLeads]);
-
-  // Since we're filtering at API level with assignedTo: null, leadsData already contains only unallotted leads
-  const headAllottedLeads = leadsData;
+  }, []);
 
   const calculatedStatCards = useMemo(() => {
-    const allottedToMe = headAllottedLeads.length;
+    const allottedToMe = allLeadsData.filter(l => !l.assignedTo || l.assignedTo === '').length;
     const allottedToCallers = allLeadsData.filter(lead => lead.assignedTo && lead.assignedTo !== '').length;
     const notAllotted = allLeadsData.filter(l => !l.assignedTo || l.assignedTo === '').length;
     const registered = allLeadsData.filter(l => l.currentStatus === 'registered' || l.currentStatus === 'REGISTERED').length;
@@ -213,139 +133,13 @@ const HeadDashboard = () => {
         default: return card;
       }
     });
-  }, [headAllottedLeads, allLeadsData]);
+  }, [allLeadsData]);
 
   // Data for reusable cards
   const systemData = useMemo(() => ({
     totalDataInSystem: allLeadsData.length,
     totalSourceOfData: [...new Set(allLeadsData.map(l => l.source?.name))].length,
   }), [allLeadsData]);
-
-  // Status distribution chart for Head's leads
-  const statusChartData = useMemo(() => {
-    const statusCounts = {};
-    headAllottedLeads.forEach(lead => {
-      const status = lead.currentStatus || 'raw';
-      // Handle both string and object status
-      const statusKey = typeof status === 'object' ? status?.code || status?.name || 'raw' : status;
-      statusCounts[statusKey] = (statusCounts[statusKey] || 0) + 1;
-    });
-
-    const labels = Object.keys(statusCounts).map(s => statusConfig[s]?.label || s);
-    const data = Object.values(statusCounts);
-    const colors = Object.keys(statusCounts).map(s => statusConfig[s]?.color || '#64748B');
-
-    return {
-      labels,
-      datasets: [{
-        data,
-        backgroundColor: colors,
-        borderWidth: 0,
-        hoverOffset: 6,
-      }],
-    };
-  }, [headAllottedLeads]);
-
-  const statusChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    cutout: '65%',
-    plugins: {
-      legend: {
-        position: 'bottom',
-        labels: { font: { size: 10 }, padding: 8, boxWidth: 10 },
-      },
-    },
-  };
-
-  // Table columns for Head's allotted leads
-  const leadColumns = [
-    { 
-      key: 'name', 
-      header: 'Lead Name', 
-      render: (value, row) => {
-        const nameValue = value || row.fullName;
-        if (typeof nameValue === 'object' && nameValue !== null) {
-          return nameValue?.name || nameValue?.fullName || nameValue?.firstName || '—';
-        }
-        return nameValue || '—';
-      }
-    },
-    { 
-      key: 'phone', 
-      header: 'Phone', 
-      render: (value, row) => {
-        const phoneValue = value || row.phoneNumber;
-        if (typeof phoneValue === 'object' && phoneValue !== null) {
-          return phoneValue?.phone || phoneValue?.mobileNo || '—';
-        }
-        return phoneValue || '—';
-      }
-    },
-    { 
-      key: 'course', 
-      header: 'Course',
-      render: (value, row) => {
-        const courseValue = value || row.courseInterested;
-        if (typeof courseValue === 'object' && courseValue !== null) {
-          return courseValue?.courseName || courseValue?.name || '—';
-        }
-        return courseValue || '—';
-      }
-    },
-    { 
-      key: 'status', 
-      header: 'Status',
-      render: (value, row) => {
-        const statusValue = value || row.currentStatus;
-        let displayStatus = '—';
-        
-        if (typeof statusValue === 'object' && statusValue !== null) {
-          displayStatus = statusValue?.name || statusValue?.code || '—';
-        } else if (typeof statusValue === 'string') {
-          displayStatus = statusValue;
-        }
-        
-        const config = statusConfig[displayStatus] || { label: displayStatus, color: '#64748B' };
-        return (
-          <span className="badge" style={{
-            background: `${config.color}15`,
-            color: config.color,
-            padding: '4px 8px',
-            borderRadius: '6px',
-            fontSize: '11px',
-            fontWeight: '600',
-          }}>
-            {config.label}
-          </span>
-        );
-      }
-    },
-    { 
-      key: 'source', 
-      header: 'Source',
-      render: (value, row) => {
-        const sourceValue = value || row.source;
-        if (typeof sourceValue === 'object' && sourceValue !== null) {
-          return sourceValue?.name || '—';
-        }
-        return sourceValue || '—';
-      }
-    },
-    { 
-      key: 'city', 
-      header: 'City', 
-      render: (value, row) => {
-        const cityValue = value || row.city;
-        if (typeof cityValue === 'object' && cityValue !== null) {
-          return cityValue?.name || cityValue?.city || '—';
-        }
-        return cityValue || '—';
-      }
-    },
-  ];
-
-
 
   const handleAllotToCaller = () => {
     if (selectedLeads.length === 0 || !selectedCaller) {
@@ -366,22 +160,19 @@ const HeadDashboard = () => {
       f => f.type === cardInfo.type && f.value === cardInfo.value
     );
     
+    let newFilters;
     if (existingFilterIndex !== -1) {
-      // Remove filter if already exists
-      setActiveFilters(activeFilters.filter((_, index) => index !== existingFilterIndex));
+      newFilters = activeFilters.filter((_, index) => index !== existingFilterIndex);
     } else {
-      // Remove existing filter of same type (single filter per type)
-      setActiveFilters(
-        activeFilters.filter(f => f.type !== cardInfo.type).concat(cardInfo)
-      );
+      newFilters = activeFilters.filter(f => f.type !== cardInfo.type).concat(cardInfo);
     }
     
-    setPage(0); // filter change hone par page reset
+    setActiveFilters(newFilters);
     
-    // Scroll to table section smoothly
-    if (tableSectionRef.current) {
-      tableSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    // Navigate to Leads page with filter (Leads.jsx will handle smart conversion)
+    setTimeout(() => {
+      navigate('/leads', { state: { activeFilters: newFilters } });
+    }, 100);
   };
 
   // Update filterRequest when activeFilters changes
@@ -425,22 +216,6 @@ const HeadDashboard = () => {
     setFilterRequest(newFilterRequest);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeFilters]);
-
-  const handleSort = (columnKey, direction) => {
-    // Map frontend column keys to backend field names (using camelCase from API response)
-    const fieldMapping = {
-      'name': 'fullName',
-      'phone': 'phoneNumber',
-      'course': 'courseInterested',
-      'status': 'currentStatus',
-      'source': 'source.name',
-      'city': 'city.name',
-    };
-    
-    const backendField = fieldMapping[columnKey] || columnKey;
-    setSortBy(backendField);
-    setSortDirection(direction);
-  };
 
   return (
     <div>
@@ -512,8 +287,7 @@ const HeadDashboard = () => {
      
 
       {/* ── Charts Row ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', marginBottom: '20px' }}>
-        {/* Status Distribution Chart */}
+      {/* <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', marginBottom: '20px' }}>
         <div className="card">
           <div className="card-header">
             <div>
@@ -525,71 +299,7 @@ const HeadDashboard = () => {
             <Doughnut data={statusChartData} options={statusChartOptions} />
           </div>
         </div>
-      </div>
-
-      {/* ── Leads Allotted to Head Table ── */}
-      <div className="card" style={{ marginBottom: '20px' }} ref={tableSectionRef}>
-        <div className="card-header">
-          <div className="card-title">Leads Allotted to You</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {/* Active card filter badges */}
-            {activeFilters.map((filter, index) => (
-              <div 
-                key={`${filter.type}-${filter.value}-${index}`}
-                className="flex items-center gap-1.5 px-3 py-1 bg-indigo-50 border border-indigo-200 rounded-md text-sm text-indigo-700 font-medium"
-              >
-                <span>{filter.label}</span>
-                <button
-                  onClick={() => {
-                    setActiveFilters(activeFilters.filter((_, i) => i !== index));
-                    setPage(0);
-                  }}
-                  className="ml-1 text-indigo-400 hover:text-indigo-700 bg-transparent border-none cursor-pointer leading-none"
-                  title="Clear filter"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
-            {/* Clear all filters button */}
-            {activeFilters.length > 0 && (
-              <button
-                onClick={() => {
-                  setActiveFilters([]);
-                  setPage(0);
-                }}
-                className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 rounded border border-gray-300 cursor-pointer"
-                title="Clear all filters"
-              >
-                Clear All
-              </button>
-            )}
-            <span className="badge badge-primary">{headAllottedLeads.length} leads</span>
-          </div>
-        </div>
-        <ReusableTable
-          columns={leadColumns}
-          data={headAllottedLeads}
-          isServerSide={true}
-          totalElements={totalElements}
-          totalPages={totalPages}
-          currentPage={page + 1}
-          rowsPerPage={size}
-          onPageChange={(newPage) => setPage(newPage - 1)}
-          onRowsPerPageChange={(newSize) => {
-            setSize(newSize);
-            setPage(0);
-          }}
-          sortBy={sortBy}
-          sortDirection={sortDirection}
-          onSort={handleSort}
-          onView={(lead) => {
-            const leadId = lead.id || lead.leadId;
-            navTo('lead-detail', { id: leadId });
-          }}
-          emptyMessage={loading ? "Loading..." : "No leads match your filters."}
-        />
-      </div>
+      </div> */}
 
       {/* ── Allotment Modal ── */}
       {allotModalOpen && (

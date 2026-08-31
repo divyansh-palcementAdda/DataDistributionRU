@@ -512,6 +512,7 @@ const LeadDetail = () => {
                 { label: 'City', value: leadDetails.city || 'N/A' },
                 { label: 'State', value: leadDetails.state || 'N/A' },
                 { label: 'Country', value: leadDetails.country || 'N/A' },
+                { label: 'Department', value: leadDetails.department?.name || 'N/A' },
                 // { label: 'Status', value: statusName },
                 // { label: 'Lead Date', value: formatDate(leadDetails.createdAt) },
                 // { label: 'Lead Code', value: leadDetails.leadCode || 'N/A' },

@@ -58,7 +58,7 @@ const FollowUps = () => {
   const [isFollowupModalOpen, setIsFollowupModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [selectedFollowup, setSelectedFollowup] = useState(null);
-  const [activeTab, setActiveTab] = useState("PENDING");
+  const [activeTab, setActiveTab] = useState("ALL");
   const [selectedLeadStatusId, setSelectedLeadStatusId] = useState(null);
 
   const debounceRef = useRef(null);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { getAllLeadStatus } from "../../../Services/leadStatus/leadStatusService";
+import { getLeadStatusesDropdown } from "../../../Services/drop-down/dropDownService";
 
 const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
     const [formData, setFormData] = useState({
@@ -26,14 +26,8 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
     useEffect(() => {
         const fetchLeadStatuses = async () => {
             try {
-                const response = await getAllLeadStatus({
-                    page: 0,
-                    size: 100,
-                    sortBy: "displayOrder",
-                    sortDirection: "ASC",
-                    search: ""
-                });
-                const allStatuses = response.data?.content || response.content || response.data || [];
+                const response = await getLeadStatusesDropdown();
+                const allStatuses = response?.data || [];
                 console.log("All statuses from API:", allStatuses.map(s => s.name));
                 console.log("Allowed statuses:", allowedLeadStatuses);
                 
@@ -121,7 +115,7 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
                         </label>
 
                         <input
-                            type="datetime-local"
+                            type="date"
                             name="followUpDate"
                             value={formData.followUpDate}
                             onChange={handleChange}

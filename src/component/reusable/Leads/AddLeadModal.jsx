@@ -3,15 +3,17 @@ import CustomInput from '../CustomInput';
 import CustomButton from '../CustomButton';
 import { useAppContext } from '../../../AppContext';
 import { createLead, updateLead } from '../../../Services/lead/leadService';
-import { getAllLeadSource } from '../../../Services/leadsource/leadSourceService';
 import { getCountries, getStates, getCities } from '../../../Services/location/locationService';
-import { getAllCourses } from '../../../Services/course/course';
-import gradsService from '../../../Services/Grads/gradsService';
-import { getAllBoards } from '../../../Services/Boards/boardsService';
-import { getAllLeadStatus } from '../../../Services/leadStatus/leadStatusService';
-import { getAllUser } from '../../../Services/user/user';
-import { getAllCourseType } from '../../../Services/courseTypes/courseTypeService';
-import { getAllDepartments } from '../../../Services/department/departmentService';
+import {
+  getLeadSourcesDropdown,
+  getCoursesDropdown,
+  getGradesDropdown,
+  getBoardsDropdown,
+  getLeadStatusesDropdown,
+  getUsersDropdown,
+  getCourseTypesDropdown,
+  getDepartmentsDropdown
+} from '../../../Services/drop-down/dropDownService';
 
 const AddLeadModal = () => {
   const { isAddLeadModalOpen, closeAddLeadModal, showToast, editLeadData, triggerLeadRefresh } = useAppContext();
@@ -106,9 +108,9 @@ const AddLeadModal = () => {
   useEffect(() => {
     const fetchLeadSources = async () => {
       try {
-        const res = await getAllLeadSource({ size: 100 });
-        if (res?.data?.success) {
-          setLeadSources(res.data.data?.content || []);
+        const res = await getLeadSourcesDropdown();
+        if (res?.success && res?.data) {
+          setLeadSources(res.data || []);
         }
       } catch (err) {
         console.error('Failed to fetch lead sources:', err);
@@ -132,13 +134,8 @@ const AddLeadModal = () => {
     const fetchCourses = async () => {
       setDropdownLoading((prev) => ({ ...prev, courses: true }));
       try {
-        const res = await getAllCourses({ size: 100 });
-        console.log('Courses API response:', res);
-        if (res?.success && res?.data?.content) {
-          setCourses(res.data.content || []);
-        } else if (res?.data?.success && res?.data?.data?.content) {
-          setCourses(res.data.data.content || []);
-        } else if (Array.isArray(res?.data)) {
+        const res = await getCoursesDropdown();
+        if (res?.success && res?.data) {
           setCourses(res.data || []);
         }
       } catch (err) {
@@ -151,13 +148,8 @@ const AddLeadModal = () => {
     const fetchGrades = async () => {
       setDropdownLoading((prev) => ({ ...prev, grades: true }));
       try {
-        const res = await gradsService.getAllGrades({ size: 100 });
-        console.log('Grades API response:', res);
-        if (res?.success && res?.data?.content) {
-          setGrades(res.data.content || []);
-        } else if (res?.data?.success && res?.data?.data?.content) {
-          setGrades(res.data.data.content || []);
-        } else if (Array.isArray(res?.data)) {
+        const res = await getGradesDropdown();
+        if (res?.success && res?.data) {
           setGrades(res.data || []);
         }
       } catch (err) {
@@ -170,13 +162,8 @@ const AddLeadModal = () => {
     const fetchBoards = async () => {
       setDropdownLoading((prev) => ({ ...prev, boards: true }));
       try {
-        const res = await getAllBoards({ size: 100 });
-        console.log('Boards API response:', res);
-        if (res?.success && res?.data?.content) {
-          setBoards(res.data.content || []);
-        } else if (res?.data?.success && res?.data?.data?.content) {
-          setBoards(res.data.data.content || []);
-        } else if (Array.isArray(res?.data)) {
+        const res = await getBoardsDropdown();
+        if (res?.success && res?.data) {
           setBoards(res.data || []);
         }
       } catch (err) {
@@ -189,14 +176,9 @@ const AddLeadModal = () => {
     const fetchLeadStatuses = async () => {
       setDropdownLoading((prev) => ({ ...prev, leadStatuses: true }));
       try {
-        const res = await getAllLeadStatus({ size: 100 });
-        console.log('Lead Statuses API response:', res);
-        if (res?.success) {
-          setLeadStatuses(res.data?.content || []);
-        } else if (res?.data) {
+        const res = await getLeadStatusesDropdown();
+        if (res?.success && res?.data) {
           setLeadStatuses(res.data || []);
-        } else if (Array.isArray(res)) {
-          setLeadStatuses(res || []);
         }
       } catch (err) {
         console.error('Failed to fetch lead statuses:', err);
@@ -208,9 +190,9 @@ const AddLeadModal = () => {
     const fetchUsers = async () => {
       setDropdownLoading((prev) => ({ ...prev, users: true }));
       try {
-        const res = await getAllUser({ size: 100 });
-        if (res?.data?.success) {
-          setUsers(res.data.data?.content || []);
+        const res = await getUsersDropdown();
+        if (res?.success && res?.data) {
+          setUsers(res.data || []);
         }
       } catch (err) {
         console.error('Failed to fetch users:', err);
@@ -222,9 +204,9 @@ const AddLeadModal = () => {
     const fetchCourseTypes = async () => {
       setDropdownLoading((prev) => ({ ...prev, courseTypes: true }));
       try {
-        const res = await getAllCourseType({ size: 100 });
-        if (res?.success && res?.data?.content) {
-          setCourseTypes(res.data.content || []);
+        const res = await getCourseTypesDropdown();
+        if (res?.success && res?.data) {
+          setCourseTypes(res.data || []);
         }
       } catch (err) {
         console.error('Failed to fetch course types:', err);
@@ -236,11 +218,9 @@ const AddLeadModal = () => {
     const fetchDepartments = async () => {
       setDropdownLoading((prev) => ({ ...prev, departments: true }));
       try {
-        const res = await getAllDepartments({ size: 100, sortBy: 'name', sortDirection: 'ASC' });
-        if (res?.success && res?.data?.content) {
-          setDepartments(res.data.content || []);
-        } else if (res?.data?.success && res?.data?.data?.content) {
-          setDepartments(res.data.data.content || []);
+        const res = await getDepartmentsDropdown();
+        if (res?.success && res?.data) {
+          setDepartments(res.data || []);
         }
       } catch (err) {
         console.error('Failed to fetch departments:', err);
@@ -300,7 +280,7 @@ const AddLeadModal = () => {
         assignedToUserId: toStr(assignedToUserId),
         statusId: toStr(statusId),
         active: active !== undefined ? active : true,
-        nextFollowUpDate: nextFollowUpDate ? new Date(nextFollowUpDate).toISOString().slice(0, 16) : '',
+        nextFollowUpDate: nextFollowUpDate ? new Date(nextFollowUpDate).toISOString().slice(0, 10) : '',
       });
 
       const fetchEditLocationData = async () => {
@@ -483,7 +463,7 @@ const AddLeadModal = () => {
       active: formData.active,
       nextFollowUpDate: formData.nextFollowUpDate
         ? new Date(formData.nextFollowUpDate).toISOString()
-        : new Date().toISOString(),
+        : null,
     };
 
     setLoading(true);
@@ -826,7 +806,7 @@ const AddLeadModal = () => {
                     <div className="custom-dropdown-options">
                       {courses
                         .filter(course => 
-                          course.courseName?.toLowerCase().includes(searchTerms.interestedCourses.toLowerCase())
+                          course.name?.toLowerCase().includes(searchTerms.interestedCourses.toLowerCase())
                         )
                         .map((course) => (
                         <div 
@@ -854,7 +834,7 @@ const AddLeadModal = () => {
                             }}
                           />
                           <label htmlFor={`custom-interested-course-${course.id}`} className="custom-option-label">
-                            {course.courseName}
+                            {course.name}
                           </label>
                         </div>
                       ))}
@@ -877,7 +857,7 @@ const AddLeadModal = () => {
                   onClick={() => setDropdownStates(prev => ({ ...prev, course: !prev.course }))}
                 >
                   {formData.courseId 
-                    ? courses.find(c => String(c.id) === String(formData.courseId))?.courseName || 'Select Course'
+                    ? courses.find(c => String(c.id) === String(formData.courseId))?.name || 'Select Course'
                     : 'Select Course'
                   }
                   <span className="custom-dropdown-arrow">▼</span>
@@ -896,7 +876,7 @@ const AddLeadModal = () => {
                     <div className="custom-dropdown-options">
                       {courses
                         .filter(course => 
-                          course.courseName?.toLowerCase().includes(searchTerms.course.toLowerCase())
+                          course.name?.toLowerCase().includes(searchTerms.course.toLowerCase())
                         )
                         .map((course) => (
                         <div 
@@ -923,7 +903,7 @@ const AddLeadModal = () => {
                             }}
                           />
                           <label htmlFor={`custom-course-${course.id}`} className="custom-option-label">
-                            {course.courseName}
+                            {course.name}
                           </label>
                         </div>
                       ))}
@@ -1043,7 +1023,7 @@ const AddLeadModal = () => {
             <div>
               <label className="form-label">Next Follow-Up Date</label>
               <input
-                type="datetime-local"
+                type="date"
                 className="form-control"
                 value={formData.nextFollowUpDate}
                 onChange={handleChange('nextFollowUpDate')}

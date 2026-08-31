@@ -360,7 +360,7 @@ const buildFollowUpColumns = (page, size, isReassignableMode = false, selectedRo
 };
 
 // ─── Helper: fetch leads for selected card (server-side) ─────────────────────
-const fetchLeadsForCard = async (activeFilters, counselorId, page, size, sortBy, sortDirection) => {
+const fetchLeadsForCard = async (activeFilters, counselorId, page, size, sortBy, sortDirection, filterRequest) => {
     if (!counselorId) return { content: [], totalElements: 0, totalPages: 0 };
 
     const params = {
@@ -611,14 +611,14 @@ const CounselorDetails = () => {
     useEffect(() => {
         if (!id) return;
         setTableLoading(true);
-        fetchLeadsForCard(activeFilters, id, tablePage, tableSize, tableSortBy, tableSortDir)
+        fetchLeadsForCard(activeFilters, id, tablePage, tableSize, tableSortBy, tableSortDir, filterRequest)
             .then(({ content, totalElements, totalPages }) => {
                 setTableData(content);
                 setTableTotalElements(totalElements);
                 setTableTotalPages(totalPages);
                 setTableLoading(false);
             });
-    }, [activeFilters, id, tablePage, tableSize, tableSortBy, tableSortDir]);
+    }, [activeFilters, id, tablePage, tableSize, tableSortBy, tableSortDir, filterRequest]);
 
     // ── update filterRequest when activeFilters change for cards ──
     useEffect(() => {

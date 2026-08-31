@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import CustomButton from '../CustomButton';
-import { getAllUser } from '../../../Services/user/user';
+import { getUsersDropdown } from '../../../Services/drop-down/dropDownService';
 import { reassignLeads, reassignDistributeLeads, reassignFollowUps, reassignDistributeFollowUps } from '../../../Services/lead/leadService';
 
 /**
@@ -57,13 +57,9 @@ const ReassignModal = ({
       setUsersLoading(true);
       setUsersError('');
       try {
-        const res = await getAllUser({ page: 0, size: 1000 });
-        const body = res?.data;
-        // handle both { data: [...] } and { data: { content: [...] } } shapes
-        const list =
-          Array.isArray(body?.data) ? body.data :
-          Array.isArray(body?.data?.content) ? body.data.content :
-          Array.isArray(body) ? body : [];
+        const res = await getUsersDropdown();
+        // API returns { success: true, data: [...], ... }
+        const list = Array.isArray(res?.data) ? res.data : [];
         // Filter out current counselor from the list
         const filteredUsers = list.filter(user => (user.id || user.userId) !== currentAssignedUserId);
         setUsers(filteredUsers);
@@ -382,7 +378,7 @@ const ReassignModal = ({
                       const uid = user.id || user.userId;
                       return (
                         <option key={uid} value={uid}>
-                          {user.firstName} {user.lastName}
+                          {user.name}
                         </option>
                       );
                     })
@@ -479,7 +475,7 @@ const ReassignModal = ({
                             style={{ width: '15px', height: '15px', accentColor: 'var(--primary-600, #2563eb)', cursor: 'pointer' }}
                           />
                           <span style={{ fontSize: '13px', color: 'var(--gray-800)', fontWeight: checked ? '600' : '400' }}>
-                            {user.firstName} {user.lastName}
+                            {user.name}
                           </span>
                         </label>
                       );

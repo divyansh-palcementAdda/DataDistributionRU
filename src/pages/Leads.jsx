@@ -664,6 +664,19 @@ const Leads = () => {
                 key: 'source',
                 header: 'Source',
                 render: (value, row) => {
+                  // First try sourceDetails (string field from API)
+                  if (row.sourceDetails && typeof row.sourceDetails === 'string') {
+                    return row.sourceDetails;
+                  }
+                  // Fall back to leadSources array (first item's name)
+                  if (Array.isArray(row.leadSources) && row.leadSources.length > 0) {
+                    const firstSource = row.leadSources[0];
+                    if (typeof firstSource === 'object' && firstSource !== null) {
+                      return firstSource.name || 'N/A';
+                    }
+                    return firstSource || 'N/A';
+                  }
+                  // Final fallback to source field (if it exists)
                   if (typeof row.source === 'object' && row.source !== null) {
                     return row.source?.name || 'N/A';
                   }

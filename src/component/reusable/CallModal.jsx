@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import CustomButton from './CustomButton';
 
-const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen }) => {
+const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen, onInfoPanelOpen }) => {
     const [isConnected, setIsConnected] = useState(false);
     const [showInterestButtons, setShowInterestButtons] = useState(false);
+    const [showActionButtons, setShowActionButtons] = useState(false);
 
     if (!isOpen) return null;
 
@@ -23,10 +24,7 @@ const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen }) => {
 
     const handleInterested = () => {
         setShowInterestButtons(false);
-        onClose();
-        if (onScheduleOpen) {
-            onScheduleOpen();
-        }
+        setShowActionButtons(true);
     };
 
     const handleNotInterested = () => {
@@ -34,9 +32,31 @@ const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen }) => {
         onClose();
     };
 
+    const handleBad = () => {
+        setShowInterestButtons(false);
+        onClose();
+    };
+
+    const handleInfoPanel = () => {
+        setShowActionButtons(false);
+        onClose();
+        if (onInfoPanelOpen) {
+            onInfoPanelOpen();
+        }
+    };
+
+    const handleScheduleFollowUp = () => {
+        setShowActionButtons(false);
+        onClose();
+        if (onScheduleOpen) {
+            onScheduleOpen();
+        }
+    };
+
     const handleMarkAsNotConnected = () => {
         setIsConnected(false);
         setShowInterestButtons(false);
+        setShowActionButtons(false);
         onClose();
     };
 
@@ -109,7 +129,7 @@ const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen }) => {
                 {/* Footer */}
                 <div className="flex justify-end gap-3 border-t p-5">
                     {/* Show connection buttons if not in follow-up status */}
-                    {shouldShowConnectionButtons && (
+                    {shouldShowConnectionButtons && !isConnected && (
                         <>
                             <CustomButton
                                 variant="secondary"
@@ -118,21 +138,19 @@ const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen }) => {
                             >
                                 Mark as not connected
                             </CustomButton>
-                            
-                            {!isConnected && (
-                                <CustomButton
-                                    variant="primary"
-                                    onClick={handleMarkAsConnected}
-                                    className="px-4 py-2"
-                                >
-                                    Mark as Connected
-                                </CustomButton>
-                            )}
+
+                            <CustomButton
+                                variant="primary"
+                                onClick={handleMarkAsConnected}
+                                className="px-4 py-2"
+                            >
+                                Mark as Connected
+                            </CustomButton>
                         </>
                     )}
 
-                    {/* Show interest buttons if in follow-up status */}
-                    {shouldShowInterestButtons && (
+                    {/* Show interest buttons when connected */}
+                    {isConnected && showInterestButtons && (
                         <>
                             <CustomButton
                                 variant="primary"
@@ -147,6 +165,33 @@ const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen }) => {
                                 className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white"
                             >
                                 Not Interested
+                            </CustomButton>
+                            <CustomButton
+                                variant="secondary"
+                                onClick={handleBad}
+                                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white"
+                            >
+                                Bad
+                            </CustomButton>
+                        </>
+                    )}
+
+                    {/* Show action buttons when interested */}
+                    {showActionButtons && (
+                        <>
+                            <CustomButton
+                                variant="primary"
+                                onClick={handleInfoPanel}
+                                className="px-4 py-2"
+                            >
+                                Info Panel
+                            </CustomButton>
+                            <CustomButton
+                                variant="secondary"
+                                onClick={handleScheduleFollowUp}
+                                className="px-4 py-2"
+                            >
+                                Schedule Follow Up
                             </CustomButton>
                         </>
                     )}

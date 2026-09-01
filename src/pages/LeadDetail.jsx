@@ -407,7 +407,7 @@ const LeadDetail = () => {
           </div>
         </div>
         <div className="flex gap-2">
-          {hasPermission('LEAD_CREATE') && (
+          {/* {hasPermission('LEAD_CREATE') && (
             <CustomButton
               variant="secondary"
               onClick={() => openAddLeadModal()}
@@ -419,7 +419,7 @@ const LeadDetail = () => {
               </svg>
               Add Lead
             </CustomButton>
-          )}
+          )} */}
           <CustomButton
             variant="primary"
             onClick={() => setIsScheduleModalOpen(true)}

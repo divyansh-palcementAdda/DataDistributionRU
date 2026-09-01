@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import CustomButton from './CustomButton';
 import { changeLeadStatus } from '../../Services/lead/leadService';
 
-const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen, onInfoPanelOpen }) => {
+const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen, onInfoPanelOpen, isFinallyNotConnected }) => {
     const [isConnected, setIsConnected] = useState(false);
     const [showInterestButtons, setShowInterestButtons] = useState(false);
     const [showActionButtons, setShowActionButtons] = useState(false);
@@ -166,74 +166,78 @@ const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen, onInfoPanelOp
 
                 {/* Footer */}
                 <div className="flex justify-end gap-3 border-t p-5">
-                    {/* Show connection buttons if not in follow-up status */}
-                    {shouldShowConnectionButtons && !isConnected && (
+                    {!isFinallyNotConnected && (
                         <>
-                            <CustomButton
-                                variant="secondary"
-                                onClick={handleMarkAsNotConnected}
-                                className="px-4 py-2"
-                            >
-                                Mark as not connected
-                            </CustomButton>
+                            {/* Show connection buttons if not in follow-up status */}
+                            {shouldShowConnectionButtons && !isConnected && (
+                                <>
+                                    <CustomButton
+                                        variant="secondary"
+                                        onClick={handleMarkAsNotConnected}
+                                        className="px-4 py-2"
+                                    >
+                                        Mark as not connected
+                                    </CustomButton>
 
-                            <CustomButton
-                                variant="primary"
-                                onClick={handleMarkAsConnected}
-                                className="px-4 py-2"
-                            >
-                                Mark as Connected
-                            </CustomButton>
-                        </>
-                    )}
+                                    <CustomButton
+                                        variant="primary"
+                                        onClick={handleMarkAsConnected}
+                                        className="px-4 py-2"
+                                    >
+                                        Mark as Connected
+                                    </CustomButton>
+                                </>
+                            )}
 
-                    {/* Show interest buttons when connected */}
-                    {isConnected && showInterestButtons && (
-                        <>
-                            <CustomButton
-                                variant="primary"
-                                onClick={handleInterested}
-                                className="px-4 py-2 bg-green-600 hover:bg-green-700"
-                                disabled={isSubmitting}
-                            >
-                                {isSubmitting ? 'Submitting...' : 'Interested'}
-                            </CustomButton>
-                            <CustomButton
-                                variant="secondary"
-                                onClick={handleNotInterested}
-                                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white"
-                                disabled={isSubmitting}
-                            >
-                                {isSubmitting ? 'Submitting...' : 'Not Interested'}
-                            </CustomButton>
-                            <CustomButton
-                                variant="secondary"
-                                onClick={handleBad}
-                                className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white"
-                                disabled={isSubmitting}
-                            >
-                                {isSubmitting ? 'Submitting...' : 'Bad'}
-                            </CustomButton>
-                        </>
-                    )}
+                            {/* Show interest buttons when connected */}
+                            {isConnected && showInterestButtons && (
+                                <>
+                                    <CustomButton
+                                        variant="primary"
+                                        onClick={handleInterested}
+                                        className="px-4 py-2 bg-green-600 hover:bg-green-700"
+                                        disabled={isSubmitting}
+                                    >
+                                        {isSubmitting ? 'Submitting...' : 'Interested'}
+                                    </CustomButton>
+                                    <CustomButton
+                                        variant="secondary"
+                                        onClick={handleNotInterested}
+                                        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white"
+                                        disabled={isSubmitting}
+                                    >
+                                        {isSubmitting ? 'Submitting...' : 'Not Interested'}
+                                    </CustomButton>
+                                    <CustomButton
+                                        variant="secondary"
+                                        onClick={handleBad}
+                                        className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white"
+                                        disabled={isSubmitting}
+                                    >
+                                        {isSubmitting ? 'Submitting...' : 'Bad'}
+                                    </CustomButton>
+                                </>
+                            )}
 
-                    {/* Show action buttons when interested */}
-                    {showActionButtons && (
-                        <>
-                            <CustomButton
-                                variant="primary"
-                                onClick={handleInfoPanel}
-                                className="px-4 py-2"
-                            >
-                                Info Panel
-                            </CustomButton>
-                            <CustomButton
-                                variant="secondary"
-                                onClick={handleScheduleFollowUp}
-                                className="px-4 py-2"
-                            >
-                                Schedule Follow Up
-                            </CustomButton>
+                            {/* Show action buttons when interested */}
+                            {showActionButtons && (
+                                <>
+                                    <CustomButton
+                                        variant="primary"
+                                        onClick={handleInfoPanel}
+                                        className="px-4 py-2"
+                                    >
+                                        Info Panel
+                                    </CustomButton>
+                                    <CustomButton
+                                        variant="secondary"
+                                        onClick={handleScheduleFollowUp}
+                                        className="px-4 py-2"
+                                    >
+                                        Schedule Follow Up
+                                    </CustomButton>
+                                </>
+                            )}
                         </>
                     )}
                 </div>

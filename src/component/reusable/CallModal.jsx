@@ -12,16 +12,29 @@ const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen, onInfoPanelOp
 
     // Get current status from API response
     const currentStatus = studentData?.currentStatus;
-    const statusName = currentStatus?.name || currentStatus?.code || '';
+    const statusName = currentStatus?.code || currentStatus?.name || '';
     const followUpStatus = currentStatus?.followUpStatus || false;
+    const currentStatusCode = statusName.toUpperCase();
 
     // Determine which buttons to show based on currentStatus
     const shouldShowConnectionButtons = !followUpStatus;
     const shouldShowInterestButtons = followUpStatus;
 
-    const handleMarkAsConnected = () => {
-        setIsConnected(true);
-        setShowInterestButtons(true);
+    const handleMarkAsConnected = async () => {
+        setIsSubmitting(true);
+        try {
+            await changeLeadStatus(studentData?.id, {
+                newStatusId: studentData?.currentStatus?.id,
+                statusCode: 'CONNECTED',
+                feedback: 'Marked as connected'
+            });
+            setIsConnected(true);
+            setShowInterestButtons(true);
+        } catch (error) {
+            console.error('Error marking as connected:', error);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleInterested = async () => {
@@ -91,11 +104,130 @@ const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen, onInfoPanelOp
         }
     };
 
-    const handleMarkAsNotConnected = () => {
-        setIsConnected(false);
-        setShowInterestButtons(false);
-        setShowActionButtons(false);
-        onClose();
+    const handleMarkAsNotConnected = async () => {
+        setIsSubmitting(true);
+        try {
+            await changeLeadStatus(studentData?.id, {
+                newStatusId: studentData?.currentStatus?.id,
+                statusCode: 'NOT_CONNECTED_1',
+                feedback: 'Marked as not connected'
+            });
+            setIsConnected(false);
+            setShowInterestButtons(false);
+            setShowActionButtons(false);
+            onClose();
+        } catch (error) {
+            console.error('Error marking as not connected:', error);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleMarkAsNotConnected2 = async () => {
+        setIsSubmitting(true);
+        try {
+            await changeLeadStatus(studentData?.id, {
+                newStatusId: studentData?.currentStatus?.id,
+                statusCode: 'NOT_CONNECTED_2',
+                feedback: 'Marked as not connected - 2'
+            });
+            setIsConnected(false);
+            setShowInterestButtons(false);
+            setShowActionButtons(false);
+            onClose();
+        } catch (error) {
+            console.error('Error marking as not connected - 2:', error);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleMarkAsNotConnected3 = async () => {
+        setIsSubmitting(true);
+        try {
+            await changeLeadStatus(studentData?.id, {
+                newStatusId: studentData?.currentStatus?.id,
+                statusCode: 'NOT_CONNECTED_3',
+                feedback: 'Marked as not connected - 3'
+            });
+            setIsConnected(false);
+            setShowInterestButtons(false);
+            setShowActionButtons(false);
+            onClose();
+        } catch (error) {
+            console.error('Error marking as not connected - 3:', error);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleFinallyNotConnected = async () => {
+        setIsSubmitting(true);
+        try {
+            await changeLeadStatus(studentData?.id, {
+                newStatusId: studentData?.currentStatus?.id,
+                statusCode: 'FINALLY_NOT_CONNECTED',
+                feedback: 'Finally not connected'
+            });
+            setIsConnected(false);
+            setShowInterestButtons(false);
+            setShowActionButtons(false);
+            onClose();
+        } catch (error) {
+            console.error('Error marking as finally not connected:', error);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    // Determine which not connected button to show based on current status
+    const getNotConnectedButton = () => {
+        if (currentStatusCode === 'NOT_CONNECTED_1') {
+            return (
+                <CustomButton
+                    variant="secondary"
+                    onClick={handleMarkAsNotConnected2}
+                    className="px-4 py-2"
+                    disabled={isSubmitting}
+                >
+                    {isSubmitting ? 'Submitting...' : 'Mark as not connected - 2'}
+                </CustomButton>
+            );
+        } else if (currentStatusCode === 'NOT_CONNECTED_2') {
+            return (
+                <CustomButton
+                    variant="secondary"
+                    onClick={handleMarkAsNotConnected3}
+                    className="px-4 py-2"
+                    disabled={isSubmitting}
+                >
+                    {isSubmitting ? 'Submitting...' : 'Mark as not connected - 3'}
+                </CustomButton>
+            );
+        } else if (currentStatusCode === 'NOT_CONNECTED_3') {
+            return (
+                <CustomButton
+                    variant="secondary"
+                    onClick={handleFinallyNotConnected}
+                    className="px-4 py-2"
+                    disabled={isSubmitting}
+                >
+                    {isSubmitting ? 'Submitting...' : 'Finally not connected'}
+                </CustomButton>
+            );
+        } else {
+            // Default case - initial button
+            return (
+                <CustomButton
+                    variant="secondary"
+                    onClick={handleMarkAsNotConnected}
+                    className="px-4 py-2"
+                    disabled={isSubmitting}
+                >
+                    {isSubmitting ? 'Submitting...' : 'Mark as not connected'}
+                </CustomButton>
+            );
+        }
     };
 
     return (
@@ -166,25 +298,20 @@ const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen, onInfoPanelOp
 
                 {/* Footer */}
                 <div className="flex justify-end gap-3 border-t p-5">
-                    {!isFinallyNotConnected && (
+                    {!isFinallyNotConnected && currentStatusCode !== 'FINALLY_NOT_CONNECTED' && (
                         <>
                             {/* Show connection buttons if not in follow-up status */}
                             {shouldShowConnectionButtons && !isConnected && (
                                 <>
-                                    <CustomButton
-                                        variant="secondary"
-                                        onClick={handleMarkAsNotConnected}
-                                        className="px-4 py-2"
-                                    >
-                                        Mark as not connected
-                                    </CustomButton>
+                                    {getNotConnectedButton()}
 
                                     <CustomButton
                                         variant="primary"
                                         onClick={handleMarkAsConnected}
                                         className="px-4 py-2"
+                                        disabled={isSubmitting}
                                     >
-                                        Mark as Connected
+                                        {isSubmitting ? 'Submitting...' : 'Mark as Connected'}
                                     </CustomButton>
                                 </>
                             )}

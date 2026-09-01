@@ -32,7 +32,7 @@ const LeadStatus = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [sortBy, setSortBy] = useState("displayOrder");
+  const [sortBy, setSortBy] = useState("name");
   const [sortDirection, setSortDirection] = useState("ASC");
 
   const fetchLeadStatuses = async () => {
@@ -139,11 +139,6 @@ const LeadStatus = () => {
       key: "description",
       header: "Description",
       render: (value) => (typeof value === "object" && value !== null ? value?.description || "-" : value || "-"),
-    },
-    {
-      key: "displayOrder",
-      header: "Display Order",
-      render: (order) => <span className="font-medium">{order}</span>
     },
     {
       key: "active",

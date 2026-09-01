@@ -716,16 +716,29 @@ const Leads = () => {
                 key: 'courseInterested', 
                 header: 'Course',
                 render: (value, row) => {
-                  // Handle both value parameter and row.courseInterested
-                  const courseValue = value || row.courseInterested;
+                  // Priority order: course > registeredCourse > courseInterested > interestedCourses
                   let displayValue = 'N/A';
                   
-                  if (typeof courseValue === 'object' && courseValue !== null) {
-                    displayValue = courseValue?.courseName || courseValue?.name || 'N/A';
-                  } else if (typeof courseValue === 'string') {
-                    displayValue = courseValue;
-                  } else if (courseValue === null || courseValue === undefined) {
-                    displayValue = 'N/A';
+                  // Check course object first
+                  if (row.course && typeof row.course === 'object' && row.course !== null) {
+                    displayValue = row.course.courseName || row.course.name || 'N/A';
+                  }
+                  // Check registeredCourse object
+                  else if (row.registeredCourse && typeof row.registeredCourse === 'object' && row.registeredCourse !== null) {
+                    displayValue = row.registeredCourse.courseName || row.registeredCourse.name || 'N/A';
+                  }
+                  // Check courseInterested string
+                  else if (row.courseInterested && typeof row.courseInterested === 'string') {
+                    displayValue = row.courseInterested;
+                  }
+                  // Check interestedCourses array
+                  else if (Array.isArray(row.interestedCourses) && row.interestedCourses.length > 0) {
+                    const firstCourse = row.interestedCourses[0];
+                    if (typeof firstCourse === 'object' && firstCourse !== null) {
+                      displayValue = firstCourse.courseName || firstCourse.name || 'N/A';
+                    } else {
+                      displayValue = firstCourse || 'N/A';
+                    }
                   }
                   
                   return displayValue;

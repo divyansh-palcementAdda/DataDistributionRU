@@ -338,12 +338,15 @@ const LeadDetail = () => {
             console.error('Error changing lead status in background:', error);
           }
         }
+        return true;
       } else {
-        showToast(response?.data?.message || 'Unable to schedule follow-up');
+        showToast(response?.data?.message || 'Unable to schedule follow-up', 'error');
+        return false;
       }
     } catch (error) {
       console.error('Failed to schedule follow-up', error);
-      showToast('Failed to schedule follow-up');
+      showToast('Failed to schedule follow-up', 'error');
+      return false;
     }
   };
 

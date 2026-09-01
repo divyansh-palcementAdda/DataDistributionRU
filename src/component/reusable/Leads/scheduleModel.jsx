@@ -107,19 +107,21 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
                 : "",
         };
 
-        await onSubmit(payload);
+        const success = await onSubmit(payload);
 
-        setFormData({
-            followUpDate: "",
-            remarks: "",
-            status: "",
-            statusCode: "",
-            leadStatus: "",
-            leadStatusCode: "",
-        });
-        setErrors({});
+        if (success) {
+            setFormData({
+                followUpDate: "",
+                remarks: "",
+                status: "",
+                statusCode: "",
+                leadStatus: "",
+                leadStatusCode: "",
+            });
+            setErrors({});
 
-        onClose();
+            onClose();
+        }
     };
 
     if (!isOpen) return null;

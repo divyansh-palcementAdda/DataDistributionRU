@@ -22,6 +22,7 @@ import UnallottedCard from '../../component/reusable/DashBoards/UnallottedCard';
 import AvailedCard from '../../component/reusable/DashBoards/availedCard';
 import AllottedCard from '../../component/reusable/DashBoards/allottedCard';
 import { getAllLeads } from '../../Services/lead/leadService';
+import { getDashboardSummary } from '../../Services/Dashboard/Dashboard';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend);
 
@@ -96,6 +97,7 @@ const HeadDashboard = () => {
   const [allLeadsData, setAllLeadsData] = useState([]); // For stats and other components
   const [activeFilters, setActiveFilters] = useState([]); // Array of active filters
   const [filterRequest, setFilterRequest] = useState({});
+  const [dashboardSummaryData, setDashboardSummaryData] = useState(null);
 
   // Fetch all leads for stats and other components
   const fetchAllLeads = async () => {
@@ -116,6 +118,25 @@ const HeadDashboard = () => {
 
   useEffect(() => {
     fetchAllLeads();
+  }, []);
+
+  // Fetch dashboard summary data from API
+  useEffect(() => {
+    const fetchDashboardSummary = async () => {
+      try {
+        const response = await getDashboardSummary();
+        console.log('Dashboard Summary API Response:', response);
+
+        if (response && response.data) {
+          setDashboardSummaryData(response.data);
+        }
+      } catch (error) {
+        console.error('Error fetching dashboard summary data:', error);
+        setDashboardSummaryData(null);
+      }
+    };
+
+    fetchDashboardSummary();
   }, []);
 
   const calculatedStatCards = useMemo(() => {
@@ -228,6 +249,333 @@ const HeadDashboard = () => {
           </p>
         </div>
         
+        {/* Glassy Navigation Buttons */}
+        <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+          <button
+            onClick={() => navigate('/callers-dashboard')}
+            style={{
+              background: 'rgba(255, 255, 255, 0.15)',
+              backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              borderRadius: '8px',
+              padding: '10px 20px',
+              color: '#ffffff',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = 'rgba(255, 255, 255, 0.25)';
+              e.target.style.transform = 'translateY(-2px)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'rgba(255, 255, 255, 0.15)';
+              e.target.style.transform = 'translateY(0)';
+            }}
+          >
+            Self Dashboard
+          </button>
+          <button
+            onClick={() => navigate('/head-dashboard')}
+            style={{
+              background: 'rgba(255, 255, 255, 0.15)',
+              backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              borderRadius: '8px',
+              padding: '10px 20px',
+              color: '#ffffff',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = 'rgba(255, 255, 255, 0.25)';
+              e.target.style.transform = 'translateY(-2px)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = 'rgba(255, 255, 255, 0.15)';
+              e.target.style.transform = 'translateY(0)';
+            }}
+          >
+            HOD Dashboard
+          </button>
+        </div>
+      </div>
+
+      {/* ── Full Width Metrics Card ── */}
+      <div style={{
+        background: 'linear-gradient(135deg, #ff2c47, #ff7a0b)',
+        borderRadius: '16px',
+        padding: '16px 20px',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '8px',
+        boxShadow: '0 8px 18px #f603',
+        border: '1px solid rgba(255, 255, 255, .1)',
+        transition: '.3s ease',
+        width: '100%',
+        maxWidth: '100%',
+        minWidth: '0',
+        boxSizing: 'border-box',
+        overflow: 'hidden',
+        marginBottom: '16px'
+      }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: '16px',
+          width: '100%',
+        }}>
+          {/* Card 1: Total Counsellors Logged Today */}
+          <div style={{
+            background: '#ffffff2e',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            borderRadius: '10px',
+            padding: '10px 12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            transition: '.3s ease',
+            boxSizing: 'border-box',
+            flexDirection: 'column'
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
+              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+            </svg>
+            <div style={{ fontSize: '11px', color: '#ffffff', fontWeight: 500, textAlign: 'center' }}>
+              Total Counsellors Logged Today
+            </div>
+            <div style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
+              {dashboardSummaryData?.counsellorsLoggedToday || 0}
+            </div>
+          </div>
+
+          {/* Card 2: Total Follow-up Scheduled Today */}
+          <div style={{
+            background: '#ffffff2e',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            borderRadius: '10px',
+            padding: '10px 12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            transition: '.3s ease',
+            boxSizing: 'border-box',
+            flexDirection: 'column'
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
+              <rect x="3" y="4" width="18" height="18" rx="2" />
+              <path d="M16 2v4M8 2v4M3 10h18" />
+              <path d="M8 14h.01M12 14h.01M16 14h.01" />
+            </svg>
+            <div style={{ fontSize: '11px', color: '#ffffff', fontWeight: 500, textAlign: 'center' }}>
+              Total Follow-up Scheduled Today
+            </div>
+            <div style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
+              {dashboardSummaryData?.totalFollowUpsToday || 0}
+            </div>
+          </div>
+
+          {/* Card 3: Total Counsellors Currently Working */}
+          <div style={{
+            background: '#ffffff2e',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            borderRadius: '10px',
+            padding: '10px 12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            transition: '.3s ease',
+            boxSizing: 'border-box',
+            flexDirection: 'column'
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
+              <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" />
+            </svg>
+            <div style={{ fontSize: '11px', color: '#ffffff', fontWeight: 500, textAlign: 'center' }}>
+              Total Counsellors Currently Working
+            </div>
+            <div style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
+              {dashboardSummaryData?.counsellorsCurrentlyWorking || 0}
+            </div>
+          </div>
+
+          {/* Card 4: Conversation Ratio */}
+          <div style={{
+            background: '#ffffff2e',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            borderRadius: '10px',
+            padding: '10px 12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            transition: '.3s ease',
+            boxSizing: 'border-box',
+            flexDirection: 'column'
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
+              <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" />
+            </svg>
+            <div style={{ fontSize: '11px', color: '#ffffff', fontWeight: 500, textAlign: 'center' }}>
+              Conversation Ratio
+            </div>
+            <div style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
+              {dashboardSummaryData?.conversationRatio
+                ? Math.round(dashboardSummaryData.conversationRatio * 100) + '%'
+                : '0%'}
+            </div>
+          </div>
+
+          {/* Card 5: Total Data in System */}
+          <div style={{
+            background: '#ffffff2e',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            borderRadius: '10px',
+            padding: '10px 12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            transition: '.3s ease',
+            boxSizing: 'border-box',
+            flexDirection: 'column'
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
+              <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+              <line x1="12" y1="22.08" x2="12" y2="12" />
+            </svg>
+            <div style={{ fontSize: '11px', color: '#ffffff', fontWeight: 500, textAlign: 'center' }}>
+              Total Data in System
+            </div>
+            <div style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
+              {dashboardSummaryData?.totalLeads || 0}
+            </div>
+          </div>
+
+          {/* Card 6: Low Data Users Alert */}
+          <div
+            onClick={() => navigate('/counselors', { state: { lowDataMode: true } })}
+            style={{
+            background: '#ffffff2e',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            borderRadius: '10px',
+            padding: '10px 12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            transition: '.3s ease',
+            boxSizing: 'border-box',
+            flexDirection: 'column',
+            cursor: 'pointer',
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
+              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <line x1="6" y1="22" x2="12" y2="22" />
+            </svg>
+            <div style={{ fontSize: '11px', color: '#ffffff', fontWeight: 500, textAlign: 'center' }}>
+              Low Data Users Alert
+            </div>
+            <div style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
+              {dashboardSummaryData?.sections
+                ?.find(s => s.code === 'OPERATIONS')
+                ?.cards?.find(c => c.code === 'LOW_DATA_USERS')
+                ?.value ?? 0}
+            </div>
+          </div>
+
+          {/* Card 7: Users Not Logged In Today */}
+          <div
+            onClick={() => navigate('/counselors', { state: { usersNotLoggedInMode: true } })}
+            style={{
+            background: '#ffffff2e',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            borderRadius: '10px',
+            padding: '10px 12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            transition: '.3s ease',
+            boxSizing: 'border-box',
+            flexDirection: 'column',
+            cursor: 'pointer',
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
+              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <line x1="17" y1="11" x2="23" y2="17" />
+              <line x1="23" y1="11" x2="17" y2="17" />
+            </svg>
+            <div style={{ fontSize: '11px', color: '#ffffff', fontWeight: 500, textAlign: 'center' }}>
+              Users Not Logged In Today
+            </div>
+            <div style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
+              {dashboardSummaryData?.sections
+                ?.find(s => s.code === 'OPERATIONS')
+                ?.cards?.find(c => c.code === 'USERS_NOT_LOGGED_IN')
+                ?.value ?? 0}
+            </div>
+          </div>
+
+          {/* Card 8: Follow-up Users Not Logged In by 11 AM */}
+          <div
+            onClick={() => navigate('/counselors', { state: { followupNotLoggedIn11amMode: true } })}
+            style={{
+            background: '#ffffff2e',
+            backdropFilter: 'blur(10px)',
+            WebkitBackdropFilter: 'blur(10px)',
+            borderRadius: '10px',
+            padding: '10px 12px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            transition: '.3s ease',
+            boxSizing: 'border-box',
+            flexDirection: 'column',
+            cursor: 'pointer',
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+              <line x1="12" y1="2" x2="12" y2="2" />
+              <path d="M9 1l3 3-3 3" />
+            </svg>
+            <div style={{ fontSize: '11px', color: '#ffffff', fontWeight: 500, textAlign: 'center' }}>
+              Follow-up Users Not Logged In by 11 AM
+            </div>
+            <div style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
+              {dashboardSummaryData?.sections
+                ?.find(s => s.code === 'OPERATIONS')
+                ?.cards?.find(c => c.code === 'FOLLOWUP_USERS_NOT_LOGGED_IN_11AM')
+                ?.value ?? 0}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* ── Stat Cards ── */}

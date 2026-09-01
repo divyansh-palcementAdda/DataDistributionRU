@@ -381,15 +381,6 @@ const Dashboard = () => {
 
   return (
     <div>
-      <style>{`
-        .recent-activity-scroll::-webkit-scrollbar {
-          display: none;
-        }
-        .recent-activity-scroll {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-      `}</style>
       {/* Page Header */}
       <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px', background: 'linear-gradient(135deg, #435fff, #a571ff)', padding: '20px', borderRadius: '12px' }}>
         <div>
@@ -733,14 +724,9 @@ const Dashboard = () => {
             padding: '20px',
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
             border: '1px solid #e2e8f0',
-            height: '750px',
-            overflowY: 'auto',
             display: 'flex',
-            flexDirection: 'column',
-            scrollbarWidth: 'none',
-            msOverflowStyle: 'none'
-          }}
-          className="recent-activity-scroll">
+            flexDirection: 'column'
+          }}>
             <div style={{
               display: 'flex',
               alignItems: 'center',

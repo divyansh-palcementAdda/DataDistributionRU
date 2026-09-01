@@ -59,6 +59,18 @@ const LeadDetail = () => {
     }
   }, [id]);
 
+  // Auto-select interested course when lead details are loaded
+  useEffect(() => {
+    if (leadDetails) {
+      // Check if there's an interested course and auto-select it
+      const interestedCourse = leadDetails.course || leadDetails.interestedCourses?.[0];
+      if (interestedCourse?.id) {
+        setSelectedCourse(interestedCourse.id);
+        setSelectedCourseObj(interestedCourse);
+      }
+    }
+  }, [leadDetails]);
+
   useEffect(() => {
     const fetchCourses = async () => {
       setCoursesLoading(true);
@@ -353,6 +365,31 @@ const LeadDetail = () => {
     }
   };
 
+  const handleRegisteredClick = async () => {
+    try {
+      // Call the changeStatus API
+      const response = await changeLeadStatus(id, {
+        newStatusId: leadDetails.currentStatus?.id,
+        statusCode: 'REGISTERED',
+        feedback: 'Lead registered successfully'
+      });
+      
+      if (response?.data?.success) {
+        showToast('Lead status changed to Registered successfully');
+        // Refresh lead details to get updated status
+        const res = await getLeadById(id);
+        if (res?.data?.success) {
+          setLeadDetails(res.data.data);
+        }
+      } else {
+        showToast(response?.data?.message || 'Failed to change lead status');
+      }
+    } catch (error) {
+      console.error('Failed to change lead status', error);
+      showToast('Failed to change lead status');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -376,6 +413,9 @@ const LeadDetail = () => {
   const createdByName = leadDetails.createdBy?.firstName && leadDetails.createdBy?.lastName
     ? `${leadDetails.createdBy.firstName} ${leadDetails.createdBy.lastName}`
     : leadDetails.createdBy?.username || 'N/A';
+  
+  // Check if status is "Finally Not Connected", "Bad", or "Not Interested"
+  const isFinallyNotConnected = statusName === 'Finally Not Connected' || statusName === 'Bad' || statusName === 'Not Interested';
 
   return (
     <div className="block" id="page-lead-detail">
@@ -395,7 +435,7 @@ const LeadDetail = () => {
           </div>
         </div>
         <div className="flex gap-2">
-          {hasPermission('LEAD_CREATE') && (
+          {/* {hasPermission('LEAD_CREATE') && (
             <CustomButton
               variant="secondary"
               onClick={() => openAddLeadModal()}
@@ -407,18 +447,34 @@ const LeadDetail = () => {
               </svg>
               Add Lead
             </CustomButton>
+          )} */}
+
+           {!isFinallyNotConnected && (
+            <CustomButton
+              variant="primary"
+              onClick={handleRegisteredClick}
+              className="text-xs py-1.5 px-3 flex items-center gap-1.5 bg-green-600 hover:bg-green-700"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              Registered
+            </CustomButton>
           )}
-          <CustomButton
-            variant="primary"
-            onClick={() => setIsScheduleModalOpen(true)}
-            className="text-xs py-1.5 px-3 flex items-center gap-1.5"
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="3" y="4" width="18" height="18" rx="2" />
-              <path d="M16 2v4M8 2v4M3 10h18" />
-            </svg>
-            Schedule Follow-up
-          </CustomButton>
+            
+          {!isFinallyNotConnected && (
+            <CustomButton
+              variant="primary"
+              onClick={() => setIsScheduleModalOpen(true)}
+              className="text-xs py-1.5 px-3 flex items-center gap-1.5"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="4" width="18" height="18" rx="2" />
+                <path d="M16 2v4M8 2v4M3 10h18" />
+              </svg>
+              Schedule Follow-up
+            </CustomButton>
+          )}
         </div>
       </div>
 
@@ -471,7 +527,8 @@ const LeadDetail = () => {
                     Edit
                   </button>
                 )}
-                <button
+                {!isFinallyNotConnected && (
+                  <button
                   onClick={() => setIsCallModalOpen(true)}
                   className="flex items-center gap-1.5 text-xs font-semibold text-green-600 bg-green-50 hover:bg-green-100 border border-green-200 px-3 py-1.5 rounded-lg transition-colors"
                   title="Call Lead"
@@ -480,7 +537,8 @@ const LeadDetail = () => {
                     <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
                   </svg>
                   Call
-                </button>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -513,6 +571,7 @@ const LeadDetail = () => {
                 { label: 'State', value: leadDetails.state || 'N/A' },
                 { label: 'Country', value: leadDetails.country || 'N/A' },
                 { label: 'Department', value: leadDetails.department?.name || 'N/A' },
+                { label: 'Last Connected', value: leadDetails.lastConnected ? formatDate(leadDetails.lastConnected) : '-' },
                 // { label: 'Status', value: statusName },
                 // { label: 'Lead Date', value: formatDate(leadDetails.createdAt) },
                 // { label: 'Lead Code', value: leadDetails.leadCode || 'N/A' },
@@ -555,16 +614,18 @@ const LeadDetail = () => {
                   )}
                 </div>
 
-                {/* Registered Course */}
-                <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Registered Course</div>
-                  <div className="text-xs font-semibold text-gray-800">
-                    {leadDetails.registeredCourse?.courseName || 'N/A'}
+                {/* Registered Course - Only show when status is Registered */}
+                {statusName === 'Registered' && (
+                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                    <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Registered Course</div>
+                    <div className="text-xs font-semibold text-gray-800">
+                      {leadDetails.registeredCourse?.courseName || 'N/A'}
+                    </div>
+                    {leadDetails.registeredCourse?.courseCode && (
+                      <div className="text-[9px] text-gray-400 mt-0.5">{leadDetails.registeredCourse.courseCode}</div>
+                    )}
                   </div>
-                  {leadDetails.registeredCourse?.courseCode && (
-                    <div className="text-[9px] text-gray-400 mt-0.5">{leadDetails.registeredCourse.courseCode}</div>
-                  )}
-                </div>
+                )}
 
                 {/* Specialization */}
                 <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
@@ -951,6 +1012,7 @@ const LeadDetail = () => {
         onClose={() => setIsCallModalOpen(false)}
         studentData={leadDetails}
         onScheduleOpen={() => setIsScheduleModalOpen(true)}
+        isFinallyNotConnected={isFinallyNotConnected}
       />
 
       <WhatsAppModal

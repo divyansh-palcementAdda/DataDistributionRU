@@ -35,7 +35,7 @@ const Sidebar = () => {
     { id: 'grades', label: 'Grads Data', icon: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>' },
     { id: 'counselors', label: 'Counselor', icon: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/><path d="M16 3h.01M8 3h.01"/></svg>' },
     { id: 'department', label: 'Department', icon: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01M16 6h.01M8 10h.01M16 10h.01M8 14h.01M16 14h.01"/></svg>' },
-    // { id: 'data-segregation', label: 'Data Segregation', icon: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>' },
+    { id: 'data-segregation', label: 'Data Segregation', icon: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>' },
   ];
 
   const configNavItems = [
@@ -68,6 +68,7 @@ const Sidebar = () => {
     'grades': 'GRADE_VIEW',
     'counselors': 'DEPARTMENT_COUNSELLOR_VIEW',
     'department': 'DEPARTMENT_VIEW',
+    'data-segregation': 'DATA_SEGREGATION_VIEW',
     'courses': 'COURSE_VIEW',
     'lead-status': 'LEAD_STATUS_VIEW',
     'reports': 'DASHBOARD_VIEW_ALL',

@@ -190,7 +190,15 @@ const ApiRoutes = {
         users: '/api/dropdowns/users',
         followupStatuses: '/api/dropdowns/followup-statuses',
         followupLeadStatuses: '/api/dropdowns/followup-lead-statuses'
+    },
+
+    DataSegregation: {
+        courseTypes: '/api/data-segregation/course-types',
+        matrix: '/api/data-segregation/matrix',
+        userAnalytics: '/api/data-segregation/user-analytics',
+        leadStatusAnalytics: '/api/data-segregation/lead-status-analytics'
     }
 }
 
-export default ApiRoutes;   
+export default ApiRoutes;
+

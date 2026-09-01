@@ -213,6 +213,12 @@ const Leads = () => {
       converted.leadStatusHistoryId = converted.leadStatusHistoryIds[0];
       delete converted.leadStatusHistoryIds;
     }
+
+    // Convert assignedUserIds → assignedUserId or assignedUserIds
+    if (converted.assignedUserIds?.length === 1) {
+      converted.assignedUserId = converted.assignedUserIds[0];
+      delete converted.assignedUserIds;
+    }
     
     return converted;
   };
@@ -321,6 +327,11 @@ const Leads = () => {
         case 'leadSource':
           if (!newFilterRequest.leadSourceIds) newFilterRequest.leadSourceIds = [];
           newFilterRequest.leadSourceIds.push(filter.value);
+          break;
+        case 'assignedUser':
+        case 'user':
+          if (!newFilterRequest.assignedUserIds) newFilterRequest.assignedUserIds = [];
+          newFilterRequest.assignedUserIds.push(filter.value);
           break;
         case 'allLeads':
           // No specific filter needed, just show all leads

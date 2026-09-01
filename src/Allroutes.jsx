@@ -42,6 +42,7 @@ import UserManagement from "./pages/settings/UserManagement";
 import Notifications from "./pages/settings/Notifications";
 import CRMConfig from "./pages/settings/CRMConfig";
 import RolesAndPermissions from "./pages/settings/RolesAndPermissions";
+import EmailSettings from "./pages/settings/EmailSettings";
 
 import Datasegregation from "./pages/Data-segregation";
 import DatasegregationDetail from "./pages/datasegregationDetail";
@@ -77,10 +78,11 @@ const Allroutes = () => {
         <Route path="/reports" element={<Reports />} />
         <Route path="/courses" element={<Courses />} />
         <Route path="/settings" element={<Settings />}>
-        <Route path="user-management" element={<UserManagement />} />
-        <Route path="notifications" element={<Notifications />} />
-        <Route path="crm-config" element={<CRMConfig />} />
-        <Route path="roles-permissions" element={<RolesAndPermissions />} />
+          <Route path="user-management" element={<UserManagement />} />
+          <Route path="notifications" element={<Notifications />} />
+          <Route path="crm-config" element={<CRMConfig />} />
+          <Route path="roles-permissions" element={<RolesAndPermissions />} />
+          <Route path="email-settings" element={<EmailSettings />} />
         </Route>
         <Route path="/lead-source" element={<Leadsourse />} />
         <Route path="/lead-source-details/:id" element={<DataSourceDetails />} />

@@ -101,9 +101,22 @@ const ApiRoutes = {
         getActive: '/api/lead-status/active'
     },
 
+    Email: {
+        send: '/api/emails/send',
+        test: '/api/emails/test',
+        logs: '/api/emails/logs',
+        status: '/api/emails/config/status',
+    },
+
     FollowUp: {
         getAllFollowUps: "/api/followups",
         getByUser: "/api/followups/user/{userId}",
+        getToday: "/api/followups/today",
+        getPending: "/api/followups/pending",
+        getCompleted: "/api/followups/completed",
+        reschedule: "/api/followups/{id}/reschedule",
+        complete: "/api/followups/{id}/complete",
+        cancel: "/api/followups/{id}/cancel",
         reassign: "/api/follow-ups/reassign",
         reassignDistribute: "/api/follow-ups/reassign/distribute",
     },

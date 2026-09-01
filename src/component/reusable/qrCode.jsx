@@ -28,7 +28,7 @@ function QRCodePage() {
                 <div className="absolute left-0 w-full h-[2px] bg-blue-500 shadow-[0_0_10px_2px_rgba(59,130,246,0.6)] animate-scan z-20" />
 
                 <QRCodeCanvas
-                    value="http://localhost:5173/student-form"
+                    value="https://dds.areyoureporting.com/student-form"
                     size={220}
                     level="H"
                     fgColor="#1e293b"

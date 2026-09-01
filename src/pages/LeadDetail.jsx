@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
 import { usePermissions } from '../PermissionContext';
+import { toast } from 'react-toastify';
 import CustomButton from '../component/reusable/CustomButton';
 import ScheduleModal from "../component/reusable/Leads/scheduleModel";
 import CallModal from '../component/reusable/CallModal';
@@ -10,6 +11,7 @@ import EmailModal from '../component/reusable/EmailModal';
 import ReusableTable from '../component/reusable/table';
 import { createLeadSchedule, getLeadById, getLeadInfoPanel, sendLeadWhatsApp, sendLeadEmail, changeLeadStatus, getLeadStatusHistory, getLeadFollowUps } from '../Services/lead/leadService';
 import { getAllCourses } from '../Services/course/course';
+import { completeFollowup, cancelFollowup } from '../Services/followUp/followService';
 
 const BASE_URL = import.meta.env.VITE_BASE_URL || '';
 
@@ -390,6 +392,70 @@ const LeadDetail = () => {
     }
   };
 
+  const handleCompleteFollowup = async () => {
+    try {
+      // Find the first pending follow-up for this lead
+      const pendingFollowup = followUps.find(f => f.status === 'PENDING' && !f.completed);
+      
+      if (!pendingFollowup) {
+        toast.error('No pending follow-up found to complete');
+        return;
+      }
+
+      const response = await completeFollowup({
+        id: pendingFollowup.id,
+        feedback: 'Follow-up completed',
+        remarks: 'Marked as completed for follow-up'
+      });
+      
+      if (response?.success) {
+        toast.success('Follow-up marked as completed successfully');
+        // Refresh follow-ups data
+        const res = await getLeadFollowUps(id);
+        if (res?.data?.success && res?.data?.data) {
+          setFollowUps(res.data.data);
+        }
+      } else {
+        toast.error(response?.message || 'Failed to complete follow-up');
+      }
+    } catch (error) {
+      console.error('Failed to complete follow-up', error);
+      toast.error('Failed to complete follow-up');
+    }
+  };
+
+  const handleCancelFollowup = async () => {
+    try {
+      // Find the first pending follow-up for this lead
+      const pendingFollowup = followUps.find(f => f.status === 'PENDING' && !f.completed);
+      
+      if (!pendingFollowup) {
+        toast.error('No pending follow-up found to cancel');
+        return;
+      }
+
+      const response = await cancelFollowup({
+        id: pendingFollowup.id,
+        feedback: 'Follow-up cancelled',
+        remarks: 'Marked as cancelled for follow-up'
+      });
+      
+      if (response?.success) {
+        toast.success('Follow-up marked as cancelled successfully');
+        // Refresh follow-ups data
+        const res = await getLeadFollowUps(id);
+        if (res?.data?.success && res?.data?.data) {
+          setFollowUps(res.data.data);
+        }
+      } else {
+        toast.error(response?.message || 'Failed to cancel follow-up');
+      }
+    } catch (error) {
+      console.error('Failed to cancel follow-up', error);
+      toast.error('Failed to cancel follow-up');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -416,6 +482,7 @@ const LeadDetail = () => {
   
   // Check if status is "Finally Not Connected", "Bad", or "Not Interested"
   const isFinallyNotConnected = statusName === 'Finally Not Connected' || statusName === 'Bad' || statusName === 'Not Interested';
+  const hasPendingFollowup = followUps.some(f => f.status === 'PENDING' && !f.completed);
 
   return (
     <div className="block" id="page-lead-detail">
@@ -435,6 +502,7 @@ const LeadDetail = () => {
           </div>
         </div>
         <div className="flex gap-2">
+
           {/* {hasPermission('LEAD_CREATE') && (
             <CustomButton
               variant="secondary"
@@ -448,6 +516,33 @@ const LeadDetail = () => {
               Add Lead
             </CustomButton>
           )} */}
+              
+               {hasPendingFollowup && (
+                <CustomButton
+                variant="primary"
+                onClick={handleCancelFollowup}
+                className="text-xs py-1.5 px-3 flex items-center gap-1.5 bg-red-600 hover:bg-red-700"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Mark as Cancelled For Follow-Up
+              </CustomButton>
+              )}
+
+               {hasPendingFollowup && (
+                <CustomButton
+                variant="primary"
+                onClick={handleCompleteFollowup}
+                className="text-xs py-1.5 px-3 flex items-center gap-1.5 bg-green-600 hover:bg-green-700"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Mark as Completed For Follow-Up
+              </CustomButton>
+              )}
+
 
            {!isFinallyNotConnected && (
             <CustomButton
@@ -462,7 +557,7 @@ const LeadDetail = () => {
             </CustomButton>
           )}
             
-          {!isFinallyNotConnected && (
+          {!isFinallyNotConnected && !hasPendingFollowup && (
             <CustomButton
               variant="primary"
               onClick={() => setIsScheduleModalOpen(true)}

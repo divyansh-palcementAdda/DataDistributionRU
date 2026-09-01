@@ -42,3 +42,61 @@ export const getAllFollowups = async ({
         throw error.response?.data || error.message;
     }
 };
+
+export const completeFollowup = async ({
+    id,
+    feedback,
+    remarks = "",
+}) => {
+    try {
+        const completeFollowupRoute =
+            ApiRoutes.FollowUp?.completeFollowup?.replace("{id}", id) ||
+            `/api/followups/${id}/complete`;
+
+        const response = await axiosInstance.post(
+            completeFollowupRoute,
+            {
+                feedback,
+                remarks,
+            },
+            {
+                params: {
+                    remarks,
+                },
+            }
+        );
+
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
+export const cancelFollowup = async ({
+    id,
+    feedback,
+    remarks = "",
+}) => {
+    try {
+        const cancelFollowupRoute =
+            ApiRoutes.FollowUp?.cancelFollowup?.replace("{id}", id) ||
+            `/api/followups/${id}/cancel`;
+
+        const response = await axiosInstance.post(
+            cancelFollowupRoute,
+            {
+                feedback,
+                remarks,
+            },
+            {
+                params: {
+                    remarks,
+                },
+            }
+        );
+
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};

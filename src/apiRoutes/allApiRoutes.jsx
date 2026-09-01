@@ -106,6 +106,8 @@ const ApiRoutes = {
         getByUser: "/api/followups/user/{userId}",
         reassign: "/api/follow-ups/reassign",
         reassignDistribute: "/api/follow-ups/reassign/distribute",
+        completeFollowup: "/api/followups/{id}/complete",
+        cancelFollowup: "/api/followups/{id}/cancel",
     },
 
     Grads: {

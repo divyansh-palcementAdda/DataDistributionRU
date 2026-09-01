@@ -10,6 +10,7 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
         leadStatus: "",
         leadStatusCode: "",
     });
+    const [errors, setErrors] = useState({});
     const [leadStatuses, setLeadStatuses] = useState([]);
     const [statuses, setStatuses] = useState([]);
 
@@ -23,6 +24,18 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
 
                 setStatuses(statusesResponse?.data || []);
                 setLeadStatuses(leadStatusesResponse?.data || []);
+
+                // Set default status to "pending"
+                const pendingStatus = statusesResponse?.data?.find(status => 
+                    status.name?.toLowerCase() === "pending"
+                );
+                if (pendingStatus) {
+                    setFormData(prev => ({
+                        ...prev,
+                        status: pendingStatus.id,
+                        statusCode: pendingStatus.code || "",
+                    }));
+                }
             } catch (error) {
                 console.error("Error fetching dropdowns:", error);
                 setStatuses([]);
@@ -37,6 +50,12 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
+
+        // Clear error for the field being changed
+        setErrors(prev => ({
+            ...prev,
+            [name]: ""
+        }));
 
         if (name === "leadStatus") {
             const selectedStatus = leadStatuses.find(status => status.id === value);
@@ -61,6 +80,26 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
     };
 
     const handleSave = async () => {
+        // Validation
+        const newErrors = {};
+        if (!formData.followUpDate) {
+            newErrors.followUpDate = "Follow Up Date is required";
+        }
+        if (!formData.remarks) {
+            newErrors.remarks = "Remarks is required";
+        }
+        if (!formData.status) {
+            newErrors.status = "Status is required";
+        }
+        if (!formData.leadStatus) {
+            newErrors.leadStatus = "Lead Status is required";
+        }
+
+        if (Object.keys(newErrors).length > 0) {
+            setErrors(newErrors);
+            return;
+        }
+
         const payload = {
             ...formData,
             followUpDate: formData.followUpDate
@@ -78,6 +117,7 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
             leadStatus: "",
             leadStatusCode: "",
         });
+        setErrors({});
 
         onClose();
     };
@@ -105,7 +145,7 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
                 <div className="space-y-4 p-5">
                     <div>
                         <label className="mb-2 block text-sm font-medium text-gray-700">
-                            Follow Up Date
+                            Follow Up Date <span className="text-red-500">*</span>
                         </label>
 
                         <input
@@ -113,13 +153,14 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
                             name="followUpDate"
                             value={formData.followUpDate}
                             onChange={handleChange}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-blue-500"
+                            className={`w-full rounded-lg border px-3 py-2 outline-none focus:border-blue-500 ${errors.followUpDate ? 'border-red-500' : 'border-gray-300'}`}
                         />
+                        {errors.followUpDate && <p className="mt-1 text-sm text-red-500">{errors.followUpDate}</p>}
                     </div>
 
                     <div>
                         <label className="mb-2 block text-sm font-medium text-gray-700">
-                            Remarks
+                            Remarks <span className="text-red-500">*</span>
                         </label>
 
                         <textarea
@@ -128,20 +169,21 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
                             value={formData.remarks}
                             onChange={handleChange}
                             placeholder="Enter remarks"
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-blue-500"
+                            className={`w-full rounded-lg border px-3 py-2 outline-none focus:border-blue-500 ${errors.remarks ? 'border-red-500' : 'border-gray-300'}`}
                         />
+                        {errors.remarks && <p className="mt-1 text-sm text-red-500">{errors.remarks}</p>}
                     </div>
 
                     <div>
                         <label className="mb-2 block text-sm font-medium text-gray-700">
-                            Status
+                            Status <span className="text-red-500">*</span>
                         </label>
 
                         <select
                             name="status"
                             value={formData.status}
                             onChange={handleChange}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-blue-500"
+                            className={`w-full rounded-lg border px-3 py-2 outline-none focus:border-blue-500 ${errors.status ? 'border-red-500' : 'border-gray-300'}`}
                         >
                             <option value="">Select Status</option>
                             {statuses.map((status) => (
@@ -150,18 +192,19 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
                                 </option>
                             ))}
                         </select>
+                        {errors.status && <p className="mt-1 text-sm text-red-500">{errors.status}</p>}
                     </div>
 
                     <div>
                         <label className="mb-2 block text-sm font-medium text-gray-700">
-                            Lead Status
+                            Lead Status <span className="text-red-500">*</span>
                         </label>
 
                         <select
                             name="leadStatus"
                             value={formData.leadStatus}
                             onChange={handleChange}
-                            className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-blue-500"
+                            className={`w-full rounded-lg border px-3 py-2 outline-none focus:border-blue-500 ${errors.leadStatus ? 'border-red-500' : 'border-gray-300'}`}
                         >
                             <option value="">Select Lead Status</option>
                             {leadStatuses.map((status) => (
@@ -170,6 +213,7 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
                                 </option>
                             ))}
                         </select>
+                        {errors.leadStatus && <p className="mt-1 text-sm text-red-500">{errors.leadStatus}</p>}
                     </div>
                 </div>
 

@@ -59,6 +59,18 @@ const LeadDetail = () => {
     }
   }, [id]);
 
+  // Auto-select interested course when lead details are loaded
+  useEffect(() => {
+    if (leadDetails) {
+      // Check if there's an interested course and auto-select it
+      const interestedCourse = leadDetails.course || leadDetails.interestedCourses?.[0];
+      if (interestedCourse?.id) {
+        setSelectedCourse(interestedCourse.id);
+        setSelectedCourseObj(interestedCourse);
+      }
+    }
+  }, [leadDetails]);
+
   useEffect(() => {
     const fetchCourses = async () => {
       setCoursesLoading(true);

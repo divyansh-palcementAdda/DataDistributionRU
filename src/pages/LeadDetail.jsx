@@ -8,6 +8,7 @@ import ScheduleModal from "../component/reusable/Leads/scheduleModel";
 import CallModal from '../component/reusable/CallModal';
 import WhatsAppModal from '../component/reusable/WhatsAppModal';
 import EmailModal from '../component/reusable/EmailModal';
+import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import ReusableTable from '../component/reusable/table';
 import { createLeadSchedule, getLeadById, getLeadInfoPanel, sendLeadWhatsApp, sendLeadEmail, changeLeadStatus, getLeadStatusHistory, getLeadFollowUps } from '../Services/lead/leadService';
 import { getAllCourses } from '../Services/course/course';
@@ -23,6 +24,7 @@ const LeadDetail = () => {
   const [isCallModalOpen, setIsCallModalOpen] = useState(false);
   const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [isRemarkModalOpen, setIsRemarkModalOpen] = useState(false);
   const [leadDetails, setLeadDetails] = useState(null);
   const [loading, setLoading] = useState(false);
   const [courses, setCourses] = useState([]);
@@ -456,6 +458,19 @@ const LeadDetail = () => {
     }
   };
 
+  const handleRemarkSave = async (lead, remark) => {
+    // Refresh lead details after saving remark
+    try {
+      const res = await getLeadById(id);
+      if (res?.data?.success) {
+        setLeadDetails(res.data.data);
+      }
+      showToast('Remark saved successfully');
+    } catch (err) {
+      console.error('Failed to refresh lead details', err);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -634,6 +649,17 @@ const LeadDetail = () => {
                   Call
                   </button>
                 )}
+                <button
+                  onClick={() => setIsRemarkModalOpen(true)}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-purple-600 bg-purple-50 hover:bg-purple-100 border border-purple-200 px-3 py-1.5 rounded-lg transition-colors"
+                  title="Remark Lead"
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                  Remark Lead
+                </button>
               </div>
             </div>
 
@@ -1125,6 +1151,13 @@ const LeadDetail = () => {
         studentData={leadDetails}
         selectedCourse={selectedCourse}
         onSend={handleEmailSend}
+      />
+
+      <LeadRemarkModal
+        isOpen={isRemarkModalOpen}
+        onClose={() => setIsRemarkModalOpen(false)}
+        lead={leadDetails}
+        onSave={handleRemarkSave}
       />
     </div>
   );

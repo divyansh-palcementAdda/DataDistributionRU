@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import CustomButton from './CustomButton';
+import { changeLeadStatus } from '../../Services/lead/leadService';
 
 const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen, onInfoPanelOpen }) => {
     const [isConnected, setIsConnected] = useState(false);
     const [showInterestButtons, setShowInterestButtons] = useState(false);
     const [showActionButtons, setShowActionButtons] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     if (!isOpen) return null;
 
@@ -22,19 +24,55 @@ const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen, onInfoPanelOp
         setShowInterestButtons(true);
     };
 
-    const handleInterested = () => {
-        setShowInterestButtons(false);
-        setShowActionButtons(true);
+    const handleInterested = async () => {
+        setIsSubmitting(true);
+        try {
+            await changeLeadStatus(studentData?.id, {
+                newStatusId: studentData?.currentStatus?.id,
+                statusCode: 'INTERESTED',
+                feedback: 'Interested in the course'
+            });
+            setShowInterestButtons(false);
+            setShowActionButtons(true);
+        } catch (error) {
+            console.error('Error changing status to Interested:', error);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
-    const handleNotInterested = () => {
-        setShowInterestButtons(false);
-        onClose();
+    const handleNotInterested = async () => {
+        setIsSubmitting(true);
+        try {
+            await changeLeadStatus(studentData?.id, {
+                newStatusId: studentData?.currentStatus?.id,
+                statusCode: 'NOT_INTERESTED',
+                feedback: 'Not interested in the course'
+            });
+            setShowInterestButtons(false);
+            onClose();
+        } catch (error) {
+            console.error('Error changing status to Not Interested:', error);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
-    const handleBad = () => {
-        setShowInterestButtons(false);
-        onClose();
+    const handleBad = async () => {
+        setIsSubmitting(true);
+        try {
+            await changeLeadStatus(studentData?.id, {
+                newStatusId: studentData?.currentStatus?.id,
+                statusCode: 'BAD_DATA',
+                feedback: 'Bad data'
+            });
+            setShowInterestButtons(false);
+            onClose();
+        } catch (error) {
+            console.error('Error changing status to Bad:', error);
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleInfoPanel = () => {
@@ -156,22 +194,25 @@ const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen, onInfoPanelOp
                                 variant="primary"
                                 onClick={handleInterested}
                                 className="px-4 py-2 bg-green-600 hover:bg-green-700"
+                                disabled={isSubmitting}
                             >
-                                Interested
+                                {isSubmitting ? 'Submitting...' : 'Interested'}
                             </CustomButton>
                             <CustomButton
                                 variant="secondary"
                                 onClick={handleNotInterested}
                                 className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white"
+                                disabled={isSubmitting}
                             >
-                                Not Interested
+                                {isSubmitting ? 'Submitting...' : 'Not Interested'}
                             </CustomButton>
                             <CustomButton
                                 variant="secondary"
                                 onClick={handleBad}
                                 className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white"
+                                disabled={isSubmitting}
                             >
-                                Bad
+                                {isSubmitting ? 'Submitting...' : 'Bad'}
                             </CustomButton>
                         </>
                     )}

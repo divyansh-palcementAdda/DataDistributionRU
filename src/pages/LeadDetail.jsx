@@ -587,7 +587,7 @@ const LeadDetail = () => {
               ].map((item, idx) => (
                 <div key={idx} className="bg-gray-50 p-3 rounded-lg border border-gray-100">
                   <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">{item.label}</div>
-                  <div className="text-xs font-semibold text-gray-800">{item.value}</div>
+                  <div className={`text-xs font-semibold text-gray-800 ${item.label === 'Email' ? 'break-all' : ''}`}>{item.value}</div>
                 </div>
               ))}
             </div>
@@ -648,7 +648,7 @@ const LeadDetail = () => {
                     {leadDetails.sourceDetails || 'N/A'}
                   </div>
                   {leadDetails.leadSources?.length > 0 && (
-                    <div className="mt-1 flex flex-wrap gap-1">
+                    <div className="mt-1 flex gap-1">
                       {leadDetails.leadSources.map((source) => (
                         <span key={source.id} className="text-[9px] bg-blue-50 text-blue-500 px-1.5 py-0.5 rounded border border-blue-100">
                           {source.name}

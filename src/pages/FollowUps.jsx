@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
 import { usePermissions } from '../PermissionContext';
 import ReusableTable from '../component/reusable/table';
-import { getAllFollowups } from '../Services/followUp/followService';
+import { getAllFollowups, getTodayFollowups, rescheduleFollowup, completeFollowup } from '../Services/followUp/followService';
 import FollowupFormModal from "../component/reusable/FollowupFormModal";
 import FollowUpCards from "../component/reusable/DashBoards/followUpCards";
 import ScheduleModal from "../component/reusable/Leads/scheduleModel";
@@ -96,6 +96,19 @@ const FollowUps = () => {
     setIsScheduleModalOpen(true);
   };
 
+  const handleComplete = async (row) => {
+    const feedback = window.prompt("Enter completion remarks / feedback:", "Follow-up completed successfully");
+    if (!feedback || !feedback.trim()) return;
+
+    try {
+      await completeFollowup(row.id, { remarks: feedback.trim() });
+      showToast("Follow-up marked as completed!", "success");
+      fetchData();
+    } catch (err) {
+      showToast(err?.message || "Failed to complete follow-up", "error");
+    }
+  };
+
   const handleViewLead = (row) => {
     const leadId = row.leadId || row.id;
     if (leadId) {
@@ -105,12 +118,20 @@ const FollowUps = () => {
 
   const handleScheduleSubmit = async (payload) => {
     try {
-      // Here you can add the API call to reschedule the followup
-      // For now, just showing a toast and refreshing data
-      showToast("Follow-up rescheduled successfully", "success");
+      if (selectedFollowup?.id) {
+        await rescheduleFollowup(selectedFollowup.id, {
+          newFollowUpDate: payload.followUpDate,
+          remarks: payload.remarks,
+        });
+        showToast("Follow-up rescheduled successfully", "success");
+      } else {
+        showToast("Follow-up scheduled successfully", "success");
+      }
       fetchData();
     } catch (error) {
-      showToast("Error rescheduling follow-up", "error");
+      showToast(error?.message || "Error rescheduling follow-up", "error");
+    } finally {
+      setSelectedFollowup(null);
     }
   };
 
@@ -118,15 +139,26 @@ const FollowUps = () => {
     setLoading(true);
 
     try {
-      const res = await getAllFollowups({
-        page,
-        size,
-        sortBy,
-        sortDirection: sortDirection.toUpperCase(),
-        search,
-        status: activeTab === "ALL" ? "" : activeTab,
-        leadStatusIds: selectedLeadStatusId ? [selectedLeadStatusId] : [],
-      });
+      let res;
+      if (activeTab === "TODAY") {
+        res = await getTodayFollowups({
+          page,
+          size,
+          sortBy,
+          sortDirection: sortDirection.toUpperCase(),
+          search,
+        });
+      } else {
+        res = await getAllFollowups({
+          page,
+          size,
+          sortBy,
+          sortDirection: sortDirection.toUpperCase(),
+          search,
+          status: activeTab === "ALL" ? "" : activeTab,
+          leadStatusIds: selectedLeadStatusId ? [selectedLeadStatusId] : [],
+        });
+      }
 
       const apiData = res?.data ?? res ?? {};
       const payload = apiData?.data ?? apiData;
@@ -223,7 +255,7 @@ const FollowUps = () => {
       key: "actions",
       header: "Actions",
       render: (_, row) => (
-        <div className="flex gap-2">
+        <div className="flex items-center gap-1.5">
           {hasPermission('FOLLOWUP_VIEW') && (
             <button
               className="btn btn-sm btn-primary"
@@ -231,6 +263,24 @@ const FollowUps = () => {
             >
               View
             </button>
+          )}
+          {row.status === "PENDING" && (
+            <>
+              <button
+                className="px-2 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded text-xs font-medium transition-colors"
+                onClick={() => handleReschedule(row)}
+                title="Reschedule Follow-up"
+              >
+                Reschedule
+              </button>
+              <button
+                className="px-2 py-1 bg-green-50 text-green-700 hover:bg-green-100 rounded text-xs font-medium transition-colors"
+                onClick={() => handleComplete(row)}
+                title="Complete Follow-up"
+              >
+                Done
+              </button>
+            </>
           )}
         </div>
       ),
@@ -294,9 +344,10 @@ const FollowUps = () => {
             setActiveTab(e.target.value);
             setPage(0);
           }}
-          style={{ maxWidth: "150px" }}
+          style={{ maxWidth: "160px" }}
         >
           <option value="ALL">ALL</option>
+          <option value="TODAY">TODAY'S DUE</option>
           <option value="PENDING">PENDING</option>
           <option value="COMPLETED">COMPLETED</option>
           <option value="MISSED">MISSED</option>

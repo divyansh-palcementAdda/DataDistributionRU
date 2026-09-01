@@ -55,7 +55,8 @@ const Sidebar = () => {
     { id: 'settings/user-management', label: 'User Management' },
     { id: 'settings/notifications', label: 'Notifications' },
     { id: 'settings/crm-config', label: 'CRM Config' },
-    { id: 'settings/roles-permissions', label: 'Roles & Permissions' }
+    { id: 'settings/roles-permissions', label: 'Roles & Permissions' },
+    { id: 'settings/email-settings', label: 'Email Settings & Logs' }
   ];
 
   // Define permission mappings for sidebar items
@@ -75,7 +76,8 @@ const Sidebar = () => {
     'settings/user-management': 'SETTINGS_USER_MANAGEMENT',
     'settings/notifications': 'SETTINGS_NOTIFICATIONS',
     'settings/crm-config': 'SETTINGS_PROJECT_CONFIGURATION',
-    'settings/roles-permissions': 'SETTINGS_ROLES_AND_PERMISSIONS'
+    'settings/roles-permissions': 'SETTINGS_ROLES_AND_PERMISSIONS',
+    'settings/email-settings': 'EMAIL_LOG_VIEW'
   };
 
   // Check if user has permission to view a specific item

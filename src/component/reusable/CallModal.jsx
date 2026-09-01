@@ -7,6 +7,15 @@ const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen }) => {
 
     if (!isOpen) return null;
 
+    // Get current status from API response
+    const currentStatus = studentData?.currentStatus;
+    const statusName = currentStatus?.name || currentStatus?.code || '';
+    const followUpStatus = currentStatus?.followUpStatus || false;
+
+    // Determine which buttons to show based on currentStatus
+    const shouldShowConnectionButtons = !followUpStatus;
+    const shouldShowInterestButtons = followUpStatus;
+
     const handleMarkAsConnected = () => {
         setIsConnected(true);
         setShowInterestButtons(true);
@@ -99,25 +108,31 @@ const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen }) => {
 
                 {/* Footer */}
                 <div className="flex justify-end gap-3 border-t p-5">
-                    <CustomButton
-                        variant="secondary"
-                        onClick={handleMarkAsNotConnected}
-                        className="px-4 py-2"
-                    >
-                        Mark as not connected
-                    </CustomButton>
-                    
-                    {!isConnected && (
-                        <CustomButton
-                            variant="primary"
-                            onClick={handleMarkAsConnected}
-                            className="px-4 py-2"
-                        >
-                            Mark as Connected
-                        </CustomButton>
+                    {/* Show connection buttons if not in follow-up status */}
+                    {shouldShowConnectionButtons && (
+                        <>
+                            <CustomButton
+                                variant="secondary"
+                                onClick={handleMarkAsNotConnected}
+                                className="px-4 py-2"
+                            >
+                                Mark as not connected
+                            </CustomButton>
+                            
+                            {!isConnected && (
+                                <CustomButton
+                                    variant="primary"
+                                    onClick={handleMarkAsConnected}
+                                    className="px-4 py-2"
+                                >
+                                    Mark as Connected
+                                </CustomButton>
+                            )}
+                        </>
                     )}
 
-                    {showInterestButtons && (
+                    {/* Show interest buttons if in follow-up status */}
+                    {shouldShowInterestButtons && (
                         <>
                             <CustomButton
                                 variant="primary"

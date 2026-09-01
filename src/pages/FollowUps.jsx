@@ -266,13 +266,13 @@ const FollowUps = () => {
           )}
           {row.status === "PENDING" && (
             <>
-              <button
+              {/* <button
                 className="px-2 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded text-xs font-medium transition-colors"
                 onClick={() => handleReschedule(row)}
                 title="Reschedule Follow-up"
               >
                 Reschedule
-              </button>
+              </button> */}
               <button
                 className="px-2 py-1 bg-green-50 text-green-700 hover:bg-green-100 rounded text-xs font-medium transition-colors"
                 onClick={() => handleComplete(row)}

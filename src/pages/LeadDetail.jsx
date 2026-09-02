@@ -463,55 +463,6 @@ const LeadDetail = () => {
 
   const handleFollowupNotConnected = async () => {
     try {
-      // First, cancel the pending follow-up
-      const pendingFollowup = followUps.find(f => f.status === 'PENDING' && !f.completed);
-
-      if (pendingFollowup) {
-        const cancelResponse = await cancelFollowup({
-          id: pendingFollowup.id,
-          feedback: 'Follow-up not connected',
-          remarks: 'Marked as not connected for follow-up'
-        });
-
-        if (cancelResponse?.success) {
-          toast.success('Follow-up cancelled successfully');
-          // Refresh follow-ups data
-          const res = await getLeadFollowUps(id);
-          if (res?.data?.success && res?.data?.data) {
-            setFollowUps(res.data.data);
-          }
-        }
-      }
-
-      // Then, mark the lead as not connected
-      const response = await changeLeadStatus(id, {
-        newStatusId: leadDetails.currentStatus?.id,
-        statusCode: 'NOT_CONNECTED_1',
-        feedback: 'Follow-up not connected'
-      });
-
-      if (response?.data?.success) {
-        toast.success('Lead marked as not connected successfully');
-        // Refresh lead details to get updated status
-        const leadRes = await getLeadById(id);
-        if (leadRes?.data?.success) {
-          setLeadDetails(leadRes.data.data);
-        }
-        // Close the call modal
-        setIsCallModalOpen(false);
-      } else {
-        toast.error(response?.data?.message || 'Failed to mark lead as not connected');
-      }
-    } catch (error) {
-      console.error('Failed to mark follow-up as not connected', error);
-      toast.error('Failed to mark follow-up as not connected');
-    }
-  };
-
-<<<<<<< Updated upstream
-=======
-  const handleFollowupNotConnected = async () => {
-    try {
       // Find the first active pending/upcoming follow-up for this lead
       const activeFollowup = followUps.find(f => (f.status === 'PENDING' || f.status === 'UPCOMING') && !f.completed);
 
@@ -552,7 +503,6 @@ const LeadDetail = () => {
     }
   };
 
->>>>>>> Stashed changes
   const handleRemarkSave = async (lead, remark) => {
     // Refresh lead details after saving remark
     try {

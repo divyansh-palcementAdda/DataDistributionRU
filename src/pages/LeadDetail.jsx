@@ -12,7 +12,7 @@ import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import ReusableTable from '../component/reusable/table';
 import { createLeadSchedule, getLeadById, getLeadInfoPanel, sendLeadWhatsApp, sendLeadEmail, changeLeadStatus, getLeadStatusHistory, getLeadFollowUps } from '../Services/lead/leadService';
 import { getAllCourses } from '../Services/course/course';
-import { completeFollowup, cancelFollowup } from '../Services/followUp/followService';
+import { completeFollowup, cancelFollowup, markFollowupNotConnected } from '../Services/followUp/followService';
 
 const BASE_URL = import.meta.env.VITE_BASE_URL || '';
 
@@ -325,7 +325,7 @@ const LeadDetail = () => {
       const response = await createLeadSchedule(id, formData);
       if (response?.data?.success) {
         showToast('Follow-up scheduled successfully');
-        
+
         // Background API call to change lead status
         if (formData.leadStatus && formData.leadStatusCode) {
           try {
@@ -380,7 +380,7 @@ const LeadDetail = () => {
         statusCode: 'REGISTERED',
         feedback: 'Lead registered successfully'
       });
-      
+
       if (response?.data?.success) {
         showToast('Lead status changed to Registered successfully');
         // Refresh lead details to get updated status
@@ -401,7 +401,7 @@ const LeadDetail = () => {
     try {
       // Find the first pending follow-up for this lead
       const pendingFollowup = followUps.find(f => f.status === 'PENDING' && !f.completed);
-      
+
       if (!pendingFollowup) {
         toast.error('No pending follow-up found to complete');
         return;
@@ -412,7 +412,7 @@ const LeadDetail = () => {
         feedback: 'Follow-up completed',
         remarks: 'Marked as completed for follow-up'
       });
-      
+
       if (response?.success) {
         toast.success('Follow-up marked as completed successfully');
         // Refresh follow-ups data
@@ -433,7 +433,7 @@ const LeadDetail = () => {
     try {
       // Find the first pending follow-up for this lead
       const pendingFollowup = followUps.find(f => f.status === 'PENDING' && !f.completed);
-      
+
       if (!pendingFollowup) {
         toast.error('No pending follow-up found to cancel');
         return;
@@ -444,7 +444,7 @@ const LeadDetail = () => {
         feedback: 'Follow-up cancelled',
         remarks: 'Marked as cancelled for follow-up'
       });
-      
+
       if (response?.success) {
         toast.success('Follow-up marked as cancelled successfully');
         // Refresh follow-ups data
@@ -465,14 +465,14 @@ const LeadDetail = () => {
     try {
       // First, cancel the pending follow-up
       const pendingFollowup = followUps.find(f => f.status === 'PENDING' && !f.completed);
-      
+
       if (pendingFollowup) {
         const cancelResponse = await cancelFollowup({
           id: pendingFollowup.id,
           feedback: 'Follow-up not connected',
           remarks: 'Marked as not connected for follow-up'
         });
-        
+
         if (cancelResponse?.success) {
           toast.success('Follow-up cancelled successfully');
           // Refresh follow-ups data
@@ -489,7 +489,7 @@ const LeadDetail = () => {
         statusCode: 'NOT_CONNECTED_1',
         feedback: 'Follow-up not connected'
       });
-      
+
       if (response?.data?.success) {
         toast.success('Lead marked as not connected successfully');
         // Refresh lead details to get updated status
@@ -508,6 +508,51 @@ const LeadDetail = () => {
     }
   };
 
+<<<<<<< Updated upstream
+=======
+  const handleFollowupNotConnected = async () => {
+    try {
+      // Find the first active pending/upcoming follow-up for this lead
+      const activeFollowup = followUps.find(f => (f.status === 'PENDING' || f.status === 'UPCOMING') && !f.completed);
+
+      if (!activeFollowup) {
+        toast.error('No active follow-up found to mark as not connected');
+        return;
+      }
+
+      // Single backend atomic operation: updates FollowUp to NOT_CONNECTED + synchronizes Lead status to NOT_CONNECTED with history
+      const response = await markFollowupNotConnected(activeFollowup.id, {
+        remarks: 'Follow-up call not attended / unanswered by student'
+      });
+
+      if (response?.success || response?.data) {
+        toast.success('Follow-up marked as Not Connected and Lead status synchronized successfully');
+
+        // Refresh follow-ups and lead details
+        const [followupsRes, leadRes] = await Promise.all([
+          getLeadFollowUps(id),
+          getLeadById(id)
+        ]);
+
+        if (followupsRes?.data?.success && followupsRes?.data?.data) {
+          setFollowUps(followupsRes.data.data);
+        }
+        if (leadRes?.data?.success && leadRes?.data?.data) {
+          setLeadDetails(leadRes.data.data);
+        }
+
+        // Close the call modal
+        setIsCallModalOpen(false);
+      } else {
+        toast.error(response?.message || 'Failed to mark follow-up as not connected');
+      }
+    } catch (error) {
+      console.error('Failed to mark follow-up as not connected', error);
+      toast.error(error?.message || 'Failed to mark follow-up as not connected');
+    }
+  };
+
+>>>>>>> Stashed changes
   const handleRemarkSave = async (lead, remark) => {
     // Refresh lead details after saving remark
     try {
@@ -544,7 +589,7 @@ const LeadDetail = () => {
   const createdByName = leadDetails.createdBy?.firstName && leadDetails.createdBy?.lastName
     ? `${leadDetails.createdBy.firstName} ${leadDetails.createdBy.lastName}`
     : leadDetails.createdBy?.username || 'N/A';
-  
+
   // Check if status is "Finally Not Connected", "Bad", or "Not Interested"
   const isFinallyNotConnected = statusName === 'Finally Not Connected' || statusName === 'Bad' || statusName === 'Not Interested';
   const hasPendingFollowup = followUps.some(f => f.status === 'PENDING' && !f.completed);
@@ -583,35 +628,48 @@ const LeadDetail = () => {
               Add Lead
             </CustomButton>
           )} */}
-              
-               {hasPendingFollowup && !followUpStatus && (
-                <CustomButton
-                variant="primary"
-                onClick={handleCancelFollowup}
-                className="text-xs py-1.5 px-3 flex items-center gap-1.5 bg-red-600 hover:bg-red-700"
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-                Mark as Cancelled For Follow-Up
-              </CustomButton>
-              )}
 
-               {hasPendingFollowup && !followUpStatus && (
-                <CustomButton
-                variant="primary"
-                onClick={handleCompleteFollowup}
-                className="text-xs py-1.5 px-3 flex items-center gap-1.5 bg-green-600 hover:bg-green-700"
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-                Mark as Completed For Follow-Up
-              </CustomButton>
-              )}
+          {hasPendingFollowup && !followUpStatus && (
+            <CustomButton
+              variant="primary"
+              onClick={handleCancelFollowup}
+              className="text-xs py-1.5 px-3 flex items-center gap-1.5 bg-red-600 hover:bg-red-700"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              Mark as Cancelled For Follow-Up
+            </CustomButton>
+          )}
+
+          {hasPendingFollowup && !followUpStatus && (
+            <CustomButton
+              variant="primary"
+              onClick={handleCompleteFollowup}
+              className="text-xs py-1.5 px-3 flex items-center gap-1.5 bg-green-600 hover:bg-green-700"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              Mark as Completed For Follow-Up
+            </CustomButton>
+          )}
+
+          {hasPendingFollowup && !followUpStatus && (
+            <CustomButton
+              variant="primary"
+              onClick={handleFollowupNotConnected}
+              className="text-xs py-1.5 px-3 flex items-center gap-1.5 bg-orange-600 hover:bg-orange-700"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              Mark as Not Connected For Follow-Up
+            </CustomButton>
+          )}
 
 
-           {!isFinallyNotConnected && (
+          {!isFinallyNotConnected && (
             <CustomButton
               variant="primary"
               onClick={handleRegisteredClick}
@@ -623,7 +681,7 @@ const LeadDetail = () => {
               Registered
             </CustomButton>
           )}
-            
+
           {leadDetails.assignedTo && !isFinallyNotConnected && !hasPendingFollowup && (
             <CustomButton
               variant="primary"
@@ -691,14 +749,14 @@ const LeadDetail = () => {
                 )}
                 {!isFinallyNotConnected && (
                   <button
-                  onClick={() => setIsCallModalOpen(true)}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-green-600 bg-green-50 hover:bg-green-100 border border-green-200 px-3 py-1.5 rounded-lg transition-colors"
-                  title="Call Lead"
-                >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                  </svg>
-                  Call
+                    onClick={() => setIsCallModalOpen(true)}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-green-600 bg-green-50 hover:bg-green-100 border border-green-200 px-3 py-1.5 rounded-lg transition-colors"
+                    title="Call Lead"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                    </svg>
+                    Call
                   </button>
                 )}
                 <button
@@ -729,7 +787,7 @@ const LeadDetail = () => {
                 </p>
 
                 <div className="flex flex-wrap gap-2">
-                   Assign To : {assignedToName}
+                  Assign To : {assignedToName}
                 </div>
               </div>
             </div>
@@ -855,7 +913,7 @@ const LeadDetail = () => {
               )}
             </div>
 
-          
+
 
             {/* Lead Sources */}
             {/* {leadDetails.leadSources?.length > 0 && (
@@ -1112,9 +1170,9 @@ const LeadDetail = () => {
                       <div className="text-[9px] font-bold text-gray-400 uppercase">Active Image</div>
                       <div className="text-xs font-semibold text-gray-700">{communicationConfig.activeImage.displayName}</div>
                       {communicationConfig.activeImage.imageUrl && (
-                        <img 
-                          src={`${BASE_URL}${communicationConfig.activeImage.imageUrl}`} 
-                          alt="Active image" 
+                        <img
+                          src={`${BASE_URL}${communicationConfig.activeImage.imageUrl}`}
+                          alt="Active image"
                           className="mt-2 rounded border border-gray-200 max-w-full h-auto"
                           onError={(e) => {
                             e.target.style.display = 'none';

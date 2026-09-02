@@ -152,3 +152,36 @@ export const cancelFollowup = async (followUpId, remarksOrPayload) => {
         throw error.response?.data || error;
     }
 };
+
+/**
+ * Mark a follow-up as Not Connected.
+ * Backend atomically updates the Follow-up status to NOT_CONNECTED and synchronizes the Lead status to NOT_CONNECTED with history.
+ * @param {string} followUpId
+ * @param {Object|string} remarksOrPayload - { remarks } or remarks string
+ */
+export const markFollowupNotConnected = async (followUpId, remarksOrPayload) => {
+    try {
+        const route = (ApiRoutes.FollowUp?.notConnected || "/api/followups/{id}/not-connected").replace("{id}", followUpId);
+        const payload = typeof remarksOrPayload === "string" ? { remarks: remarksOrPayload } : remarksOrPayload;
+        const response = await axiosInstance.patch(route, payload);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error;
+    }
+};
+
+/**
+ * Dynamically update follow-up status.
+ * @param {string} followUpId
+ * @param {Object} payload - { status, remarks }
+ */
+export const updateFollowupStatus = async (followUpId, payload) => {
+    try {
+        const route = (ApiRoutes.FollowUp?.updateStatus || "/api/followups/{id}/status").replace("{id}", followUpId);
+        const response = await axiosInstance.patch(route, payload);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error;
+    }
+};
+

@@ -122,6 +122,8 @@ const ApiRoutes = {
         reassignDistribute: "/api/follow-ups/reassign/distribute",
         completeFollowup: "/api/followups/{id}/complete",
         cancelFollowup: "/api/followups/{id}/cancel",
+        notConnected: "/api/followups/{id}/not-connected",
+        updateStatus: "/api/followups/{id}/status",
     },
 
     Grads: {

@@ -940,6 +940,10 @@ const Leads = () => {
                             courseTypeId: String(
                               full.courseType?.id ?? full.interestedCourseTypes?.[0]?.id ?? full.courseTypeId ?? ''
                             ),
+                            // department
+                            departmentId: String(
+                              full.department?.id ?? full.departmentId ?? ''
+                            ),
                             // assignedTo
                             assignedToUserId: String(
                               full.assignedTo?.id ?? full.assignedToUserId ?? ''

@@ -603,7 +603,7 @@ const Counselors = () => {
             onChange={handleSearchInput}
           />
         </div>
-        <select
+        {/* <select
           className="form-control"
           style={{ maxWidth: '150px', fontSize: '13px' }}
           value={sortBy}
@@ -612,7 +612,7 @@ const Counselors = () => {
           {SORTABLE_COLS.map((c) => (
             <option key={c.key} value={c.key}>{c.label}</option>
           ))}
-        </select>
+        </select> */}
       </div>
 
       {/* ── Table Card ── */}

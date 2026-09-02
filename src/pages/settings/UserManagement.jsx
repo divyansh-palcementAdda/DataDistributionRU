@@ -26,11 +26,12 @@ const UserManagement = () => {
   const [isDeleteUserModalOpen, setIsDeleteUserModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
   const [isDeletingUser, setIsDeletingUser] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const fetchUsers = useCallback(async () => {
+  const fetchUsers = useCallback(async (search = '') => {
     try {
       setLoadingUsers(true);
-      const res = await getAllUser();
+      const res = await getAllUser({ search });
       console.log('API Response for getAllUser:', res.data);
 
       let usersArray = [];
@@ -165,6 +166,15 @@ const UserManagement = () => {
     }
   };
 
+  // Debounced search effect
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchUsers(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, fetchUsers]);
+
   // Load users on component mount
   useEffect(() => {
     fetchUsers();
@@ -175,15 +185,24 @@ const UserManagement = () => {
     <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden animate-fadeIn">
       <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
         <h2 className="text-sm font-semibold text-gray-800">User Management</h2>
-        {hasPermission('USER_CREATE') && (
-          <CustomButton
-            variant="primary"
-            onClick={handleOpenAddUserModal}
-            className="text-xs py-1.5 px-3"
-          >
-            + Add User
-          </CustomButton>
-        )}
+        <div className="flex items-center gap-3">
+          <input
+            type="text"
+            placeholder="Search users..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="text-xs px-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-48"
+          />
+          {hasPermission('USER_CREATE') && (
+            <CustomButton
+              variant="primary"
+              onClick={handleOpenAddUserModal}
+              className="text-xs py-1.5 px-3"
+            >
+              + Add User
+            </CustomButton>
+          )}
+        </div>
       </div>
       {loadingUsers ? (
         <div className="py-8 text-center text-sm text-gray-500">Loading users...</div>

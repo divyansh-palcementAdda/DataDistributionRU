@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import CustomButton from './CustomButton';
 import { changeLeadStatus } from '../../Services/lead/leadService';
 
-const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen, onInfoPanelOpen, isFinallyNotConnected }) => {
+const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen, onInfoPanelOpen, isFinallyNotConnected, hasPendingFollowup, onCompleteFollowup, onCancelFollowup, onFollowupNotConnected, onRegisterLead }) => {
     const [isConnected, setIsConnected] = useState(false);
     const [showInterestButtons, setShowInterestButtons] = useState(false);
     const [showActionButtons, setShowActionButtons] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [followupActionCompleted, setFollowupActionCompleted] = useState(null); // 'cancelled', 'completed', 'not_connected'
 
     if (!isOpen) return null;
 
@@ -63,7 +64,7 @@ const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen, onInfoPanelOp
                 feedback: 'Not interested in the course'
             });
             setShowInterestButtons(false);
-            onClose();
+            handleClose();
         } catch (error) {
             console.error('Error changing status to Not Interested:', error);
         } finally {
@@ -80,7 +81,7 @@ const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen, onInfoPanelOp
                 feedback: 'Bad data'
             });
             setShowInterestButtons(false);
-            onClose();
+            handleClose();
         } catch (error) {
             console.error('Error changing status to Bad:', error);
         } finally {
@@ -90,7 +91,7 @@ const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen, onInfoPanelOp
 
     const handleInfoPanel = () => {
         setShowActionButtons(false);
-        onClose();
+        handleClose();
         if (onInfoPanelOpen) {
             onInfoPanelOpen();
         }
@@ -98,7 +99,7 @@ const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen, onInfoPanelOp
 
     const handleScheduleFollowUp = () => {
         setShowActionButtons(false);
-        onClose();
+        handleClose();
         if (onScheduleOpen) {
             onScheduleOpen();
         }
@@ -115,7 +116,7 @@ const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen, onInfoPanelOp
             setIsConnected(false);
             setShowInterestButtons(false);
             setShowActionButtons(false);
-            onClose();
+            handleClose();
         } catch (error) {
             console.error('Error marking as not connected:', error);
         } finally {
@@ -134,7 +135,7 @@ const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen, onInfoPanelOp
             setIsConnected(false);
             setShowInterestButtons(false);
             setShowActionButtons(false);
-            onClose();
+            handleClose();
         } catch (error) {
             console.error('Error marking as not connected - 2:', error);
         } finally {
@@ -153,7 +154,7 @@ const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen, onInfoPanelOp
             setIsConnected(false);
             setShowInterestButtons(false);
             setShowActionButtons(false);
-            onClose();
+            handleClose();
         } catch (error) {
             console.error('Error marking as not connected - 3:', error);
         } finally {
@@ -172,12 +173,46 @@ const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen, onInfoPanelOp
             setIsConnected(false);
             setShowInterestButtons(false);
             setShowActionButtons(false);
-            onClose();
+            handleClose();
         } catch (error) {
             console.error('Error marking as finally not connected:', error);
         } finally {
             setIsSubmitting(false);
         }
+    };
+
+    const handleCompleteFollowup = async () => {
+        if (onCompleteFollowup) {
+            await onCompleteFollowup();
+            setFollowupActionCompleted('completed');
+        }
+    };
+
+    const handleCancelFollowup = async () => {
+        if (onCancelFollowup) {
+            await onCancelFollowup();
+            setFollowupActionCompleted('cancelled');
+        }
+    };
+
+    const handleFollowupNotConnected = async () => {
+        if (onFollowupNotConnected) {
+            await onFollowupNotConnected();
+            setFollowupActionCompleted('not_connected');
+        }
+    };
+
+    const handleRegisterLead = async () => {
+        if (onRegisterLead) {
+            await onRegisterLead();
+            onClose();
+        }
+    };
+
+    // Reset followup action state when modal closes
+    const handleClose = () => {
+        setFollowupActionCompleted(null);
+        onClose();
     };
 
     // Determine which not connected button to show based on current status
@@ -239,7 +274,7 @@ const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen, onInfoPanelOp
                         Call Details
                     </h2>
                     <button
-                        onClick={onClose}
+                        onClick={handleClose}
                         className="text-2xl text-gray-500 hover:text-red-500 transition-colors"
                     >
                         ×
@@ -362,6 +397,92 @@ const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen, onInfoPanelOp
                                         className="px-4 py-2"
                                     >
                                         Schedule Follow Up
+                                    </CustomButton>
+                                </>
+                            )}
+
+                            {/* Show followup action buttons when followup is pending */}
+                            {hasPendingFollowup && !followupActionCompleted && (
+                                <>
+                                    <CustomButton
+                                        variant="primary"
+                                        onClick={handleCancelFollowup}
+                                        className="px-4 py-2 bg-red-600 hover:bg-red-700"
+                                        disabled={isSubmitting}
+                                    >
+                                        {isSubmitting ? 'Submitting...' : 'Mark as Cancelled'}
+                                    </CustomButton>
+                                    <CustomButton
+                                        variant="primary"
+                                        onClick={handleCompleteFollowup}
+                                        className="px-4 py-2 bg-green-600 hover:bg-green-700"
+                                        disabled={isSubmitting}
+                                    >
+                                        {isSubmitting ? 'Submitting...' : 'Mark as Completed'}
+                                    </CustomButton>
+                                    <CustomButton
+                                        variant="secondary"
+                                        onClick={handleFollowupNotConnected}
+                                        className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white"
+                                        disabled={isSubmitting}
+                                    >
+                                        {isSubmitting ? 'Submitting...' : 'Follow up Not Connected'}
+                                    </CustomButton>
+                                </>
+                            )}
+
+                            {/* Show followup completed action buttons */}
+                            {followupActionCompleted === 'cancelled' && (
+                                <>
+                                    <CustomButton
+                                        variant="primary"
+                                        onClick={handleRegisterLead}
+                                        className="px-4 py-2 bg-green-600 hover:bg-green-700"
+                                        disabled={isSubmitting}
+                                    >
+                                        {isSubmitting ? 'Submitting...' : 'Registered'}
+                                    </CustomButton>
+                                    <CustomButton
+                                        variant="secondary"
+                                        onClick={handleScheduleFollowUp}
+                                        className="px-4 py-2"
+                                        disabled={isSubmitting}
+                                    >
+                                        {isSubmitting ? 'Submitting...' : 'Schedule'}
+                                    </CustomButton>
+                                </>
+                            )}
+
+                            {followupActionCompleted === 'completed' && (
+                                <>
+                                    <CustomButton
+                                        variant="primary"
+                                        onClick={handleRegisterLead}
+                                        className="px-4 py-2 bg-green-600 hover:bg-green-700"
+                                        disabled={isSubmitting}
+                                    >
+                                        {isSubmitting ? 'Submitting...' : 'Registered'}
+                                    </CustomButton>
+                                    <CustomButton
+                                        variant="secondary"
+                                        onClick={handleScheduleFollowUp}
+                                        className="px-4 py-2"
+                                        disabled={isSubmitting}
+                                    >
+                                        {isSubmitting ? 'Submitting...' : 'Schedule'}
+                                    </CustomButton>
+                                </>
+                            )}
+
+                            {followupActionCompleted === 'not_connected' && (
+                                <>
+                                    <CustomButton
+                                        variant="secondary"
+                                        onClick={handleScheduleFollowUp}
+                                        className="px-4 py-2"
+                                        disabled={isSubmitting}
+                                    >
+                                        {isSubmitting ? 'Submitting...' : 'Schedule'}
                                     </CustomButton>
                                 </>
                             )}

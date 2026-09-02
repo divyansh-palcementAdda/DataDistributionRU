@@ -38,7 +38,7 @@ const AddLeadModal = () => {
     departmentId: '',
     remarks: '',
     assignedToUserId: '',
-    statusId: '',
+    statusId: '', // Will be set to "raw" when leadStatuses load
     active: true,
     nextFollowUpDate: '',
   });
@@ -315,6 +315,12 @@ const AddLeadModal = () => {
 
       fetchEditLocationData();
     } else {
+      // Set default status to "raw" for new leads
+      const rawStatus = leadStatuses.find(status => 
+        status.name?.toLowerCase() === 'raw' || 
+        status.name?.toLowerCase() === 'main raw'
+      );
+      
       setFormData({
         fullName: '',
         phoneNumber: '',
@@ -334,7 +340,7 @@ const AddLeadModal = () => {
         departmentId: '',
         remarks: '',
         assignedToUserId: '',
-        statusId: '',
+        statusId: rawStatus ? String(rawStatus.id) : '',
         active: true,
         nextFollowUpDate: '',
       });
@@ -394,6 +400,19 @@ const AddLeadModal = () => {
     fetchCities();
   }, [formData.country, formData.state]);
 
+  // Set default status to "raw" when leadStatuses are loaded and it's a new lead
+  useEffect(() => {
+    if (!editLeadData && leadStatuses.length > 0 && !formData.statusId) {
+      const rawStatus = leadStatuses.find(status => 
+        status.name?.toLowerCase() === 'raw' || 
+        status.name?.toLowerCase() === 'main raw'
+      );
+      if (rawStatus) {
+        setFormData(prev => ({ ...prev, statusId: String(rawStatus.id) }));
+      }
+    }
+  }, [leadStatuses, editLeadData, formData.statusId]);
+
   const handleChange = (field) => (e) => {
     const value = e.target.value;
     
@@ -407,6 +426,12 @@ const AddLeadModal = () => {
   };
 
   const resetForm = () => {
+    // Set default status to "raw" when resetting form
+    const rawStatus = leadStatuses.find(status => 
+      status.name?.toLowerCase() === 'raw' || 
+      status.name?.toLowerCase() === 'main raw'
+    );
+    
     setFormData({
       fullName: '',
       phoneNumber: '',
@@ -426,7 +451,7 @@ const AddLeadModal = () => {
       departmentId: '',
       remarks: '',
       assignedToUserId: '',
-      statusId: '',
+      statusId: rawStatus ? String(rawStatus.id) : '',
       active: true,
       nextFollowUpDate: '',
     });
@@ -1009,7 +1034,7 @@ const AddLeadModal = () => {
                 className="form-control"
                 value={formData.statusId}
                 onChange={handleChange('statusId')}
-                disabled={dropdownLoading.leadStatuses || editLeadData}
+                disabled={true}
               >
                 <option value="">Select Status</option>
                 {leadStatuses.length > 0 ? leadStatuses.map((status) => (

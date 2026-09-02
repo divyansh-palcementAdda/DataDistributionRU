@@ -196,8 +196,8 @@ const LeadDetail = () => {
         year: 'numeric',
         month: 'short',
         day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
+        // hour: '2-digit',
+        // minute: '2-digit',
       });
     } catch {
       return '-';
@@ -461,6 +461,53 @@ const LeadDetail = () => {
     }
   };
 
+  const handleFollowupNotConnected = async () => {
+    try {
+      // First, cancel the pending follow-up
+      const pendingFollowup = followUps.find(f => f.status === 'PENDING' && !f.completed);
+      
+      if (pendingFollowup) {
+        const cancelResponse = await cancelFollowup({
+          id: pendingFollowup.id,
+          feedback: 'Follow-up not connected',
+          remarks: 'Marked as not connected for follow-up'
+        });
+        
+        if (cancelResponse?.success) {
+          toast.success('Follow-up cancelled successfully');
+          // Refresh follow-ups data
+          const res = await getLeadFollowUps(id);
+          if (res?.data?.success && res?.data?.data) {
+            setFollowUps(res.data.data);
+          }
+        }
+      }
+
+      // Then, mark the lead as not connected
+      const response = await changeLeadStatus(id, {
+        newStatusId: leadDetails.currentStatus?.id,
+        statusCode: 'NOT_CONNECTED_1',
+        feedback: 'Follow-up not connected'
+      });
+      
+      if (response?.data?.success) {
+        toast.success('Lead marked as not connected successfully');
+        // Refresh lead details to get updated status
+        const leadRes = await getLeadById(id);
+        if (leadRes?.data?.success) {
+          setLeadDetails(leadRes.data.data);
+        }
+        // Close the call modal
+        setIsCallModalOpen(false);
+      } else {
+        toast.error(response?.data?.message || 'Failed to mark lead as not connected');
+      }
+    } catch (error) {
+      console.error('Failed to mark follow-up as not connected', error);
+      toast.error('Failed to mark follow-up as not connected');
+    }
+  };
+
   const handleRemarkSave = async (lead, remark) => {
     // Refresh lead details after saving remark
     try {
@@ -501,6 +548,8 @@ const LeadDetail = () => {
   // Check if status is "Finally Not Connected", "Bad", or "Not Interested"
   const isFinallyNotConnected = statusName === 'Finally Not Connected' || statusName === 'Bad' || statusName === 'Not Interested';
   const hasPendingFollowup = followUps.some(f => f.status === 'PENDING' && !f.completed);
+  const currentStatus = leadDetails?.currentStatus;
+  const followUpStatus = currentStatus?.followUpStatus || false;
 
   return (
     <div className="block" id="page-lead-detail">
@@ -535,7 +584,7 @@ const LeadDetail = () => {
             </CustomButton>
           )} */}
               
-               {hasPendingFollowup && (
+               {hasPendingFollowup && !followUpStatus && (
                 <CustomButton
                 variant="primary"
                 onClick={handleCancelFollowup}
@@ -548,7 +597,7 @@ const LeadDetail = () => {
               </CustomButton>
               )}
 
-               {hasPendingFollowup && (
+               {hasPendingFollowup && !followUpStatus && (
                 <CustomButton
                 variant="primary"
                 onClick={handleCompleteFollowup}
@@ -575,7 +624,7 @@ const LeadDetail = () => {
             </CustomButton>
           )}
             
-          {!isFinallyNotConnected && !hasPendingFollowup && (
+          {leadDetails.assignedTo && !isFinallyNotConnected && !hasPendingFollowup && (
             <CustomButton
               variant="primary"
               onClick={() => setIsScheduleModalOpen(true)}
@@ -1137,6 +1186,11 @@ const LeadDetail = () => {
         studentData={leadDetails}
         onScheduleOpen={() => setIsScheduleModalOpen(true)}
         isFinallyNotConnected={isFinallyNotConnected}
+        hasPendingFollowup={hasPendingFollowup}
+        onCompleteFollowup={handleCompleteFollowup}
+        onCancelFollowup={handleCancelFollowup}
+        onFollowupNotConnected={handleFollowupNotConnected}
+        onRegisterLead={handleRegisteredClick}
       />
 
       <WhatsAppModal

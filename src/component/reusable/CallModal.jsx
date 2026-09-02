@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import CustomButton from './CustomButton';
 import { changeLeadStatus } from '../../Services/lead/leadService';
 
-const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen, onInfoPanelOpen, isFinallyNotConnected, hasPendingFollowup, onCompleteFollowup, onCancelFollowup, onFollowupNotConnected, onRegisterLead }) => {
+const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen, onInfoPanelOpen, isFinallyNotConnected, hasPendingFollowup, onCompleteFollowup, onCancelFollowup, onFollowupNotConnected, onRegisterLead, hasClickedInfoPanel, onResetInfoPanel }) => {
     const [isConnected, setIsConnected] = useState(false);
     const [showInterestButtons, setShowInterestButtons] = useState(false);
     const [showActionButtons, setShowActionButtons] = useState(false);
@@ -31,6 +31,7 @@ const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen, onInfoPanelOp
             });
             setIsConnected(true);
             setShowInterestButtons(true);
+            if (onResetInfoPanel) onResetInfoPanel();
         } catch (error) {
             console.error('Error marking as connected:', error);
         } finally {
@@ -48,6 +49,7 @@ const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen, onInfoPanelOp
             });
             setShowInterestButtons(false);
             setShowActionButtons(true);
+            if (onResetInfoPanel) onResetInfoPanel();
         } catch (error) {
             console.error('Error changing status to Interested:', error);
         } finally {
@@ -399,6 +401,17 @@ const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen, onInfoPanelOp
                                         Schedule Follow Up
                                     </CustomButton>
                                 </>
+                            )}
+
+                            {/* Show Schedule button when Info Panel is clicked but modal is reopened */}
+                            {hasClickedInfoPanel && !showActionButtons && !isConnected && (
+                                <CustomButton
+                                    variant="primary"
+                                    onClick={handleScheduleFollowUp}
+                                    className="px-4 py-2"
+                                >
+                                    Schedule
+                                </CustomButton>
                             )}
 
                             {/* Show followup action buttons when followup is pending */}

@@ -25,6 +25,7 @@ const LeadDetail = () => {
   const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [isRemarkModalOpen, setIsRemarkModalOpen] = useState(false);
+  const [hasClickedInfoPanel, setHasClickedInfoPanel] = useState(false);
   const [leadDetails, setLeadDetails] = useState(null);
   const [loading, setLoading] = useState(false);
   const [courses, setCourses] = useState([]);
@@ -407,8 +408,7 @@ const LeadDetail = () => {
         return;
       }
 
-      const response = await completeFollowup({
-        id: pendingFollowup.id,
+      const response = await completeFollowup(pendingFollowup.id, {
         feedback: 'Follow-up completed',
         remarks: 'Marked as completed for follow-up'
       });
@@ -439,8 +439,7 @@ const LeadDetail = () => {
         return;
       }
 
-      const response = await cancelFollowup({
-        id: pendingFollowup.id,
+      const response = await cancelFollowup(pendingFollowup.id, {
         feedback: 'Follow-up cancelled',
         remarks: 'Marked as cancelled for follow-up'
       });
@@ -1193,12 +1192,15 @@ const LeadDetail = () => {
         onClose={() => setIsCallModalOpen(false)}
         studentData={leadDetails}
         onScheduleOpen={() => setIsScheduleModalOpen(true)}
+        onInfoPanelOpen={() => setHasClickedInfoPanel(true)}
         isFinallyNotConnected={isFinallyNotConnected}
         hasPendingFollowup={hasPendingFollowup}
         onCompleteFollowup={handleCompleteFollowup}
         onCancelFollowup={handleCancelFollowup}
         onFollowupNotConnected={handleFollowupNotConnected}
         onRegisterLead={handleRegisteredClick}
+        hasClickedInfoPanel={hasClickedInfoPanel}
+        onResetInfoPanel={() => setHasClickedInfoPanel(false)}
       />
 
       <WhatsAppModal

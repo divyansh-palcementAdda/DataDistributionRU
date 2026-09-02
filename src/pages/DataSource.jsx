@@ -205,10 +205,40 @@ const LeadSource = () => {
         },
         {
             key: 'name',
-            header: 'Name',
+            header: 'Lead Source',
             sortable: true,
             render: (value) => (
                 <span style={{ fontWeight: 600, color: 'var(--gray-800)' }}>{value}</span>
+            ),
+        },
+        {
+            key: 'totalData',
+            header: 'Total Data',
+            sortable: true,
+            render: (value) => (
+                <span className="inline-flex items-center font-semibold text-gray-900 bg-gray-100 px-2.5 py-0.5 rounded-full text-xs">
+                    {value ?? 0}
+                </span>
+            ),
+        },
+        {
+            key: 'totalAllottedData',
+            header: 'Total Allotted Data',
+            sortable: true,
+            render: (value) => (
+                <span className="inline-flex items-center font-semibold text-blue-800 bg-blue-50 px-2.5 py-0.5 rounded-full text-xs">
+                    {value ?? 0}
+                </span>
+            ),
+        },
+        {
+            key: 'totalAvailedData',
+            header: 'Total Availed Data',
+            sortable: true,
+            render: (value) => (
+                <span className="inline-flex items-center font-semibold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full text-xs">
+                    {value ?? 0}
+                </span>
             ),
         },
         {

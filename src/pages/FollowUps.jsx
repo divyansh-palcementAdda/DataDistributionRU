@@ -3,10 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
 import { usePermissions } from '../PermissionContext';
 import ReusableTable from '../component/reusable/table';
-import { getAllFollowups, getTodayFollowups, rescheduleFollowup, completeFollowup } from '../Services/followUp/followService';
+import { getAllFollowups, getTodayFollowups, rescheduleFollowup, completeFollowup, markFollowupNotConnected } from '../Services/followUp/followService';
 import FollowupFormModal from "../component/reusable/FollowupFormModal";
 import FollowUpCards from "../component/reusable/DashBoards/followUpCards";
 import ScheduleModal from "../component/reusable/Leads/scheduleModel";
+<<<<<<< Updated upstream
+=======
+import CompleteFollowupModal from "../component/reusable/CompleteFollowupModal";
+import NotConnectedFollowupModal from "../component/reusable/NotConnectedFollowupModal";
+>>>>>>> Stashed changes
 
 const formatFollowUpDate = (value) => {
   if (!value) return "-";
@@ -25,12 +30,18 @@ const getStatusClass = (value) => {
   switch (value) {
     case "PENDING":
       return "bg-orange-100 text-orange-700";
+    case "UPCOMING":
+      return "bg-blue-100 text-blue-700";
     case "COMPLETED":
       return "bg-green-100 text-green-700";
     case "MISSED":
       return "bg-red-100 text-red-700";
     case "RESCHEDULED":
       return "bg-blue-100 text-blue-700";
+    case "NOT_CONNECTED":
+      return "bg-purple-100 text-purple-700";
+    case "CANCELLED":
+      return "bg-gray-200 text-gray-700";
     default:
       return "bg-gray-100 text-gray-700";
   }
@@ -57,6 +68,11 @@ const FollowUps = () => {
 
   const [isFollowupModalOpen, setIsFollowupModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+<<<<<<< Updated upstream
+=======
+  const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
+  const [isNotConnectedModalOpen, setIsNotConnectedModalOpen] = useState(false);
+>>>>>>> Stashed changes
   const [selectedFollowup, setSelectedFollowup] = useState(null);
   const [activeTab, setActiveTab] = useState("ALL");
   const [selectedLeadStatusId, setSelectedLeadStatusId] = useState(null);
@@ -106,6 +122,26 @@ const FollowUps = () => {
       fetchData();
     } catch (err) {
       showToast(err?.message || "Failed to complete follow-up", "error");
+    }
+  };
+
+  const handleNotConnected = (row) => {
+    setSelectedFollowup(row);
+    setIsNotConnectedModalOpen(true);
+  };
+
+  const handleNotConnectedSubmit = async (remarks) => {
+    if (!selectedFollowup?.id) return;
+
+    try {
+      await markFollowupNotConnected(selectedFollowup.id, { remarks });
+      showToast("Follow-up marked as Not Connected and Lead status updated!", "success");
+      fetchData();
+    } catch (err) {
+      showToast(err?.message || "Failed to mark follow-up as Not Connected", "error");
+    } finally {
+      setIsNotConnectedModalOpen(false);
+      setSelectedFollowup(null);
     }
   };
 
@@ -264,21 +300,21 @@ const FollowUps = () => {
               View
             </button>
           )}
-          {row.status === "PENDING" && (
+          {(row.status === "PENDING" || row.status === "UPCOMING") && (
             <>
-              {/* <button
-                className="px-2 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded text-xs font-medium transition-colors"
-                onClick={() => handleReschedule(row)}
-                title="Reschedule Follow-up"
-              >
-                Reschedule
-              </button> */}
               <button
                 className="px-2 py-1 bg-green-50 text-green-700 hover:bg-green-100 rounded text-xs font-medium transition-colors"
                 onClick={() => handleComplete(row)}
                 title="Complete Follow-up"
               >
                 Done
+              </button>
+              <button
+                className="px-2 py-1 bg-orange-50 text-orange-700 hover:bg-orange-100 rounded text-xs font-medium transition-colors"
+                onClick={() => handleNotConnected(row)}
+                title="Mark Follow-up as Not Connected"
+              >
+                Not Connected
               </button>
             </>
           )}
@@ -406,6 +442,28 @@ const FollowUps = () => {
         }}
         onSubmit={handleScheduleSubmit}
       />
+<<<<<<< Updated upstream
+=======
+
+      <CompleteFollowupModal
+        isOpen={isCompleteModalOpen}
+        onClose={() => {
+          setIsCompleteModalOpen(false);
+          setSelectedFollowup(null);
+        }}
+        onSubmit={handleCompleteSubmit}
+      />
+
+      <NotConnectedFollowupModal
+        isOpen={isNotConnectedModalOpen}
+        onClose={() => {
+          setIsNotConnectedModalOpen(false);
+          setSelectedFollowup(null);
+        }}
+        onSubmit={handleNotConnectedSubmit}
+        leadName={selectedFollowup?.leadFullName || selectedFollowup?.leadName || selectedFollowup?.name}
+      />
+>>>>>>> Stashed changes
     </div>
   );
 };

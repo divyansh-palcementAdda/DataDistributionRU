@@ -12,7 +12,7 @@ import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import ReusableTable from '../component/reusable/table';
 import { createLeadSchedule, getLeadById, getLeadInfoPanel, sendLeadWhatsApp, sendLeadEmail, changeLeadStatus, getLeadStatusHistory, getLeadFollowUps } from '../Services/lead/leadService';
 import { getAllCourses } from '../Services/course/course';
-import { completeFollowup, cancelFollowup } from '../Services/followUp/followService';
+import { completeFollowup, cancelFollowup, markFollowupNotConnected } from '../Services/followUp/followService';
 
 const BASE_URL = import.meta.env.VITE_BASE_URL || '';
 
@@ -461,6 +461,51 @@ const LeadDetail = () => {
     }
   };
 
+<<<<<<< Updated upstream
+=======
+  const handleFollowupNotConnected = async () => {
+    try {
+      // Find the first active pending/upcoming follow-up for this lead
+      const activeFollowup = followUps.find(f => (f.status === 'PENDING' || f.status === 'UPCOMING') && !f.completed);
+      
+      if (!activeFollowup) {
+        toast.error('No active follow-up found to mark as not connected');
+        return;
+      }
+
+      // Single backend atomic operation: updates FollowUp to NOT_CONNECTED + synchronizes Lead status to NOT_CONNECTED with history
+      const response = await markFollowupNotConnected(activeFollowup.id, {
+        remarks: 'Follow-up call not attended / unanswered by student'
+      });
+      
+      if (response?.success || response?.data) {
+        toast.success('Follow-up marked as Not Connected and Lead status synchronized successfully');
+        
+        // Refresh follow-ups and lead details
+        const [followupsRes, leadRes] = await Promise.all([
+          getLeadFollowUps(id),
+          getLeadById(id)
+        ]);
+
+        if (followupsRes?.data?.success && followupsRes?.data?.data) {
+          setFollowUps(followupsRes.data.data);
+        }
+        if (leadRes?.data?.success && leadRes?.data?.data) {
+          setLeadDetails(leadRes.data.data);
+        }
+        
+        // Close the call modal
+        setIsCallModalOpen(false);
+      } else {
+        toast.error(response?.message || 'Failed to mark follow-up as not connected');
+      }
+    } catch (error) {
+      console.error('Failed to mark follow-up as not connected', error);
+      toast.error(error?.message || 'Failed to mark follow-up as not connected');
+    }
+  };
+
+>>>>>>> Stashed changes
   const handleRemarkSave = async (lead, remark) => {
     // Refresh lead details after saving remark
     try {
@@ -558,6 +603,19 @@ const LeadDetail = () => {
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
                 Mark as Completed For Follow-Up
+              </CustomButton>
+              )}
+
+               {hasPendingFollowup && !followUpStatus && (
+                <CustomButton
+                variant="primary"
+                onClick={handleFollowupNotConnected}
+                className="text-xs py-1.5 px-3 flex items-center gap-1.5 bg-orange-600 hover:bg-orange-700"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Mark as Not Connected For Follow-Up
               </CustomButton>
               )}
 

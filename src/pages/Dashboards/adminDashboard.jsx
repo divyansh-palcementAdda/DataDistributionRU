@@ -15,7 +15,7 @@ import { Bar, Doughnut } from 'react-chartjs-2';
 import ReusableTable from '../../component/reusable/table';
 import LeadCards from '../../component/reusable/DashBoards/leadCards';
 import LeadSource from '../../component/reusable/DashBoards/leadSource';
-import SystemCards from '../../component/reusable/DashBoards/SystemCards';
+// import SystemCards from '../../component/reusable/DashBoards/SystemCards';
 import CategorywiseCard from '../../component/reusable/DashBoards/categorywiseCard';
 import BoardWiseCard from '../../component/reusable/DashBoards/BoardWiseCard';
 import GradWiseCard from '../../component/reusable/DashBoards/gradWiseCard';
@@ -414,7 +414,7 @@ const Dashboard = () => {
             minWidth: '0',
             boxSizing: 'border-box',
             overflow: 'hidden',
-            flex: '1 1 auto'
+            height: 'auto'
           }}>
             <div style={{ 
               display: 'grid',
@@ -562,7 +562,7 @@ const Dashboard = () => {
 
               {/* Card 6: Low Data Users Alert */}
               <div
-                onClick={() => navigate('/counselors', { state: { lowDataMode: true } })}
+                onClick={() => navigate('/counselors', { state: { lowDataMode: true, fromDashboard: true } })}
                 style={{ 
                 background: '#ffffff2e',
                 backdropFilter: 'blur(10px)',
@@ -596,7 +596,7 @@ const Dashboard = () => {
 
               {/* Card 7: Users Not Logged In Today */}
               <div
-                onClick={() => navigate('/counselors', { state: { usersNotLoggedInMode: true } })}
+                onClick={() => navigate('/counselors', { state: { usersNotLoggedInMode: true, fromDashboard: true } })}
                 style={{ 
                 background: '#ffffff2e',
                 backdropFilter: 'blur(10px)',
@@ -631,7 +631,7 @@ const Dashboard = () => {
 
               {/* Card 8: Follow-up Users Not Logged In by 11 AM */}
               <div
-                onClick={() => navigate('/counselors', { state: { followupNotLoggedIn11amMode: true } })}
+                onClick={() => navigate('/counselors', { state: { followupNotLoggedIn11amMode: true, fromDashboard: true } })}
                 style={{ 
                 background: '#ffffff2e',
                 backdropFilter: 'blur(10px)',
@@ -667,22 +667,50 @@ const Dashboard = () => {
           </div>
 
           {/* ── Reusable Dashboard Cards ── */}
-          <div style={{ display: 'flex', flexDirection: 'row', gap: '20px' }}>
-            <UnallottedCard 
-              onCardClick={handleCardClick}
-              activeFilters={activeFilters}
-              filterRequest={filterRequest}
-            />
-            <AvailedCard 
-              onCardClick={handleCardClick}
-              activeFilters={activeFilters}
-              filterRequest={filterRequest}
-            />
-            <AllottedCard 
-              onCardClick={handleCardClick}
-              activeFilters={activeFilters}
-              filterRequest={filterRequest}
-            />
+          <div style={{ marginBottom: '24px' }}>
+            <div className="allotted-cards-responsive-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
+              <UnallottedCard
+                onCardClick={handleCardClick}
+                activeFilters={activeFilters}
+                filterRequest={filterRequest}
+              />
+              <AvailedCard
+                onCardClick={handleCardClick}
+                activeFilters={activeFilters}
+                filterRequest={filterRequest}
+              />
+              <AllottedCard
+                onCardClick={handleCardClick}
+                activeFilters={activeFilters}
+                filterRequest={filterRequest}
+              />
+            </div>
+            <style>{`
+              @media (max-width: 1200px) {
+                .allotted-cards-responsive-grid {
+                  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important;
+                  gap: 14px !important;
+                }
+              }
+              @media (max-width: 768px) {
+                .allotted-cards-responsive-grid {
+                  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
+                  gap: 12px !important;
+                }
+              }
+              @media (max-width: 480px) {
+                .allotted-cards-responsive-grid {
+                  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+                  gap: 10px !important;
+                }
+              }
+              @media (max-width: 360px) {
+                .allotted-cards-responsive-grid {
+                  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)) !important;
+                  gap: 8px !important;
+                }
+              }
+            `}</style>
           </div>
           <LeadCards 
             data={leadCardsData} 
@@ -694,11 +722,11 @@ const Dashboard = () => {
             onCardClick={handleCardClick}
             activeFilters={activeFilters}
           />
-          <SystemCards 
+          {/* <SystemCards 
             data={systemCardsData} 
             onCardClick={handleCardClick}
             activeFilters={activeFilters}
-          />
+          /> */}
           <CategorywiseCard 
             onCardClick={handleCardClick}
             activeFilters={activeFilters}
@@ -716,7 +744,7 @@ const Dashboard = () => {
         </div>
 
         {/* Right Column: Recent Activity */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', position: 'sticky', top: '16px', alignSelf: 'flex-start' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {/* ── Recent Activity Card ── */}
           <div style={{
             background: '#ffffff',

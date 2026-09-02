@@ -320,19 +320,21 @@ const AddUserModal = ({ isOpen, onClose, onSuccess, initialData, defaultRole }) 
                             </div>
                         </div>
 
-                        {/* Row 5: HOD Access Type */}
-                        <div className="flex flex-col gap-1.5">
-                            <label className="text-sm font-semibold text-gray-700 ml-1">HOD Access Type</label>
-                            <select
-                                className="px-4 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500"
-                                value={formData.hodAccessType}
-                                onChange={(e) => handleChange('hodAccessType', e.target.value)}
-                            >
-                                {HOD_ACCESS_TYPES.map((type) => (
-                                    <option key={type} value={type}>{type.replace('_', ' ')}</option>
-                                ))}
-                            </select>
-                        </div>
+                        {/* Row 5: HOD Access Type - Only show when HOD role is selected */}
+                        {formData.roles[0] === 'HOD' && (
+                            <div className="flex flex-col gap-1.5">
+                                <label className="text-sm font-semibold text-gray-700 ml-1">HOD Access Type</label>
+                                <select
+                                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500"
+                                    value={formData.hodAccessType}
+                                    onChange={(e) => handleChange('hodAccessType', e.target.value)}
+                                >
+                                    {HOD_ACCESS_TYPES.map((type) => (
+                                        <option key={type} value={type}>{type.replace('_', ' ')}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
 
                         {/* Account Status Toggles */}
                         <div className="flex flex-col gap-3 mt-2 p-4 bg-gray-50 rounded-lg border border-gray-100">

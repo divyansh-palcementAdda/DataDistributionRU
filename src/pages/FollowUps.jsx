@@ -7,6 +7,7 @@ import { getAllFollowups, getTodayFollowups, rescheduleFollowup, completeFollowu
 import FollowupFormModal from "../component/reusable/FollowupFormModal";
 import FollowUpCards from "../component/reusable/DashBoards/followUpCards";
 import ScheduleModal from "../component/reusable/Leads/scheduleModel";
+import CompleteFollowupModal from "../component/reusable/CompleteFollowupModal";
 
 const formatFollowUpDate = (value) => {
   if (!value) return "-";
@@ -57,6 +58,7 @@ const FollowUps = () => {
 
   const [isFollowupModalOpen, setIsFollowupModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
   const [selectedFollowup, setSelectedFollowup] = useState(null);
   const [activeTab, setActiveTab] = useState("ALL");
   const [selectedLeadStatusId, setSelectedLeadStatusId] = useState(null);
@@ -96,16 +98,23 @@ const FollowUps = () => {
     setIsScheduleModalOpen(true);
   };
 
-  const handleComplete = async (row) => {
-    const feedback = window.prompt("Enter completion remarks / feedback:", "Follow-up completed successfully");
-    if (!feedback || !feedback.trim()) return;
+  const handleComplete = (row) => {
+    setSelectedFollowup(row);
+    setIsCompleteModalOpen(true);
+  };
+
+  const handleCompleteSubmit = async (remarks) => {
+    if (!selectedFollowup?.id) return;
 
     try {
-      await completeFollowup(row.id, { remarks: feedback.trim() });
+      await completeFollowup(selectedFollowup.id, { remarks });
       showToast("Follow-up marked as completed!", "success");
       fetchData();
     } catch (err) {
       showToast(err?.message || "Failed to complete follow-up", "error");
+    } finally {
+      setIsCompleteModalOpen(false);
+      setSelectedFollowup(null);
     }
   };
 
@@ -405,6 +414,15 @@ const FollowUps = () => {
           setSelectedFollowup(null);
         }}
         onSubmit={handleScheduleSubmit}
+      />
+
+      <CompleteFollowupModal
+        isOpen={isCompleteModalOpen}
+        onClose={() => {
+          setIsCompleteModalOpen(false);
+          setSelectedFollowup(null);
+        }}
+        onSubmit={handleCompleteSubmit}
       />
     </div>
   );

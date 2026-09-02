@@ -879,7 +879,7 @@ const LeadDetail = () => {
             <h3 className="text-sm font-bold text-gray-800 mb-4">Info Penal</h3>
 
             <div className="flex gap-2 mb-4">
-              <CustomButton
+              {/* <CustomButton
                 variant="primary"
                 onClick={() => setIsEmailModalOpen(true)}
                 disabled={!selectedCourse}
@@ -890,7 +890,7 @@ const LeadDetail = () => {
                   <polyline points="22,6 12,13 2,6" />
                 </svg>
                 Email
-              </CustomButton>
+              </CustomButton> */}
               <CustomButton
                 variant="secondary"
                 onClick={() => setIsWhatsAppModalOpen(true)}

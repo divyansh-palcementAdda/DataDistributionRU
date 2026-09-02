@@ -90,11 +90,7 @@ const UnallottedCard = ({ data, onCardClick, activeFilters = [], filterRequest =
   };
 
   return (
-    <div style={{ marginBottom: '24px' }}>
-      <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#1e293b', marginBottom: '16px' }}>
-        Unallotted Leads
-      </h2>
-
+    <>
       {loading ? (
         <div style={{
           background: '#ffffff', borderRadius: '12px', padding: '40px 20px',
@@ -142,7 +138,7 @@ const UnallottedCard = ({ data, onCardClick, activeFilters = [], filterRequest =
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

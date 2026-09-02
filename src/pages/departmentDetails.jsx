@@ -40,34 +40,39 @@ const formatDate = (isoString) => {
 };
 
 // ─── Lead table columns ───────────────────────────────────────────────────────
-const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, currentData, hasPermission) => [
-    {
-        key: 'checkbox',
-        header: (
-            <input
-                type="checkbox"
-                checked={currentData.length > 0 && currentData.every(r => selectedRows.has(r.id ?? r.leadId))}
-                onChange={(e) => onToggleAll(e.target.checked, currentData)}
-                disabled={!hasPermission('LEAD_ASSIGN')}
-                style={{ width: '15px', height: '15px', cursor: hasPermission('LEAD_ASSIGN') ? 'pointer' : 'not-allowed', accentColor: '#4f46e5' }}
-                title="Select All"
-            />
-        ),
-        sortable: false,
-        render: (value, row) => {
-            const rowId = row.id ?? row.leadId;
-            return (
+const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, currentData, hasPermission) => {
+    const columns = [];
+
+    // Only add checkbox column if user has LEAD_ASSIGN permission
+    if (hasPermission('LEAD_ASSIGN')) {
+        columns.push({
+            key: 'checkbox',
+            header: (
                 <input
                     type="checkbox"
-                    checked={selectedRows.has(rowId)}
-                    onChange={() => onToggleRow(rowId)}
-                    onClick={(e) => e.stopPropagation()}
-                    disabled={!hasPermission('LEAD_ASSIGN')}
-                    style={{ width: '15px', height: '15px', cursor: hasPermission('LEAD_ASSIGN') ? 'pointer' : 'not-allowed', accentColor: '#4f46e5' }}
+                    checked={currentData.length > 0 && currentData.every(r => selectedRows.has(r.id ?? r.leadId))}
+                    onChange={(e) => onToggleAll(e.target.checked, currentData)}
+                    style={{ width: '15px', height: '15px', cursor: 'pointer', accentColor: '#4f46e5' }}
+                    title="Select All"
                 />
-            );
-        },
-    },
+            ),
+            sortable: false,
+            render: (value, row) => {
+                const rowId = row.id ?? row.leadId;
+                return (
+                    <input
+                        type="checkbox"
+                        checked={selectedRows.has(rowId)}
+                        onChange={() => onToggleRow(rowId)}
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ width: '15px', height: '15px', cursor: 'pointer', accentColor: '#4f46e5' }}
+                    />
+                );
+            },
+        });
+    }
+
+    columns.push(
     {
         key: 'sno',
         header: 'S.No',
@@ -155,8 +160,11 @@ const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, cu
                 return `${v.firstName || ''} ${v.lastName || ''}`.trim() || 'N/A';
             return v || 'N/A';
         },
-    },
-];
+    }
+    );
+
+    return columns;
+};
 
 // ─── Helper: fetch leads for selected card (server-side) ─────────────────────
 const fetchLeadsForCard = async (activeFilters, departmentId, page, size, sortBy, sortDirection) => {

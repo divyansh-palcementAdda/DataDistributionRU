@@ -101,7 +101,7 @@ const Counselors = () => {
         setTotalPages(payload.totalPages ?? 0);
       } else {
         const res = await getAllCounselors({
-          roleName: 'COUNSELOR',
+          roleName: 'COUNSELOR' ,
           roleNames: 'COUNSELOR',
           page,
           size,
@@ -536,19 +536,35 @@ const Counselors = () => {
           {(lowDataMode || usersNotLoggedInMode || followupNotLoggedIn11amMode) && (
             <p style={{ fontSize: '13px', color: 'var(--gray-500)', marginTop: '4px' }}>
               <button
-                onClick={() => navigate('/counselors', { replace: true, state: {} })}
+                onClick={() => {
+                  // Check if user came from dashboard
+                  if (location.state?.fromDashboard) {
+                    // Get user role to determine which dashboard to navigate to
+                    const userRole = localStorage.getItem('userRole');
+                    if (userRole === 'HOD') {
+                      navigate('/head-dashboard');
+                    } else if (userRole === 'ADMIN') {
+                      navigate('/admin-dashboard');
+                    } else {
+                      navigate('/dashboard');
+                    }
+                  } else {
+                    // Otherwise use browser history
+                    navigate(-1);
+                  }
+                }}
                 style={{ background: 'none', border: 'none', color: 'var(--primary, #2563EB)', cursor: 'pointer', fontSize: '13px', padding: 0, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M19 12H5M12 5l-7 7 7 7" />
                 </svg>
-                Back to All Counselors
+                Back
               </button>
             </p>
           )}
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
-          {hasPermission('COUNSELOR_CREATE') && (
+          {hasPermission('USER_CREATE') && (
             <button
               className="btn btn-primary btn-sm"
               style={{ display: 'flex', alignItems: 'center', gap: '6px' }}

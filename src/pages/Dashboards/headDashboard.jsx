@@ -474,7 +474,7 @@ const HeadDashboard = () => {
 
           {/* Card 6: Low Data Users Alert */}
           <div
-            onClick={() => navigate('/counselors', { state: { lowDataMode: true } })}
+            onClick={() => navigate('/counselors', { state: { lowDataMode: true, fromDashboard: true } })}
             style={{
             background: '#ffffff2e',
             backdropFilter: 'blur(10px)',
@@ -508,7 +508,7 @@ const HeadDashboard = () => {
 
           {/* Card 7: Users Not Logged In Today */}
           <div
-            onClick={() => navigate('/counselors', { state: { usersNotLoggedInMode: true } })}
+            onClick={() => navigate('/counselors', { state: { usersNotLoggedInMode: true, fromDashboard: true } })}
             style={{
             background: '#ffffff2e',
             backdropFilter: 'blur(10px)',
@@ -543,7 +543,7 @@ const HeadDashboard = () => {
 
           {/* Card 8: Follow-up Users Not Logged In by 11 AM */}
           <div
-            onClick={() => navigate('/counselors', { state: { followupNotLoggedIn11amMode: true } })}
+            onClick={() => navigate('/counselors', { state: { followupNotLoggedIn11amMode: true, fromDashboard: true } })}
             style={{
             background: '#ffffff2e',
             backdropFilter: 'blur(10px)',

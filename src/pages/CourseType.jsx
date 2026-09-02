@@ -185,19 +185,15 @@ const CourseType = () => {
                     sortDirection={sortDirection}
                     onSort={handleSort}
                     emptyMessage={loading ? "Loading..." : "No course types found"}
-                    onView={(row) => navigate(`/course-types/${row.id}`)}
-                    onEdit={(row) => {
+                    onView={canReadCourseType() ? (row) => navigate(`/course-types/${row.id}`) : undefined}
+                    onEdit={hasPermission('COURSE_TYPE_UPDATE') ? (row) => {
                         setEditData(row);
-
                         setIsAddModalOpen(true);
-                    }}
-                    onDelete={(row) => {
+                    } : undefined}
+                    onDelete={hasPermission('COURSE_TYPE_DELETE') ? (row) => {
                         setItemToDelete(row);
                         setIsDeleteModalOpen(true);
-                    }}
-                    onViewDisabled={!canReadCourseType()}
-                    onEditDisabled={!hasPermission('COURSE_TYPE_UPDATE')}
-                    onDeleteDisabled={!hasPermission('COURSE_TYPE_DELETE')}
+                    } : undefined}
                 />
             </div>
 

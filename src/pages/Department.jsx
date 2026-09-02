@@ -661,20 +661,17 @@ const Department = () => {
                         setCurrentPage(1);
                     }}
                     emptyMessage={loading ? "Loading departments..." : "No departments found"}
-                    onView={(row) => {
+                    onView={canReadDepartment() ? (row) => {
                         navigate(`/department-details/${row.id}`);
-                    }}
-                    onEdit={(row) => {
+                    } : undefined}
+                    onEdit={hasPermission('DEPARTMENT_UPDATE') ? (row) => {
                         setEditData(row);
                         setIsAddModalOpen(true);
-                    }}
-                    onDelete={(row) => {
+                    } : undefined}
+                    onDelete={hasPermission('DEPARTMENT_DELETE') ? (row) => {
                         setDepartmentToDelete(row);
                         setIsDeleteModalOpen(true);
-                    }}
-                    onViewDisabled={!canReadDepartment()}
-                    onEditDisabled={!hasPermission('DEPARTMENT_UPDATE')}
-                    onDeleteDisabled={!hasPermission('DEPARTMENT_DELETE')}
+                    } : undefined}
                 />
             </div>
 

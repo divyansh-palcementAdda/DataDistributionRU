@@ -623,25 +623,25 @@ const AddLeadModal = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <CustomInput
               label="Full Name *"
-              placeholder="Priya Kumar"
+              placeholder="Enter Your Name"
               value={formData.fullName}
               onChange={handleChange('fullName')}
             />
             <CustomInput
               label="Phone Number *"
-              placeholder="+91 98765 43210"
+              placeholder="Mobile Number"
               value={formData.phoneNumber}
               onChange={handleChange('phoneNumber')}
             />
             <CustomInput
               label="Alternate Phone"
-              placeholder="+91 91234 56789"
+              placeholder="Phone Number"
               value={formData.alternatePhoneNumber}
               onChange={handleChange('alternatePhoneNumber')}
             />
             <CustomInput
               label="Email"
-              placeholder="priya@gmail.com"
+              placeholder="example@gmail.com"
               value={formData.email}
               onChange={handleChange('email')}
             />

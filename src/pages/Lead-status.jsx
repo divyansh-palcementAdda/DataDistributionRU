@@ -4,7 +4,7 @@ import { FiEye, FiEdit, FiTrash2 } from 'react-icons/fi';
 import CustomButton from '../component/reusable/CustomButton';
 import ReusableTable from '../component/reusable/table';
 import Toggle from '../component/reusable/custumToggle';
-import { getAllLeadStatus, toggleLeadStatusStatus, deleteLeadStatus } from '../Services/leadStatus/leadStatusService';
+import { getAllLeadStatus, toggleLeadStatusStatus, deleteLeadStatus, updateLeadStatus } from '../Services/leadStatus/leadStatusService';
 import { toast } from 'react-toastify';
 import AddLeadStatusModal from '../component/reusable/leadStatus/addLeadStatusModel';
 import DeleteModal from '../component/reusable/deleteModel';
@@ -89,6 +89,23 @@ const LeadStatus = () => {
     }
   };
 
+  const handleToggleFollowUpStatus = async (id, currentFollowUpStatus, row, newStatus) => {
+    console.log('Toggle clicked:', { id, currentFollowUpStatus, newStatus, row });
+    if (!hasPermission('LEAD_STATUS_UPDATE')) {
+      toast.error('You do not have permission to update lead status');
+      return;
+    }
+    try {
+      console.log('Calling API with:', { name: row.name, followUpStatus: newStatus });
+      await updateLeadStatus(id, { name: row.name, followUpStatus: newStatus });
+      toast.success("Follow up status updated successfully");
+      fetchLeadStatuses();
+    } catch (error) {
+      console.error('Error updating follow up status:', error);
+      toast.error(error.message || "Failed to update follow up status");
+    }
+  };
+
   const handleSearch = (e) => {
     setSearch(e.target.value);
     setCurrentPage(1);
@@ -151,7 +168,24 @@ const LeadStatus = () => {
           />
         ) : null
       )
-    }
+    },
+   {
+  key: "followUpStatus",
+  header: "Follow Up Status",
+  render: (followUpStatus, row) => (
+    <Toggle
+      checked={row.followUpStatus === true}
+      onChange={() =>
+        handleToggleFollowUpStatus(
+          row.id,
+          row.followUpStatus,
+          row,
+          !row.followUpStatus
+        )
+      }
+    />
+  )
+}
   ];
 
   return (

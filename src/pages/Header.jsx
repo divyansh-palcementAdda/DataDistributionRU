@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppContext } from '../AppContext';
-import { logout } from '../Services/auth/logout';
+import { logoutUser } from '../axiosInstance/axios';
 import Cookies from 'js-cookie';
 
 const Header = () => {
@@ -13,23 +13,7 @@ const Header = () => {
   const initials = `${userData.firstName?.[0] || ''}${userData.lastName?.[0] || ''}`.toUpperCase() || 'U';
 
   const handleLogout = async () => {
-    try {
-      await logout();
-      Cookies.remove('accessToken');
-      Cookies.remove('refreshToken');
-      Cookies.remove('tokenType');
-      localStorage.removeItem('user');
-      localStorage.removeItem('lastActivity');
-      window.location.href = '/';
-    } catch (error) {
-      console.error('Logout failed:', error);
-      Cookies.remove('accessToken');
-      Cookies.remove('refreshToken');
-      Cookies.remove('tokenType');
-      localStorage.removeItem('user');
-      localStorage.removeItem('lastActivity');
-      window.location.href = '/';
-    }
+    await logoutUser('MANUAL_LOGOUT');
   };
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);

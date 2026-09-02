@@ -3,17 +3,14 @@
 import axios from "axios";
 import Cookies from "js-cookie";
 
-const BASE_URL = import.meta.env.VITE_BASE_URL;
+const RAW_BASE_URL = import.meta.env.VITE_BASE_URL || "";
+const BASE_URL = RAW_BASE_URL.replace(/\/+$/, "");
 
-
-const INACTIVITY_LIMIT = 15 * 60 * 1000;
-// const INACTIVITY_LIMIT = 2 * 60 * 1000; // 15 minutes
+const INACTIVITY_LIMIT = 15 * 60 * 1000; // 15 minutes
 const LAST_ACTIVITY_KEY = "lastActivity";
 
-
-
 const axiosInstance = axios.create({
-  baseURL: BASE_URL,
+  baseURL: BASE_URL || undefined,
   headers: {
     "Content-Type": "application/json",
   },
@@ -41,77 +38,70 @@ const processQueue = (
   failedQueue = [];
 };
 
-
-
 let inactivityTimer = null;
-
-// VERY IMPORTANT
-// 15 minutes complete hone ke baad ye true ho jayega.
-// Iske baad 401 par refresh API call nahi hogi.
 let isSessionExpiredByInactivity = false;
-
-// Prevent multiple redirects
 let isLoggingOut = false;
 
 // ======================================================
 // LOGOUT FUNCTION
 // ======================================================
 
-const logoutUser = async () => {
-  // Multiple logout calls ko prevent karo
+export const logoutUser = async (reason = "MANUAL_LOGOUT") => {
   if (isLoggingOut) {
     return;
   }
 
   isLoggingOut = true;
+  isSessionExpiredByInactivity = true;
 
   try {
     const accessToken = Cookies.get("accessToken");
     const refreshToken = Cookies.get("refreshToken");
-    const tokenType =
-      Cookies.get("tokenType") || "Bearer";
+    const tokenType = Cookies.get("tokenType") || "Bearer";
 
-    // Backend logout API
-    if (accessToken) {
+    if (accessToken && refreshToken) {
       await axios.post(
-        `${BASE_URL}api/auth/logout`,
-        { refreshToken },
+        `${BASE_URL}/api/auth/logout`,
         {
+          refreshToken,
+          logoutReason: reason,
+        },
+        {
+          timeout: 3000,
           headers: {
             Authorization: `${tokenType} ${accessToken}`,
           },
         }
       );
-
     }
   } catch (logoutError) {
-    // Logout API fail ho jaye tab bhi
-    // frontend logout hona chahiye
     console.log(
       "Logout API error:",
-      logoutError.response?.status ||
-        logoutError.message
+      logoutError.response?.status || logoutError.message
     );
   } finally {
-    // Stop inactivity timer
     if (inactivityTimer) {
       clearTimeout(inactivityTimer);
       inactivityTimer = null;
     }
 
-    // Clear cookies
+    // Clear all auth cookies
     Cookies.remove("accessToken");
     Cookies.remove("refreshToken");
     Cookies.remove("tokenType");
 
     // Clear local storage
     localStorage.removeItem("user");
-    localStorage.removeItem(
-      LAST_ACTIVITY_KEY
-    );
+    localStorage.removeItem("userInfo");
+    localStorage.removeItem("userRole");
+    localStorage.removeItem("roleId");
+    localStorage.removeItem(LAST_ACTIVITY_KEY);
 
     // Clear pending refresh requests
-    failedQueue = [];
+    if (failedQueue.length > 0) {
+      processQueue(new Error("User logged out"));
+    }
+    isRefreshing = false;
 
     // Redirect to login
     window.location.href = "/";
@@ -123,40 +113,21 @@ const logoutUser = async () => {
 // ======================================================
 
 const resetInactivityTimer = () => {
-  const accessToken =
-    Cookies.get("accessToken");
-
-  // User logged in nahi hai
-  if (!accessToken) {
+  const accessToken = Cookies.get("accessToken");
+  if (!accessToken || isSessionExpiredByInactivity) {
     return;
   }
 
-  // Agar session already expire ho chuka hai
-  if (isSessionExpiredByInactivity) {
-    return;
-  }
-
-  // Save activity time
   const now = Date.now();
+  localStorage.setItem(LAST_ACTIVITY_KEY, now.toString());
 
-  localStorage.setItem(
-    LAST_ACTIVITY_KEY,
-    now.toString()
-  );
-
-  // Clear old timer
   if (inactivityTimer) {
     clearTimeout(inactivityTimer);
   }
 
-  // Start new 15 minute timer
   inactivityTimer = setTimeout(() => {
-    // VERY IMPORTANT
-    // Flag pehle true hoga
     isSessionExpiredByInactivity = true;
-
-    // Uske baad logout
-    logoutUser();
+    logoutUser("INACTIVITY_LOGOUT");
   }, INACTIVITY_LIMIT);
 };
 
@@ -165,60 +136,37 @@ const resetInactivityTimer = () => {
 // ======================================================
 
 const initializeInactivityTimer = () => {
-  const accessToken =
-    Cookies.get("accessToken");
-
-  // User logged in nahi hai
+  const accessToken = Cookies.get("accessToken");
   if (!accessToken) {
     return;
   }
 
-  const lastActivity =
-    localStorage.getItem(
-      LAST_ACTIVITY_KEY
-    );
-
-  // Previous activity available nahi hai
+  const lastActivity = localStorage.getItem(LAST_ACTIVITY_KEY);
   if (!lastActivity) {
     resetInactivityTimer();
     return;
   }
 
-  const elapsedTime =
-    Date.now() - Number(lastActivity);
-
-  // ================================================
-  // 15 MINUTES ALREADY COMPLETE
-  // ================================================
-
+  const elapsedTime = Date.now() - Number(lastActivity);
   if (elapsedTime >= INACTIVITY_LIMIT) {
     isSessionExpiredByInactivity = true;
-
-    logoutUser();
-
+    logoutUser("INACTIVITY_LOGOUT");
     return;
   }
 
-  // ================================================
-  // REMAINING TIME CALCULATE
-  // ================================================
-
-  const remainingTime =
-    INACTIVITY_LIMIT - elapsedTime;
-
+  const remainingTime = INACTIVITY_LIMIT - elapsedTime;
   if (inactivityTimer) {
     clearTimeout(inactivityTimer);
   }
 
   inactivityTimer = setTimeout(() => {
     isSessionExpiredByInactivity = true;
-
-    logoutUser();
+    logoutUser("INACTIVITY_LOGOUT");
   }, remainingTime);
 };
 
 // ======================================================
-// USER ACTIVITY EVENTS
+// USER ACTIVITY EVENTS & MULTI-TAB SYNC
 // ======================================================
 
 const activityEvents = [
@@ -233,18 +181,15 @@ const activityEvents = [
 let activityThrottle = false;
 
 const handleUserActivity = () => {
-  // Already expired
   if (isSessionExpiredByInactivity) {
     return;
   }
 
-  // Prevent excessive localStorage writes
   if (activityThrottle) {
     return;
   }
 
   activityThrottle = true;
-
   resetInactivityTimer();
 
   setTimeout(() => {
@@ -252,18 +197,36 @@ const handleUserActivity = () => {
   }, 1000);
 };
 
-// Register events
+// Register activity listeners
 activityEvents.forEach((event) => {
-  window.addEventListener(
-    event,
-    handleUserActivity,
-    {
-      passive: true,
-    }
-  );
+  window.addEventListener(event, handleUserActivity, {
+    passive: true,
+  });
 });
 
-// Initialize timer
+// Multi-tab sync for activity and logout
+window.addEventListener("storage", (e) => {
+  if (e.key === LAST_ACTIVITY_KEY && e.newValue) {
+    if (!isSessionExpiredByInactivity) {
+      const elapsedTime = Date.now() - Number(e.newValue);
+      if (elapsedTime < INACTIVITY_LIMIT) {
+        if (inactivityTimer) clearTimeout(inactivityTimer);
+        inactivityTimer = setTimeout(() => {
+          isSessionExpiredByInactivity = true;
+          logoutUser("INACTIVITY_LOGOUT");
+        }, INACTIVITY_LIMIT - elapsedTime);
+      }
+    }
+  } else if ((e.key === "userInfo" || e.key === "user") && !e.newValue) {
+    // Logged out in another tab
+    const accessToken = Cookies.get("accessToken");
+    if (!accessToken && !isLoggingOut) {
+      logoutUser("MANUAL_LOGOUT");
+    }
+  }
+});
+
+// Initialize timer on load
 initializeInactivityTimer();
 
 // ======================================================
@@ -272,21 +235,15 @@ initializeInactivityTimer();
 
 axiosInstance.interceptors.request.use(
   (config) => {
-    const accessToken =
-      Cookies.get("accessToken");
-
-    const tokenType =
-      Cookies.get("tokenType") || "Bearer";
+    const accessToken = Cookies.get("accessToken");
+    const tokenType = Cookies.get("tokenType") || "Bearer";
 
     if (accessToken) {
-      config.headers.Authorization =
-        `${tokenType} ${accessToken}`;
+      config.headers.Authorization = `${tokenType} ${accessToken}`;
     }
 
-    console.log("Making request:", config.method?.toUpperCase(), config.url, config.params);
     return config;
   },
-
   (error) => {
     return Promise.reject(error);
   }
@@ -300,177 +257,88 @@ axiosInstance.interceptors.response.use(
   (response) => {
     return response;
   },
-
   async (error) => {
     const originalRequest = error.config;
 
-    console.log(
-      "Axios error:",
-      error.message,
-      error.response?.status
-    );
-
-    // ==================================================
-    // NO RESPONSE / NETWORK ERROR
-    // ==================================================
-
+    // No response / Network error
     if (!error.response) {
       return Promise.reject(error);
     }
 
-    // ==================================================
-    // 403 ERROR - ACCESS DENIED
-    // ==================================================
-
+    // 403 Forbidden
     if (error.response.status === 403) {
-      // Dispatch custom event to show Access Denied modal
-      window.dispatchEvent(new CustomEvent('accessDenied'));
+      window.dispatchEvent(new CustomEvent("accessDenied"));
       return Promise.reject(error);
     }
 
-    // ==================================================
-    // 401 ERROR
-    // ==================================================
+    // 401 Unauthorized
+    if (error.response.status === 401 && !originalRequest?._retry) {
+      // 1. Check if user is inactive (>= 15 minutes without activity)
+      const lastActivity = Number(localStorage.getItem(LAST_ACTIVITY_KEY) || 0);
+      const isInactive =
+        !lastActivity || Date.now() - lastActivity >= INACTIVITY_LIMIT;
 
-    if (
-      error.response.status === 401 &&
-      !originalRequest?._retry
-    ) {
-      // =================================================
-      // MOST IMPORTANT CONDITION
-      // =================================================
-      //
-      // Agar 15 minutes inactivity complete ho chuki hai
-      // toh REFRESH API CALL NAHI HOGI.
-      //
-      // Direct logout + login redirect.
-      // =================================================
-
-      if (isSessionExpiredByInactivity) {
-        console.log(
-          "15 minutes inactivity completed."
-        );
-
-        console.log(
-          "401 received -> Refresh API will NOT run."
-        );
-
-        logoutUser();
-
+      if (isInactive || isSessionExpiredByInactivity) {
+        isSessionExpiredByInactivity = true;
+        logoutUser("INACTIVITY_LOGOUT");
         return Promise.reject(error);
       }
 
-      // =================================================
-      // REFRESH API KO DOBARA REFRESH MAT KARO
-      // =================================================
-
+      // 2. Prevent recursion if the failed request itself is refresh-token or login
       if (
-        originalRequest.url?.includes(
-          "/api/auth/refresh-token"
-        )
+        originalRequest.url?.includes("/api/auth/refresh-token") ||
+        originalRequest.url?.includes("/api/auth/login")
       ) {
-        Cookies.remove("accessToken");
-        Cookies.remove("refreshToken");
-        Cookies.remove("tokenType");
-
-        localStorage.removeItem("user");
-        localStorage.removeItem(
-          LAST_ACTIVITY_KEY
-        );
-
-        window.location.href = "/";
-
+        logoutUser("MANUAL_LOGOUT");
         return Promise.reject(error);
       }
 
-      // =================================================
-      // REFRESH ALREADY RUNNING
-      // =================================================
-
+      // 3. If a refresh is already in progress, queue this request
       if (isRefreshing) {
-        return new Promise(
-          (resolve, reject) => {
-            failedQueue.push({
-              resolve,
-              reject,
-            });
-          }
-        )
-          .then(
-            ({
-              accessToken,
-              tokenType,
-            }) => {
-              originalRequest.headers.Authorization =
-                `${tokenType} ${accessToken}`;
-
-              return axiosInstance(
-                originalRequest
-              );
-            }
-          )
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then(({ accessToken, tokenType }) => {
+            originalRequest.headers.Authorization = `${tokenType} ${accessToken}`;
+            return axiosInstance(originalRequest);
+          })
           .catch((err) => {
             return Promise.reject(err);
           });
       }
 
-      // =================================================
-      // MARK REQUEST AS RETRY
-      // =================================================
-
+      // 4. Start refreshing
       originalRequest._retry = true;
-
       isRefreshing = true;
 
       try {
-        // =================================================
-        // GET REFRESH TOKEN
-        // =================================================
-
-        const refreshToken =
-          Cookies.get("refreshToken");
-
-        // =================================================
-        // REFRESH TOKEN NOT AVAILABLE
-        // =================================================
-
+        const refreshToken = Cookies.get("refreshToken");
         if (!refreshToken) {
           isRefreshing = false;
-
+          logoutUser("MANUAL_LOGOUT");
           return Promise.reject(error);
         }
 
-        // =================================================
-        // SAFETY CHECK
-        // =================================================
-        //
-        // Refresh API call karne se just pehle bhi
-        // inactivity check karenge.
-        //
-        // Isse race condition ke case mein bhi
-        // refresh API nahi chalegi.
-        // =================================================
-
+        // Safety check before calling refresh API
         if (isSessionExpiredByInactivity) {
-          logoutUser();
-
+          isRefreshing = false;
+          logoutUser("INACTIVITY_LOGOUT");
           return Promise.reject(error);
         }
 
-        // =================================================
-        // CALL REFRESH API
-        // =================================================
-
+        // Direct axios call (not using axiosInstance to prevent recursive interception)
         const response = await axios.post(
-          `${BASE_URL}api/auth/refresh-token`,
+          `${BASE_URL}/api/auth/refresh-token`,
           {
             refreshToken,
+          },
+          {
+            timeout: 10000,
+            headers: {
+              "Content-Type": "application/json",
+            },
           }
         );
-
-        // =================================================
-        // GET NEW TOKENS
-        // =================================================
 
         const {
           accessToken,
@@ -478,88 +346,32 @@ axiosInstance.interceptors.response.use(
           tokenType,
         } = response.data.data;
 
-        // =================================================
-        // SAVE NEW TOKENS
-        // =================================================
-
-        Cookies.set(
-          "accessToken",
-          accessToken
-        );
-
-        Cookies.set(
-          "refreshToken",
-          newRefreshToken
-        );
-
-        Cookies.set(
-          "tokenType",
-          tokenType
-        );
-
-        // =================================================
-        // UPDATE AXIOS DEFAULT HEADER
-        // =================================================
-
-        axiosInstance.defaults.headers.common[
-          "Authorization"
-        ] = `${tokenType} ${accessToken}`;
-
-        // =================================================
-        // RETRY PENDING REQUESTS
-        // =================================================
-
-        processQueue(
-          null,
-          accessToken,
-          tokenType
-        );
-
-        // =================================================
-        // RETRY ORIGINAL REQUEST
-        // =================================================
-
-        originalRequest.headers.Authorization =
-          `${tokenType} ${accessToken}`;
-
-        return axiosInstance(
-          originalRequest
-        );
-      } catch (refreshError) {
-        const refreshStatus =
-          refreshError.response?.status;
-
-        console.log(
-          "Refresh API error:",
-          refreshStatus
-        );
-
-        // Reject queued requests
-        processQueue(refreshError);
-
-        // =================================================
-        // ONLY REFRESH API 401 -> LOGOUT
-        // =================================================
-
-        if (refreshStatus === 401) {
-          Cookies.remove("accessToken");
-          Cookies.remove("refreshToken");
-          Cookies.remove("tokenType");
-
-          localStorage.removeItem("user");
-          localStorage.removeItem(
-            LAST_ACTIVITY_KEY
-          );
-
-          window.location.href = "/";
+        // Save new tokens
+        Cookies.set("accessToken", accessToken);
+        if (newRefreshToken) {
+          Cookies.set("refreshToken", newRefreshToken);
+        }
+        if (tokenType) {
+          Cookies.set("tokenType", tokenType);
         }
 
-        // 400 / 403 / 500 / network error
-        // Existing behavior same rahega
+        // Update default header
+        axiosInstance.defaults.headers.common["Authorization"] = `${tokenType || "Bearer"} ${accessToken}`;
 
-        return Promise.reject(
-          refreshError
-        );
+        // Process queued requests
+        processQueue(null, accessToken, tokenType || "Bearer");
+
+        // Retry original request
+        originalRequest.headers.Authorization = `${tokenType || "Bearer"} ${accessToken}`;
+        return axiosInstance(originalRequest);
+      } catch (refreshError) {
+        // Process and reject queued requests
+        processQueue(refreshError);
+
+        // Immediate logout on refresh failure to stop any infinite retry loops
+        logoutUser("MANUAL_LOGOUT");
+
+        return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
       }

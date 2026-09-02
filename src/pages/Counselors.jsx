@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
 import { usePermissions } from '../PermissionContext';
 import ReusableTable from '../component/reusable/table';
-import { getAllCounselors } from '../Services/Counselors/counselors';
+import { getUserPerformance } from '../Services/Counselors/counselors';
 import { getLowDataUsers, getUsersNotLoggedIn, getFollowupUsersNotLoggedIn11am } from '../Services/Dashboard/Dashboard';
 import AddUserModal from '../component/reusable/user/addUser';
 
@@ -17,19 +17,13 @@ const SortIcon = ({ active, direction }) => (
     height="12"
     viewBox="0 0 24 24"
     fill="none"
-    stroke={active ? 'var(--primary)' : 'var(--gray-400)'}
+    stroke={active ? 'var(--primary, #2563EB)' : 'var(--gray-400, #9CA3AF)'}
     strokeWidth="2.5"
     style={{ marginLeft: '4px', flexShrink: 0, transition: 'transform 0.2s', transform: active && direction === 'DESC' ? 'rotate(180deg)' : 'none' }}
   >
-    <path d="M12 5l7 7H5z" fill={active ? 'var(--primary)' : 'var(--gray-400)'} stroke="none" />
+    <path d="M12 5l7 7H5z" fill={active ? 'var(--primary, #2563EB)' : 'var(--gray-400, #9CA3AF)'} stroke="none" />
   </svg>
 );
-
-const SORTABLE_COLS = [
-  { key: 'firstName', label: 'Name' },
-  { key: 'email', label: 'Email' },
-  { key: 'role', label: 'Role' }
-];
 
 const Counselors = () => {
   const { showToast } = useAppContext();
@@ -53,13 +47,17 @@ const Counselors = () => {
   const [size, setSize] = useState(10);
 
   /* ── Sort ── */
-  const [sortBy, setSortBy] = useState('');
+  const [sortBy, setSortBy] = useState('userName');
   const [sortDirection, setSortDirection] = useState('ASC');
 
   /* ── Search (debounced) ── */
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const debounceRef = useRef(null);
+
+  /* ── Additional Filters ── */
+  const [statusFilter, setStatusFilter] = useState('');
+  const [workingFilter, setWorkingFilter] = useState('');
 
   /* ── Modal state ── */
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
@@ -100,29 +98,27 @@ const Counselors = () => {
         setTotalElements(payload.totalElements ?? content.length ?? 0);
         setTotalPages(payload.totalPages ?? 0);
       } else {
-        const res = await getAllCounselors({
-          roleName: 'COUNSELOR' ,
-          roleNames: 'COUNSELOR',
+        const res = await getUserPerformance({
           page,
           size,
           sortBy,
           sortDirection,
           search,
+          status: statusFilter,
+          currentlyWorking: workingFilter !== '' ? workingFilter === 'true' : undefined,
         });
         const payload = res?.data?.data || res?.data || {};
-        const content = Array.isArray(payload)
-          ? payload
-          : payload.content || payload.users || payload.data || [];
-        setData(Array.isArray(content) ? content : []);
+        const content = Array.isArray(payload.content) ? payload.content : (Array.isArray(payload) ? payload : []);
+        setData(content);
         setTotalElements(payload.totalElements ?? content.length ?? 0);
         setTotalPages(payload.totalPages ?? 0);
       }
     } catch (err) {
-      showToast('Error fetching users', 'error');
+      showToast('Error fetching user performance data', 'error');
     } finally {
       setLoading(false);
     }
-  }, [page, size, sortBy, sortDirection, search, showToast, lowDataMode, usersNotLoggedInMode, followupNotLoggedIn11amMode]);
+  }, [page, size, sortBy, sortDirection, search, statusFilter, workingFilter, showToast, lowDataMode, usersNotLoggedInMode, followupNotLoggedIn11amMode]);
 
   useEffect(() => {
     fetchData();
@@ -144,19 +140,20 @@ const Counselors = () => {
   const handleUserAdded = () => fetchData();
 
   /* ── Column header renderer ── */
-  const SortHeader = ({ col }) => (
+  const SortHeader = ({ col, label }) => (
     <div
-      onClick={() => handleSort(col.key)}
+      onClick={() => handleSort(col)}
       style={{
         display: 'inline-flex',
         alignItems: 'center',
         cursor: 'pointer',
         userSelect: 'none',
-        color: sortBy === col.key ? 'var(--primary, #2563EB)' : 'inherit',
+        whiteSpace: 'nowrap',
+        color: sortBy === col ? 'var(--primary, #2563EB)' : 'inherit',
       }}
     >
-      {col.label}
-      <SortIcon active={sortBy === col.key} direction={sortDirection} />
+      {label}
+      <SortIcon active={sortBy === col} direction={sortDirection} />
     </div>
   );
 
@@ -164,22 +161,24 @@ const Counselors = () => {
   const getColor = (str) => {
     const colors = ['#7C3AED', '#0891B2', '#16A34A', '#EA580C', '#DB2777', '#0369A1', '#2563EB'];
     let hash = 0;
-    for (let i = 0; i < str.length; i++) {
+    for (let i = 0; i < (str || '').length; i++) {
       hash = str.charCodeAt(i) + ((hash << 5) - hash);
     }
     return colors[Math.abs(hash) % colors.length];
   };
 
-  const getInitials = (first, last) => {
-    if (first && last) return `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
-    if (first) return first.slice(0, 2).toUpperCase();
-    return 'U';
+  const getInitials = (name) => {
+    if (!name) return 'U';
+    const parts = name.trim().split(' ');
+    if (parts.length >= 2) return `${parts[0].charAt(0)}${parts[1].charAt(0)}`.toUpperCase();
+    return name.slice(0, 2).toUpperCase();
   };
 
   /* ── Shared badge styles ── */
   const badge = (bg, color) => ({
-    padding: '2px 10px', borderRadius: '12px',
-    fontSize: '12px', fontWeight: 600, background: bg, color,
+    padding: '2px 8px', borderRadius: '12px',
+    fontSize: '11px', fontWeight: 600, background: bg, color,
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center'
   });
 
   /* ── Table columns ── */
@@ -401,6 +400,7 @@ const Counselors = () => {
       },
     ];
   } else {
+    // Consolidated User Performance & Operational Analytics View
     columns = [
       {
         key: 'sno',
@@ -411,50 +411,120 @@ const Counselors = () => {
       },
       {
         key: 'user',
-        header: <SortHeader col={{ key: 'firstName', label: 'Counselor Name' }} />,
+        header: <SortHeader col="userName" label="User" />,
         render: (_, row) => {
-          const name = row.name || `${row.firstName || ''} ${row.lastName || ''}`.trim() || 'Unknown User';
+          const name = row.userName || row.name || row.username || 'Unknown User';
           const color = getColor(name);
-          const initials = getInitials(row.firstName || name, row.lastName || '');
+          const initials = getInitials(name);
           return (
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs"
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0"
                 style={{ backgroundColor: color }}>
                 {initials}
               </div>
-              <div>
-                <div className="font-semibold text-gray-900">{name}</div>
-                <div className="text-xs text-gray-400">{row.role?.name || row.role || 'Counselor'}</div>
+              <div style={{ minWidth: '120px' }}>
+                <div className="font-semibold text-gray-900 text-sm">{name}</div>
+                <div className="text-xs text-gray-400">{row.email || '—'}</div>
               </div>
             </div>
           );
         },
       },
       {
-        key: 'email',
-        header: <SortHeader col={{ key: 'email', label: 'Email Address' }} />,
-        render: (value, row) => (
-          <span className="text-gray-600 text-sm">{value || row.email || '—'}</span>
-        ),
-      },
-      {
-        key: 'contact',
-        header: 'Contact',
+        key: 'role',
+        header: <SortHeader col="role" label="Role" />,
         render: (_, row) => (
-          <span className="text-gray-600 text-sm">{row.mobileNo || row.phone || '—'}</span>
+          <span className="text-gray-700 text-xs font-medium">
+            {Array.isArray(row.roles) ? row.roles.join(', ') : (row.role || '—')}
+          </span>
         ),
       },
       {
-        key: 'status',
-        header: 'Status',
-        render: (_, row) => {
-          const isActive = row.isActive !== false;
-          return (
-            <span className={`px-2 py-1 rounded-full text-xs font-medium ${isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-              {isActive ? 'Active' : 'Inactive'}
-            </span>
-          );
-        },
+        key: 'department',
+        header: <SortHeader col="department" label="Department" />,
+        render: (_, row) => (
+          <span className="text-gray-700 text-xs">
+            {row.department || '—'}
+          </span>
+        ),
+      },
+      {
+        key: 'totalAllottedData',
+        header: <SortHeader col="totalAllottedData" label="Total Allotted" />,
+        render: (val) => <span style={badge('#dbeafe', '#1d4ed8')}>{val ?? 0}</span>,
+      },
+      {
+        key: 'totalAvailedData',
+        header: <SortHeader col="totalAvailedData" label="Total Availed" />,
+        render: (val) => <span style={badge('#dcfce7', '#15803d')}>{val ?? 0}</span>,
+      },
+      {
+        key: 'rawDataCount',
+        header: <SortHeader col="rawDataCount" label="RAW" />,
+        render: (val) => <span style={badge('#f3e8ff', '#7e22ce')}>{val ?? 0}</span>,
+      },
+      {
+        key: 'registeredDataCount',
+        header: <SortHeader col="registeredDataCount" label="Registered" />,
+        render: (val) => <span style={badge('#ccfbf1', '#0f766e')}>{val ?? 0}</span>,
+      },
+      {
+        key: 'todayFollowupsCount',
+        header: <SortHeader col="todayFollowupsCount" label="Today's Followups" />,
+        render: (val) => <span style={badge('#fef3c7', '#b45309')}>{val ?? 0}</span>,
+      },
+      {
+        key: 'todayFollowupsScheduled',
+        header: <SortHeader col="todayFollowupsScheduled" label="Scheduled" />,
+        render: (val) => <span className="text-xs font-semibold text-gray-700">{val ?? 0}</span>,
+      },
+      {
+        key: 'todayMissedFollowups',
+        header: <SortHeader col="todayMissedFollowups" label="Missed" />,
+        render: (val) => (
+          <span style={badge(val > 0 ? '#fee2e2' : '#f3f4f6', val > 0 ? '#b91c1c' : '#6b7280')}>
+            {val ?? 0}
+          </span>
+        ),
+      },
+      {
+        key: 'todayUpcomingFollowups',
+        header: <SortHeader col="todayUpcomingFollowups" label="Upcoming" />,
+        render: (val) => <span className="text-xs font-semibold text-blue-600">{val ?? 0}</span>,
+      },
+      {
+        key: 'todayPendingFollowups',
+        header: <SortHeader col="todayPendingFollowups" label="Pending" />,
+        render: (val) => <span className="text-xs font-semibold text-amber-600">{val ?? 0}</span>,
+      },
+      {
+        key: 'todayConnectedCalls',
+        header: <SortHeader col="todayConnectedCalls" label="Connected Calls" />,
+        render: (val) => <span style={badge('#e0e7ff', '#4338ca')}>{val ?? 0}</span>,
+      },
+      {
+        key: 'todayLoginCount',
+        header: <SortHeader col="todayLoginCount" label="Login Count" />,
+        render: (val) => <span className="text-xs font-medium text-gray-800">{val ?? 0}</span>,
+      },
+      {
+        key: 'todayLogoutCount',
+        header: <SortHeader col="todayLogoutCount" label="Logout Count" />,
+        render: (val) => <span className="text-xs font-medium text-gray-500">{val ?? 0}</span>,
+      },
+      {
+        key: 'todayWorkingHours',
+        header: <SortHeader col="todayWorkingHours" label="Working Hours" />,
+        render: (val) => <span style={badge('#f1f5f9', '#334155')}>{val ? `${val}h` : '0h'}</span>,
+      },
+      {
+        key: 'currentlyWorking',
+        header: <SortHeader col="currentlyWorking" label="Currently Working" />,
+        render: (val) => (
+          <span style={badge(val ? '#dcfce7' : '#f3f4f6', val ? '#15803d' : '#6b7280')}>
+            {val ? '● Working' : '○ Offline'}
+          </span>
+        ),
       },
       {
         key: 'actions',
@@ -464,12 +534,12 @@ const Counselors = () => {
             className="btn btn-sm"
             style={{
               display: 'inline-flex', alignItems: 'center', gap: '4px',
-              fontSize: '12px', padding: '4px 10px',
+              fontSize: '11px', padding: '4px 8px',
               border: '1px solid var(--primary, #2563EB)',
               color: 'var(--primary, #2563EB)',
               background: 'transparent', borderRadius: '6px', cursor: 'pointer',
             }}
-            onClick={() => navigate(`/counselor-details/${row.id}`)}
+            onClick={() => navigate(`/counselor-details/${row.userId || row.id}`)}
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
@@ -486,31 +556,31 @@ const Counselors = () => {
   const pageTitle = lowDataMode
     ? 'Low Data Users'
     : usersNotLoggedInMode
-    ? 'Users Not Logged In Today'
-    : followupNotLoggedIn11amMode
-    ? 'Follow-up Users Not Logged In by 11 AM'
-    : 'Counselors';
+      ? 'Users Not Logged In Today'
+      : followupNotLoggedIn11amMode
+        ? 'Follow-up Users Not Logged In by 11 AM'
+        : 'Counselors & Operational Performance';
 
   const alertBadge = lowDataMode
     ? { bg: '#fef3c7', color: '#b45309', border: '#fde68a' }
     : usersNotLoggedInMode
-    ? { bg: '#fee2e2', color: '#b91c1c', border: '#fecaca' }
-    : followupNotLoggedIn11amMode
-    ? { bg: '#fee2e2', color: '#b91c1c', border: '#fecaca' }
-    : null;
+      ? { bg: '#fee2e2', color: '#b91c1c', border: '#fecaca' }
+      : followupNotLoggedIn11amMode
+        ? { bg: '#fee2e2', color: '#b91c1c', border: '#fecaca' }
+        : null;
 
   const emptyMessage = search
     ? `No ${lowDataMode ? 'low data users' : usersNotLoggedInMode ? 'users' : followupNotLoggedIn11amMode ? 'users' : 'counselors'} match "${search}".`
     : lowDataMode
-    ? 'No low data users found.'
-    : usersNotLoggedInMode
-    ? 'No users found.'
-    : followupNotLoggedIn11amMode
-    ? 'No users found.'
-    : 'No counselors found.';
+      ? 'No low data users found.'
+      : usersNotLoggedInMode
+        ? 'No users found.'
+        : followupNotLoggedIn11amMode
+          ? 'No users found.'
+          : 'No operational users found.';
 
   return (
-    <div>
+    <div id="page-counselors">
       {/* ── Page Header ── */}
       <div
         className="page-header"
@@ -533,8 +603,8 @@ const Counselors = () => {
               </span>
             )}
           </h1>
-          {(lowDataMode || usersNotLoggedInMode || followupNotLoggedIn11amMode) && (
-            <p style={{ fontSize: '13px', color: 'var(--gray-500)', marginTop: '4px' }}>
+          <p style={{ fontSize: '13px', color: 'var(--gray-500)', marginTop: '4px' }}>
+            {(lowDataMode || usersNotLoggedInMode || followupNotLoggedIn11amMode) ? (
               <button
                 onClick={() => {
                   // Check if user came from dashboard
@@ -560,8 +630,10 @@ const Counselors = () => {
                 </svg>
                 Back
               </button>
-            </p>
-          )}
+            ) : (
+              'Monitor team productivity, working hours, lead conversions, and daily operational metrics'
+            )}
+          </p>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
           {hasPermission('USER_CREATE') && (
@@ -580,10 +652,10 @@ const Counselors = () => {
         </div>
       </div>
 
-      {/* ── Search & Sort Bar ── */}
+      {/* ── Search & Filter Bar ── */}
       <div
         className="filter-bar"
-        style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '16px', alignItems: 'center' }}
+        style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '16px', alignItems: 'center' }}
       >
         <div style={{ position: 'relative' }}>
           <svg
@@ -597,33 +669,49 @@ const Counselors = () => {
           <input
             type="text"
             className="form-control"
-            placeholder="Search by name…"
+            placeholder="Search by name, email…"
             style={{ maxWidth: '240px', paddingLeft: '32px' }}
             value={searchInput}
             onChange={handleSearchInput}
           />
         </div>
-        {/* <select
-          className="form-control"
-          style={{ maxWidth: '150px', fontSize: '13px' }}
-          value={sortBy}
-          onChange={(e) => { setSortBy(e.target.value); setPage(0); }}
-        >
-          {SORTABLE_COLS.map((c) => (
-            <option key={c.key} value={c.key}>{c.label}</option>
-          ))}
-        </select> */}
+
+        {!lowDataMode && !usersNotLoggedInMode && !followupNotLoggedIn11amMode && (
+          <>
+            <select
+              className="form-control"
+              style={{ maxWidth: '160px', fontSize: '13px' }}
+              value={workingFilter}
+              onChange={(e) => { setWorkingFilter(e.target.value); setPage(0); }}
+            >
+              <option value="">Working State: All</option>
+              <option value="true">● Currently Working</option>
+              <option value="false">○ Offline</option>
+            </select>
+
+            <select
+              className="form-control"
+              style={{ maxWidth: '140px', fontSize: '13px' }}
+              value={statusFilter}
+              onChange={(e) => { setStatusFilter(e.target.value); setPage(0); }}
+            >
+              <option value="">Status: All</option>
+              <option value="ACTIVE">Active</option>
+              <option value="INACTIVE">Inactive</option>
+            </select>
+          </>
+        )}
       </div>
 
       {/* ── Table Card ── */}
-      <div className="card">
+      <div className="card" style={{ overflowX: 'auto' }}>
         {loading ? (
           <div style={{ padding: '48px', textAlign: 'center', color: 'var(--gray-400)' }}>
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
               style={{ animation: 'spin 1s linear infinite', display: 'block', margin: '0 auto 12px' }}>
               <path d="M21 12a9 9 0 11-6.219-8.56" />
             </svg>
-            Loading…
+            Loading operational performance metrics…
             <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
           </div>
         ) : (

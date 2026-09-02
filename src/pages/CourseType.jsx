@@ -124,7 +124,43 @@ const CourseType = () => {
             sortable: false,
             render: (_, row, index) => (currentPage - 1) * rowsPerPage + index + 1
         },
-        { key: "name", header: "Name", render: (value) => (typeof value === "object" && value !== null ? value?.name || "-" : value || "-") },
+        { key: "name", header: "Course Type", render: (value) => (typeof value === "object" && value !== null ? value?.name || "-" : value || "-") },
+        {
+            key: "totalData",
+            header: "Total Data",
+            render: (value) => (
+                <span className="inline-flex items-center font-semibold text-gray-900 bg-gray-100 px-2.5 py-0.5 rounded-full text-xs">
+                    {value ?? 0}
+                </span>
+            )
+        },
+        {
+            key: "totalAllottedData",
+            header: "Total Allotted Data",
+            render: (value) => (
+                <span className="inline-flex items-center font-semibold text-blue-800 bg-blue-50 px-2.5 py-0.5 rounded-full text-xs">
+                    {value ?? 0}
+                </span>
+            )
+        },
+        {
+            key: "totalUnallottedData",
+            header: "Total Unallotted Data",
+            render: (value) => (
+                <span className="inline-flex items-center font-semibold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full text-xs">
+                    {value ?? 0}
+                </span>
+            )
+        },
+        {
+            key: "totalAvailedData",
+            header: "Total Availed Data",
+            render: (value) => (
+                <span className="inline-flex items-center font-semibold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full text-xs">
+                    {value ?? 0}
+                </span>
+            )
+        },
         { key: "description", header: "Description", render: (value) => (typeof value === "object" && value !== null ? value?.description || "-" : value || "-") },
         {
             key: "status",

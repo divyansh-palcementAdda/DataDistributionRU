@@ -46,11 +46,17 @@ const Grades = () => {
       // Map API response to UI format
       const mappedGrades = (res.data?.content || []).map(grade => ({
         id: grade.id,
+        name: grade.name,
         gradeName: grade.name,
         gradeCode: grade.code,
         description: grade.description,
         status: grade.active ? "ACTIVE" : "INACTIVE",
-        displayOrder: grade.displayOrder
+        active: grade.active,
+        displayOrder: grade.displayOrder,
+        totalData: grade.totalData ?? 0,
+        totalAllottedData: grade.totalAllottedData ?? 0,
+        totalUnallottedData: grade.totalUnallottedData ?? 0,
+        totalAvailedData: grade.totalAvailedData ?? 0
       }));
 
       setGrades(mappedGrades);
@@ -125,16 +131,56 @@ const Grades = () => {
       sortable: false,
       render: (_, row, index) => (currentPage - 1) * rowsPerPage + index + 1
     },
-    { key: "gradeName", header: "Name", render: (value) => (typeof value === "object" && value !== null ? value?.name || value?.gradeName || "-" : value || "-") },
-    { key: "gradeCode", header: "Code", render: (value) => (typeof value === "object" && value !== null ? value?.code || value?.gradeCode || "-" : value || "-") },
-    { key: "description", header: "Description", render: (value) => (typeof value === "object" && value !== null ? value?.description || "-" : value || "-") },
+    { key: "name", header: "Grade", sortable: true, render: (value, row) => (typeof value === "object" && value !== null ? value?.name || value?.gradeName || "-" : value || row?.gradeName || "-") },
+    {
+      key: "totalData",
+      header: "Total Data",
+      sortable: true,
+      render: (value) => (
+        <span className="inline-flex items-center font-semibold text-gray-900 bg-gray-100 px-2.5 py-0.5 rounded-full text-xs">
+          {value ?? 0}
+        </span>
+      )
+    },
+    {
+      key: "totalAllottedData",
+      header: "Total Allotted Data",
+      sortable: true,
+      render: (value) => (
+        <span className="inline-flex items-center font-semibold text-blue-800 bg-blue-50 px-2.5 py-0.5 rounded-full text-xs">
+          {value ?? 0}
+        </span>
+      )
+    },
+    {
+      key: "totalUnallottedData",
+      header: "Total Unallotted Data",
+      sortable: true,
+      render: (value) => (
+        <span className="inline-flex items-center font-semibold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full text-xs">
+          {value ?? 0}
+        </span>
+      )
+    },
+    {
+      key: "totalAvailedData",
+      header: "Total Availed Data",
+      sortable: true,
+      render: (value) => (
+        <span className="inline-flex items-center font-semibold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full text-xs">
+          {value ?? 0}
+        </span>
+      )
+    },
+    { key: "description", header: "Description", sortable: true, render: (value) => (typeof value === "object" && value !== null ? value?.description || "-" : value || "-") },
     {
       key: "status",
       header: "Status",
+      sortable: true,
       render: (status, row) => (
         hasPermission('GRADE_UPDATE') ? (
           <Toggle
-            checked={status === 'ACTIVE' || status === true}
+            checked={row.active === true || status === 'ACTIVE'}
             onChange={() => handleToggleStatus(row.id, status)}
           />
         ) : null

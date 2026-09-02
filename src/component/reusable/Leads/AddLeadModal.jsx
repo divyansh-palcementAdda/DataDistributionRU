@@ -461,9 +461,7 @@ const AddLeadModal = () => {
       assignedToUserId: formData.assignedToUserId,
       statusId: formData.statusId,
       active: formData.active,
-      nextFollowUpDate: formData.nextFollowUpDate
-        ? new Date(formData.nextFollowUpDate).toISOString()
-        : null,
+      nextFollowUpDate: formData.nextFollowUpDate ? `${formData.nextFollowUpDate}T00:00:00` : null,
     };
 
     setLoading(true);
@@ -995,7 +993,9 @@ const AddLeadModal = () => {
                 disabled={dropdownLoading.users}
               >
                 <option value="">Select User</option>
-                {users.map((user) => (
+                {users
+                  .filter((user) => user.username !== 'admin' && user.username !== 'superadmin')
+                  .map((user) => (
                   <option key={user.id} value={String(user.id)}>
                     {user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username}
                   </option>
@@ -1009,7 +1009,7 @@ const AddLeadModal = () => {
                 className="form-control"
                 value={formData.statusId}
                 onChange={handleChange('statusId')}
-                disabled={dropdownLoading.leadStatuses}
+                disabled={dropdownLoading.leadStatuses || editLeadData}
               >
                 <option value="">Select Status</option>
                 {leadStatuses.length > 0 ? leadStatuses.map((status) => (

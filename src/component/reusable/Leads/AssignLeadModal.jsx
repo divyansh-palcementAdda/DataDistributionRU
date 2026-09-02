@@ -48,7 +48,13 @@ const AssignLeadModal = ({ isOpen, onClose, filters = {}, showToast }) => {
       try {
         const res = await getUsersDropdown();
         const list = res?.data || [];
-        setUsers(list);
+        // Filter out Admin and Super Admin users based on exact username match
+        const filteredList = list.filter(
+          (user) =>
+            user.username?.toLowerCase() !== 'admin' &&
+            user.username?.toLowerCase() !== 'superadmin'
+        );
+        setUsers(filteredList);
       } catch (err) {
         setUsersError('Users load karne mein error aaya.');
       } finally {

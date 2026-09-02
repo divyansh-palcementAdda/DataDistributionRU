@@ -60,9 +60,15 @@ const ReassignModal = ({
         const res = await getUsersDropdown();
         // API returns { success: true, data: [...], ... }
         const list = Array.isArray(res?.data) ? res.data : [];
+        // Filter out Admin and Super Admin users based on exact username match
+        const filteredUsers = list.filter(
+          (user) =>
+            user.username?.toLowerCase() !== 'admin' &&
+            user.username?.toLowerCase() !== 'superadmin'
+        );
         // Filter out current counselor from the list
-        const filteredUsers = list.filter(user => (user.id || user.userId) !== currentAssignedUserId);
-        setUsers(filteredUsers);
+        const finalFilteredUsers = filteredUsers.filter(user => (user.id || user.userId) !== currentAssignedUserId);
+        setUsers(finalFilteredUsers);
         setSingleSelectedUserId('');
       } catch (err) {
         setUsersError('Users load karne mein error aaya.');

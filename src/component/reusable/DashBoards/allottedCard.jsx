@@ -71,6 +71,33 @@ const AllottedCard = ({ data, onCardClick, activeFilters = [], filterRequest = {
     justifyContent: 'space-between',
   };
 
+  const iconContainerStyle = {
+    width: '40px',
+    height: '40px',
+    borderRadius: '10px',
+    background: '#FFF7ED',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  };
+
+  const labelStyle = {
+    fontSize: '14px',
+    fontWeight: '600',
+    color: '#1e293b',
+    lineHeight: '1.3',
+    flex: 1,
+  };
+
+  const countStyle = {
+    fontSize: '28px',
+    fontWeight: '700',
+    color: '#1e293b',
+    flexShrink: 0,
+    marginLeft: '12px',
+  };
+
   const handleMouseEnter = (e) => {
     e.currentTarget.style.transform = 'translateY(-4px)';
     if (!isSelected) e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.12)';
@@ -93,6 +120,7 @@ const AllottedCard = ({ data, onCardClick, activeFilters = [], filterRequest = {
         </div>
       ) : (
         <div
+          className="allotted-card-item"
           onClick={() => onCardClick && onCardClick({ type: 'allotted', value: true, label: 'Allotted' })}
           style={cardStyle}
           onMouseEnter={handleMouseEnter}
@@ -113,23 +141,168 @@ const AllottedCard = ({ data, onCardClick, activeFilters = [], filterRequest = {
           )}
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-            <div style={{
-              width: '40px', height: '40px', borderRadius: '10px',
-              background: '#FFF7ED', display: 'flex', alignItems: 'center',
-              justifyContent: 'center', flexShrink: 0,
-            }}>
-              <div style={{ color: '#EA580C' }}><AllottedIcon /></div>
+            <div className="allotted-icon-container" style={iconContainerStyle}>
+              <div className="allotted-icon" style={{ color: '#EA580C' }}><AllottedIcon /></div>
             </div>
-            <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', lineHeight: '1.3', flex: 1 }}>
+            <div className="allotted-label" style={labelStyle}>
               {type}
             </div>
           </div>
 
-          <div style={{ fontSize: '28px', fontWeight: '700', color: '#1e293b', flexShrink: 0, marginLeft: '12px' }}>
+          <div className="allotted-count" style={countStyle}>
             {count.toLocaleString()}
           </div>
         </div>
       )}
+      <style>{`
+        /* Allotted Card Item Responsive */
+        @media (max-width: 1024px) {
+          .allotted-card-item {
+            height: 95px !important;
+            padding: 14px !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .allotted-card-item {
+            height: 90px !important;
+            padding: 12px !important;
+            border-radius: 10px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .allotted-card-item {
+            height: 85px !important;
+            padding: 10px !important;
+            border-radius: 8px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .allotted-card-item {
+            height: 80px !important;
+            padding: 8px !important;
+            border-radius: 8px !important;
+          }
+        }
+
+        /* Allotted Icon Container Responsive */
+        @media (max-width: 1024px) {
+          .allotted-icon-container {
+            width: 36px !important;
+            height: 36px !important;
+            border-radius: 8px !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .allotted-icon-container {
+            width: 32px !important;
+            height: 32px !important;
+            border-radius: 7px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .allotted-icon-container {
+            width: 28px !important;
+            height: 28px !important;
+            border-radius: 6px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .allotted-icon-container {
+            width: 24px !important;
+            height: 24px !important;
+            border-radius: 5px !important;
+          }
+        }
+
+        /* Allotted Icon Responsive */
+        @media (max-width: 1024px) {
+          .allotted-icon svg {
+            width: 18px !important;
+            height: 18px !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .allotted-icon svg {
+            width: 16px !important;
+            height: 16px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .allotted-icon svg {
+            width: 14px !important;
+            height: 14px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .allotted-icon svg {
+            width: 12px !important;
+            height: 12px !important;
+          }
+        }
+
+        /* Allotted Label Responsive */
+        @media (max-width: 1024px) {
+          .allotted-label {
+            font-size: 13px !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .allotted-label {
+            font-size: 12px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .allotted-label {
+            font-size: 11px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .allotted-label {
+            font-size: 10px !important;
+          }
+        }
+
+        /* Allotted Count Responsive */
+        @media (max-width: 1024px) {
+          .allotted-count {
+            font-size: 24px !important;
+            margin-left: 10px !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .allotted-count {
+            font-size: 22px !important;
+            margin-left: 8px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .allotted-count {
+            font-size: 20px !important;
+            margin-left: 6px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .allotted-count {
+            font-size: 18px !important;
+            margin-left: 4px !important;
+          }
+        }
+      `}</style>
     </>
   );
 };

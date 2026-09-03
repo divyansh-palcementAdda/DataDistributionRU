@@ -69,6 +69,33 @@ const AvailedCard = ({ data, onCardClick, activeFilters = [], filterRequest = {}
     justifyContent: 'space-between',
   };
 
+  const iconContainerStyle = {
+    width: '40px',
+    height: '40px',
+    borderRadius: '10px',
+    background: 'var(--success-light)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  };
+
+  const labelStyle = {
+    fontSize: '14px',
+    fontWeight: '600',
+    color: '#1e293b',
+    lineHeight: '1.3',
+    flex: 1,
+  };
+
+  const countStyle = {
+    fontSize: '28px',
+    fontWeight: '700',
+    color: '#1e293b',
+    flexShrink: 0,
+    marginLeft: '12px',
+  };
+
   const handleMouseEnter = (e) => {
     e.currentTarget.style.transform = 'translateY(-4px)';
     if (!isSelected) e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.12)';
@@ -91,6 +118,7 @@ const AvailedCard = ({ data, onCardClick, activeFilters = [], filterRequest = {}
         </div>
       ) : (
         <div
+          className="availed-card-item"
           onClick={() => onCardClick && onCardClick({ type: 'availed', value: true, label: 'Availed' })}
           style={cardStyle}
           onMouseEnter={handleMouseEnter}
@@ -111,23 +139,168 @@ const AvailedCard = ({ data, onCardClick, activeFilters = [], filterRequest = {}
           )}
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-            <div style={{
-              width: '40px', height: '40px', borderRadius: '10px',
-              background: 'var(--success-light)', display: 'flex', alignItems: 'center',
-              justifyContent: 'center', flexShrink: 0,
-            }}>
-              <div style={{ color: 'var(--success)' }}><AvailedIcon /></div>
+            <div className="availed-icon-container" style={iconContainerStyle}>
+              <div className="availed-icon" style={{ color: 'var(--success)' }}><AvailedIcon /></div>
             </div>
-            <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', lineHeight: '1.3', flex: 1 }}>
+            <div className="availed-label" style={labelStyle}>
               {type}
             </div>
           </div>
 
-          <div style={{ fontSize: '28px', fontWeight: '700', color: '#1e293b', flexShrink: 0, marginLeft: '12px' }}>
+          <div className="availed-count" style={countStyle}>
             {count.toLocaleString()}
           </div>
         </div>
       )}
+      <style>{`
+        /* Availed Card Item Responsive */
+        @media (max-width: 1024px) {
+          .availed-card-item {
+            height: 95px !important;
+            padding: 14px !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .availed-card-item {
+            height: 90px !important;
+            padding: 12px !important;
+            border-radius: 10px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .availed-card-item {
+            height: 85px !important;
+            padding: 10px !important;
+            border-radius: 8px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .availed-card-item {
+            height: 80px !important;
+            padding: 8px !important;
+            border-radius: 8px !important;
+          }
+        }
+
+        /* Availed Icon Container Responsive */
+        @media (max-width: 1024px) {
+          .availed-icon-container {
+            width: 36px !important;
+            height: 36px !important;
+            border-radius: 8px !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .availed-icon-container {
+            width: 32px !important;
+            height: 32px !important;
+            border-radius: 7px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .availed-icon-container {
+            width: 28px !important;
+            height: 28px !important;
+            border-radius: 6px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .availed-icon-container {
+            width: 24px !important;
+            height: 24px !important;
+            border-radius: 5px !important;
+          }
+        }
+
+        /* Availed Icon Responsive */
+        @media (max-width: 1024px) {
+          .availed-icon svg {
+            width: 18px !important;
+            height: 18px !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .availed-icon svg {
+            width: 16px !important;
+            height: 16px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .availed-icon svg {
+            width: 14px !important;
+            height: 14px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .availed-icon svg {
+            width: 12px !important;
+            height: 12px !important;
+          }
+        }
+
+        /* Availed Label Responsive */
+        @media (max-width: 1024px) {
+          .availed-label {
+            font-size: 13px !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .availed-label {
+            font-size: 12px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .availed-label {
+            font-size: 11px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .availed-label {
+            font-size: 10px !important;
+          }
+        }
+
+        /* Availed Count Responsive */
+        @media (max-width: 1024px) {
+          .availed-count {
+            font-size: 24px !important;
+            margin-left: 10px !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .availed-count {
+            font-size: 22px !important;
+            margin-left: 8px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .availed-count {
+            font-size: 20px !important;
+            margin-left: 6px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .availed-count {
+            font-size: 18px !important;
+            margin-left: 4px !important;
+          }
+        }
+      `}</style>
     </>
   );
 };

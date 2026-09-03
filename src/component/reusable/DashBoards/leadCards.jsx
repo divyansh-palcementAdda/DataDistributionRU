@@ -32,6 +32,11 @@ const LeadCards = ({ onCardClick, activeFilters = [], courseTypeId, leadSourceId
     gap: '16px',
   };
 
+  // Card responsive styles
+  const cardStyle = {
+    height: '100px',
+  };
+
   // Function to get card styling based on status code
   const getCardStyle = (code) => {
     const statusColors = {
@@ -171,11 +176,11 @@ const LeadCards = ({ onCardClick, activeFilters = [], courseTypeId, leadSourceId
 
   return (
     <div style={{ marginBottom: '24px' }}>
-      <h2 style={{ 
-        fontSize: '20px', 
-        fontWeight: '700', 
-        color: '#1e293b', 
-        marginBottom: '16px' 
+      <h2 className="lead-cards-title" style={{
+        fontSize: '20px',
+        fontWeight: '700',
+        color: '#1e293b',
+        marginBottom: '16px'
       }}>
         Lead Status
       </h2>
@@ -185,6 +190,7 @@ const LeadCards = ({ onCardClick, activeFilters = [], courseTypeId, leadSourceId
           return (
             <div
               key={item.id}
+              className="lead-card-item"
               onClick={() => onCardClick && onCardClick({ type: 'leadStatus', value: item.id, label: item.name })}
               style={{
                 background: cardStyle.isHighlighted ? 'linear-gradient(135deg, #FFF9E6 0%, #FFFFFF 100%)' : '#ffffff',
@@ -192,13 +198,13 @@ const LeadCards = ({ onCardClick, activeFilters = [], courseTypeId, leadSourceId
                 padding: cardStyle.isHighlighted ? '12px' : '12px',
                 boxShadow: activeFilters.some(f => f.type === 'leadStatus' && f.value === item.id)
                   ? '0 0 0 2px #6366f1, 0 4px 16px rgba(99,102,241,0.18)'
-                  : cardStyle.isHighlighted 
-                    ? '0 4px 20px rgba(255, 215, 0, 0.3), 0 0 0 2px rgba(255, 215, 0, 0.5)' 
+                  : cardStyle.isHighlighted
+                    ? '0 4px 20px rgba(255, 215, 0, 0.3), 0 0 0 2px rgba(255, 215, 0, 0.5)'
                     : '0 2px 8px rgba(0, 0, 0, 0.08)',
                 border: activeFilters.some(f => f.type === 'leadStatus' && f.value === item.id)
                   ? '2px solid #6366f1'
-                  : cardStyle.isHighlighted 
-                    ? '2px solid #FFD700' 
+                  : cardStyle.isHighlighted
+                    ? '2px solid #FFD700'
                     : '1px solid #e5e7eb',
                 transition: 'all 0.3s ease',
                 cursor: 'pointer',
@@ -247,6 +253,7 @@ const LeadCards = ({ onCardClick, activeFilters = [], courseTypeId, leadSourceId
                   minWidth: 0,
                 }}>
                   <div
+                    className="lead-card-icon-container"
                     style={{
                       width: '40px',
                       height: '40px',
@@ -258,11 +265,11 @@ const LeadCards = ({ onCardClick, activeFilters = [], courseTypeId, leadSourceId
                       flexShrink: 0,
                     }}
                   >
-                    <div style={{ color: cardStyle.iconStroke }}>
+                    <div className="lead-card-icon" style={{ color: cardStyle.iconStroke }}>
                       {getIcon(item.code)}
                     </div>
                   </div>
-                  <div style={{
+                  <div className="lead-card-label" style={{
                     fontSize: cardStyle.isHighlighted ? '14px' : '14px',
                     fontWeight: cardStyle.isHighlighted ? '700' : '600',
                     color: cardStyle.isHighlighted ? '#FF8C00' : '#1e293b',
@@ -272,7 +279,7 @@ const LeadCards = ({ onCardClick, activeFilters = [], courseTypeId, leadSourceId
                     {item.name}
                   </div>
                 </div>
-                <div style={{
+                <div className="lead-card-count" style={{
                   fontSize: cardStyle.isHighlighted ? '26px' : '24px',
                   fontWeight: cardStyle.isHighlighted ? '700' : '700',
                   color: cardStyle.isHighlighted ? '#FF8C00' : '#1e293b',
@@ -287,31 +294,216 @@ const LeadCards = ({ onCardClick, activeFilters = [], courseTypeId, leadSourceId
         })}
       </div>
       <style>{`
+        /* Lead Cards Container Responsive */
+        @media (max-width: 1400px) {
+          .lead-cards-responsive-grid {
+            grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)) !important;
+            gap: 15px !important;
+          }
+        }
+
         @media (max-width: 1200px) {
           .lead-cards-responsive-grid {
             grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important;
             gap: 14px !important;
           }
         }
-        
+
+        @media (max-width: 1024px) {
+          .lead-cards-responsive-grid {
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)) !important;
+            gap: 13px !important;
+          }
+        }
+
         @media (max-width: 768px) {
           .lead-cards-responsive-grid {
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
             gap: 12px !important;
           }
         }
-        
+
         @media (max-width: 480px) {
           .lead-cards-responsive-grid {
             grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
             gap: 10px !important;
           }
         }
-        
+
         @media (max-width: 360px) {
           .lead-cards-responsive-grid {
             grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)) !important;
             gap: 8px !important;
+          }
+        }
+
+        /* Lead Card Item Responsive */
+        @media (max-width: 1024px) {
+          .lead-card-item {
+            height: 95px !important;
+            padding: 10px !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .lead-card-item {
+            height: 90px !important;
+            padding: 8px !important;
+            border-radius: 10px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .lead-card-item {
+            height: 85px !important;
+            padding: 6px !important;
+            border-radius: 8px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .lead-card-item {
+            height: 80px !important;
+            padding: 5px !important;
+            border-radius: 8px !important;
+          }
+        }
+
+        /* Lead Card Icon Container Responsive */
+        @media (max-width: 1024px) {
+          .lead-card-icon-container {
+            width: 36px !important;
+            height: 36px !important;
+            border-radius: 8px !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .lead-card-icon-container {
+            width: 32px !important;
+            height: 32px !important;
+            border-radius: 7px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .lead-card-icon-container {
+            width: 28px !important;
+            height: 28px !important;
+            border-radius: 6px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .lead-card-icon-container {
+            width: 24px !important;
+            height: 24px !important;
+            border-radius: 5px !important;
+          }
+        }
+
+        /* Lead Card Icon Responsive */
+        @media (max-width: 1024px) {
+          .lead-card-icon svg {
+            width: 18px !important;
+            height: 18px !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .lead-card-icon svg {
+            width: 16px !important;
+            height: 16px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .lead-card-icon svg {
+            width: 14px !important;
+            height: 14px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .lead-card-icon svg {
+            width: 12px !important;
+            height: 12px !important;
+          }
+        }
+
+        /* Lead Card Label Responsive */
+        @media (max-width: 1024px) {
+          .lead-card-label {
+            font-size: 13px !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .lead-card-label {
+            font-size: 12px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .lead-card-label {
+            font-size: 11px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .lead-card-label {
+            font-size: 10px !important;
+          }
+        }
+
+        /* Lead Card Count Responsive */
+        @media (max-width: 1024px) {
+          .lead-card-count {
+            font-size: 22px !important;
+            margin-left: 10px !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .lead-card-count {
+            font-size: 20px !important;
+            margin-left: 8px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .lead-card-count {
+            font-size: 18px !important;
+            margin-left: 6px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .lead-card-count {
+            font-size: 16px !important;
+            margin-left: 4px !important;
+          }
+        }
+
+        /* Title Responsive */
+        @media (max-width: 768px) {
+          .lead-cards-title {
+            font-size: 18px !important;
+            margin-bottom: 14px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .lead-cards-title {
+            font-size: 16px !important;
+            margin-bottom: 12px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .lead-cards-title {
+            font-size: 14px !important;
+            margin-bottom: 10px !important;
           }
         }
       `}</style>

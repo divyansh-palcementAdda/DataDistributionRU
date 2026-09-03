@@ -68,7 +68,7 @@ const BoardWiseCard = ({ data, onCardClick, activeFilters = [], courseTypeId, le
 
   return (
     <div style={{ marginBottom: '24px' }}>
-      <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#1e293b', marginBottom: '16px' }}>
+      <h2 className="boardwise-title" style={{ fontSize: '20px', fontWeight: '700', color: '#1e293b', marginBottom: '16px' }}>
         Board Wise
       </h2>
 
@@ -93,6 +93,7 @@ const BoardWiseCard = ({ data, onCardClick, activeFilters = [], courseTypeId, le
             return (
               <div
                 key={item.id || item.code}
+                className="boardwise-card-item"
                 onClick={() => onCardClick && onCardClick({ type: 'board', value: item.id, label: item.name })}
                 style={{
                   background: '#ffffff',
@@ -126,18 +127,18 @@ const BoardWiseCard = ({ data, onCardClick, activeFilters = [], courseTypeId, le
                 )}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-                    <div style={{
+                    <div className="boardwise-icon-container" style={{
                       width: '40px', height: '40px', borderRadius: '10px',
                       background: clr.iconBg, display: 'flex', alignItems: 'center',
                       justifyContent: 'center', flexShrink: 0,
                     }}>
-                      <div style={{ color: clr.iconStroke }}><BoardIcon /></div>
+                      <div className="boardwise-icon" style={{ color: clr.iconStroke }}><BoardIcon /></div>
                     </div>
-                    <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', lineHeight: '1.3', flex: 1 }}>
+                    <div className="boardwise-label" style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', lineHeight: '1.3', flex: 1 }}>
                       {item.name}
                     </div>
                   </div>
-                  <div style={{ fontSize: '28px', fontWeight: '700', color: '#1e293b', flexShrink: 0, marginLeft: '12px' }}>
+                  <div className="boardwise-count" style={{ fontSize: '28px', fontWeight: '700', color: '#1e293b', flexShrink: 0, marginLeft: '12px' }}>
                     {item.count !== undefined ? item.count.toLocaleString() : '0'}
                   </div>
                 </div>
@@ -148,10 +149,218 @@ const BoardWiseCard = ({ data, onCardClick, activeFilters = [], courseTypeId, le
       )}
 
       <style>{`
-        @media (max-width: 1200px) { .boardwise-responsive-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important; gap: 14px !important; } }
-        @media (max-width: 768px)  { .boardwise-responsive-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important; gap: 12px !important; } }
-        @media (max-width: 480px)  { .boardwise-responsive-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important; gap: 10px !important; } }
-        @media (max-width: 360px)  { .boardwise-responsive-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)) !important; gap: 8px  !important; } }
+        /* Boardwise Container Responsive */
+        @media (max-width: 1400px) {
+          .boardwise-responsive-grid {
+            grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)) !important;
+            gap: 15px !important;
+          }
+        }
+
+        @media (max-width: 1200px) {
+          .boardwise-responsive-grid {
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important;
+            gap: 14px !important;
+          }
+        }
+
+        @media (max-width: 1024px) {
+          .boardwise-responsive-grid {
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)) !important;
+            gap: 13px !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .boardwise-responsive-grid {
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
+            gap: 12px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .boardwise-responsive-grid {
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+            gap: 10px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .boardwise-responsive-grid {
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)) !important;
+            gap: 8px !important;
+          }
+        }
+
+        /* Boardwise Card Item Responsive */
+        @media (max-width: 1024px) {
+          .boardwise-card-item {
+            height: 95px !important;
+            padding: 10px !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .boardwise-card-item {
+            height: 90px !important;
+            padding: 8px !important;
+            border-radius: 10px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .boardwise-card-item {
+            height: 85px !important;
+            padding: 6px !important;
+            border-radius: 8px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .boardwise-card-item {
+            height: 80px !important;
+            padding: 5px !important;
+            border-radius: 8px !important;
+          }
+        }
+
+        /* Boardwise Icon Container Responsive */
+        @media (max-width: 1024px) {
+          .boardwise-icon-container {
+            width: 36px !important;
+            height: 36px !important;
+            border-radius: 8px !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .boardwise-icon-container {
+            width: 32px !important;
+            height: 32px !important;
+            border-radius: 7px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .boardwise-icon-container {
+            width: 28px !important;
+            height: 28px !important;
+            border-radius: 6px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .boardwise-icon-container {
+            width: 24px !important;
+            height: 24px !important;
+            border-radius: 5px !important;
+          }
+        }
+
+        /* Boardwise Icon Responsive */
+        @media (max-width: 1024px) {
+          .boardwise-icon svg {
+            width: 18px !important;
+            height: 18px !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .boardwise-icon svg {
+            width: 16px !important;
+            height: 16px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .boardwise-icon svg {
+            width: 14px !important;
+            height: 14px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .boardwise-icon svg {
+            width: 12px !important;
+            height: 12px !important;
+          }
+        }
+
+        /* Boardwise Label Responsive */
+        @media (max-width: 1024px) {
+          .boardwise-label {
+            font-size: 13px !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .boardwise-label {
+            font-size: 12px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .boardwise-label {
+            font-size: 11px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .boardwise-label {
+            font-size: 10px !important;
+          }
+        }
+
+        /* Boardwise Count Responsive */
+        @media (max-width: 1024px) {
+          .boardwise-count {
+            font-size: 24px !important;
+            margin-left: 10px !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .boardwise-count {
+            font-size: 22px !important;
+            margin-left: 8px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .boardwise-count {
+            font-size: 20px !important;
+            margin-left: 6px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .boardwise-count {
+            font-size: 18px !important;
+            margin-left: 4px !important;
+          }
+        }
+
+        /* Title Responsive */
+        @media (max-width: 768px) {
+          .boardwise-title {
+            font-size: 18px !important;
+            margin-bottom: 14px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .boardwise-title {
+            font-size: 16px !important;
+            margin-bottom: 12px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .boardwise-title {
+            font-size: 14px !important;
+            margin-bottom: 10px !important;
+          }
+        }
       `}</style>
     </div>
   );

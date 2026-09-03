@@ -68,7 +68,7 @@ const LeadSource = ({ data, onCardClick, activeFilters = [], courseTypeId, leadS
 
   return (
     <div style={{ marginBottom: '24px' }}>
-      <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#1e293b', marginBottom: '16px' }}>
+      <h2 className="lead-source-title" style={{ fontSize: '20px', fontWeight: '700', color: '#1e293b', marginBottom: '16px' }}>
         Data Source
       </h2>
 
@@ -93,6 +93,7 @@ const LeadSource = ({ data, onCardClick, activeFilters = [], courseTypeId, leadS
             return (
               <div
                 key={item.id || item.code}
+                className="lead-source-card-item"
                 onClick={() => onCardClick && onCardClick({ type: 'leadSource', value: item.id, label: item.name })}
                 style={{
                   background: '#ffffff',
@@ -126,18 +127,18 @@ const LeadSource = ({ data, onCardClick, activeFilters = [], courseTypeId, leadS
                 )}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: '100%' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-                    <div style={{
+                    <div className="lead-source-icon-container" style={{
                       width: '40px', height: '40px', borderRadius: '10px',
                       background: clr.iconBg, display: 'flex', alignItems: 'center',
                       justifyContent: 'center', flexShrink: 0,
                     }}>
-                      <div style={{ color: clr.iconStroke }}><SourceIcon /></div>
+                      <div className="lead-source-icon" style={{ color: clr.iconStroke }}><SourceIcon /></div>
                     </div>
-                    <div style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', lineHeight: '1.3', flex: 1 }}>
+                    <div className="lead-source-label" style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', lineHeight: '1.3', flex: 1 }}>
                       {item.name}
                     </div>
                   </div>
-                  <div style={{ fontSize: '28px', fontWeight: '700', color: '#1e293b', flexShrink: 0, marginLeft: '12px' }}>
+                  <div className="lead-source-count" style={{ fontSize: '28px', fontWeight: '700', color: '#1e293b', flexShrink: 0, marginLeft: '12px' }}>
                     {item.count !== undefined ? item.count.toLocaleString() : '0'}
                   </div>
                 </div>
@@ -148,10 +149,218 @@ const LeadSource = ({ data, onCardClick, activeFilters = [], courseTypeId, leadS
       )}
 
       <style>{`
-        @media (max-width: 1200px) { .lead-source-responsive-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important; gap: 14px !important; } }
-        @media (max-width: 768px)  { .lead-source-responsive-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important; gap: 12px !important; } }
-        @media (max-width: 480px)  { .lead-source-responsive-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important; gap: 10px !important; } }
-        @media (max-width: 360px)  { .lead-source-responsive-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)) !important; gap: 8px  !important; } }
+        /* Lead Source Container Responsive */
+        @media (max-width: 1400px) {
+          .lead-source-responsive-grid {
+            grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)) !important;
+            gap: 15px !important;
+          }
+        }
+
+        @media (max-width: 1200px) {
+          .lead-source-responsive-grid {
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important;
+            gap: 14px !important;
+          }
+        }
+
+        @media (max-width: 1024px) {
+          .lead-source-responsive-grid {
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)) !important;
+            gap: 13px !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .lead-source-responsive-grid {
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
+            gap: 12px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .lead-source-responsive-grid {
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+            gap: 10px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .lead-source-responsive-grid {
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)) !important;
+            gap: 8px !important;
+          }
+        }
+
+        /* Lead Source Card Item Responsive */
+        @media (max-width: 1024px) {
+          .lead-source-card-item {
+            height: 95px !important;
+            padding: 10px !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .lead-source-card-item {
+            height: 90px !important;
+            padding: 8px !important;
+            border-radius: 10px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .lead-source-card-item {
+            height: 85px !important;
+            padding: 6px !important;
+            border-radius: 8px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .lead-source-card-item {
+            height: 80px !important;
+            padding: 5px !important;
+            border-radius: 8px !important;
+          }
+        }
+
+        /* Lead Source Icon Container Responsive */
+        @media (max-width: 1024px) {
+          .lead-source-icon-container {
+            width: 36px !important;
+            height: 36px !important;
+            border-radius: 8px !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .lead-source-icon-container {
+            width: 32px !important;
+            height: 32px !important;
+            border-radius: 7px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .lead-source-icon-container {
+            width: 28px !important;
+            height: 28px !important;
+            border-radius: 6px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .lead-source-icon-container {
+            width: 24px !important;
+            height: 24px !important;
+            border-radius: 5px !important;
+          }
+        }
+
+        /* Lead Source Icon Responsive */
+        @media (max-width: 1024px) {
+          .lead-source-icon svg {
+            width: 18px !important;
+            height: 18px !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .lead-source-icon svg {
+            width: 16px !important;
+            height: 16px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .lead-source-icon svg {
+            width: 14px !important;
+            height: 14px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .lead-source-icon svg {
+            width: 12px !important;
+            height: 12px !important;
+          }
+        }
+
+        /* Lead Source Label Responsive */
+        @media (max-width: 1024px) {
+          .lead-source-label {
+            font-size: 13px !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .lead-source-label {
+            font-size: 12px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .lead-source-label {
+            font-size: 11px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .lead-source-label {
+            font-size: 10px !important;
+          }
+        }
+
+        /* Lead Source Count Responsive */
+        @media (max-width: 1024px) {
+          .lead-source-count {
+            font-size: 24px !important;
+            margin-left: 10px !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .lead-source-count {
+            font-size: 22px !important;
+            margin-left: 8px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .lead-source-count {
+            font-size: 20px !important;
+            margin-left: 6px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .lead-source-count {
+            font-size: 18px !important;
+            margin-left: 4px !important;
+          }
+        }
+
+        /* Title Responsive */
+        @media (max-width: 768px) {
+          .lead-source-title {
+            font-size: 18px !important;
+            margin-bottom: 14px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .lead-source-title {
+            font-size: 16px !important;
+            margin-bottom: 12px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .lead-source-title {
+            font-size: 14px !important;
+            margin-bottom: 10px !important;
+          }
+        }
       `}</style>
     </div>
   );

@@ -393,11 +393,11 @@ const Dashboard = () => {
       </div>
 
       {/* ── Main Content Layout ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '20px', marginBottom: '20px' }}>
+      <div className="dashboard-main-layout" style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '20px', marginBottom: '20px' }}>
         {/* Left Column: Metrics and Cards */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {/* ── Full Width Metrics Card ── */}
-          <div style={{ 
+          <div className="metrics-card" style={{
             background: 'linear-gradient(135deg, #ff2c47, #ff7a0b)',
             borderRadius: '16px',
             padding: '16px 20px',
@@ -416,14 +416,14 @@ const Dashboard = () => {
             overflow: 'hidden',
             height: 'auto'
           }}>
-            <div style={{ 
+            <div className="metrics-grid" style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(4, 1fr)',
               gap: '16px',
               width: '100%',
             }}>
               {/* Card 1: Total Counsellors Logged Today */}
-              <div style={{ 
+              <div className="metric-card" style={{
                 background: '#ffffff2e',
                 backdropFilter: 'blur(10px)',
                 WebkitBackdropFilter: 'blur(10px)',
@@ -437,21 +437,21 @@ const Dashboard = () => {
                 boxSizing: 'border-box',
                 flexDirection: 'column'
               }}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
+                <svg className="metric-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
                   <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
                   <circle cx="9" cy="7" r="4" />
                   <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
                 </svg>
-                <div style={{ fontSize: '11px', color: '#ffffff', fontWeight: 500, textAlign: 'center' }}>
+                <div className="metric-label" style={{ fontSize: '11px', color: '#ffffff', fontWeight: 500, textAlign: 'center' }}>
                   Total Counsellors Logged Today
                 </div>
-                <div style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
+                <div className="metric-value" style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
                   {dashboardSummaryData?.counsellorsLoggedToday || 0}
                 </div>
               </div>
 
               {/* Card 2: Total Follow-up Scheduled Today */}
-              <div style={{ 
+              <div className="metric-card" style={{
                 background: '#ffffff2e',
                 backdropFilter: 'blur(10px)',
                 WebkitBackdropFilter: 'blur(10px)',
@@ -465,21 +465,21 @@ const Dashboard = () => {
                 boxSizing: 'border-box',
                 flexDirection: 'column'
               }}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
+                <svg className="metric-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
                   <rect x="3" y="4" width="18" height="18" rx="2" />
                   <path d="M16 2v4M8 2v4M3 10h18" />
                   <path d="M8 14h.01M12 14h.01M16 14h.01" />
                 </svg>
-                <div style={{ fontSize: '11px', color: '#ffffff', fontWeight: 500, textAlign: 'center' }}>
+                <div className="metric-label" style={{ fontSize: '11px', color: '#ffffff', fontWeight: 500, textAlign: 'center' }}>
                   Total Follow-up Scheduled Today
                 </div>
-                <div style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
+                <div className="metric-value" style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
                   {dashboardSummaryData?.totalFollowUpsToday || 0}
                 </div>
               </div>
 
               {/* Card 3: Total Counsellors Currently Working */}
-              <div style={{ 
+              <div className="metric-card" style={{
                 background: '#ffffff2e',
                 backdropFilter: 'blur(10px)',
                 WebkitBackdropFilter: 'blur(10px)',
@@ -493,19 +493,19 @@ const Dashboard = () => {
                 boxSizing: 'border-box',
                 flexDirection: 'column'
               }}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
+                <svg className="metric-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
                   <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" />
                 </svg>
-                <div style={{ fontSize: '11px', color: '#ffffff', fontWeight: 500, textAlign: 'center' }}>
+                <div className="metric-label" style={{ fontSize: '11px', color: '#ffffff', fontWeight: 500, textAlign: 'center' }}>
                   Total Counsellors Currently Working
                 </div>
-                <div style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
+                <div className="metric-value" style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
                   {dashboardSummaryData?.counsellorsCurrentlyWorking || 0}
                 </div>
               </div>
 
               {/* Card 4: Conversation Ratio */}
-              <div style={{ 
+              <div className="metric-card" style={{
                 background: '#ffffff2e',
                 backdropFilter: 'blur(10px)',
                 WebkitBackdropFilter: 'blur(10px)',
@@ -519,21 +519,21 @@ const Dashboard = () => {
                 boxSizing: 'border-box',
                 flexDirection: 'column'
               }}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
+                <svg className="metric-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
                   <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" />
                 </svg>
-                <div style={{ fontSize: '11px', color: '#ffffff', fontWeight: 500, textAlign: 'center' }}>
+                <div className="metric-label" style={{ fontSize: '11px', color: '#ffffff', fontWeight: 500, textAlign: 'center' }}>
                   Conversation Ratio
                 </div>
-                <div style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
-                  {dashboardSummaryData?.conversationRatio 
-                    ? Math.round(dashboardSummaryData.conversationRatio * 100) + '%' 
+                <div className="metric-value" style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
+                  {dashboardSummaryData?.conversationRatio
+                    ? Math.round(dashboardSummaryData.conversationRatio * 100) + '%'
                     : '0%'}
                 </div>
               </div>
 
               {/* Card 5: Total Data in System */}
-              <div style={{ 
+              <div className="metric-card" style={{
                 background: '#ffffff2e',
                 backdropFilter: 'blur(10px)',
                 WebkitBackdropFilter: 'blur(10px)',
@@ -547,15 +547,15 @@ const Dashboard = () => {
                 boxSizing: 'border-box',
                 flexDirection: 'column'
               }}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
+                <svg className="metric-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
                   <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" />
                   <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
                   <line x1="12" y1="22.08" x2="12" y2="12" />
                 </svg>
-                <div style={{ fontSize: '11px', color: '#ffffff', fontWeight: 500, textAlign: 'center' }}>
+                <div className="metric-label" style={{ fontSize: '11px', color: '#ffffff', fontWeight: 500, textAlign: 'center' }}>
                   Total Data in System
                 </div>
-                <div style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
+                <div className="metric-value" style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
                   {dashboardSummaryData?.totalLeads || 0}
                 </div>
               </div>
@@ -563,7 +563,8 @@ const Dashboard = () => {
               {/* Card 6: Low Data Users Alert */}
               <div
                 onClick={() => navigate('/counselors', { state: { lowDataMode: true, fromDashboard: true } })}
-                style={{ 
+                className="metric-card"
+                style={{
                 background: '#ffffff2e',
                 backdropFilter: 'blur(10px)',
                 WebkitBackdropFilter: 'blur(10px)',
@@ -578,15 +579,15 @@ const Dashboard = () => {
                 flexDirection: 'column',
                 cursor: 'pointer',
               }}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
+                <svg className="metric-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
                   <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
                   <circle cx="9" cy="7" r="4" />
                   <line x1="6" y1="22" x2="12" y2="22" />
                 </svg>
-                <div style={{ fontSize: '11px', color: '#ffffff', fontWeight: 500, textAlign: 'center' }}>
+                <div className="metric-label" style={{ fontSize: '11px', color: '#ffffff', fontWeight: 500, textAlign: 'center' }}>
                   Low Data Users Alert
                 </div>
-                <div style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
+                <div className="metric-value" style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
                   {dashboardSummaryData?.sections
                     ?.find(s => s.code === 'OPERATIONS')
                     ?.cards?.find(c => c.code === 'LOW_DATA_USERS')
@@ -597,7 +598,8 @@ const Dashboard = () => {
               {/* Card 7: Users Not Logged In Today */}
               <div
                 onClick={() => navigate('/counselors', { state: { usersNotLoggedInMode: true, fromDashboard: true } })}
-                style={{ 
+                className="metric-card"
+                style={{
                 background: '#ffffff2e',
                 backdropFilter: 'blur(10px)',
                 WebkitBackdropFilter: 'blur(10px)',
@@ -612,16 +614,16 @@ const Dashboard = () => {
                 flexDirection: 'column',
                 cursor: 'pointer',
               }}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
+                <svg className="metric-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
                   <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
                   <circle cx="9" cy="7" r="4" />
                   <line x1="17" y1="11" x2="23" y2="17" />
                   <line x1="23" y1="11" x2="17" y2="17" />
                 </svg>
-                <div style={{ fontSize: '11px', color: '#ffffff', fontWeight: 500, textAlign: 'center' }}>
+                <div className="metric-label" style={{ fontSize: '11px', color: '#ffffff', fontWeight: 500, textAlign: 'center' }}>
                   Users Not Logged In Today
                 </div>
-                <div style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
+                <div className="metric-value" style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
                   {dashboardSummaryData?.sections
                     ?.find(s => s.code === 'OPERATIONS')
                     ?.cards?.find(c => c.code === 'USERS_NOT_LOGGED_IN')
@@ -632,7 +634,8 @@ const Dashboard = () => {
               {/* Card 8: Follow-up Users Not Logged In by 11 AM */}
               <div
                 onClick={() => navigate('/counselors', { state: { followupNotLoggedIn11amMode: true, fromDashboard: true } })}
-                style={{ 
+                className="metric-card"
+                style={{
                 background: '#ffffff2e',
                 backdropFilter: 'blur(10px)',
                 WebkitBackdropFilter: 'blur(10px)',
@@ -647,16 +650,16 @@ const Dashboard = () => {
                 flexDirection: 'column',
                 cursor: 'pointer',
               }}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
+                <svg className="metric-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" style={{ marginBottom: '4px' }}>
                   <circle cx="12" cy="12" r="10" />
                   <polyline points="12 6 12 12 16 14" />
                   <line x1="12" y1="2" x2="12" y2="2" />
                   <path d="M9 1l3 3-3 3" />
                 </svg>
-                <div style={{ fontSize: '11px', color: '#ffffff', fontWeight: 500, textAlign: 'center' }}>
+                <div className="metric-label" style={{ fontSize: '11px', color: '#ffffff', fontWeight: 500, textAlign: 'center' }}>
                   Follow-up Users Not Logged In by 11 AM
                 </div>
-                <div style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
+                <div className="metric-value" style={{ fontSize: '20px', fontWeight: '700', color: '#ffffff' }}>
                   {dashboardSummaryData?.sections
                     ?.find(s => s.code === 'OPERATIONS')
                     ?.cards?.find(c => c.code === 'FOLLOWUP_USERS_NOT_LOGGED_IN_11AM')
@@ -686,28 +689,233 @@ const Dashboard = () => {
               />
             </div>
             <style>{`
+              /* Allotted Cards Container Responsive */
+              @media (max-width: 1400px) {
+                .allotted-cards-responsive-grid {
+                  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)) !important;
+                  gap: 15px !important;
+                }
+              }
+
               @media (max-width: 1200px) {
                 .allotted-cards-responsive-grid {
                   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important;
                   gap: 14px !important;
                 }
               }
+
+              @media (max-width: 1024px) {
+                .allotted-cards-responsive-grid {
+                  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)) !important;
+                  gap: 13px !important;
+                }
+              }
+
               @media (max-width: 768px) {
                 .allotted-cards-responsive-grid {
                   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
                   gap: 12px !important;
                 }
               }
+
               @media (max-width: 480px) {
                 .allotted-cards-responsive-grid {
                   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
                   gap: 10px !important;
                 }
               }
+
               @media (max-width: 360px) {
                 .allotted-cards-responsive-grid {
                   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)) !important;
                   gap: 8px !important;
+                }
+              }
+
+              /* Main Dashboard Layout Responsive */
+              @media (max-width: 1024px) {
+                .dashboard-main-layout {
+                  grid-template-columns: 1fr !important;
+                }
+              }
+
+              @media (max-width: 768px) {
+                .dashboard-main-layout {
+                  gap: 16px !important;
+                }
+              }
+
+              @media (max-width: 480px) {
+                .dashboard-main-layout {
+                  gap: 12px !important;
+                }
+              }
+
+              /* Recent Activity Card Responsive */
+              @media (max-width: 1024px) {
+                .recent-activity-card {
+                  padding: 18px !important;
+                }
+              }
+
+              @media (max-width: 768px) {
+                .recent-activity-card {
+                  padding: 16px !important;
+                }
+                .recent-activity-item {
+                  padding: 10px !important;
+                  gap: 10px !important;
+                }
+                .recent-activity-icon {
+                  width: 36px !important;
+                  height: 36px !important;
+                }
+                .recent-activity-icon svg {
+                  width: 18px !important;
+                  height: 18px !important;
+                }
+                .recent-activity-title {
+                  font-size: 12px !important;
+                }
+                .recent-activity-time {
+                  font-size: 10px !important;
+                }
+                .recent-activity-desc {
+                  font-size: 11px !important;
+                }
+              }
+
+              @media (max-width: 480px) {
+                .recent-activity-card {
+                  padding: 14px !important;
+                }
+                .recent-activity-item {
+                  padding: 8px !important;
+                  gap: 8px !important;
+                }
+                .recent-activity-icon {
+                  width: 32px !important;
+                  height: 32px !important;
+                }
+                .recent-activity-icon svg {
+                  width: 16px !important;
+                  height: 16px !important;
+                }
+                .recent-activity-title {
+                  font-size: 11px !important;
+                }
+                .recent-activity-time {
+                  font-size: 9px !important;
+                }
+                .recent-activity-desc {
+                  font-size: 10px !important;
+                }
+              }
+
+              @media (max-width: 360px) {
+                .recent-activity-card {
+                  padding: 12px !important;
+                }
+                .recent-activity-item {
+                  padding: 6px !important;
+                  gap: 6px !important;
+                }
+                .recent-activity-icon {
+                  width: 28px !important;
+                  height: 28px !important;
+                }
+                .recent-activity-icon svg {
+                  width: 14px !important;
+                  height: 14px !important;
+                }
+                .recent-activity-title {
+                  font-size: 10px !important;
+                }
+                .recent-activity-time {
+                  font-size: 8px !important;
+                }
+                .recent-activity-desc {
+                  font-size: 9px !important;
+                }
+              }
+
+              /* Page Header Responsive */
+              @media (max-width: 768px) {
+                .page-header {
+                  padding: 16px !important;
+                }
+                .page-header h1 {
+                  font-size: 18px !important;
+                }
+                .page-header p {
+                  font-size: 12px !important;
+                }
+              }
+
+              @media (max-width: 480px) {
+                .page-header {
+                  padding: 14px !important;
+                }
+                .page-header h1 {
+                  font-size: 16px !important;
+                }
+                .page-header p {
+                  font-size: 11px !important;
+                }
+              }
+
+              /* Metrics Card Responsive */
+              @media (max-width: 768px) {
+                .metrics-card {
+                  padding: 14px 16px !important;
+                }
+                .metrics-grid {
+                  grid-template-columns: repeat(2, 1fr) !important;
+                  gap: 12px !important;
+                }
+                .metric-card {
+                  padding: 8px 10px !important;
+                }
+                .metric-card svg {
+                  width: 20px !important;
+                  height: 20px !important;
+                }
+                .metric-icon {
+                  width: 20px !important;
+                  height: 20px !important;
+                }
+                .metric-label {
+                  font-size: 10px !important;
+                }
+                .metric-value {
+                  font-size: 18px !important;
+                }
+              }
+
+              @media (max-width: 480px) {
+                .metrics-card {
+                  padding: 12px 14px !important;
+                }
+                .metrics-grid {
+                  grid-template-columns: repeat(2, 1fr) !important;
+                  gap: 10px !important;
+                }
+                .metric-card {
+                  padding: 6px 8px !important;
+                }
+                .metric-card svg {
+                  width: 18px !important;
+                  height: 18px !important;
+                }
+                .metric-icon {
+                  width: 18px !important;
+                  height: 18px !important;
+                }
+                .metric-label {
+                  font-size: 9px !important;
+                }
+                .metric-value {
+                  font-size: 16px !important;
                 }
               }
             `}</style>
@@ -746,7 +954,7 @@ const Dashboard = () => {
         {/* Right Column: Recent Activity */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {/* ── Recent Activity Card ── */}
-          <div style={{
+          <div className="recent-activity-card" style={{
             background: '#ffffff',
             borderRadius: '16px',
             padding: '20px',
@@ -847,7 +1055,7 @@ const Dashboard = () => {
                   };
 
                   return (
-                    <div key={activity.id || index} style={{
+                    <div key={activity.id || index} className="recent-activity-item" style={{
                       display: 'flex',
                       gap: '12px',
                       padding: '12px',
@@ -855,7 +1063,7 @@ const Dashboard = () => {
                       background: '#f8fafc',
                       transition: 'background 0.2s'
                     }}>
-                      <div style={{
+                      <div className="recent-activity-icon" style={{
                         width: '40px',
                         height: '40px',
                         borderRadius: '8px',
@@ -876,28 +1084,28 @@ const Dashboard = () => {
                           justifyContent: 'space-between',
                           marginBottom: '4px'
                         }}>
-                          <span style={{
+                          <span className="recent-activity-title" style={{
                             fontSize: '13px',
                             fontWeight: '600',
                             color: '#1e293b'
                           }}>
                             {activity.feedback || 'Activity'}
                           </span>
-                          <span style={{
+                          <span className="recent-activity-time" style={{
                             fontSize: '11px',
                             color: '#64748b'
                           }}>
                             {activity.timestamp ? formatTime(activity.timestamp) : 'Just now'}
                           </span>
                         </div>
-                        <p style={{
+                        <p className="recent-activity-desc" style={{
                           fontSize: '12px',
                           color: '#64748b',
                           margin: 0,
                           lineHeight: '1.4'
                         }}>
                           {activity.leadCode && `Lead: ${activity.leadCode}`}
-                          {activity.newStatus && activity.previousStatus && 
+                          {activity.newStatus && activity.previousStatus &&
                             ` - Status changed from ${activity.previousStatus} to ${activity.newStatus}`}
                           {activity.changedBy && ` by ${activity.changedBy}`}
                         </p>

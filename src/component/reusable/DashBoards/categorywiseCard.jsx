@@ -63,11 +63,11 @@ const CategorywiseCard = ({ data, onCardClick, activeFilters = [], courseTypeId,
 
   return (
     <div style={{ marginBottom: '24px' }}>
-      <h2 style={{ 
-        fontSize: '20px', 
-        fontWeight: '700', 
-        color: '#1e293b', 
-        marginBottom: '16px' 
+      <h2 className="categorywise-title" style={{
+        fontSize: '20px',
+        fontWeight: '700',
+        color: '#1e293b',
+        marginBottom: '16px'
       }}>
         Category Wise data
       </h2>
@@ -96,6 +96,7 @@ const CategorywiseCard = ({ data, onCardClick, activeFilters = [], courseTypeId,
             return (
             <div
               key={item.id ?? index}
+              className="categorywise-card-item"
               onClick={() => onCardClick && onCardClick({ type: 'courseType', value: item.code || item.id, label })}
               style={{
                 background: '#ffffff',
@@ -154,6 +155,7 @@ const CategorywiseCard = ({ data, onCardClick, activeFilters = [], courseTypeId,
                   minWidth: 0,
                 }}>
                   <div
+                    className="categorywise-icon-container"
                     style={{
                       width: '40px',
                       height: '40px',
@@ -165,7 +167,7 @@ const CategorywiseCard = ({ data, onCardClick, activeFilters = [], courseTypeId,
                       flexShrink: 0,
                     }}
                   >
-                    <div style={{ color: iconStroke }}>
+                    <div className="categorywise-icon" style={{ color: iconStroke }}>
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <rect x="3" y="3" width="18" height="18" rx="2" />
                         <path d="M3 9h18" />
@@ -173,7 +175,7 @@ const CategorywiseCard = ({ data, onCardClick, activeFilters = [], courseTypeId,
                       </svg>
                     </div>
                   </div>
-                  <div style={{
+                  <div className="categorywise-label" style={{
                     fontSize: '14px',
                     fontWeight: '600',
                     color: '#1e293b',
@@ -183,7 +185,7 @@ const CategorywiseCard = ({ data, onCardClick, activeFilters = [], courseTypeId,
                     {label}
                   </div>
                 </div>
-                <div style={{
+                <div className="categorywise-count" style={{
                   fontSize: '28px',
                   fontWeight: '700',
                   color: '#1e293b',
@@ -199,31 +201,216 @@ const CategorywiseCard = ({ data, onCardClick, activeFilters = [], courseTypeId,
         </div>
       )}
       <style>{`
+        /* Categorywise Container Responsive */
+        @media (max-width: 1400px) {
+          .categorywise-responsive-grid {
+            grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)) !important;
+            gap: 15px !important;
+          }
+        }
+
         @media (max-width: 1200px) {
           .categorywise-responsive-grid {
             grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important;
             gap: 14px !important;
           }
         }
-        
+
+        @media (max-width: 1024px) {
+          .categorywise-responsive-grid {
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)) !important;
+            gap: 13px !important;
+          }
+        }
+
         @media (max-width: 768px) {
           .categorywise-responsive-grid {
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
             gap: 12px !important;
           }
         }
-        
+
         @media (max-width: 480px) {
           .categorywise-responsive-grid {
             grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
             gap: 10px !important;
           }
         }
-        
+
         @media (max-width: 360px) {
           .categorywise-responsive-grid {
             grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)) !important;
             gap: 8px !important;
+          }
+        }
+
+        /* Categorywise Card Item Responsive */
+        @media (max-width: 1024px) {
+          .categorywise-card-item {
+            height: 95px !important;
+            padding: 10px !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .categorywise-card-item {
+            height: 90px !important;
+            padding: 8px !important;
+            border-radius: 10px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .categorywise-card-item {
+            height: 85px !important;
+            padding: 6px !important;
+            border-radius: 8px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .categorywise-card-item {
+            height: 80px !important;
+            padding: 5px !important;
+            border-radius: 8px !important;
+          }
+        }
+
+        /* Categorywise Icon Container Responsive */
+        @media (max-width: 1024px) {
+          .categorywise-icon-container {
+            width: 36px !important;
+            height: 36px !important;
+            border-radius: 8px !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .categorywise-icon-container {
+            width: 32px !important;
+            height: 32px !important;
+            border-radius: 7px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .categorywise-icon-container {
+            width: 28px !important;
+            height: 28px !important;
+            border-radius: 6px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .categorywise-icon-container {
+            width: 24px !important;
+            height: 24px !important;
+            border-radius: 5px !important;
+          }
+        }
+
+        /* Categorywise Icon Responsive */
+        @media (max-width: 1024px) {
+          .categorywise-icon svg {
+            width: 18px !important;
+            height: 18px !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .categorywise-icon svg {
+            width: 16px !important;
+            height: 16px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .categorywise-icon svg {
+            width: 14px !important;
+            height: 14px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .categorywise-icon svg {
+            width: 12px !important;
+            height: 12px !important;
+          }
+        }
+
+        /* Categorywise Label Responsive */
+        @media (max-width: 1024px) {
+          .categorywise-label {
+            font-size: 13px !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .categorywise-label {
+            font-size: 12px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .categorywise-label {
+            font-size: 11px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .categorywise-label {
+            font-size: 10px !important;
+          }
+        }
+
+        /* Categorywise Count Responsive */
+        @media (max-width: 1024px) {
+          .categorywise-count {
+            font-size: 24px !important;
+            margin-left: 10px !important;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .categorywise-count {
+            font-size: 22px !important;
+            margin-left: 8px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .categorywise-count {
+            font-size: 20px !important;
+            margin-left: 6px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .categorywise-count {
+            font-size: 18px !important;
+            margin-left: 4px !important;
+          }
+        }
+
+        /* Title Responsive */
+        @media (max-width: 768px) {
+          .categorywise-title {
+            font-size: 18px !important;
+            margin-bottom: 14px !important;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .categorywise-title {
+            font-size: 16px !important;
+            margin-bottom: 12px !important;
+          }
+        }
+
+        @media (max-width: 360px) {
+          .categorywise-title {
+            font-size: 14px !important;
+            margin-bottom: 10px !important;
           }
         }
       `}</style>

@@ -141,7 +141,7 @@ const buildLeadColumns = (page, size, onOpenRemark, navTo, selectedRows, onToggl
 ];
 
 // ─── Helper: fetch leads for the selected card (server-side) ─────────────────
-const fetchLeadsForCard = async (activeFilters, courseTypeId, page, size, sortBy, sortDirection) => {
+const fetchLeadsForCard = async (activeFilters, courseTypeId, page, size, sortBy, sortDirection, filterRequest) => {
     if (!courseTypeId) return { content: [], totalElements: 0, totalPages: 0 };
 
     const params = {
@@ -190,7 +190,7 @@ const fetchLeadsForCard = async (activeFilters, courseTypeId, page, size, sortBy
     };
 
     // Use filterRequest with smart conversion instead of direct assignment
-    Object.assign(params, convertFilterRequest(filterRequest));
+    Object.assign(params, convertFilterRequest(filterRequest || {}));
 
     try {
         const res = await axiosInstance.get(ApiRoutes.Lead.getAllLeads, { params });
@@ -299,14 +299,14 @@ const CourseTypeDetails = () => {
     useEffect(() => {
         if (!id) return;
         setTableLoading(true);
-        fetchLeadsForCard(activeFilters, id, tablePage, tableSize, tableSortBy, tableSortDir)
+        fetchLeadsForCard(activeFilters, id, tablePage, tableSize, tableSortBy, tableSortDir, filterRequest)
             .then(({ content, totalElements, totalPages }) => {
                 setTableData(content);
                 setTableTotalElements(totalElements);
                 setTableTotalPages(totalPages);
                 setTableLoading(false);
             });
-    }, [activeFilters, id, tablePage, tableSize, tableSortBy, tableSortDir]);
+    }, [activeFilters, id, tablePage, tableSize, tableSortBy, tableSortDir, filterRequest]);
 
     // ── update filterRequest when activeFilters change for cards ──
     useEffect(() => {

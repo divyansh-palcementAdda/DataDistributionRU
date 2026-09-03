@@ -796,12 +796,12 @@ const AddLeadModal = () => {
                 )}
               </div>
             </div>
-            <CustomInput
+            {/* <CustomInput
               label="Source Details"
               placeholder="Additional source details..."
               value={formData.sourceDetails}
               onChange={handleChange('sourceDetails')}
-            />
+            /> */}
             <div>
               <label className="form-label">Interested Courses</label>
               <div className="custom-dropdown-container" ref={interestedCoursesDropdownRef}>

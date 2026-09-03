@@ -123,6 +123,7 @@ const LeadStatus = () => {
       setIsDeleting(true);
       await deleteLeadStatus(itemToDelete.id);
       toast.success("Lead status deleted successfully");
+      console.log('test')
       fetchLeadStatuses();
       setIsDeleteModalOpen(false);
       setItemToDelete(null);

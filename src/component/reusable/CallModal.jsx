@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import CustomButton from './CustomButton';
 import { changeLeadStatus } from '../../Services/lead/leadService';
 
@@ -8,6 +8,29 @@ const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen, onInfoPanelOp
     const [showActionButtons, setShowActionButtons] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [followupActionCompleted, setFollowupActionCompleted] = useState(null); // 'cancelled', 'completed', 'not_connected'
+
+    // Initialize state based on current status from API
+    useEffect(() => {
+        if (studentData?.currentStatus) {
+            const currentStatus = studentData.currentStatus;
+            const statusName = currentStatus?.code || currentStatus?.name || '';
+            const currentStatusCode = statusName.toUpperCase();
+
+            // Set isConnected based on current status
+            if (currentStatusCode === 'CONNECTED') {
+                setIsConnected(true);
+                setShowInterestButtons(true);
+            } else if (currentStatusCode === 'INTERESTED') {
+                setIsConnected(true);
+                setShowInterestButtons(false);
+                setShowActionButtons(true);
+            } else {
+                setIsConnected(false);
+                setShowInterestButtons(false);
+                setShowActionButtons(false);
+            }
+        }
+    }, [studentData]);
 
     if (!isOpen) return null;
 
@@ -208,6 +231,22 @@ const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen, onInfoPanelOp
         if (onRegisterLead) {
             await onRegisterLead();
             onClose();
+        }
+    };
+
+    const handleFollowupNotInterested = async () => {
+        setIsSubmitting(true);
+        try {
+            await changeLeadStatus(studentData?.id, {
+                newStatusId: studentData?.currentStatus?.id,
+                statusCode: 'NOT_INTERESTED',
+                feedback: 'Followup not interested'
+            });
+            handleClose();
+        } catch (error) {
+            console.error('Error changing status to Not Interested:', error);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -483,6 +522,14 @@ const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen, onInfoPanelOp
                                         disabled={isSubmitting}
                                     >
                                         {isSubmitting ? 'Submitting...' : 'Schedule'}
+                                    </CustomButton>
+                                    <CustomButton
+                                        variant="secondary"
+                                        onClick={handleFollowupNotInterested}
+                                        className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white"
+                                        disabled={isSubmitting}
+                                    >
+                                        {isSubmitting ? 'Submitting...' : 'Followup not interested'}
                                     </CustomButton>
                                 </>
                             )}

@@ -23,6 +23,8 @@ const ApiRoutes = {
         reassign: '/api/leads/reassign',
         reassignDistribute: '/api/leads/reassign/distribute',
         changeStatus: '/api/leads/{id}/change-status',
+        manualApproveRegistration: '/api/leads/{id}/manual-approve-registration',
+        retryCmsVerification: '/api/leads/{id}/retry-cms-verification',
         statusHistory: '/api/leads/{id}/status-history',
         avail: '/api/leads/{id}/avail',
     },

@@ -232,3 +232,26 @@ export const availLead = async (id) => {
         throw error;
     }
 };
+
+// Manually approve lead registration — POST /api/leads/{id}/manual-approve-registration
+export const manualApproveLeadRegistration = async (id, data) => {
+    try {
+        const url = ApiRoutes.Lead.manualApproveRegistration.replace("{id}", id);
+        const response = await axiosInstance.post(url, data);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
+// Retry CMS verification — POST /api/leads/{id}/retry-cms-verification
+export const retryCmsStudentVerification = async (id) => {
+    try {
+        const url = ApiRoutes.Lead.retryCmsVerification.replace("{id}", id);
+        const response = await axiosInstance.post(url);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+

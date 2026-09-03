@@ -10,7 +10,7 @@ import WhatsAppModal from '../component/reusable/WhatsAppModal';
 import EmailModal from '../component/reusable/EmailModal';
 import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import ReusableTable from '../component/reusable/table';
-import { createLeadSchedule, getLeadById, getLeadInfoPanel, sendLeadWhatsApp, sendLeadEmail, changeLeadStatus, getLeadStatusHistory, getLeadFollowUps } from '../Services/lead/leadService';
+import { createLeadSchedule, getLeadById, getLeadInfoPanel, sendLeadWhatsApp, sendLeadEmail, changeLeadStatus, getLeadStatusHistory, getLeadFollowUps, manualApproveLeadRegistration, retryCmsStudentVerification } from '../Services/lead/leadService';
 import { getAllCourses } from '../Services/course/course';
 import { completeFollowup, cancelFollowup, markFollowupNotConnected } from '../Services/followUp/followService';
 
@@ -37,6 +37,14 @@ const LeadDetail = () => {
   const [statusHistoryLoading, setStatusHistoryLoading] = useState(false);
   const [followUps, setFollowUps] = useState([]);
   const [followUpsLoading, setFollowUpsLoading] = useState(false);
+
+  // Manual Registration Approval state
+  const [isManualApproveModalOpen, setIsManualApproveModalOpen] = useState(false);
+  const [manualApproveCourseId, setManualApproveCourseId] = useState('');
+  const [manualApproveEnrollmentId, setManualApproveEnrollmentId] = useState('');
+  const [manualApproveRemarks, setManualApproveRemarks] = useState('');
+  const [manualApproveSubmitting, setManualApproveSubmitting] = useState(false);
+  const [isRetryingCms, setIsRetryingCms] = useState(false);
 
   // Searchable course dropdown state
   const [courseSearch, setCourseSearch] = useState('');
@@ -375,16 +383,15 @@ const LeadDetail = () => {
 
   const handleRegisteredClick = async () => {
     try {
-      // Call the changeStatus API
+      setLoading(true);
       const response = await changeLeadStatus(id, {
         newStatusId: leadDetails.currentStatus?.id,
         statusCode: 'REGISTERED',
-        feedback: 'Lead registered successfully'
+        feedback: 'Lead marked as registered'
       });
 
       if (response?.data?.success) {
-        showToast('Lead status changed to Registered successfully');
-        // Refresh lead details to get updated status
+        showToast('Student verified with CMS & registered successfully!');
         const res = await getLeadById(id);
         if (res?.data?.success) {
           setLeadDetails(res.data.data);
@@ -393,8 +400,84 @@ const LeadDetail = () => {
         showToast(response?.data?.message || 'Failed to change lead status');
       }
     } catch (error) {
-      console.error('Failed to change lead status', error);
-      showToast('Failed to change lead status');
+      console.error('Failed to register lead with CMS check', error);
+      const errMsg = error?.response?.data?.message || error?.message || 'CMS verification failed. Lead not registered.';
+      showToast(errMsg);
+      // Reload lead details to reflect updated registrationStatus (CHECK_REJECTED / CHECK_PENDING) and reason
+      try {
+        const res = await getLeadById(id);
+        if (res?.data?.success) {
+          setLeadDetails(res.data.data);
+        }
+      } catch (e) {}
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOpenManualApproveModal = () => {
+    const courseId = leadDetails?.registeredCourse?.id || leadDetails?.course?.id || leadDetails?.interestedCourses?.[0]?.id || '';
+    setManualApproveCourseId(courseId);
+    setManualApproveEnrollmentId(leadDetails?.enrollmentId || '');
+    setManualApproveRemarks('');
+    setIsManualApproveModalOpen(true);
+  };
+
+  const handleManualApproveSubmit = async (e) => {
+    e.preventDefault();
+    if (!manualApproveCourseId) {
+      toast.error('Please select the registered course');
+      return;
+    }
+    try {
+      setManualApproveSubmitting(true);
+      const res = await manualApproveLeadRegistration(id, {
+        registeredCourseId: manualApproveCourseId,
+        enrollmentId: manualApproveEnrollmentId ? manualApproveEnrollmentId.trim() : null,
+        remarks: manualApproveRemarks ? manualApproveRemarks.trim() : null,
+      });
+      if (res?.data?.success) {
+        toast.success('Registration manually approved successfully!');
+        setIsManualApproveModalOpen(false);
+        const refreshed = await getLeadById(id);
+        if (refreshed?.data?.success) {
+          setLeadDetails(refreshed.data.data);
+        }
+      } else {
+        toast.error(res?.data?.message || 'Failed to approve registration');
+      }
+    } catch (err) {
+      console.error('Error approving registration:', err);
+      toast.error(err?.response?.data?.message || err?.message || 'Failed to approve registration');
+    } finally {
+      setManualApproveSubmitting(false);
+    }
+  };
+
+  const handleRetryCms = async () => {
+    try {
+      setIsRetryingCms(true);
+      const res = await retryCmsStudentVerification(id);
+      if (res?.data?.success) {
+        toast.success('CMS verification successful & student registered!');
+        const refreshed = await getLeadById(id);
+        if (refreshed?.data?.success) {
+          setLeadDetails(refreshed.data.data);
+        }
+      } else {
+        toast.error(res?.data?.message || 'CMS verification failed');
+      }
+    } catch (err) {
+      console.error('Error retrying CMS verification:', err);
+      toast.error(err?.response?.data?.message || err?.message || 'CMS verification failed');
+      try {
+        const refreshed = await getLeadById(id);
+        if (refreshed?.data?.success) {
+          setLeadDetails(refreshed.data.data);
+        }
+      } catch (e) {}
+    } finally {
+      setIsRetryingCms(false);
     }
   };
 
@@ -531,6 +614,9 @@ const LeadDetail = () => {
     );
   }
 
+  const userRole = localStorage.getItem('userRole')?.toUpperCase() || '';
+  const isAdmin = userRole === 'SUPER_ADMIN' || userRole === 'ADMIN';
+
   const statusName = leadDetails.currentStatus?.name || leadDetails.currentStatus?.code || 'N/A';
   const assignedToName = leadDetails.assignedTo?.firstName && leadDetails.assignedTo?.lastName
     ? `${leadDetails.assignedTo.firstName} ${leadDetails.assignedTo.lastName}`
@@ -544,6 +630,49 @@ const LeadDetail = () => {
   const hasPendingFollowup = followUps.some(f => f.status === 'PENDING' && !f.completed);
   const currentStatus = leadDetails?.currentStatus;
   const followUpStatus = currentStatus?.followUpStatus || false;
+
+  const renderRegistrationBadge = () => {
+    const regStatus = leadDetails?.registrationStatus;
+    if (!regStatus || regStatus === 'NONE') return null;
+
+    if (regStatus === 'CHECK_PENDING') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-300 shadow-sm">
+          <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+          Registration Check Pending
+        </span>
+      );
+    }
+    if (regStatus === 'CHECK_REJECTED') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-300 shadow-sm">
+          <span className="w-2 h-2 rounded-full bg-red-500"></span>
+          Registration Check Rejected
+        </span>
+      );
+    }
+    if (regStatus === 'COMPLETED_MATCHED' || regStatus === 'CHECK_SUCCESSFUL') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-300 shadow-sm">
+          <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+          Registration Completed / CMS Matched
+        </span>
+      );
+    }
+    if (regStatus === 'MANUALLY_APPROVED') {
+      return (
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-300 shadow-sm">
+          <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
+          Manually Approved Registration
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700 border border-gray-300 shadow-sm">
+        {regStatus}
+      </span>
+    );
+  };
 
   return (
     <div className="block" id="page-lead-detail">
@@ -651,6 +780,63 @@ const LeadDetail = () => {
         {/* Left / Main Content */}
         <div className="flex flex-col gap-4 lg:col-span-2">
 
+          {/* Registration Verification Status Notice / Banner for Pending & Rejected */}
+          {(leadDetails.registrationStatus === 'CHECK_REJECTED' || leadDetails.registrationStatus === 'CHECK_PENDING') && (
+            <div className={`p-4 rounded-xl border shadow-sm ${leadDetails.registrationStatus === 'CHECK_REJECTED' ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200'}`}>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <div className={`p-2 rounded-lg mt-0.5 ${leadDetails.registrationStatus === 'CHECK_REJECTED' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="8" x2="12" y2="12" />
+                      <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className={`text-sm font-bold ${leadDetails.registrationStatus === 'CHECK_REJECTED' ? 'text-red-900' : 'text-amber-900'}`}>
+                      {leadDetails.registrationStatus === 'CHECK_REJECTED' ? 'Registration Check Rejected / Student Not Matched in CMS' : 'Registration Check Pending'}
+                    </h4>
+                    {isAdmin && (
+                      <p className="text-xs text-gray-700 mt-1">
+                        <span className="font-bold text-gray-900">Rejection/Failure Reason:</span> {leadDetails.registrationCheckFailureReason || 'CMS verification did not find a full match.'}
+                      </p>
+                    )}
+                    {!isAdmin && (
+                      <p className="text-xs text-gray-600 mt-1">
+                        CMS student verification was not completed automatically. This registration is pending Admin review and approval.
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {isAdmin && (
+                  <div className="flex flex-wrap items-center gap-2 sm:self-start">
+                    <button
+                      onClick={handleOpenManualApproveModal}
+                      className="px-3 py-1.5 text-xs font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm transition-colors flex items-center gap-1"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                      Manually Approve
+                    </button>
+                    <button
+                      onClick={handleRetryCms}
+                      disabled={isRetryingCms}
+                      className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-lg shadow-sm transition-colors flex items-center gap-1 disabled:opacity-50"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={isRetryingCms ? 'animate-spin' : ''}>
+                        <polyline points="23 4 23 10 17 10" />
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+                      </svg>
+                      {isRetryingCms ? 'Retrying...' : 'Retry CMS'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Lead Info Card */}
           <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm w-full">
 
@@ -728,15 +914,23 @@ const LeadDetail = () => {
                 {initials}
               </div>
               <div className="flex-1">
-                <h2 className="text-lg font-bold text-gray-900 mb-1">
-                  {leadDetails.fullName || 'N/A'}
-                </h2>
+                <div className="flex flex-wrap items-center gap-2 mb-1">
+                  <h2 className="text-lg font-bold text-gray-900">
+                    {leadDetails.fullName || 'N/A'}
+                  </h2>
+                  {renderRegistrationBadge()}
+                  {leadDetails.enrollmentId && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                      Enrollment ID: {leadDetails.enrollmentId}
+                    </span>
+                  )}
+                </div>
                 <p className="text-sm text-gray-500 mb-3">
                   {leadDetails.leadCode || 'N/A'}{leadDetails.nextFollowUpDate ? ` · Next Follow up Date ${formatDate(leadDetails.nextFollowUpDate)}` : ''}
                 </p>
 
-                <div className="flex flex-wrap gap-2">
-                  Assign To : {assignedToName}
+                <div className="flex flex-wrap gap-2 text-xs text-gray-600">
+                  <span className="font-semibold text-gray-700">Assigned To:</span> {assignedToName}
                 </div>
               </div>
             </div>
@@ -1226,6 +1420,167 @@ const LeadDetail = () => {
         lead={leadDetails}
         onSave={handleRemarkSave}
       />
+
+      {/* Admin Manual Registration Approval Modal */}
+      {isManualApproveModalOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-green-50 to-emerald-50">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-green-100 text-green-700 rounded-lg">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-gray-900">Manually Approve Registration</h3>
+                  <p className="text-xs text-gray-500">Approve lead as Registered without CMS verification</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsManualApproveModalOpen(false)}
+                className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <form onSubmit={handleManualApproveSubmit} className="p-6 space-y-4">
+              {/* Student Summary Card */}
+              <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-bold text-gray-900">{leadDetails?.fullName || 'N/A'}</div>
+                  <div className="text-[11px] text-gray-500">{leadDetails?.leadCode} · {leadDetails?.phoneNumber}</div>
+                </div>
+                {hasPermission('LEAD_UPDATE') && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsManualApproveModalOpen(false);
+                      const editPayload = {
+                        id: leadDetails.id ?? leadDetails.leadId,
+                        leadId: leadDetails.id ?? leadDetails.leadId,
+                        fullName: leadDetails.fullName || '',
+                        phoneNumber: leadDetails.phoneNumber || '',
+                        alternatePhoneNumber: leadDetails.alternatePhoneNumber || '',
+                        email: leadDetails.email || '',
+                        city: leadDetails.city || '',
+                        state: leadDetails.state || '',
+                        country: leadDetails.country || '',
+                        leadSourceIds: leadDetails.leadSources?.map((s) => s.id) || [],
+                        sourceDetails: leadDetails.sourceDetails || '',
+                        interestedCourseIds: leadDetails.interestedCourses?.map((c) => c.id) || [],
+                        courseId: leadDetails.course?.id || '',
+                        registeredCourseId: leadDetails.registeredCourse?.id || '',
+                        boardId: leadDetails.board?.id || '',
+                        gradeId: leadDetails.grade?.id || '',
+                        remarks: leadDetails.remarks || '',
+                        assignedToUserId: leadDetails.assignedTo?.id || '',
+                        statusId: leadDetails.currentStatus?.id || '',
+                        active: leadDetails.active !== undefined ? leadDetails.active : true,
+                        nextFollowUpDate: leadDetails.nextFollowUpDate || '',
+                      };
+                      openAddLeadModal(editPayload);
+                    }}
+                    className="text-xs font-semibold text-blue-600 hover:text-blue-700 underline"
+                  >
+                    Edit details first
+                  </button>
+                )}
+              </div>
+
+              {/* Registered Course Selection */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                  Registered Course <span className="text-red-500">*</span>
+                </label>
+                <select
+                  value={manualApproveCourseId}
+                  onChange={(e) => setManualApproveCourseId(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition"
+                >
+                  <option value="">-- Select Registered Course --</option>
+                  {courses.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.courseName} {c.courseCode ? `(${c.courseCode})` : ''}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[11px] text-gray-500 mt-1">Select the course in which the student is enrolled.</p>
+              </div>
+
+              {/* Enrollment ID */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                  Enrollment ID (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={manualApproveEnrollmentId}
+                  onChange={(e) => setManualApproveEnrollmentId(e.target.value)}
+                  placeholder="e.g. RU2026-ENG-1082"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition"
+                />
+                <p className="text-[11px] text-gray-500 mt-1">If available, provide the student's CMS or institutional enrollment ID.</p>
+              </div>
+
+              {/* Approval Remarks */}
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1">
+                  Approval Remarks / Notes
+                </label>
+                <textarea
+                  rows="2"
+                  value={manualApproveRemarks}
+                  onChange={(e) => setManualApproveRemarks(e.target.value)}
+                  placeholder="e.g. Verified physically via fee receipt"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition"
+                ></textarea>
+              </div>
+
+              {/* Footer Buttons */}
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setIsManualApproveModalOpen(false)}
+                  disabled={manualApproveSubmitting}
+                  className="px-4 py-2 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={manualApproveSubmitting}
+                  className="px-4 py-2 text-xs font-semibold text-white bg-green-600 hover:bg-green-700 rounded-lg shadow-sm transition-colors flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  {manualApproveSubmitting ? (
+                    <>
+                      <svg className="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Approving...
+                    </>
+                  ) : (
+                    <>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                      Mark Registration Successful
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

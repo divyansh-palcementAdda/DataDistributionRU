@@ -192,7 +192,7 @@ const LeadSource = () => {
     };
 
     /* ── Table columns ── */
-    const columns = [
+    const allColumns = [
         {
             key: 'sno',
             header: 'S.No',
@@ -225,8 +225,20 @@ const LeadSource = () => {
             key: 'totalAllottedData',
             header: 'Total Allotted Data',
             sortable: true,
+            permission: 'DATA_ALLOTTED_COLUMN_VIEW',
             render: (value) => (
                 <span className="inline-flex items-center font-semibold text-blue-800 bg-blue-50 px-2.5 py-0.5 rounded-full text-xs">
+                    {value ?? 0}
+                </span>
+            ),
+        },
+        {
+            key: 'totalUnallottedData',
+            header: 'Total Unallotted Data',
+            sortable: true,
+            permission: 'DATA_UNALLOTTED_COLUMN_VIEW',
+            render: (value) => (
+                <span className="inline-flex items-center font-semibold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full text-xs">
                     {value ?? 0}
                 </span>
             ),
@@ -235,6 +247,7 @@ const LeadSource = () => {
             key: 'totalAvailedData',
             header: 'Total Availed Data',
             sortable: true,
+            permission: 'DATA_AVAILED_COLUMN_VIEW',
             render: (value) => (
                 <span className="inline-flex items-center font-semibold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full text-xs">
                     {value ?? 0}
@@ -255,13 +268,12 @@ const LeadSource = () => {
             key: 'active',
             header: 'Status',
             sortable: true,
+            permission: 'LEADSOURCE_UPDATE',
             render: (value, row) => (
-                hasPermission('LEADSOURCE_UPDATE') ? (
-                    <CustomToggle
-                        checked={value}
-                        onChange={() => handleToggle(row)}
-                    />
-                ) : null
+                <CustomToggle
+                    checked={value}
+                    onChange={() => handleToggle(row)}
+                />
             ),
         },
         {
@@ -273,6 +285,8 @@ const LeadSource = () => {
             ),
         },
     ];
+
+    const columns = allColumns.filter(col => !col.permission || hasPermission(col.permission));
 
     /* ── Palette for stat cards ── */
     const CARD_COLORS = [

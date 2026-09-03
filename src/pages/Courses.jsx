@@ -110,7 +110,7 @@ const Courses = () => {
     setCurrentPage(1);
   };
 
-  const columns = [
+  const allColumns = [
     {
       key: "sno",
       header: "S.no",
@@ -122,16 +122,17 @@ const Courses = () => {
     {
       key: "status",
       header: "Status",
+      permission: 'COURSE_UPDATE',
       render: (status, row) => (
-        hasPermission('COURSE_UPDATE') ? (
-          <Toggle
-            checked={status === 'ACTIVE' || status === true}
-            onChange={() => handleToggleStatus(row.id, status)}
-          />
-        ) : null
+        <Toggle
+          checked={status === 'ACTIVE' || status === true}
+          onChange={() => handleToggleStatus(row.id, status)}
+        />
       )
     }
   ];
+
+  const columns = allColumns.filter(col => !col.permission || hasPermission(col.permission));
 
   return (
     <div className="block p-4 sm:p-6 p-0" id="page-courses">

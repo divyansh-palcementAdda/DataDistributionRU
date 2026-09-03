@@ -133,7 +133,7 @@ const LeadStatus = () => {
     }
   };
 
-  const columns = [
+  const allColumns = [
     {
       key: "sNo",
       header: "S.No",
@@ -160,18 +160,18 @@ const LeadStatus = () => {
     {
       key: "active",
       header: "Status",
+      permission: 'LEAD_STATUS_UPDATE',
       render: (active, row) => (
-        hasPermission('LEAD_STATUS_UPDATE') ? (
-          <Toggle
-            checked={active === true || row.status === 'ACTIVE'}
-            onChange={() => handleToggleStatus(row.id, row.status)}
-          />
-        ) : null
+        <Toggle
+          checked={active === true || row.status === 'ACTIVE'}
+          onChange={() => handleToggleStatus(row.id, row.status)}
+        />
       )
     },
    {
   key: "followUpStatus",
   header: "Follow Up Status",
+  permission: 'LEAD_STATUS_UPDATE',
   render: (followUpStatus, row) => (
     <Toggle
       checked={row.followUpStatus === true}
@@ -187,6 +187,8 @@ const LeadStatus = () => {
   )
 }
   ];
+
+  const columns = allColumns.filter(col => !col.permission || hasPermission(col.permission));
 
   return (
     <div className="block p-4 sm:p-6 p-0" id="page-lead-status">

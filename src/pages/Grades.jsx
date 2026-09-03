@@ -124,7 +124,7 @@ const Grades = () => {
     setCurrentPage(1);
   };
 
-  const columns = [
+  const allColumns = [
     {
       key: "sno",
       header: "S.no",
@@ -146,6 +146,7 @@ const Grades = () => {
       key: "totalAllottedData",
       header: "Total Allotted Data",
       sortable: true,
+      permission: 'DATA_ALLOTTED_COLUMN_VIEW',
       render: (value) => (
         <span className="inline-flex items-center font-semibold text-blue-800 bg-blue-50 px-2.5 py-0.5 rounded-full text-xs">
           {value ?? 0}
@@ -156,6 +157,7 @@ const Grades = () => {
       key: "totalUnallottedData",
       header: "Total Unallotted Data",
       sortable: true,
+      permission: 'DATA_UNALLOTTED_COLUMN_VIEW',
       render: (value) => (
         <span className="inline-flex items-center font-semibold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full text-xs">
           {value ?? 0}
@@ -166,6 +168,7 @@ const Grades = () => {
       key: "totalAvailedData",
       header: "Total Availed Data",
       sortable: true,
+      permission: 'DATA_AVAILED_COLUMN_VIEW',
       render: (value) => (
         <span className="inline-flex items-center font-semibold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full text-xs">
           {value ?? 0}
@@ -177,16 +180,17 @@ const Grades = () => {
       key: "status",
       header: "Status",
       sortable: true,
+      permission: 'GRADE_UPDATE',
       render: (status, row) => (
-        hasPermission('GRADE_UPDATE') ? (
-          <Toggle
-            checked={row.active === true || status === 'ACTIVE'}
-            onChange={() => handleToggleStatus(row.id, status)}
-          />
-        ) : null
+        <Toggle
+          checked={row.active === true || status === 'ACTIVE'}
+          onChange={() => handleToggleStatus(row.id, status)}
+        />
       )
     }
   ];
+
+  const columns = allColumns.filter(col => !col.permission || hasPermission(col.permission));
 
   return (
     <div className="block p-4 sm:p-6 p-0" id="page-grades">

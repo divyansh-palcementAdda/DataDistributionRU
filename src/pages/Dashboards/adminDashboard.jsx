@@ -961,7 +961,8 @@ const Dashboard = () => {
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
             border: '1px solid #e2e8f0',
             display: 'flex',
-            flexDirection: 'column'
+            flexDirection: 'column',
+            height: '1750px'
           }}>
             <div style={{
               display: 'flex',

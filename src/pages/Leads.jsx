@@ -33,6 +33,19 @@ const Leads = () => {
   const [selectedCard, setSelectedCard] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
+  const [autoSelectCount, setAutoSelectCount] = useState('');
+
+  const handleAutoSelectCount = (e) => {
+    const val = e.target.value;
+    setAutoSelectCount(val);
+    const count = parseInt(val, 10);
+    if (!isNaN(count) && count > 0) {
+      const topIds = leadsData.slice(0, count).map(lead => lead.id || lead.leadId);
+      setSelectedIds(topIds);
+    } else {
+      setSelectedIds([]);
+    }
+  };
   const [activeFilters, setActiveFilters] = useState([]);
   const [filterRequest, setFilterRequest] = useState({});
 
@@ -595,6 +608,18 @@ const Leads = () => {
           </button>
         )}
         {/* Allot Lead */}
+        {hasPermission('LEAD_ASSIGN') && (
+          <input
+            type="number"
+            min="1"
+            max={leadsData.length}
+            value={autoSelectCount}
+            onChange={handleAutoSelectCount}
+            placeholder="Count"
+            className="form-control"
+            style={{ width: '80px' }}
+          />
+        )}
         {hasPermission('LEAD_ASSIGN') && (
           <button
             className="btn btn-secondary btn-sm flex items-center gap-1.5"

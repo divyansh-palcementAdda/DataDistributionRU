@@ -297,7 +297,7 @@ const FollowUps = () => {
               View
             </button>
           )}
-          {(row.status === "PENDING" || row.status === "UPCOMING") && (
+          {/* {(row.status === "PENDING" || row.status === "UPCOMING") && (
             <>
               <button
                 className="px-2 py-1 bg-green-50 text-green-700 hover:bg-green-100 rounded text-xs font-medium transition-colors"
@@ -314,7 +314,7 @@ const FollowUps = () => {
                 Not Connected
               </button>
             </>
-          )}
+          )} */}
         </div>
       ),
     },

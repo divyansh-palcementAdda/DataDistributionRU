@@ -1047,12 +1047,20 @@ const AddLeadModal = () => {
             </div>
             <div>
               <label className="form-label">Next Follow-Up Date</label>
-              <input
-                type="date"
-                className="form-control"
-                value={formData.nextFollowUpDate}
-                onChange={handleChange('nextFollowUpDate')}
-              />
+              <div 
+                className="form-control cursor-pointer"
+                style={{ position: 'relative', padding: 0 }}
+                onClick={() => document.querySelector('input[type="date"][name="nextFollowUpDate"]')?.showPicker?.() || document.querySelector('input[type="date"][name="nextFollowUpDate"]')?.focus()}
+              >
+                <input
+                  type="date"
+                  name="nextFollowUpDate"
+                  className="form-control"
+                  value={formData.nextFollowUpDate}
+                  onChange={handleChange('nextFollowUpDate')}
+                  style={{ border: 'none', background: 'transparent', width: '100%' }}
+                />
+              </div>
             </div>
           </div>
 

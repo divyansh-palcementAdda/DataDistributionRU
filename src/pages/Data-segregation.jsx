@@ -25,6 +25,7 @@ const DataSegregation = () => {
   // State: Expanded Tree Rows (IDs of expanded sources and boards)
   const [expandedNodes, setExpandedNodes] = useState(new Set());
   const [searchTerm, setSearchTerm] = useState('');
+  const [isAllExpanded, setIsAllExpanded] = useState(false);
 
   // State: User Analytics Modal
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -82,6 +83,7 @@ const DataSegregation = () => {
             initialExpanded.add(`source-${s.sourceId}`);
           });
           setExpandedNodes(initialExpanded);
+          setIsAllExpanded(false);
         }
       } else {
         setMatrixError(res?.message || 'Failed to fetch matrix data.');
@@ -107,20 +109,23 @@ const DataSegregation = () => {
     });
   };
 
-  const expandAll = () => {
+  const toggleExpandCollapseAll = () => {
     if (!matrixData?.sources) return;
-    const all = new Set();
-    matrixData.sources.forEach((s) => {
-      all.add(`source-${s.sourceId}`);
-      s.boards?.forEach((b) => {
-        all.add(`board-${s.sourceId}-${b.boardId}`);
+    
+    if (isAllExpanded) {
+      setExpandedNodes(new Set());
+      setIsAllExpanded(false);
+    } else {
+      const all = new Set();
+      matrixData.sources.forEach((s) => {
+        all.add(`source-${s.sourceId}`);
+        s.boards?.forEach((b) => {
+          all.add(`board-${s.sourceId}-${b.boardId}`);
+        });
       });
-    });
-    setExpandedNodes(all);
-  };
-
-  const collapseAll = () => {
-    setExpandedNodes(new Set());
+      setExpandedNodes(all);
+      setIsAllExpanded(true);
+    }
   };
 
   // =========================================================================
@@ -418,16 +423,10 @@ const DataSegregation = () => {
 
           <div className="flex items-center gap-2">
             <button
-              onClick={expandAll}
+              onClick={toggleExpandCollapseAll}
               className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-lg shadow-2xs cursor-pointer"
             >
-              Expand All
-            </button>
-            <button
-              onClick={collapseAll}
-              className="px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white hover:bg-gray-100 border border-gray-300 rounded-lg shadow-2xs cursor-pointer"
-            >
-              Collapse All
+              {isAllExpanded ? 'Collapse All' : 'Expand All'}
             </button>
           </div>
         </div>

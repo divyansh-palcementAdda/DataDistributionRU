@@ -150,13 +150,19 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
                             Follow Up Date <span className="text-red-500">*</span>
                         </label>
 
-                        <input
-                            type="date"
-                            name="followUpDate"
-                            value={formData.followUpDate}
-                            onChange={handleChange}
-                            className={`w-full rounded-lg border px-3 py-2 outline-none focus:border-blue-500 ${errors.followUpDate ? 'border-red-500' : 'border-gray-300'}`}
-                        />
+                        <div 
+                            className={`w-full rounded-lg border px-3 py-2 cursor-pointer ${errors.followUpDate ? 'border-red-500' : 'border-gray-300'}`}
+                            onClick={() => document.querySelector('input[name="followUpDate"]').showPicker?.() || document.querySelector('input[name="followUpDate"]').focus()}
+                        >
+                            <input
+                                type="date"
+                                name="followUpDate"
+                                value={formData.followUpDate}
+                                onChange={handleChange}
+                                className="w-full outline-none cursor-pointer"
+                                style={{ border: 'none', background: 'transparent' }}
+                            />
+                        </div>
                         {errors.followUpDate && <p className="mt-1 text-sm text-red-500">{errors.followUpDate}</p>}
                     </div>
 

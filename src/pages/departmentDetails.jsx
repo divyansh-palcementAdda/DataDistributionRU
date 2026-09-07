@@ -898,13 +898,14 @@ const DepartmentDetails = () => {
                             filterRequest={filterRequest}
                             departmentId={id}
                         />
-                        <AvailedCard
+                        
+                        <UnallottedCard
                             onCardClick={handleCardClick}
                             activeFilters={activeFilters}
                             filterRequest={filterRequest}
                             departmentId={id}
                         />
-                        <UnallottedCard
+                        <AvailedCard
                             onCardClick={handleCardClick}
                             activeFilters={activeFilters}
                             filterRequest={filterRequest}

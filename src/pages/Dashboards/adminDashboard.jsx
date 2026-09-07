@@ -677,12 +677,13 @@ const Dashboard = () => {
                 activeFilters={activeFilters}
                 filterRequest={filterRequest}
               />
-              <AvailedCard
+            
+              <AllottedCard
                 onCardClick={handleCardClick}
                 activeFilters={activeFilters}
                 filterRequest={filterRequest}
               />
-              <AllottedCard
+                <AvailedCard
                 onCardClick={handleCardClick}
                 activeFilters={activeFilters}
                 filterRequest={filterRequest}

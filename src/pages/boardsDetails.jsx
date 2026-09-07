@@ -549,14 +549,13 @@ const BoardDetails = () => {
                             boardId={id}
                         />
 
-                        <AvailedCard
+                        <UnallottedCard
                             onCardClick={handleCardClick}
                             activeFilters={activeFilters}
                             filterRequest={filterRequest}
                             boardId={id}
                         />
-
-                        <UnallottedCard
+                         <AvailedCard
                             onCardClick={handleCardClick}
                             activeFilters={activeFilters}
                             filterRequest={filterRequest}

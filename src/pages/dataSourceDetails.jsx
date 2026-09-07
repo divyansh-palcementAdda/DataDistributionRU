@@ -610,14 +610,16 @@ const DataSourceDetails = () => {
                         leadSourceId={id}
                     />
 
-                    <AvailedCard
+                   
+
+                    <UnallottedCard
                         onCardClick={handleCardClick}
                         activeFilters={activeFilters}
                         filterRequest={filterRequest}
                         leadSourceId={id}
                     />
 
-                    <UnallottedCard
+                     <AvailedCard
                         onCardClick={handleCardClick}
                         activeFilters={activeFilters}
                         filterRequest={filterRequest}

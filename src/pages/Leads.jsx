@@ -502,12 +502,13 @@ const Leads = () => {
           activeFilters={activeFilters}
           filterRequest={filterRequest}
         />
-        <AvailedCard 
+       
+        <AllottedCard 
           onCardClick={handleCardClick}
           activeFilters={activeFilters}
           filterRequest={filterRequest}
         />
-        <AllottedCard 
+         <AvailedCard 
           onCardClick={handleCardClick}
           activeFilters={activeFilters}
           filterRequest={filterRequest}
@@ -529,7 +530,7 @@ const Leads = () => {
           value={search}
           onChange={(e) => { setSearch(e.target.value); }}
         />
-        <select
+        {/* <select
           className="form-control max-w-[200px]"
           value={filterLeadStatus}
           onChange={(e) => { 
@@ -545,7 +546,8 @@ const Leads = () => {
               {status.name}
             </option>
           ))}
-        </select>
+        </select> */}
+
         {/* Active card filter badges */}
         {activeFilters.map((filter, index) => (
           <div 
@@ -615,6 +617,7 @@ const Leads = () => {
             max={leadsData.length}
             value={autoSelectCount}
             onChange={handleAutoSelectCount}
+            onWheel={(e) => e.target.blur()}
             placeholder="Count"
             className="form-control"
             style={{ width: '80px' }}
@@ -646,7 +649,7 @@ const Leads = () => {
             Allot Lead
           </button>
         )}
-        <button
+        {/* <button
           className="btn btn-ghost btn-sm flex items-center gap-1.5"
         >
           <svg
@@ -662,7 +665,7 @@ const Leads = () => {
             <line x1="11" y1="18" x2="13" y2="18" />
           </svg>
           Filters
-        </button>
+        </button> */}
       </div>
 
       {/* ── Table Card ── */}

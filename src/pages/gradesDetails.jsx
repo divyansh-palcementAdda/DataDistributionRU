@@ -554,14 +554,13 @@ const GradesDetails = () => {
                             gradeId={id}
                         />
 
-                        <AvailedCard
+                        <UnallottedCard
                             onCardClick={handleCardClick}
                             activeFilters={activeFilters}
                             filterRequest={filterRequest}
                             gradeId={id}
                         />
-
-                        <UnallottedCard
+                          <AvailedCard
                             onCardClick={handleCardClick}
                             activeFilters={activeFilters}
                             filterRequest={filterRequest}

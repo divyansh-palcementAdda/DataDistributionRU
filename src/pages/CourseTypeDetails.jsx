@@ -566,19 +566,20 @@ const CourseTypeDetails = () => {
                         courseTypeId={id}
                     />
 
-                    <AvailedCard
-                        onCardClick={handleCardClick}
-                        activeFilters={activeFilters}
-                        filterRequest={filterRequest}
-                        courseTypeId={id}
-                    />
-
+                  
                     <UnallottedCard
                         onCardClick={handleCardClick}
                         activeFilters={activeFilters}
                         filterRequest={filterRequest}
                         courseTypeId={id}
                     />
+                      <AvailedCard
+                        onCardClick={handleCardClick}
+                        activeFilters={activeFilters}
+                        filterRequest={filterRequest}
+                        courseTypeId={id}
+                    />
+
                 </div>
 
                 <LeadCards

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getGradeBreakdown } from '../../../Services/cards/cardService';
+import { usePermissions } from '../../../PermissionContext';
 
 const GradeIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -22,6 +23,7 @@ const COLORS = [
 const GradWiseCard = ({ data, onCardClick, activeFilters = [], courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId }) => {
   // API returns an array: [{id, name, code, count, percentage}, ...]
   const [gradeData, setGradeData] = useState([]);
+  const { hasPermission } = usePermissions();
 
   useEffect(() => {
     if (data !== undefined) {
@@ -59,6 +61,19 @@ const GradWiseCard = ({ data, onCardClick, activeFilters = [], courseTypeId, lea
         .filter(([, val]) => val > 0)
         .map(([key, val]) => ({ id: key, code: key, name: key, count: val, percentage: 0 }));
 
+  // Filter items based on permissions: DASHBOARD_CARD_GRADE_GRADE_<NAME>
+  // item.name = "Grade A" → "GRADE_A" → key = "DASHBOARD_CARD_GRADE_GRADE_A"
+  const visibleItems = items.filter((item) => {
+    const namePart = (item.name || item.code || '').toString().toUpperCase().replace(/\s+/g, '_').replace(/^GRADE_/, '');
+    const permissionKey = `DASHBOARD_CARD_GRADE_GRADE_${namePart}`;
+    return hasPermission(permissionKey);
+  });
+
+  // Agar koi bhi visible item nahi hai toh pura section hide karo (heading bhi nahi)
+  if (visibleItems.length === 0) {
+    return null;
+  }
+
   const gridStyle = {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
@@ -71,7 +86,7 @@ const GradWiseCard = ({ data, onCardClick, activeFilters = [], courseTypeId, lea
         Grade Wise
       </h2>
 
-      {items.length === 0 ? (
+      {visibleItems.length === 0 ? (
         <div style={{
           background: '#ffffff', borderRadius: '12px', padding: '40px 20px',
           boxShadow: '0 2px 8px rgba(0,0,0,0.08)', border: '1px solid #e5e7eb',
@@ -86,7 +101,7 @@ const GradWiseCard = ({ data, onCardClick, activeFilters = [], courseTypeId, lea
         </div>
       ) : (
         <div className="gradwise-responsive-grid" style={gridStyle}>
-          {items.map((item, index) => {
+          {visibleItems.map((item, index) => {
             const clr = COLORS[index % COLORS.length];
             const isSelected = activeFilters.some(f => f.type === 'grade' && f.value === item.id);
             return (

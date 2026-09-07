@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getUnallottedCount } from '../../../Services/cards/cardService';
+import { usePermissions } from '../../../PermissionContext';
 
 const UnallottedIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -12,15 +13,7 @@ const UnallottedIcon = () => (
 const UnallottedCard = ({ data, onCardClick, activeFilters = [], filterRequest = {}, courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId, statusId }) => {
   const [unallottedData, setUnallottedData] = useState(null);
   const [loading, setLoading] = useState(false);
-
-  // Check if user is Super Admin or Admin
-  const userRole = localStorage.getItem('userRole');
-  const isAdminOrSuperAdmin = userRole === 'SUPER_ADMIN' || userRole === 'ADMIN';
-
-  // Don't render the card if user is not Super Admin or Admin
-  if (!isAdminOrSuperAdmin) {
-    return null;
-  }
+  const { hasPermission } = usePermissions();
 
   useEffect(() => {
     if (data !== undefined) {
@@ -60,6 +53,10 @@ const UnallottedCard = ({ data, onCardClick, activeFilters = [], filterRequest =
   const count = unallottedData?.count ?? 0;
   const type = unallottedData?.type ?? 'Unallotted';
   const isSelected = activeFilters.some(f => f.type === 'unallotted');
+
+  if (!hasPermission('DASHBOARD_CARD_TOTAL_UNALLOTTED_DATA')) {
+    return null;
+  }
 
   const cardStyle = {
     background: '#ffffff',

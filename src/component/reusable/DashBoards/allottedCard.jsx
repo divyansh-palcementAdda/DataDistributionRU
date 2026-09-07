@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getAllottedCount } from '../../../Services/cards/cardService';
+import { usePermissions } from '../../../PermissionContext';
 
 const AllottedIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -13,6 +14,7 @@ const AllottedIcon = () => (
 const AllottedCard = ({ data, onCardClick, activeFilters = [], filterRequest = {}, courseTypeId, leadSourceId, boardId, gradeId, counselorId, departmentId, statusId }) => {
   const [allottedData, setAllottedData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const { hasPermission } = usePermissions();
 
   useEffect(() => {
     if (data !== undefined) {
@@ -52,6 +54,10 @@ const AllottedCard = ({ data, onCardClick, activeFilters = [], filterRequest = {
   const count = allottedData?.count ?? 0;
   const type = allottedData?.type ?? 'Allotted';
   const isSelected = activeFilters.some(f => f.type === 'allotted');
+
+  if (!hasPermission('DASHBOARD_CARD_TOTAL_ALLOTTED_DATA')) {
+    return null;
+  }
 
   const cardStyle = {
     background: '#ffffff',

@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { getCourseTypesBreakdown } from '../../../Services/cards/cardService';
+import { usePermissions } from '../../../PermissionContext';
 
 const CategorywiseCard = ({ data, onCardClick, activeFilters = [], courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId }) => {
   // API returns an array: [{id, name, code, count, percentage}, ...]
   const [courseTypesData, setCourseTypesData] = useState([]);
+  const { hasPermission } = usePermissions();
 
   useEffect(() => {
     if (data !== undefined) {
@@ -33,6 +35,16 @@ const CategorywiseCard = ({ data, onCardClick, activeFilters = [], courseTypeId,
 
     fetchCourseTypes();
   }, [data, courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId]);
+
+  // Permission gate: hide entire section if permission is false
+  if (!hasPermission('DASHBOARD_COURSE_TYPE_VIEW')) {
+    return null;
+  }
+
+  // No data — render nothing at all
+  if (courseTypesData.length === 0) {
+    return null;
+  }
 
   // Responsive styles
   const gridStyle = {

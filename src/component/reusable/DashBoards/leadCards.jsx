@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { getLeadStatusBreakdown } from '../../../Services/cards/cardService';
+import { usePermissions } from '../../../PermissionContext';
 
 const LeadCards = ({ onCardClick, activeFilters = [], courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId }) => {
   const [leadData, setLeadData] = useState([]);
+  const { hasPermission } = usePermissions();
 
   useEffect(() => {
     const fetchLeadStatusData = async () => {
@@ -25,6 +27,12 @@ const LeadCards = ({ onCardClick, activeFilters = [], courseTypeId, leadSourceId
 
     fetchLeadStatusData();
   }, [courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId]);
+
+  // Section-level permission check: hide entire section if permission is false
+  if (!hasPermission('DASHBOARD_CARD_TOTAL_LEADS')) {
+    return null;
+  }
+
   // Responsive styles
   const gridStyle = {
     display: 'grid',

@@ -399,6 +399,7 @@ const RolesAndPermissions = () => {
       PERMISSION: { label: 'Permission Management', permissions: [] },
       FOLLOWUP: { label: 'Follow-up Management', permissions: [] },
       FEEDBACK: { label: 'Feedback Management', permissions: [] },
+      DATA_SEGREGATION: { label: 'Data Segregation', permissions: [] },
       OTHER: { label: 'Other Permissions', permissions: [] }
     };
 

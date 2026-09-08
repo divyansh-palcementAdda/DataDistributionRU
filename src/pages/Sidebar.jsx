@@ -82,6 +82,9 @@ const Sidebar = () => {
 
   // Check if user has permission to view a specific item
   const canViewItem = (itemId) => {
+    if (itemId === 'data-segregation') {
+      return hasPermission('DATA_SEGREGATION_VIEW') || hasPermission('DATA_SEGREGATION_FULL_FLOW_VIEW');
+    }
     const requiredPermission = itemPermissions[itemId];
     if (!requiredPermission) return true; // If no permission defined, show by default
     return hasPermission(requiredPermission);

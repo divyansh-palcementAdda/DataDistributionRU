@@ -21,6 +21,7 @@ import LeadSource from '../../component/reusable/DashBoards/leadSource';
 import UnallottedCard from '../../component/reusable/DashBoards/UnallottedCard';
 import AvailedCard from '../../component/reusable/DashBoards/availedCard';
 import AllottedCard from '../../component/reusable/DashBoards/allottedCard';
+import TodayFollowUpsCard from '../../component/reusable/DashBoards/TodayFollowUpsCard';
 import { getAllLeads } from '../../Services/lead/leadService';
 import { getDashboardSummary } from '../../Services/Dashboard/Dashboard';
 
@@ -176,6 +177,11 @@ const HeadDashboard = () => {
   };
 
   const handleCardClick = (cardInfo) => {
+    if (cardInfo.type === 'todayFollowUps') {
+      navigate('/followups', { state: { activeTab: 'TODAY' } });
+      return;
+    }
+
     // Toggle: same card click kare toh filter clear ho jaye
     const existingFilterIndex = activeFilters.findIndex(
       f => f.type === cardInfo.type && f.value === cardInfo.value
@@ -592,14 +598,19 @@ const HeadDashboard = () => {
       </div> */}
 
       {/* ── Reusable Dashboard Cards ── */}
-      {/* Availed and Allotted Cards in Flex Row */}
-      <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
+      {/* Availed, Allotted, and Today Follow-ups Cards in Flex Row */}
+      <div style={{ display: 'flex', gap: '16px', marginBottom: '16px', flexWrap: 'wrap' }}>
         <AvailedCard 
           onCardClick={handleCardClick}
           activeFilters={activeFilters}
           filterRequest={filterRequest}
         />
         <AllottedCard 
+          onCardClick={handleCardClick}
+          activeFilters={activeFilters}
+          filterRequest={filterRequest}
+        />
+        <TodayFollowUpsCard
           onCardClick={handleCardClick}
           activeFilters={activeFilters}
           filterRequest={filterRequest}

@@ -9,6 +9,7 @@ import CallModal from '../component/reusable/CallModal';
 import WhatsAppModal from '../component/reusable/WhatsAppModal';
 import EmailModal from '../component/reusable/EmailModal';
 import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
+import PlanUniversityVisitModal from '../component/reusable/Leads/PlanUniversityVisitModal';
 import ReusableTable from '../component/reusable/table';
 import { createLeadSchedule, getLeadById, getLeadInfoPanel, sendLeadWhatsApp, sendLeadEmail, changeLeadStatus, getLeadStatusHistory, getLeadFollowUps, manualApproveLeadRegistration, retryCmsStudentVerification } from '../Services/lead/leadService';
 import { getAllCourses } from '../Services/course/course';
@@ -25,6 +26,7 @@ const LeadDetail = () => {
   const [isWhatsAppModalOpen, setIsWhatsAppModalOpen] = useState(false);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [isRemarkModalOpen, setIsRemarkModalOpen] = useState(false);
+  const [isVisitModalOpen, setIsVisitModalOpen] = useState(false);
   const [hasClickedInfoPanel, setHasClickedInfoPanel] = useState(false);
   const [leadDetails, setLeadDetails] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -210,6 +212,19 @@ const LeadDetail = () => {
       });
     } catch {
       return '-';
+    }
+  };
+
+  const formatTime = (timeString) => {
+    if (!timeString) return '-';
+    try {
+      const [h, m] = timeString.split(':');
+      const hour = parseInt(h, 10);
+      const period = hour >= 12 ? 'PM' : 'AM';
+      const formattedHour = hour % 12 || 12;
+      return `${formattedHour}:${m} ${period}`;
+    } catch {
+      return timeString;
     }
   };
 
@@ -857,6 +872,12 @@ const LeadDetail = () => {
                         city: leadDetails.city || '',
                         state: leadDetails.state || '',
                         country: leadDetails.country || '',
+                        preferredStudyState: leadDetails.preferredStudyState || '',
+                        preferredStudyCity: leadDetails.preferredStudyCity || '',
+                        planningToVisitUniversity: leadDetails.planningToVisitUniversity || false,
+                        visitDate: leadDetails.visitDate || '',
+                        visitTime: leadDetails.visitTime || '',
+                        visitRemarks: leadDetails.visitRemarks || '',
                         leadSourceIds: leadDetails.leadSources?.map((s) => s.id) || [],
                         sourceDetails: leadDetails.sourceDetails || '',
                         interestedCourseIds: leadDetails.interestedCourses?.map((c) => c.id) || [],
@@ -944,6 +965,8 @@ const LeadDetail = () => {
                 { label: 'City', value: leadDetails.city || 'N/A' },
                 { label: 'State', value: leadDetails.state || 'N/A' },
                 { label: 'Country', value: leadDetails.country || 'N/A' },
+                { label: 'Preferred State', value: leadDetails.preferredStudyState || 'Not specified' },
+                { label: 'Preferred City', value: leadDetails.preferredStudyCity || 'Not specified' },
                 { label: 'Department', value: leadDetails.department?.name || 'N/A' },
                 { label: 'Last Connected', value: leadDetails.lastConnected ? formatDate(leadDetails.lastConnected) : '-' },
                 // { label: 'Status', value: statusName },
@@ -1120,6 +1143,99 @@ const LeadDetail = () => {
                 />
               )}
             </div>
+          </div>
+
+          {/* University Visit Planning Card */}
+          <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm w-full">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className={`p-2 rounded-lg ${leadDetails.planningToVisitUniversity ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-500'}`}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-gray-800">University Visit Planning</h3>
+                  <p className="text-xs text-gray-500">Track and schedule campus visits for this lead</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2.5">
+                <span
+                  className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
+                    leadDetails.planningToVisitUniversity
+                      ? 'bg-green-50 text-green-700 border border-green-200'
+                      : 'bg-gray-100 text-gray-600 border border-gray-200'
+                  }`}
+                >
+                  {leadDetails.planningToVisitUniversity ? '● Visit Planned' : 'No Visit Planned'}
+                </span>
+
+                {hasPermission('LEAD_UPDATE') && (
+                  <button
+                    onClick={() => setIsVisitModalOpen(true)}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-3 py-1.5 rounded-lg transition-colors"
+                    title={leadDetails.planningToVisitUniversity ? 'Edit Visit Plan' : 'Plan University Visit'}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    </svg>
+                    {leadDetails.planningToVisitUniversity ? 'Edit Visit Plan' : 'Plan University Visit'}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {leadDetails.planningToVisitUniversity ? (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+                <div className="bg-indigo-50/50 p-3 rounded-lg border border-indigo-100">
+                  <div className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider mb-1">Visit Date</div>
+                  <div className="text-xs font-semibold text-gray-800 flex items-center gap-1.5">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-indigo-600">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                      <line x1="16" y1="2" x2="16" y2="6" />
+                      <line x1="8" y1="2" x2="8" y2="6" />
+                      <line x1="3" y1="10" x2="21" y2="10" />
+                    </svg>
+                    {formatDate(leadDetails.visitDate)}
+                  </div>
+                </div>
+
+                <div className="bg-indigo-50/50 p-3 rounded-lg border border-indigo-100">
+                  <div className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider mb-1">Visit Time</div>
+                  <div className="text-xs font-semibold text-gray-800 flex items-center gap-1.5">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-indigo-600">
+                      <circle cx="12" cy="12" r="10" />
+                      <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                    {formatTime(leadDetails.visitTime)}
+                  </div>
+                </div>
+
+                <div className="bg-indigo-50/50 p-3 rounded-lg border border-indigo-100 sm:col-span-1">
+                  <div className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider mb-1">Visit Remarks</div>
+                  <div className="text-xs font-semibold text-gray-800 break-words">
+                    {leadDetails.visitRemarks || 'None'}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-4 rounded-lg bg-gray-50 border border-gray-100 text-xs text-gray-500 flex items-center justify-between">
+                <span>No university visit has been planned for this lead yet.</span>
+                {hasPermission('LEAD_UPDATE') && (
+                  <button
+                    onClick={() => setIsVisitModalOpen(true)}
+                    className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 underline"
+                  >
+                    Schedule a Visit
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -1581,6 +1697,16 @@ const LeadDetail = () => {
           </div>
         </div>
       )}
+
+      {/* Plan University Visit Modal */}
+      <PlanUniversityVisitModal
+        isOpen={isVisitModalOpen}
+        onClose={() => setIsVisitModalOpen(false)}
+        leadDetails={leadDetails}
+        onSuccess={(updatedLead) => {
+          setLeadDetails(updatedLead);
+        }}
+      />
     </div>
   );
 };

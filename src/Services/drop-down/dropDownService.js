@@ -116,7 +116,27 @@ const getFollowupLeadStatusesDropdown = async () => {
     }
 };
 
+const getStatesDropdown = async (search = '') => {
+    try {
+        const params = search ? { search } : {};
+        const response = await axiosInstance.get(ApiRoutes.Dropdowns.states, { params });
+        return response.data;
+    } catch (error) {
+        return error;
+    }
+};
 
+const getCitiesDropdown = async (state = '', search = '') => {
+    try {
+        const params = {};
+        if (state) params.state = state;
+        if (search) params.search = search;
+        const response = await axiosInstance.get(ApiRoutes.Dropdowns.cities, { params });
+        return response.data;
+    } catch (error) {
+        return error;
+    }
+};
 
 export {
     getBoardsDropdown,
@@ -129,5 +149,7 @@ export {
     getRolesDropdown,
     getUsersDropdown,
     getFollowupStatusesDropdown,
-    getFollowupLeadStatusesDropdown
+    getFollowupLeadStatusesDropdown,
+    getStatesDropdown,
+    getCitiesDropdown
 };

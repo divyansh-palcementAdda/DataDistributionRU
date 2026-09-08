@@ -1,44 +1,25 @@
 import React, { useState, useEffect } from "react";
-import { getFollowupStatusesDropdown, getFollowupLeadStatusesDropdown } from "../../../Services/drop-down/dropDownService";
+import { getFollowupLeadStatusesDropdown } from "../../../Services/drop-down/dropDownService";
 
 const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
+    const todayStr = new Date().toISOString().split('T')[0];
+
     const [formData, setFormData] = useState({
         followUpDate: "",
         remarks: "",
-        status: "",
-        statusCode: "",
         leadStatus: "",
         leadStatusCode: "",
     });
     const [errors, setErrors] = useState({});
     const [leadStatuses, setLeadStatuses] = useState([]);
-    const [statuses, setStatuses] = useState([]);
 
     useEffect(() => {
         const fetchDropdowns = async () => {
             try {
-                const [statusesResponse, leadStatusesResponse] = await Promise.all([
-                    getFollowupStatusesDropdown(),
-                    getFollowupLeadStatusesDropdown()
-                ]);
-
-                setStatuses(statusesResponse?.data || []);
+                const leadStatusesResponse = await getFollowupLeadStatusesDropdown();
                 setLeadStatuses(leadStatusesResponse?.data || []);
-
-                // Set default status to "pending"
-                const pendingStatus = statusesResponse?.data?.find(status => 
-                    status.name?.toLowerCase() === "pending"
-                );
-                if (pendingStatus) {
-                    setFormData(prev => ({
-                        ...prev,
-                        status: pendingStatus.id,
-                        statusCode: pendingStatus.code || "",
-                    }));
-                }
             } catch (error) {
                 console.error("Error fetching dropdowns:", error);
-                setStatuses([]);
                 setLeadStatuses([]);
             }
         };
@@ -64,13 +45,6 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
                 [name]: value,
                 leadStatusCode: selectedStatus?.code || "",
             }));
-        } else if (name === "status") {
-            const selectedStatus = statuses.find(status => status.id === value);
-            setFormData((prev) => ({
-                ...prev,
-                [name]: value,
-                statusCode: selectedStatus?.code || "",
-            }));
         } else {
             setFormData((prev) => ({
                 ...prev,
@@ -84,12 +58,12 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
         const newErrors = {};
         if (!formData.followUpDate) {
             newErrors.followUpDate = "Follow Up Date is required";
+        } else if (formData.followUpDate < todayStr) {
+            newErrors.followUpDate = "Follow Up Date cannot be in the past";
         }
-        if (!formData.remarks) {
+
+        if (!formData.remarks?.trim()) {
             newErrors.remarks = "Remarks is required";
-        }
-        if (!formData.status) {
-            newErrors.status = "Status is required";
         }
         if (!formData.leadStatus) {
             newErrors.leadStatus = "Lead Status is required";
@@ -113,8 +87,6 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
             setFormData({
                 followUpDate: "",
                 remarks: "",
-                status: "",
-                statusCode: "",
                 leadStatus: "",
                 leadStatusCode: "",
             });
@@ -157,6 +129,7 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
                             <input
                                 type="date"
                                 name="followUpDate"
+                                min={todayStr}
                                 value={formData.followUpDate}
                                 onChange={handleChange}
                                 className="w-full outline-none cursor-pointer"
@@ -180,27 +153,6 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
                             className={`w-full rounded-lg border px-3 py-2 outline-none focus:border-blue-500 ${errors.remarks ? 'border-red-500' : 'border-gray-300'}`}
                         />
                         {errors.remarks && <p className="mt-1 text-sm text-red-500">{errors.remarks}</p>}
-                    </div>
-
-                    <div>
-                        <label className="mb-2 block text-sm font-medium text-gray-700">
-                            Status <span className="text-red-500">*</span>
-                        </label>
-
-                        <select
-                            name="status"
-                            value={formData.status}
-                            onChange={handleChange}
-                            className={`w-full rounded-lg border px-3 py-2 outline-none focus:border-blue-500 ${errors.status ? 'border-red-500' : 'border-gray-300'}`}
-                        >
-                            <option value="">Select Status</option>
-                            {statuses.map((status) => (
-                                <option key={status.id} value={status.id}>
-                                    {status.name}
-                                </option>
-                            ))}
-                        </select>
-                        {errors.status && <p className="mt-1 text-sm text-red-500">{errors.status}</p>}
                     </div>
 
                     <div>

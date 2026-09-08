@@ -178,6 +178,7 @@ const ApiRoutes = {
         unallottedCount: '/api/dashboard/leads/unallotted/count',
         availedCount: '/api/dashboard/leads/availed/count',
         allottedCount: '/api/dashboard/leads/allotted/count',
+        todayFollowUpsCount: '/api/dashboard/followups/today/count',
         followupStatusCounts: '/api/dashboard/followups/status-counts',
     },
 
@@ -209,7 +210,9 @@ const ApiRoutes = {
         roles: '/api/dropdowns/roles',
         users: '/api/dropdowns/users',
         followupStatuses: '/api/dropdowns/followup-statuses',
-        followupLeadStatuses: '/api/dropdowns/followup-lead-statuses'
+        followupLeadStatuses: '/api/dropdowns/followup-lead-statuses',
+        states: '/api/dropdowns/states',
+        cities: '/api/dropdowns/cities'
     },
 
     DataSegregation: {

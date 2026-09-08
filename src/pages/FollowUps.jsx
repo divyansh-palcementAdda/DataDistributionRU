@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
 import { usePermissions } from '../PermissionContext';
 import ReusableTable from '../component/reusable/table';
@@ -45,6 +45,7 @@ const getStatusClass = (value) => {
 const FollowUps = () => {
   const { showToast, navTo } = useAppContext();
   const { hasPermission } = usePermissions();
+  const location = useLocation();
 
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -64,10 +65,16 @@ const FollowUps = () => {
   const [isFollowupModalOpen, setIsFollowupModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [selectedFollowup, setSelectedFollowup] = useState(null);
-  const [activeTab, setActiveTab] = useState("ALL");
+  const [activeTab, setActiveTab] = useState(location.state?.activeTab || "ALL");
   const [selectedLeadStatusId, setSelectedLeadStatusId] = useState(null);
 
   const debounceRef = useRef(null);
+
+  useEffect(() => {
+    if (location.state?.activeTab) {
+      setActiveTab(location.state.activeTab);
+    }
+  }, [location.state?.activeTab]);
 
   const handleCardClick = (filter) => {
     if (filter.type === 'leadStatus') {

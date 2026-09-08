@@ -213,6 +213,7 @@ const ApiRoutes = {
     },
 
     DataSegregation: {
+        capabilities: '/api/data-segregation/capabilities',
         courseTypes: '/api/data-segregation/course-types',
         matrix: '/api/data-segregation/matrix',
         userAnalytics: '/api/data-segregation/user-analytics',

@@ -2,6 +2,18 @@ import axiosInstance from "../../axiosInstance/axios";
 import ApiRoutes from "../../apiRoutes/allApiRoutes";
 
 /**
+ * Fetch flow visibility capabilities for data segregation
+ */
+export const getSegregationCapabilities = async () => {
+    try {
+        const response = await axiosInstance.get(ApiRoutes.DataSegregation.capabilities);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
+/**
  * Fetch course types summary with lead counts
  */
 export const getCourseTypesSummary = async () => {

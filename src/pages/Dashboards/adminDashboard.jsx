@@ -986,7 +986,7 @@ const Dashboard = () => {
             {/* Activity List */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {recentActivityData.length > 0 ? (
-                recentActivityData.map((activity, index) => {
+                recentActivityData.slice(0, 15).map((activity, index) => {
                   // Determine icon and background color based on activity type
                   const getActivityIcon = () => {
                     if (activity.feedback && activity.feedback.toLowerCase().includes('registered')) {

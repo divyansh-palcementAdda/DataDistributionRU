@@ -112,10 +112,21 @@ const Courses = () => {
   };
 
   // Download Excel function
-  const downloadExcel = () => {
+  const downloadExcel = async () => {
     try {
+      // Fetch all data without pagination
+      const allDataRes = await getAllCourses({
+        page: 0,
+        size: totalElements,
+        search: debouncedSearch,
+        sortBy,
+        sortDirection,
+      });
+      
+      const allCourses = allDataRes?.data?.content || allDataRes?.content || allDataRes || [];
+      
       // Flatten the courses data for Excel export
-      const excelData = courses.map((row, index) => {
+      const excelData = allCourses.map((row, index) => {
         const courseName = typeof row.courseName === "object" && row.courseName !== null 
           ? row.courseName?.courseName || row.courseName?.name || "-" 
           : row.courseName || row.name || "-";
@@ -125,7 +136,7 @@ const Courses = () => {
           : row.description || "-";
 
         return {
-          'S.No': (currentPage - 1) * rowsPerPage + index + 1,
+          'S.No': index + 1,
           'Course Name': courseName,
           'Description': description,
           'Status': row.status === 'ACTIVE' || row.status === true ? 'Active' : 'Inactive',

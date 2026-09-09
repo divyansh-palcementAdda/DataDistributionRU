@@ -136,10 +136,21 @@ const LeadStatus = () => {
   };
 
   // Download Excel function
-  const downloadExcel = () => {
+  const downloadExcel = async () => {
     try {
+      // Fetch all data without pagination
+      const allDataRes = await getAllLeadStatus({
+        page: 0,
+        size: totalElements,
+        search: debouncedSearch,
+        sortBy: sortBy,
+        sortDirection: sortDirection,
+      });
+      
+      const allLeadStatuses = allDataRes?.data?.content || allDataRes?.content || allDataRes || [];
+      
       // Flatten the lead statuses data for Excel export
-      const excelData = leadStatuses.map((row, index) => {
+      const excelData = allLeadStatuses.map((row, index) => {
         const name = typeof row.name === "object" && row.name !== null 
           ? row.name?.name || row.name?.code || "-" 
           : row.name || "-";
@@ -153,7 +164,7 @@ const LeadStatus = () => {
           : row.description || "-";
 
         return {
-          'S.No': (currentPage - 1) * rowsPerPage + index + 1,
+          'S.No': index + 1,
           'Status Name': name,
           'Code': code,
           'Description': description,

@@ -141,12 +141,35 @@ const Counselors = () => {
   const handleUserAdded = () => fetchData();
 
   // Download Excel function
-  const downloadExcel = () => {
+  const downloadExcel = async () => {
     try {
+      // Fetch all data without pagination based on current mode
+      let allDataRes;
+      if (lowDataMode) {
+        allDataRes = await getLowDataUsers({ page: 0, size: totalElements, sortBy, sortDirection, search });
+      } else if (usersNotLoggedInMode) {
+        allDataRes = await getUsersNotLoggedIn({ page: 0, size: totalElements, sortBy, sortDirection, search });
+      } else if (followupNotLoggedIn11amMode) {
+        allDataRes = await getFollowupUsersNotLoggedIn11am({ page: 0, size: totalElements, sortBy, sortDirection, search });
+      } else {
+        allDataRes = await getUserPerformance({
+          page: 0,
+          size: totalElements,
+          sortBy,
+          sortDirection,
+          search,
+          status: statusFilter,
+          currentlyWorking: workingFilter !== '' ? workingFilter === 'true' : undefined,
+        });
+      }
+      
+      const payload = allDataRes?.data?.data || allDataRes?.data || {};
+      const allData = Array.isArray(payload.content) ? payload.content : (Array.isArray(payload) ? payload : []);
+      
       // Flatten the counselors data for Excel export based on current mode
-      const excelData = data.map((row, index) => {
+      const excelData = allData.map((row, index) => {
         const baseData = {
-          'S.No': (page * size) + index + 1,
+          'S.No': index + 1,
           'Name': row.name || row.userName || row.username || 'Unknown User',
           'Email': row.email || 'N/A',
           'Username': row.username || 'N/A',

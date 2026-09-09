@@ -120,12 +120,23 @@ const Programs = () => {
   };
 
   // Download Excel function
-  const downloadExcel = () => {
+  const downloadExcel = async () => {
     try {
+      // Fetch all data without pagination
+      const allDataRes = await getAllPrograms({
+        page: 0,
+        size: totalElements,
+        search: debouncedSearch,
+        sortBy,
+        sortDirection: sortDirection ? sortDirection.toUpperCase() : 'DESC',
+      });
+      
+      const allPrograms = allDataRes?.data?.content || allDataRes?.content || allDataRes?.data || [];
+      
       // Flatten the programs data for Excel export
-      const excelData = programs.map((row, index) => {
+      const excelData = allPrograms.map((row, index) => {
         return {
-          'S.No': (currentPage - 1) * rowsPerPage + index + 1,
+          'S.No': index + 1,
           'Program Name': row.name || 'N/A',
           'Program Code': row.code || 'N/A',
           'Description': row.description || 'N/A',

@@ -900,17 +900,129 @@ const CounselorDetails = () => {
 
     const isActive = details?.isActive !== false;
 
-    // ── download Excel function ──
-    const downloadExcel = () => {
+    // ── fetch all leads data for download ──
+    const fetchAllLeadsForDownload = async () => {
+        if (!id) return [];
+        
+        const allLeads = [];
+        let page = 0;
+        let hasMore = true;
+        
+        const params = {
+            assignedUserIds: id,
+            sortBy: tableSortBy || 'createdAt',
+            sortDirection: tableSortDir || 'desc',
+            size: 100, // Fetch larger pages for download
+        };
+        
+        // Apply current filters
+        const convertFilterRequest = (request) => {
+            const converted = { ...request };
+            
+            if (converted.leadStatusIds?.length === 1) {
+                converted.statusId = converted.leadStatusIds[0];
+                delete converted.leadStatusIds;
+            }
+            
+            if (converted.boardIds?.length === 1) {
+                converted.boardId = converted.boardIds[0];
+                delete converted.boardIds;
+            }
+            
+            if (converted.gradeIds?.length === 1) {
+                converted.gradeId = converted.gradeIds[0];
+                delete converted.gradeIds;
+            }
+            
+            if (converted.courseTypeIds?.length === 1) {
+                converted.courseTypeId = converted.courseTypeIds[0];
+                delete converted.courseTypeIds;
+            }
+            
+            if (converted.leadSourceIds?.length === 1) {
+                converted.leadSourceId = converted.leadSourceIds[0];
+                delete converted.leadSourceIds;
+            }
+            
+            return converted;
+        };
+        
+        Object.assign(params, convertFilterRequest(filterRequest));
+        
         try {
-            // Flatten the table data for Excel export
-            const excelData = tableData.map((lead, index) => {
-                const rowId = typeof lead.id === 'object' ? lead.id?.id : lead.id;
-                const rowLeadId = typeof lead.leadId === 'object' ? lead.leadId?.id : lead.leadId;
-                const idToUse = rowId || rowLeadId;
+            while (hasMore) {
+                const res = await axiosInstance.get(ApiRoutes.Lead.getAllLeads, { 
+                    params: { ...params, page } 
+                });
+                const d = res?.data?.data || res?.data || {};
+                const content = d.content ?? (Array.isArray(d) ? d : []);
                 
+                allLeads.push(...content);
+                
+                const totalPages = d.totalPages ?? 0;
+                hasMore = page < totalPages - 1;
+                page++;
+            }
+            
+            return allLeads;
+        } catch (err) {
+            console.error('Failed to fetch all leads for download', err);
+            return [];
+        }
+    };
+    
+    // ── fetch all follow-ups data for download ──
+    const fetchAllFollowUpsForDownload = async () => {
+        if (!id) return [];
+        
+        const allFollowUps = [];
+        let page = 0;
+        let hasMore = true;
+        
+        const params = {
+            sortBy: 'followUpDate',
+            sortDirection: 'desc',
+            size: 100,
+        };
+        
+        try {
+            while (hasMore) {
+                const url = ApiRoutes.FollowUp.getByUser.replace('{userId}', id);
+                const res = await axiosInstance.get(url, { params: { ...params, page } });
+                const d = res?.data?.data || res?.data || {};
+                const content = d.content ?? (Array.isArray(d) ? d : []);
+                
+                allFollowUps.push(...content);
+                
+                const totalPages = d.totalPages ?? 0;
+                hasMore = page < totalPages - 1;
+                page++;
+            }
+            
+            return allFollowUps;
+        } catch (err) {
+            console.error('Failed to fetch all follow-ups for download', err);
+            return [];
+        }
+    };
+
+    // ── download Excel function for All Leads table ──
+    const downloadLeadsExcel = async () => {
+        try {
+            showToast('Fetching all leads data for download...', 'info');
+            
+            // Fetch all leads data
+            const allLeads = await fetchAllLeadsForDownload();
+            
+            if (allLeads.length === 0) {
+                showToast('No data available to download', 'error');
+                return;
+            }
+            
+            // Flatten the table data for Excel export
+            const excelData = allLeads.map((lead, index) => {
                 return {
-                    'S.No': (tablePage * tableSize) + index + 1,
+                    'S.No': index + 1,
                     'Lead Code': typeof lead.leadCode === 'object' ? lead.leadCode?.code || lead.leadCode?.name || 'N/A' : lead.leadCode || 'N/A',
                     'Lead Name': typeof lead.fullName === 'object' ? lead.fullName?.name || lead.fullName?.firstName || 'N/A' : lead.fullName || 'N/A',
                     'Phone Number': lead.phoneNumber || 'N/A',
@@ -934,19 +1046,67 @@ const CounselorDetails = () => {
             
             // Create workbook
             const workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, 'Leads');
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'All Leads');
             
             // Generate filename with timestamp
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
-            const filename = `counselor_leads_${timestamp}.xlsx`;
+            const filename = `counselor_all_leads_${timestamp}.xlsx`;
             
             // Download the file
             XLSX.writeFile(workbook, filename);
             
-            showToast('Excel file downloaded successfully');
+            showToast(`Excel file downloaded successfully with ${allLeads.length} records`);
         } catch (error) {
             console.error('Error downloading Excel:', error);
             showToast('Failed to download Excel file', 'error');
+        }
+    };
+    
+    // ── download Excel function for Follow-up table ──
+    const downloadFollowUpsExcel = async () => {
+        try {
+            showToast('Fetching all follow-ups data for download...', 'info');
+            
+            // Fetch all follow-ups data
+            const allFollowUps = await fetchAllFollowUpsForDownload();
+            
+            if (allFollowUps.length === 0) {
+                showToast('No follow-up data available to download', 'error');
+                return;
+            }
+            
+            // Flatten the follow-up data for Excel export
+            const excelData = allFollowUps.map((followUp, index) => {
+                return {
+                    'S.No': index + 1,
+                    'Lead Code': followUp.leadCode || 'N/A',
+                    'Lead Name': followUp.leadFullName || 'N/A',
+                    'Follow-up Date': followUp.followUpDate ? new Date(followUp.followUpDate).toLocaleDateString() : 'N/A',
+                    'Remarks': followUp.remarks || 'N/A',
+                    'Status': followUp.status || 'N/A',
+                    'Completed': followUp.completed ? 'Yes' : 'No',
+                    'Completed At': followUp.completedAt ? new Date(followUp.completedAt).toLocaleDateString() : 'N/A',
+                };
+            });
+
+            // Create worksheet
+            const worksheet = XLSX.utils.json_to_sheet(excelData);
+            
+            // Create workbook
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Follow-ups');
+            
+            // Generate filename with timestamp
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+            const filename = `counselor_followups_${timestamp}.xlsx`;
+            
+            // Download the file
+            XLSX.writeFile(workbook, filename);
+            
+            showToast(`Follow-ups Excel file downloaded successfully with ${allFollowUps.length} records`);
+        } catch (error) {
+            console.error('Error downloading follow-ups Excel:', error);
+            showToast('Failed to download follow-ups Excel file', 'error');
         }
     };
 
@@ -973,12 +1133,12 @@ const CounselorDetails = () => {
                     </div>
                 </div>
                 <div className="flex gap-2">
-                    {/* Download Excel */}
+                    {/* Download Excel for All Leads */}
                     <button
                         className="flex items-center gap-1.5"
                         style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '4px 10px', fontSize: '12px', borderRadius: '4px', cursor: 'pointer', boxShadow: 'none' }}
-                        onClick={downloadExcel}
-                        disabled={tableData.length === 0}
+                        onClick={downloadLeadsExcel}
+                        disabled={tableTotalElements === 0}
                     >
                         <svg
                             width="10"
@@ -990,7 +1150,7 @@ const CounselorDetails = () => {
                         >
                             <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                         </svg>
-                        Download
+                        Download Leads
                     </button>
                 </div>
             </div>
@@ -1407,6 +1567,25 @@ const CounselorDetails = () => {
                                 </span>
                             </div>
                             <div className="flex items-center gap-2">
+                                {/* Download Excel for Follow-ups */}
+                                <button
+                                    className="flex items-center gap-1.5"
+                                    style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '4px 10px', fontSize: '12px', borderRadius: '4px', cursor: 'pointer', boxShadow: 'none' }}
+                                    onClick={downloadFollowUpsExcel}
+                                    disabled={followUpTotalElements === 0}
+                                >
+                                    <svg
+                                        width="10"
+                                        height="10"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                    >
+                                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                                    </svg>
+                                    Download
+                                </button>
                                 <button
                                     onClick={handleSwitchFollowUp}
                                     className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all shadow-sm bg-green-600 text-white hover:bg-green-700"

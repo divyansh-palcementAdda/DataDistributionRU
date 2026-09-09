@@ -8,6 +8,7 @@ import { toast } from 'react-toastify';
 import AddCourseModal from '../component/reusable/course/addCourseModel';
 import DeleteModal from '../component/reusable/deleteModel';
 import { usePermissions } from '../PermissionContext';
+import * as XLSX from 'xlsx';
 
 const Courses = () => {
   const navigate = useNavigate();
@@ -110,6 +111,49 @@ const Courses = () => {
     setCurrentPage(1);
   };
 
+  // Download Excel function
+  const downloadExcel = () => {
+    try {
+      // Flatten the courses data for Excel export
+      const excelData = courses.map((row, index) => {
+        const courseName = typeof row.courseName === "object" && row.courseName !== null 
+          ? row.courseName?.courseName || row.courseName?.name || "-" 
+          : row.courseName || row.name || "-";
+        
+        const description = typeof row.description === "object" && row.description !== null 
+          ? row.description?.description || "-" 
+          : row.description || "-";
+
+        return {
+          'S.No': (currentPage - 1) * rowsPerPage + index + 1,
+          'Course Name': courseName,
+          'Description': description,
+          'Status': row.status === 'ACTIVE' || row.status === true ? 'Active' : 'Inactive',
+          'Created Date': row.createdAt ? new Date(row.createdAt).toLocaleDateString() : 'N/A'
+        };
+      });
+
+      // Create worksheet
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      
+      // Create workbook
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Courses');
+      
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const filename = `courses_${timestamp}.xlsx`;
+      
+      // Download the file
+      XLSX.writeFile(workbook, filename);
+      
+      toast.success('Excel file downloaded successfully');
+    } catch (error) {
+      console.error('Error downloading Excel:', error);
+      toast.error('Failed to download Excel file');
+    }
+  };
+
   const allColumns = [
     {
       key: "sno",
@@ -145,23 +189,43 @@ const Courses = () => {
 
 
 
-        <input
-          type="text"
-          placeholder="Search courses..."
-          value={search}
-          onChange={handleSearch}
-          className="border border-gray-300 rounded-lg px-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+        <div className="flex gap-2 flex-wrap">
+          <input
+            type="text"
+            placeholder="Search courses..."
+            value={search}
+            onChange={handleSearch}
+            className="border border-gray-300 rounded-lg px-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
 
-        {hasPermission('COURSE_CREATE') && (
-          <CustomButton
-            variant="primary"
-            onClick={() => { setEditData(null); setIsAddModalOpen(true); }}
-            className="text-sm py-2 px-4 shadow-sm hover:shadow-md transition-shadow"
+          <button
+            onClick={downloadExcel}
+            disabled={courses.length === 0}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm rounded-full shadow-sm hover:shadow transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            + Add Course
-          </CustomButton>
-        )}
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+            </svg>
+            Download
+          </button>
+
+          {hasPermission('COURSE_CREATE') && (
+            <CustomButton
+              variant="primary"
+              onClick={() => { setEditData(null); setIsAddModalOpen(true); }}
+              className="text-sm py-2 px-4 shadow-sm hover:shadow-md transition-shadow"
+            >
+              + Add Course
+            </CustomButton>
+          )}
+        </div>
       </div>
 
       {/* Main Content Area */}

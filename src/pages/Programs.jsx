@@ -10,6 +10,7 @@ import MapCoursesModal from '../component/reusable/program/MapCoursesModal';
 import DeleteModal from '../component/reusable/deleteModel';
 import { usePermissions } from '../PermissionContext';
 import { FiBookOpen, FiPlus, FiSearch, FiLayers } from 'react-icons/fi';
+import * as XLSX from 'xlsx';
 
 const Programs = () => {
   const navigate = useNavigate();
@@ -118,6 +119,43 @@ const Programs = () => {
     setCurrentPage(1);
   };
 
+  // Download Excel function
+  const downloadExcel = () => {
+    try {
+      // Flatten the programs data for Excel export
+      const excelData = programs.map((row, index) => {
+        return {
+          'S.No': (currentPage - 1) * rowsPerPage + index + 1,
+          'Program Name': row.name || 'N/A',
+          'Program Code': row.code || 'N/A',
+          'Description': row.description || 'N/A',
+          'Mapped Courses': row.totalCourses ?? (row?.courses?.length || 0),
+          'Status': row.status === 'ACTIVE' || row.status === true ? 'Active' : 'Inactive',
+          'Created Date': row.createdAt ? new Date(row.createdAt).toLocaleDateString() : 'N/A'
+        };
+      });
+
+      // Create worksheet
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      
+      // Create workbook
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Programs');
+      
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const filename = `programs_${timestamp}.xlsx`;
+      
+      // Download the file
+      XLSX.writeFile(workbook, filename);
+      
+      toast.success('Excel file downloaded successfully');
+    } catch (error) {
+      console.error('Error downloading Excel:', error);
+      toast.error('Failed to download Excel file');
+    }
+  };
+
   const columns = [
     {
       key: 'sno',
@@ -218,6 +256,24 @@ const Programs = () => {
               className="pl-9 pr-4 py-2 text-sm border border-gray-300 rounded-lg w-64 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
             />
           </div>
+
+          <button
+            onClick={downloadExcel}
+            disabled={programs.length === 0}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm rounded-lg shadow-sm hover:shadow transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+            </svg>
+            Download
+          </button>
 
           {hasPermission('PROGRAM_CREATE') && (
             <CustomButton

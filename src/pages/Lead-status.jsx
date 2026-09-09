@@ -9,6 +9,7 @@ import { toast } from 'react-toastify';
 import AddLeadStatusModal from '../component/reusable/leadStatus/addLeadStatusModel';
 import DeleteModal from '../component/reusable/deleteModel';
 import { usePermissions } from '../PermissionContext';
+import * as XLSX from 'xlsx';
 
 const LeadStatus = () => {
   const navigate = useNavigate();
@@ -134,6 +135,54 @@ const LeadStatus = () => {
     }
   };
 
+  // Download Excel function
+  const downloadExcel = () => {
+    try {
+      // Flatten the lead statuses data for Excel export
+      const excelData = leadStatuses.map((row, index) => {
+        const name = typeof row.name === "object" && row.name !== null 
+          ? row.name?.name || row.name?.code || "-" 
+          : row.name || "-";
+        
+        const code = typeof row.code === "object" && row.code !== null 
+          ? row.code?.code || row.code?.name || "-" 
+          : row.code || "-";
+        
+        const description = typeof row.description === "object" && row.description !== null 
+          ? row.description?.description || "-" 
+          : row.description || "-";
+
+        return {
+          'S.No': (currentPage - 1) * rowsPerPage + index + 1,
+          'Status Name': name,
+          'Code': code,
+          'Description': description,
+          'Status': row.active === true || row.status === 'ACTIVE' ? 'Active' : 'Inactive',
+          'Follow Up Status': row.followUpStatus === true ? 'Yes' : 'No'
+        };
+      });
+
+      // Create worksheet
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      
+      // Create workbook
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Lead Status');
+      
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const filename = `lead_status_${timestamp}.xlsx`;
+      
+      // Download the file
+      XLSX.writeFile(workbook, filename);
+      
+      toast.success('Excel file downloaded successfully');
+    } catch (error) {
+      console.error('Error downloading Excel:', error);
+      toast.error('Failed to download Excel file');
+    }
+  };
+
   const allColumns = [
     {
       key: "sNo",
@@ -202,23 +251,43 @@ const LeadStatus = () => {
 
 
 
-        <input
-          type="text"
-          placeholder="Search lead statuses..."
-          value={search}
-          onChange={handleSearch}
-          className="border border-gray-300 rounded-lg px-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+        <div className="flex gap-2 flex-wrap">
+          <input
+            type="text"
+            placeholder="Search lead statuses..."
+            value={search}
+            onChange={handleSearch}
+            className="border border-gray-300 rounded-lg px-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
 
-        {hasPermission('LEAD_STATUS_CREATE') && (
-          <CustomButton
-            variant="primary"
-            onClick={() => { setEditData(null); setIsAddModalOpen(true); }}
-            className="text-sm py-2 px-4 shadow-sm hover:shadow-md transition-shadow"
+          <button
+            onClick={downloadExcel}
+            disabled={leadStatuses.length === 0}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm rounded-full shadow-sm hover:shadow transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            + Add Lead Status
-          </CustomButton>
-        )}
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+            </svg>
+            Download
+          </button>
+
+          {hasPermission('LEAD_STATUS_CREATE') && (
+            <CustomButton
+              variant="primary"
+              onClick={() => { setEditData(null); setIsAddModalOpen(true); }}
+              className="text-sm py-2 px-4 shadow-sm hover:shadow-md transition-shadow"
+            >
+              + Add Lead Status
+            </CustomButton>
+          )}
+        </div>
       </div>
 
       {/* Main Content Area */}

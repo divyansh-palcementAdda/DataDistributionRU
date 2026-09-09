@@ -229,43 +229,45 @@ const Boards = () => {
           <p className="text-sm text-gray-500 mt-1">Manage education boards and affiliations</p>
         </div>
 
-        <input
-          type="text"
-          placeholder="Search boards..."
-          value={search}
-          onChange={handleSearch}
-          className="border border-gray-300 rounded-lg px-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+        <div className="flex gap-2 flex-wrap">
+          <input
+            type="text"
+            placeholder="Search boards..."
+            value={search}
+            onChange={handleSearch}
+            className="border border-gray-300 rounded-lg px-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
 
-        {/* Download Excel */}
-        <button
-          className="flex items-center gap-1.5"
-          style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '4px 10px', fontSize: '12px', borderRadius: '4px', cursor: 'pointer', boxShadow: 'none' }}
-          onClick={downloadExcel}
-          disabled={boards.length === 0}
-        >
-          <svg
-            width="10"
-            height="10"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
+          {/* Download Excel */}
+          <button
+            className="flex items-center gap-1.5"
+            style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '8px 16px', fontSize: '13px', borderRadius: '9999px', cursor: 'pointer', boxShadow: 'none', fontWeight: '600' }}
+            onClick={downloadExcel}
+            disabled={boards.length === 0}
           >
-            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
-          </svg>
-          Download
-        </button>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+            </svg>
+            Download
+          </button>
 
-        {hasPermission('BOARD_CREATE') && (
-          <CustomButton
-            variant="primary"
-            onClick={() => { setEditData(null); setIsAddModalOpen(true); }}
-            className="text-sm py-2 px-4 shadow-sm hover:shadow-md transition-shadow"
-          >
-            + Add Board
-          </CustomButton>
-        )}
+          {hasPermission('BOARD_CREATE') && (
+            <CustomButton
+              variant="primary"
+              onClick={() => { setEditData(null); setIsAddModalOpen(true); }}
+              className="text-sm py-2 px-4 shadow-sm hover:shadow-md transition-shadow"
+            >
+              + Add Board
+            </CustomButton>
+          )}
+        </div>
       </div>
 
       {/* Main Content Area */}

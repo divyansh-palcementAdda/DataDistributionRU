@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FiRefreshCw, FiSearch, FiX, FiLayers } from 'react-icons/fi';
+import * as XLSX from 'xlsx';
 
 // Reusable Components
 import ReusableTable from '../component/reusable/table';
@@ -177,6 +178,47 @@ const Department = () => {
         setIsAddModalOpen(false);
         setEditData(null);
         fetchDepartments();
+    };
+
+    // Download Excel function
+    const downloadExcel = () => {
+        try {
+            // Flatten the departments data for Excel export
+            const excelData = departments.map((row, index) => {
+                return {
+                    'S.No': (currentPage - 1) * rowsPerPage + index + 1,
+                    'Department Name': row.name || 'N/A',
+                    'Department Code': row.code || 'N/A',
+                    'Description': row.description || 'N/A',
+                    'HOD Name': row.hods?.length > 0 ? `${row.hods[0].firstName || ''} ${row.hods[0].lastName || ''}`.trim() : 'No HOD',
+                    'HOD Access Type': row.hods?.length > 0 ? row.hods[0].hodAccessType || 'N/A' : 'N/A',
+                    'Total HODs': row.hods?.length || 0,
+                    'Total Counsellors': row.counsellors?.length || 0,
+                    'Total Users': row.userCount || (row.hods?.length || 0) + (row.counsellors?.length || 0),
+                    'Status': row.active ? 'Active' : 'Inactive',
+                    'Created Date': formatDate(row.createdAt)
+                };
+            });
+
+            // Create worksheet
+            const worksheet = XLSX.utils.json_to_sheet(excelData);
+            
+            // Create workbook
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Departments');
+            
+            // Generate filename with timestamp
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+            const filename = `departments_${timestamp}.xlsx`;
+            
+            // Download the file
+            XLSX.writeFile(workbook, filename);
+            
+            toast.success('Excel file downloaded successfully');
+        } catch (error) {
+            console.error('Error downloading Excel:', error);
+            toast.error('Failed to download Excel file');
+        }
     };
 
     // Table Columns Definition
@@ -487,6 +529,46 @@ const Department = () => {
                             <span>Refresh</span>
                         </div>
                     </CustomButton>
+
+                    <button
+                        onClick={downloadExcel}
+                        disabled={departments.length === 0}
+                        style={{
+                            backgroundColor: '#10b981',
+                            color: 'white',
+                            border: 'none',
+                            padding: '8px 16px',
+                            fontSize: '13px',
+                            borderRadius: '8px',
+                            cursor: departments.length === 0 ? 'not-allowed' : 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            fontWeight: '600',
+                            opacity: departments.length === 0 ? 0.5 : 1,
+                            transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => {
+                            if (departments.length > 0) {
+                                e.currentTarget.style.backgroundColor = '#059669';
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = '#10b981';
+                        }}
+                    >
+                        <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                        >
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                        </svg>
+                        Download
+                    </button>
 
                     {hasPermission('DEPARTMENT_CREATE') && (
                         <CustomButton

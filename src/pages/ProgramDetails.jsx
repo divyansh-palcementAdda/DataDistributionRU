@@ -19,6 +19,7 @@ import {
   FiExternalLink,
   FiPlus
 } from 'react-icons/fi';
+import * as XLSX from 'xlsx';
 
 const formatDate = (iso) => {
   if (!iso) return '—';
@@ -100,6 +101,49 @@ const ProgramDetails = () => {
       fetchProgram();
     } catch (err) {
       toast.error(err.message || 'Failed to remove course');
+    }
+  };
+
+  // Download Excel function
+  const downloadExcel = () => {
+    try {
+      const programCourses = program.courses || [];
+      if (programCourses.length === 0) {
+        toast.warning('No courses to download');
+        return;
+      }
+
+      // Flatten the courses data for Excel export
+      const excelData = programCourses.map((course, index) => {
+        return {
+          'S.No': index + 1,
+          'Program Name': program.name || 'N/A',
+          'Program Code': program.code || 'N/A',
+          'Course Name': course.name || course.courseName || 'N/A',
+          'Course Code': course.code || 'N/A',
+          'Course Type': course.courseTypeName || course.courseType?.name || 'N/A',
+          'Course ID': course.id || 'N/A'
+        };
+      });
+
+      // Create worksheet
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      
+      // Create workbook
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Program Courses');
+      
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const filename = `program_courses_${program.code || 'program'}_${timestamp}.xlsx`;
+      
+      // Download the file
+      XLSX.writeFile(workbook, filename);
+      
+      toast.success('Excel file downloaded successfully');
+    } catch (error) {
+      console.error('Error downloading Excel:', error);
+      toast.error('Failed to download Excel file');
     }
   };
 
@@ -248,16 +292,35 @@ const ProgramDetails = () => {
               {courses.length}
             </span>
           </div>
-          {hasPermission('PROGRAM_UPDATE') && (
-            <CustomButton
-              variant="primary"
-              onClick={() => setIsMapModalOpen(true)}
-              className="text-xs py-1.5 px-3 flex items-center gap-1.5"
+          <div className="flex items-center gap-2">
+            <button
+              onClick={downloadExcel}
+              disabled={courses.length === 0}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs rounded-lg shadow-sm hover:shadow transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <FiPlus className="w-3.5 h-3.5" />
-              <span>Map More Courses</span>
-            </CustomButton>
-          )}
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+              </svg>
+              Download
+            </button>
+            {hasPermission('PROGRAM_UPDATE') && (
+              <CustomButton
+                variant="primary"
+                onClick={() => setIsMapModalOpen(true)}
+                className="text-xs py-1.5 px-3 flex items-center gap-1.5"
+              >
+                <FiPlus className="w-3.5 h-3.5" />
+                <span>Map More Courses</span>
+              </CustomButton>
+            )}
+          </div>
         </div>
 
         {courses.length === 0 ? (

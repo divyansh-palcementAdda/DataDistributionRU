@@ -241,13 +241,13 @@ const CourseType = () => {
                     {/* Download Excel */}
                     <button
                         className="flex items-center gap-1.5"
-                        style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '4px 10px', fontSize: '12px', borderRadius: '4px', cursor: 'pointer', boxShadow: 'none' }}
+                        style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '8px 16px', fontSize: '13px', borderRadius: '9999px', cursor: 'pointer', boxShadow: 'none', fontWeight: '600' }}
                         onClick={downloadExcel}
                         disabled={courses.length === 0}
                     >
                         <svg
-                            width="10"
-                            height="10"
+                            width="14"
+                            height="14"
                             viewBox="0 0 24 24"
                             fill="none"
                             stroke="currentColor"

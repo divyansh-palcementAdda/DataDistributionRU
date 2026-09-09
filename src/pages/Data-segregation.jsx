@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePermissions } from '../PermissionContext';
+import { toast } from 'react-toastify';
 import {
   getSegregationCapabilities,
   getCourseTypesSummary,
@@ -10,6 +11,7 @@ import {
 } from '../Services/segregation/dataSegregationService';
 import UserSegregationAnalyticsModal from '../component/reusable/segregation/UserSegregationAnalyticsModal';
 import LeadStatusSegregationModal from '../component/reusable/segregation/LeadStatusSegregationModal';
+import * as XLSX from 'xlsx';
 
 const DataSegregation = () => {
   const navigate = useNavigate();
@@ -345,6 +347,93 @@ const DataSegregation = () => {
     });
   }, [matrixData, searchTerm, canViewSource, canViewBoard, canViewGrade]);
 
+  // Download Excel function
+  const downloadExcel = () => {
+    try {
+      if (!matrixData?.sources || matrixData.sources.length === 0) {
+        return;
+      }
+
+      // Flatten the hierarchical data for Excel export
+      const excelData = [];
+      let sno = 1;
+
+      matrixData.sources.forEach((source) => {
+        // Add source level row
+        excelData.push({
+          'S.No': sno++,
+          'Level': 'Source',
+          'Category': selectedCourseType?.name || 'N/A',
+          'Source': source.sourceName || 'N/A',
+          'Source Code': source.sourceCode || 'N/A',
+          'Specialization': canViewBoard ? 'All Boards' : 'N/A',
+          'Grade': canViewGrade ? 'All Grades' : 'N/A',
+          'Total Leads': source.total || 0,
+          'Allotted': source.allotted || 0,
+          'Unallotted': source.unallotted || 0,
+          'Availed': source.availed || 0
+        });
+
+        // Add board level rows if permitted
+        if (canViewBoard && source.boards) {
+          source.boards.forEach((board) => {
+            excelData.push({
+              'S.No': sno++,
+              'Level': 'Specialization',
+              'Category': selectedCourseType?.name || 'N/A',
+              'Source': source.sourceName || 'N/A',
+              'Source Code': source.sourceCode || 'N/A',
+              'Specialization': board.boardName || 'N/A',
+              'Grade': canViewGrade ? 'All Grades' : 'N/A',
+              'Total Leads': board.total || 0,
+              'Allotted': board.allotted || 0,
+              'Unallotted': board.unallotted || 0,
+              'Availed': board.availed || 0
+            });
+
+            // Add grade level rows if permitted
+            if (canViewGrade && board.grades) {
+              board.grades.forEach((grade) => {
+                excelData.push({
+                  'S.No': sno++,
+                  'Level': 'Grade',
+                  'Category': selectedCourseType?.name || 'N/A',
+                  'Source': source.sourceName || 'N/A',
+                  'Source Code': source.sourceCode || 'N/A',
+                  'Specialization': board.boardName || 'N/A',
+                  'Grade': grade.gradeName || 'N/A',
+                  'Total Leads': grade.total || 0,
+                  'Allotted': grade.allotted || 0,
+                  'Unallotted': grade.unallotted || 0,
+                  'Availed': grade.availed || 0
+                });
+              });
+            }
+          });
+        }
+      });
+
+      // Create worksheet
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      
+      // Create workbook
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Data Segregation');
+      
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const filename = `data_segregation_${selectedCourseType?.name || 'all'}_${timestamp}.xlsx`;
+      
+      // Download the file
+      XLSX.writeFile(workbook, filename);
+      
+      toast.success('Excel file downloaded successfully');
+    } catch (error) {
+      console.error('Error downloading Excel:', error);
+      toast.error('Failed to download Excel file');
+    }
+  };
+
   // Access denied screen if base permission is missing
   if (!canView) {
     return (
@@ -401,6 +490,17 @@ const DataSegregation = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
             Refresh
+          </button>
+
+          <button
+            onClick={downloadExcel}
+            disabled={!matrixData?.sources || matrixData.sources.length === 0}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm rounded-xl shadow-xs hover:shadow transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+            </svg>
+            Download
           </button>
 
           {selectedCourseType && canViewCourseType && (

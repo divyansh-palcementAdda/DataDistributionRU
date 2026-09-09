@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import CustomButton from './CustomButton';
 import { changeLeadStatus } from '../../Services/lead/leadService';
 
-const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen, onInfoPanelOpen, isFinallyNotConnected, hasPendingFollowup, onCompleteFollowup, onCancelFollowup, onFollowupNotConnected, onRegisterLead, hasClickedInfoPanel, onResetInfoPanel }) => {
+const CallModal = ({ isOpen, onClose, studentData, followups, onScheduleOpen, onInfoPanelOpen, isFinallyNotConnected, hasPendingFollowup, onCompleteFollowup, onCancelFollowup, onFollowupNotConnected, onRegisterLead, hasClickedInfoPanel, onResetInfoPanel }) => {
     const [isConnected, setIsConnected] = useState(false);
     const [showInterestButtons, setShowInterestButtons] = useState(false);
     const [showActionButtons, setShowActionButtons] = useState(false);
@@ -40,8 +40,11 @@ const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen, onInfoPanelOp
     const followUpStatus = currentStatus?.followUpStatus || false;
     const currentStatusCode = statusName.toUpperCase();
 
+    // Check if any followup has MISSED status
+    const hasMissedFollowup = followups?.some(f => f.status === 'MISSED');
+
     // Determine which buttons to show based on currentStatus
-    const shouldShowConnectionButtons = !followUpStatus;
+    const shouldShowConnectionButtons = !followUpStatus || hasMissedFollowup;
     const shouldShowInterestButtons = followUpStatus;
 
     const handleMarkAsConnected = async () => {
@@ -454,7 +457,7 @@ const CallModal = ({ isOpen, onClose, studentData, onScheduleOpen, onInfoPanelOp
                             )}
 
                             {/* Show followup action buttons when followup is pending */}
-                            {hasPendingFollowup && !followupActionCompleted && (
+                            {(hasPendingFollowup || followUpStatus === 'upcoming') && !followupActionCompleted && (
                                 <>
                                     <CustomButton
                                         variant="primary"

@@ -1501,6 +1501,7 @@ const LeadDetail = () => {
         isOpen={isCallModalOpen}
         onClose={() => setIsCallModalOpen(false)}
         studentData={leadDetails}
+        followups={followUps}
         onScheduleOpen={() => setIsScheduleModalOpen(true)}
         onInfoPanelOpen={() => setHasClickedInfoPanel(true)}
         isFinallyNotConnected={isFinallyNotConnected}

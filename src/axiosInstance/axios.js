@@ -127,7 +127,7 @@ const resetInactivityTimer = () => {
 
   inactivityTimer = setTimeout(() => {
     isSessionExpiredByInactivity = true;
-    logoutUser("INACTIVITY_LOGOUT");
+    logoutUser("AUTO_LOGOUT_INACTIVITY");
   }, INACTIVITY_LIMIT);
 };
 
@@ -150,7 +150,7 @@ const initializeInactivityTimer = () => {
   const elapsedTime = Date.now() - Number(lastActivity);
   if (elapsedTime >= INACTIVITY_LIMIT) {
     isSessionExpiredByInactivity = true;
-    logoutUser("INACTIVITY_LOGOUT");
+    logoutUser("AUTO_LOGOUT_INACTIVITY");
     return;
   }
 
@@ -161,7 +161,7 @@ const initializeInactivityTimer = () => {
 
   inactivityTimer = setTimeout(() => {
     isSessionExpiredByInactivity = true;
-    logoutUser("INACTIVITY_LOGOUT");
+    logoutUser("AUTO_LOGOUT_INACTIVITY");
   }, remainingTime);
 };
 
@@ -213,7 +213,7 @@ window.addEventListener("storage", (e) => {
         if (inactivityTimer) clearTimeout(inactivityTimer);
         inactivityTimer = setTimeout(() => {
           isSessionExpiredByInactivity = true;
-          logoutUser("INACTIVITY_LOGOUT");
+          logoutUser("AUTO_LOGOUT_INACTIVITY");
         }, INACTIVITY_LIMIT - elapsedTime);
       }
     }
@@ -280,7 +280,7 @@ axiosInstance.interceptors.response.use(
 
       if (isInactive || isSessionExpiredByInactivity) {
         isSessionExpiredByInactivity = true;
-        logoutUser("INACTIVITY_LOGOUT");
+        logoutUser("AUTO_LOGOUT_INACTIVITY");
         return Promise.reject(error);
       }
 
@@ -322,7 +322,7 @@ axiosInstance.interceptors.response.use(
         // Safety check before calling refresh API
         if (isSessionExpiredByInactivity) {
           isRefreshing = false;
-          logoutUser("INACTIVITY_LOGOUT");
+          logoutUser("AUTO_LOGOUT_INACTIVITY");
           return Promise.reject(error);
         }
 

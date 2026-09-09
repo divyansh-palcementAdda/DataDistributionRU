@@ -312,7 +312,7 @@ const AddLeadModal = () => {
         assignedToUserId: toStr(assignedToUserId),
         statusId: toStr(statusId),
         active: active !== undefined ? active : true,
-        nextFollowUpDate: nextFollowUpDate ? new Date(nextFollowUpDate).toISOString().slice(0, 10) : '',
+        nextFollowUpDate: nextFollowUpDate ? (typeof nextFollowUpDate === 'string' ? nextFollowUpDate.slice(0, 10) : new Date(nextFollowUpDate).toLocaleDateString('en-CA')) : '',
       });
 
       const fetchEditLocationData = async () => {

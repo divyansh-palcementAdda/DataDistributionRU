@@ -2,10 +2,12 @@ import React, { useState, useEffect } from "react";
 import { getFollowupLeadStatusesDropdown } from "../../../Services/drop-down/dropDownService";
 
 const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
-    const todayStr = new Date().toISOString().split('T')[0];
+    // Get local date in YYYY-MM-DD format (not UTC)
+    const todayStr = new Date().toLocaleDateString('en-CA');
 
     const [formData, setFormData] = useState({
         followUpDate: "",
+        followUpTime: "",
         remarks: "",
         leadStatus: "",
         leadStatusCode: "",
@@ -74,11 +76,15 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
             return;
         }
 
+        const localDate = formData.followUpDate;
+        const localTime = formData.followUpTime
+            ? (formData.followUpTime.length === 5 ? `${formData.followUpTime}:00` : formData.followUpTime)
+            : "00:00:00";
+
         const payload = {
             ...formData,
-            followUpDate: formData.followUpDate
-                ? new Date(formData.followUpDate).toISOString()
-                : "",
+            // Format as standard ISO local datetime without trailing 'Z' to preserve exact business calendar date
+            followUpDate: `${localDate}T${localTime}`,
         };
 
         const success = await onSubmit(payload);
@@ -86,6 +92,7 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
         if (success) {
             setFormData({
                 followUpDate: "",
+                followUpTime: "",
                 remarks: "",
                 leadStatus: "",
                 leadStatusCode: "",
@@ -117,26 +124,48 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
 
                 {/* Body */}
                 <div className="space-y-4 p-5">
-                    <div>
-                        <label className="mb-2 block text-sm font-medium text-gray-700">
-                            Follow Up Date <span className="text-red-500">*</span>
-                        </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label className="mb-2 block text-sm font-medium text-gray-700">
+                                Follow Up Date <span className="text-red-500">*</span>
+                            </label>
 
-                        <div 
-                            className={`w-full rounded-lg border px-3 py-2 cursor-pointer ${errors.followUpDate ? 'border-red-500' : 'border-gray-300'}`}
-                            onClick={() => document.querySelector('input[name="followUpDate"]').showPicker?.() || document.querySelector('input[name="followUpDate"]').focus()}
-                        >
-                            <input
-                                type="date"
-                                name="followUpDate"
-                                min={todayStr}
-                                value={formData.followUpDate}
-                                onChange={handleChange}
-                                className="w-full outline-none cursor-pointer"
-                                style={{ border: 'none', background: 'transparent' }}
-                            />
+                            <div
+                                className={`w-full rounded-lg border px-3 py-2 cursor-pointer ${errors.followUpDate ? 'border-red-500' : 'border-gray-300'}`}
+                                onClick={() => document.querySelector('input[name="followUpDate"]').showPicker?.() || document.querySelector('input[name="followUpDate"]').focus()}
+                            >
+                                <input
+                                    type="date"
+                                    name="followUpDate"
+                                    min={todayStr}
+                                    value={formData.followUpDate}
+                                    onChange={handleChange}
+                                    className="w-full outline-none cursor-pointer"
+                                    style={{ border: 'none', background: 'transparent' }}
+                                />
+                            </div>
+                            {errors.followUpDate && <p className="mt-1 text-sm text-red-500">{errors.followUpDate}</p>}
                         </div>
-                        {errors.followUpDate && <p className="mt-1 text-sm text-red-500">{errors.followUpDate}</p>}
+
+                        {/* <div>
+                            <label className="mb-2 block text-sm font-medium text-gray-700">
+                                Follow Up Time
+                            </label>
+
+                            <div 
+                                className="w-full rounded-lg border px-3 py-2 cursor-pointer border-gray-300"
+                                onClick={() => document.querySelector('input[name="followUpTime"]')?.showPicker?.() || document.querySelector('input[name="followUpTime"]')?.focus()}
+                            >
+                                <input
+                                    type="time"
+                                    name="followUpTime"
+                                    value={formData.followUpTime}
+                                    onChange={handleChange}
+                                    className="w-full outline-none cursor-pointer"
+                                    style={{ border: 'none', background: 'transparent' }}
+                                />
+                            </div>
+                        </div> */}
                     </div>
 
                     <div>

@@ -125,12 +125,37 @@ const Grades = () => {
     setCurrentPage(1);
   };
 
-  const downloadExcel = () => {
+  const downloadExcel = async () => {
     try {
+      // Fetch all grades data without pagination
+      const res = await gradsService.getAllGrades({
+        page: 0,
+        size: 10000, // Large size to get all data
+        search: debouncedSearch,
+        sortBy,
+        sortDirection,
+      });
+
+      // Map API response to UI format
+      const allGrades = (res.data?.content || []).map(grade => ({
+        id: grade.id,
+        name: grade.name,
+        gradeName: grade.name,
+        gradeCode: grade.code,
+        description: grade.description,
+        status: grade.active ? "ACTIVE" : "INACTIVE",
+        active: grade.active,
+        displayOrder: grade.displayOrder,
+        totalData: grade.totalData ?? 0,
+        totalAllottedData: grade.totalAllottedData ?? 0,
+        totalUnallottedData: grade.totalUnallottedData ?? 0,
+        totalAvailedData: grade.totalAvailedData ?? 0
+      }));
+
       // Flatten the grades data for Excel export
-      const excelData = grades.map((grade, index) => {
+      const excelData = allGrades.map((grade, index) => {
         return {
-          'S.No': (currentPage - 1) * rowsPerPage + index + 1,
+          'S.No': index + 1,
           'Grade': typeof grade.name === 'object' ? grade.name?.name || grade.name?.gradeName || '-' : grade.name || grade.gradeName || '-',
           'Grade Code': grade.gradeCode || 'N/A',
           'Description': typeof grade.description === 'object' ? grade.description?.description || '-' : grade.description || '-',
@@ -257,7 +282,7 @@ const Grades = () => {
             className="flex items-center gap-1.5"
             style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '8px 16px', fontSize: '13px', borderRadius: '9999px', cursor: 'pointer', boxShadow: 'none', fontWeight: '600' }}
             onClick={downloadExcel}
-            disabled={grades.length === 0}
+            disabled={totalElements === 0}
           >
             <svg
               width="14"

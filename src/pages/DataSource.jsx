@@ -193,12 +193,20 @@ const LeadSource = () => {
     };
 
     // Download Excel function
-    const downloadExcel = () => {
+    const downloadExcel = async () => {
         try {
+            // Fetch all lead sources data without pagination
+            const params = { page: 0, size: 10000, sortBy, sortDirection };
+            if (search.trim()) params.search = search.trim();
+            if (statusFilter !== 'all') params.active = statusFilter === 'active';
+            
+            const res = await getAllLeadSource(params);
+            const allData = res?.data?.data?.content ?? [];
+
             // Flatten the data source data for Excel export
-            const excelData = data.map((item, index) => {
+            const excelData = allData.map((item, index) => {
                 return {
-                    'S.No': (page * size) + index + 1,
+                    'S.No': index + 1,
                     'Lead Source': item.name || 'N/A',
                     'Description': item.description || 'N/A',
                     'Total Data': item.totalData ?? 0,
@@ -361,7 +369,7 @@ const LeadSource = () => {
                         className="flex items-center gap-1.5"
                         style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '4px 10px', fontSize: '12px', borderRadius: '4px', cursor: 'pointer', boxShadow: 'none' }}
                         onClick={downloadExcel}
-                        disabled={data.length === 0}
+                        disabled={totalElements === 0}
                     >
                         <svg
                             width="10"

@@ -175,12 +175,45 @@ const FollowUps = () => {
     }
   };
 
-  const downloadExcel = () => {
+  const downloadExcel = async () => {
     try {
+      // Fetch all followups with current filters applied
+      let res;
+      if (activeTab === "TODAY") {
+        res = await getTodayFollowups({
+          page: 0,
+          size: 10000,
+          sortBy,
+          sortDirection: sortDirection.toUpperCase(),
+          search,
+        });
+      } else {
+        res = await getAllFollowups({
+          page: 0,
+          size: 10000,
+          sortBy,
+          sortDirection: sortDirection.toUpperCase(),
+          search,
+          status: activeTab === "ALL" ? "" : activeTab,
+          leadStatusIds: selectedLeadStatusId ? [selectedLeadStatusId] : [],
+        });
+      }
+
+      const apiData = res?.data ?? res ?? {};
+      const payload = apiData?.data ?? apiData;
+
+      const allFollowupsData = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.content)
+          ? payload.content
+          : Array.isArray(payload?.data)
+            ? payload.data
+            : [];
+      
       // Flatten the followups data for Excel export
-      const excelData = data.map((followup, index) => {
+      const excelData = allFollowupsData.map((followup, index) => {
         return {
-          'S.No': (page * size) + index + 1,
+          'S.No': index + 1,
           'Lead Name': followup.leadFullName || followup.leadName || followup.name || 'N/A',
           'Lead Code': followup.leadCode || followup.mobileNo || followup.phone || 'N/A',
           'Follow-up Date': formatFollowUpDate(followup.followUpDate),

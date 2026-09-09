@@ -441,16 +441,37 @@ const Leads = () => {
     setSortDirection(direction);
   };
 
-  const downloadExcel = () => {
+  const downloadExcel = async () => {
     try {
+      // Fetch all leads with current filters applied
+      const params = {
+        page: 0,
+        size: 10000,
+        search: search || undefined,
+        sortBy: sortBy || undefined,
+        sortDirection: sortDirection || undefined,
+        // Add filterRequest parameters with smart conversion
+        ...convertFilterRequest(filterRequest),
+        // Card filter — statusId send karo agar koi card selected hai (for backward compatibility)
+        ...(selectedCard?.type === 'leadStatus' && selectedCard?.value
+          ? { statusId: selectedCard.value }
+          : {}),
+        // Lead Status dropdown filter
+        ...(filterLeadStatus
+          ? { leadStatusHistoryIds: [filterLeadStatus] }
+          : {}),
+      };
+      const res = await getAllLeads(params);
+      const allLeadsData = res?.data?.data?.content || [];
+      
       // Flatten the leads data for Excel export
-      const excelData = leadsData.map((lead, index) => {
+      const excelData = allLeadsData.map((lead, index) => {
         const rowId = typeof lead.id === 'object' ? lead.id?.id : lead.id;
         const rowLeadId = typeof lead.leadId === 'object' ? lead.leadId?.id : lead.leadId;
         const idToUse = rowId || rowLeadId;
         
         return {
-          'S.No': (page * size) + index + 1,
+          'S.No': index + 1,
           'Lead Code': typeof lead.leadCode === 'object' ? lead.leadCode?.code || lead.leadCode?.name || 'N/A' : lead.leadCode || 'N/A',
           'Lead Name': typeof lead.fullName === 'object' ? lead.fullName?.name || lead.fullName?.firstName || 'N/A' : lead.fullName || 'N/A',
           'Phone Number': lead.phoneNumber || 'N/A',

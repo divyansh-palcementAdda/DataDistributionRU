@@ -118,12 +118,23 @@ const CourseType = () => {
         setCurrentPage(1);
     };
 
-    const downloadExcel = () => {
+    const downloadExcel = async () => {
         try {
+            // Fetch all course types data without pagination
+            const res = await getAllCourseType({
+                page: 0,
+                size: 10000, // Large size to get all data
+                search: debouncedSearch,
+                sortBy,
+                sortDirection,
+            });
+
+            const allCourses = res?.data?.content || res?.content || res?.data || res || [];
+
             // Flatten the course types data for Excel export
-            const excelData = courses.map((course, index) => {
+            const excelData = allCourses.map((course, index) => {
                 return {
-                    'S.No': (currentPage - 1) * rowsPerPage + index + 1,
+                    'S.No': index + 1,
                     'Course Type': typeof course.name === 'object' ? course.name?.name || '-' : course.name || '-',
                     'Description': typeof course.description === 'object' ? course.description?.description || '-' : course.description || '-',
                     'Total Data': course.totalData ?? 0,
@@ -243,7 +254,7 @@ const CourseType = () => {
                         className="flex items-center gap-1.5"
                         style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '8px 16px', fontSize: '13px', borderRadius: '9999px', cursor: 'pointer', boxShadow: 'none', fontWeight: '600' }}
                         onClick={downloadExcel}
-                        disabled={courses.length === 0}
+                        disabled={totalElements === 0}
                     >
                         <svg
                             width="14"

@@ -443,16 +443,19 @@ const GradesDetails = () => {
     const goBack = () => navTo('grades');
 
     // ── download Excel function ──
-    const downloadExcel = () => {
+    const downloadExcel = async () => {
         try {
+            // Fetch all leads with current filters applied
+            const allLeadsData = await fetchLeadsForCard(activeFilters, id, 0, 10000, tableSortBy, tableSortDir, filterRequest);
+            
             // Flatten the table data for Excel export
-            const excelData = tableData.map((lead, index) => {
+            const excelData = allLeadsData.content.map((lead, index) => {
                 const rowId = typeof lead.id === 'object' ? lead.id?.id : lead.id;
                 const rowLeadId = typeof lead.leadId === 'object' ? lead.leadId?.id : lead.leadId;
                 const idToUse = rowId || rowLeadId;
                 
                 return {
-                    'S.No': (tablePage * tableSize) + index + 1,
+                    'S.No': index + 1,
                     'Lead Code': typeof lead.leadCode === 'object' ? lead.leadCode?.code || lead.leadCode?.name || 'N/A' : lead.leadCode || 'N/A',
                     'Lead Name': typeof lead.fullName === 'object' ? lead.fullName?.name || lead.fullName?.firstName || 'N/A' : lead.fullName || 'N/A',
                     'Phone Number': lead.phoneNumber || 'N/A',

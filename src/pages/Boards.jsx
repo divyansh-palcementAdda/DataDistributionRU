@@ -113,12 +113,23 @@ const Boards = () => {
     setCurrentPage(1);
   };
 
-  const downloadExcel = () => {
+  const downloadExcel = async () => {
     try {
+      // Fetch all boards data without pagination
+      const res = await getAllBoards({
+        page: 0,
+        size: 10000, // Large size to get all data
+        search: debouncedSearch,
+        sortBy,
+        sortDirection,
+      });
+
+      const allBoards = res.data?.content || [];
+
       // Flatten the boards data for Excel export
-      const excelData = boards.map((board, index) => {
+      const excelData = allBoards.map((board, index) => {
         return {
-          'S.No': (currentPage - 1) * rowsPerPage + index + 1,
+          'S.No': index + 1,
           'Board': typeof board.name === 'object' ? board.name?.name || '-' : board.name || '-',
           'Description': typeof board.description === 'object' ? board.description?.description || '-' : board.description || '-',
           'Total Data': board.totalData ?? 0,
@@ -243,7 +254,7 @@ const Boards = () => {
             className="flex items-center gap-1.5"
             style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '8px 16px', fontSize: '13px', borderRadius: '9999px', cursor: 'pointer', boxShadow: 'none', fontWeight: '600' }}
             onClick={downloadExcel}
-            disabled={boards.length === 0}
+            disabled={totalElements === 0}
           >
             <svg
               width="14"

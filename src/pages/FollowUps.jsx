@@ -16,7 +16,7 @@ const formatFollowUpDate = (value) => {
 
   if (Number.isNaN(date.getTime())) return value;
 
-  return date.toLocaleDateString();
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 };
 
 const getStatusClass = (value) => {

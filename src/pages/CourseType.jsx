@@ -9,6 +9,7 @@ import { toast } from 'react-toastify';
 import AddCourseTypeModel from '../component/reusable/AddCourseTypeModel';
 import DeleteModal from '../component/reusable/deleteModel';
 import { usePermissions } from '../PermissionContext';
+import * as XLSX from 'xlsx';
 
 const CourseType = () => {
     const navigate = useNavigate();
@@ -117,6 +118,45 @@ const CourseType = () => {
         setCurrentPage(1);
     };
 
+    const downloadExcel = () => {
+        try {
+            // Flatten the course types data for Excel export
+            const excelData = courses.map((course, index) => {
+                return {
+                    'S.No': (currentPage - 1) * rowsPerPage + index + 1,
+                    'Course Type': typeof course.name === 'object' ? course.name?.name || '-' : course.name || '-',
+                    'Description': typeof course.description === 'object' ? course.description?.description || '-' : course.description || '-',
+                    'Total Data': course.totalData ?? 0,
+                    'Total Allotted Data': course.totalAllottedData ?? 0,
+                    'Total Unallotted Data': course.totalUnallottedData ?? 0,
+                    'Total Availed Data': course.totalAvailedData ?? 0,
+                    'Status': course.status || 'INACTIVE',
+                    'Created Date': course.createdAt ? new Date(course.createdAt).toLocaleDateString() : 'N/A',
+                    'Updated Date': course.updatedAt ? new Date(course.updatedAt).toLocaleDateString() : 'N/A'
+                };
+            });
+
+            // Create worksheet
+            const worksheet = XLSX.utils.json_to_sheet(excelData);
+            
+            // Create workbook
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Course Types');
+            
+            // Generate filename with timestamp
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+            const filename = `course_types_${timestamp}.xlsx`;
+            
+            // Download the file
+            XLSX.writeFile(workbook, filename);
+            
+            toast.success('Excel file downloaded successfully');
+        } catch (error) {
+            console.error('Error downloading Excel:', error);
+            toast.error('Failed to download Excel file');
+        }
+    };
+
     const allColumns = [
         {
             key: "sno",
@@ -189,24 +229,45 @@ const CourseType = () => {
                     <p className="text-sm text-gray-500 mt-1">Manage your Category catalog and parameters</p>
                 </div>
 
-                <input
-                    type="text"
-                    placeholder="Search course type..."
-                    value={search}
-                    onChange={handleSearch}
-                    className="border border-gray-300 rounded-lg px-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                <div className="flex gap-2 flex-wrap">
+                    <input
+                        type="text"
+                        placeholder="Search course type..."
+                        value={search}
+                        onChange={handleSearch}
+                        className="border border-gray-300 rounded-lg px-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
 
-
-                {hasPermission('COURSE_TYPE_CREATE') && (
-                    <CustomButton
-                        variant="primary"
-                        onClick={() => { setEditData(null); setIsAddModalOpen(true); }}
-                        className="text-sm py-2 px-4 shadow-sm hover:shadow-md transition-shadow"
+                    {/* Download Excel */}
+                    <button
+                        className="flex items-center gap-1.5"
+                        style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '4px 10px', fontSize: '12px', borderRadius: '4px', cursor: 'pointer', boxShadow: 'none' }}
+                        onClick={downloadExcel}
+                        disabled={courses.length === 0}
                     >
-                        + Add Category Type
-                    </CustomButton>
-                )}
+                        <svg
+                            width="10"
+                            height="10"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                        >
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                        </svg>
+                        Download
+                    </button>
+
+                    {hasPermission('COURSE_TYPE_CREATE') && (
+                        <CustomButton
+                            variant="primary"
+                            onClick={() => { setEditData(null); setIsAddModalOpen(true); }}
+                            className="text-sm py-2 px-4 shadow-sm hover:shadow-md transition-shadow"
+                        >
+                            + Add Category Type
+                        </CustomButton>
+                    )}
+                </div>
             </div>
 
             {/* Main Content Area */}

@@ -6,6 +6,7 @@ import ReusableTable from '../component/reusable/table';
 import { getUserPerformance } from '../Services/Counselors/counselors';
 import { getLowDataUsers, getUsersNotLoggedIn, getFollowupUsersNotLoggedIn11am } from '../Services/Dashboard/Dashboard';
 import AddUserModal from '../component/reusable/user/addUser';
+import * as XLSX from 'xlsx';
 
 /* ── Sort direction toggle helper ── */
 const nextDir = (cur) => (cur === 'ASC' ? 'DESC' : 'ASC');
@@ -138,6 +139,93 @@ const Counselors = () => {
   const handleOpenAddUserModal = () => setIsAddUserModalOpen(true);
   const handleCloseAddUserModal = () => setIsAddUserModalOpen(false);
   const handleUserAdded = () => fetchData();
+
+  // Download Excel function
+  const downloadExcel = () => {
+    try {
+      // Flatten the counselors data for Excel export based on current mode
+      const excelData = data.map((row, index) => {
+        const baseData = {
+          'S.No': (page * size) + index + 1,
+          'Name': row.name || row.userName || row.username || 'Unknown User',
+          'Email': row.email || 'N/A',
+          'Username': row.username || 'N/A',
+        };
+
+        if (lowDataMode) {
+          return {
+            ...baseData,
+            'Role': Array.isArray(row.roleNames) ? row.roleNames.join(', ') : row.roleNames || 'N/A',
+            'Department': Array.isArray(row.departmentNames) ? row.departmentNames.join(', ') : row.departmentNames || 'N/A',
+            'Allotted': row.allottedDataCount ?? 0,
+            'Availed': row.availedDataCount ?? 0,
+            'Remaining': row.remainingDataCount ?? 0,
+            'Low Data': row.lowDataUser ? 'Yes' : 'No'
+          };
+        } else if (usersNotLoggedInMode) {
+          return {
+            ...baseData,
+            'Role': Array.isArray(row.roleNames) ? row.roleNames.join(', ') : row.roleNames || 'N/A',
+            'Department': Array.isArray(row.departmentNames) ? row.departmentNames.join(', ') : row.departmentNames || 'N/A',
+            'Allotted': row.allottedDataCount ?? 0,
+            'Availed': row.availedDataCount ?? 0,
+            'Remaining': row.remainingDataCount ?? 0,
+            'Logged In Today': 'No'
+          };
+        } else if (followupNotLoggedIn11amMode) {
+          return {
+            ...baseData,
+            'Role': Array.isArray(row.roleNames) ? row.roleNames.join(', ') : row.roleNames || 'N/A',
+            'Department': Array.isArray(row.departmentNames) ? row.departmentNames.join(', ') : row.departmentNames || 'N/A',
+            'Allotted': row.allottedDataCount ?? 0,
+            'Availed': row.availedDataCount ?? 0,
+            'Remaining': row.remainingDataCount ?? 0,
+            'Logged In by 11 AM': 'No'
+          };
+        } else {
+          // Normal mode - operational performance
+          return {
+            ...baseData,
+            'Role': Array.isArray(row.roles) ? row.roles.join(', ') : (row.role || 'N/A'),
+            'Department': row.department || 'N/A',
+            'Total Allotted': row.totalAllottedData ?? 0,
+            'Total Availed': row.totalAvailedData ?? 0,
+            'RAW': row.rawDataCount ?? 0,
+            'Registered': row.registeredDataCount ?? 0,
+            "Today's Followups": row.todayFollowupsCount ?? 0,
+            'Scheduled': row.todayFollowupsScheduled ?? 0,
+            'Missed': row.todayMissedFollowups ?? 0,
+            'Upcoming': row.todayUpcomingFollowups ?? 0,
+            'Pending': row.todayPendingFollowups ?? 0,
+            'Connected Calls': row.todayConnectedCalls ?? 0,
+            'Login Count': row.todayLoginCount ?? 0,
+            'Logout Count': row.todayLogoutCount ?? 0,
+            'Working Hours': row.todayWorkingHours ? `${row.todayWorkingHours}h` : '0h',
+            'Currently Working': row.currentlyWorking ? 'Working' : 'Offline'
+          };
+        }
+      });
+
+      // Create worksheet
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      
+      // Create workbook
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Counselors');
+      
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const filename = `counselors_${timestamp}.xlsx`;
+      
+      // Download the file
+      XLSX.writeFile(workbook, filename);
+      
+      showToast('Excel file downloaded successfully');
+    } catch (error) {
+      console.error('Error downloading Excel:', error);
+      showToast('Failed to download Excel file', 'error');
+    }
+  };
 
   /* ── Column header renderer ── */
   const SortHeader = ({ col, label }) => (
@@ -636,6 +724,25 @@ const Counselors = () => {
           </p>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
+          {/* Download Excel */}
+          <button
+            className="flex items-center gap-1.5"
+            style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '4px 10px', fontSize: '12px', borderRadius: '4px', cursor: 'pointer', boxShadow: 'none' }}
+            onClick={downloadExcel}
+            disabled={data.length === 0}
+          >
+            <svg
+              width="10"
+              height="10"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+            </svg>
+            Download
+          </button>
           {hasPermission('USER_CREATE') && (
             <button
               className="btn btn-primary btn-sm"

@@ -17,6 +17,7 @@ import AvailedCard from '../component/reusable/DashBoards/availedCard';
 import AllottedCard from '../component/reusable/DashBoards/allottedCard';
 import BulkUploadModal from '../component/reusable/Leads/BulkUploadModal';
 import PreviewDistributionModal from '../component/reusable/Leads/PreviewDistributionModal';
+import * as XLSX from 'xlsx';
 
 
 const Leads = () => {
@@ -440,6 +441,55 @@ const Leads = () => {
     setSortDirection(direction);
   };
 
+  const downloadExcel = () => {
+    try {
+      // Flatten the leads data for Excel export
+      const excelData = leadsData.map((lead, index) => {
+        const rowId = typeof lead.id === 'object' ? lead.id?.id : lead.id;
+        const rowLeadId = typeof lead.leadId === 'object' ? lead.leadId?.id : lead.leadId;
+        const idToUse = rowId || rowLeadId;
+        
+        return {
+          'S.No': (page * size) + index + 1,
+          'Lead Code': typeof lead.leadCode === 'object' ? lead.leadCode?.code || lead.leadCode?.name || 'N/A' : lead.leadCode || 'N/A',
+          'Lead Name': typeof lead.fullName === 'object' ? lead.fullName?.name || lead.fullName?.firstName || 'N/A' : lead.fullName || 'N/A',
+          'Phone Number': lead.phoneNumber || 'N/A',
+          'Email': lead.email || 'N/A',
+          'Course': lead.course?.courseName || lead.registeredCourse?.courseName || lead.courseInterested || 'N/A',
+          'Source': lead.sourceDetails || (Array.isArray(lead.leadSources) && lead.leadSources[0]?.name) || (typeof lead.source === 'object' ? lead.source?.name : lead.source) || 'N/A',
+          'Status': typeof lead.currentStatus === 'object' ? lead.currentStatus?.name || lead.currentStatus?.code || 'N/A' : lead.currentStatus || 'N/A',
+          'Counselor': typeof lead.assignedTo === 'object' ? `${lead.assignedTo.firstName || ''} ${lead.assignedTo.lastName || ''}`.trim() || 'Not Allotted' : lead.assignedTo || 'Not Allotted',
+          'Follow-up Date': lead.nextFollowUpDate ? new Date(lead.nextFollowUpDate).toLocaleDateString() : 'None',
+          'Created By': typeof lead.createdBy === 'object' ? `${lead.createdBy.firstName || ''} ${lead.createdBy.lastName || ''}`.trim() || 'N/A' : lead.createdBy || 'N/A',
+          'Created Date': lead.createdAt ? new Date(lead.createdAt).toLocaleDateString() : 'N/A',
+          'Remarks': lead.remarks || 'N/A',
+          'City': typeof lead.city === 'object' ? lead.city?.name || '' : lead.city || 'N/A',
+          'State': typeof lead.state === 'object' ? lead.state?.name || '' : lead.state || 'N/A',
+          'Country': typeof lead.country === 'object' ? lead.country?.name || '' : lead.country || 'N/A'
+        };
+      });
+
+      // Create worksheet
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      
+      // Create workbook
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Leads');
+      
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const filename = `leads_export_${timestamp}.xlsx`;
+      
+      // Download the file
+      XLSX.writeFile(workbook, filename);
+      
+      showToast('Excel file downloaded successfully');
+    } catch (error) {
+      console.error('Error downloading Excel:', error);
+      showToast('Failed to download Excel file', 'error');
+    }
+  };
+
   return (
     <div>
       {/* ── Page Header ── */}
@@ -472,6 +522,25 @@ const Leads = () => {
               Import
             </button>
           )}
+          {/* Download Excel */}
+          <button
+            className="flex items-center gap-1.5"
+            style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '4px 10px', fontSize: '12px', borderRadius: '4px', cursor: 'pointer', boxShadow: 'none' }}
+            onClick={downloadExcel}
+            disabled={leadsData.length === 0}
+          >
+            <svg
+              width="10"
+              height="10"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+            </svg>
+            Download
+          </button>
           {/* Add Lead */}
           {hasPermission('LEAD_CREATE') && (
             <button

@@ -8,6 +8,7 @@ import AddBoardModal from '../component/reusable/board/addBoardModel';
 import DeleteModal from '../component/reusable/deleteModel';
 import { getAllBoards, deleteBoard, toggleBoardStatus } from '../Services/Boards/boardsService';
 import { usePermissions } from '../PermissionContext';
+import * as XLSX from 'xlsx';
 
 const Boards = () => {
   const navigate = useNavigate();
@@ -112,6 +113,45 @@ const Boards = () => {
     setCurrentPage(1);
   };
 
+  const downloadExcel = () => {
+    try {
+      // Flatten the boards data for Excel export
+      const excelData = boards.map((board, index) => {
+        return {
+          'S.No': (currentPage - 1) * rowsPerPage + index + 1,
+          'Board': typeof board.name === 'object' ? board.name?.name || '-' : board.name || '-',
+          'Description': typeof board.description === 'object' ? board.description?.description || '-' : board.description || '-',
+          'Total Data': board.totalData ?? 0,
+          'Total Allotted Data': board.totalAllottedData ?? 0,
+          'Total Unallotted Data': board.totalUnallottedData ?? 0,
+          'Total Availed Data': board.totalAvailedData ?? 0,
+          'Status': board.active ? 'Active' : 'Inactive',
+          'Created Date': board.createdAt ? new Date(board.createdAt).toLocaleDateString() : 'N/A',
+          'Updated Date': board.updatedAt ? new Date(board.updatedAt).toLocaleDateString() : 'N/A'
+        };
+      });
+
+      // Create worksheet
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      
+      // Create workbook
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Boards');
+      
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const filename = `boards_${timestamp}.xlsx`;
+      
+      // Download the file
+      XLSX.writeFile(workbook, filename);
+      
+      toast.success('Excel file downloaded successfully');
+    } catch (error) {
+      console.error('Error downloading Excel:', error);
+      toast.error('Failed to download Excel file');
+    }
+  };
+
   const allColumns = [
     {
       key: "sno",
@@ -196,6 +236,26 @@ const Boards = () => {
           onChange={handleSearch}
           className="border border-gray-300 rounded-lg px-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
+
+        {/* Download Excel */}
+        <button
+          className="flex items-center gap-1.5"
+          style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '4px 10px', fontSize: '12px', borderRadius: '4px', cursor: 'pointer', boxShadow: 'none' }}
+          onClick={downloadExcel}
+          disabled={boards.length === 0}
+        >
+          <svg
+            width="10"
+            height="10"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+          </svg>
+          Download
+        </button>
 
         {hasPermission('BOARD_CREATE') && (
           <CustomButton

@@ -7,6 +7,7 @@ import { getAllFollowups, getTodayFollowups, rescheduleFollowup, completeFollowu
 import FollowupFormModal from "../component/reusable/FollowupFormModal";
 import FollowUpCards from "../component/reusable/DashBoards/followUpCards";
 import ScheduleModal from "../component/reusable/Leads/scheduleModel";
+import * as XLSX from 'xlsx';
 
 const formatFollowUpDate = (value) => {
   if (!value) return "-";
@@ -61,6 +62,8 @@ const FollowUps = () => {
 
   const [isFollowupModalOpen, setIsFollowupModalOpen] = useState(false);
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
+  const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
+  const [isNotConnectedModalOpen, setIsNotConnectedModalOpen] = useState(false);
   const [selectedFollowup, setSelectedFollowup] = useState(null);
   const [activeTab, setActiveTab] = useState(location.state?.activeTab || "ALL");
   const [selectedLeadStatusId, setSelectedLeadStatusId] = useState(null);
@@ -169,6 +172,45 @@ const FollowUps = () => {
       showToast(error?.message || "Error rescheduling follow-up", "error");
     } finally {
       setSelectedFollowup(null);
+    }
+  };
+
+  const downloadExcel = () => {
+    try {
+      // Flatten the followups data for Excel export
+      const excelData = data.map((followup, index) => {
+        return {
+          'S.No': (page * size) + index + 1,
+          'Lead Name': followup.leadFullName || followup.leadName || followup.name || 'N/A',
+          'Lead Code': followup.leadCode || followup.mobileNo || followup.phone || 'N/A',
+          'Follow-up Date': formatFollowUpDate(followup.followUpDate),
+          'Remarks': followup.remarks || 'N/A',
+          'Status': followup.status || 'N/A',
+          'Created By': followup?.createdBy?.firstName || followup?.createdBy?.lastName
+            ? `${followup.createdBy.firstName || ""} ${followup.createdBy.lastName || ""}`.trim()
+            : followup?.createdBy?.username || 'N/A',
+          'Lead ID': followup.leadId || followup.id || 'N/A'
+        };
+      });
+
+      // Create worksheet
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      
+      // Create workbook
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Follow-ups');
+      
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const filename = `followups_export_${timestamp}.xlsx`;
+      
+      // Download the file
+      XLSX.writeFile(workbook, filename);
+      
+      showToast('Excel file downloaded successfully');
+    } catch (error) {
+      console.error('Error downloading Excel:', error);
+      showToast('Failed to download Excel file', 'error');
     }
   };
 
@@ -301,7 +343,7 @@ const FollowUps = () => {
               View
             </button>
           )}
-          {/* {(row.status === "PENDING" || row.status === "UPCOMING") && (
+          {(row.status === "PENDING" || row.status === "UPCOMING") && (
             <>
               <button
                 className="px-2 py-1 bg-green-50 text-green-700 hover:bg-green-100 rounded text-xs font-medium transition-colors"
@@ -318,7 +360,7 @@ const FollowUps = () => {
                 Not Connected
               </button>
             </>
-          )} */}
+          )}
         </div>
       ),
     },
@@ -348,6 +390,27 @@ const FollowUps = () => {
           <p className="text-sm text-gray-500">
             Track and manage follow-ups
           </p>
+        </div>
+        <div className="flex gap-2 h-8">
+          {/* Download Excel */}
+          <button
+            className="flex items-center gap-1.5"
+            style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '4px 10px', fontSize: '12px', borderRadius: '4px', cursor: 'pointer', boxShadow: 'none' }}
+            onClick={downloadExcel}
+            disabled={data.length === 0}
+          >
+            <svg
+              width="10"
+              height="10"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+            </svg>
+            Download
+          </button>
         </div>
       </div>
 
@@ -577,6 +640,76 @@ const FollowUps = () => {
         }}
         onSubmit={handleScheduleSubmit}
       />
+
+      {/* Complete Followup Modal */}
+      {isCompleteModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4">Complete Follow-up</h3>
+            <textarea
+              className="form-control mb-4"
+              rows="3"
+              placeholder="Add remarks (optional)"
+              id="completeRemarks"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={() => {
+                  setIsCompleteModalOpen(false);
+                  setSelectedFollowup(null);
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={() => {
+                  const remarks = document.getElementById('completeRemarks')?.value || '';
+                  handleCompleteSubmit(remarks);
+                }}
+              >
+                Complete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Not Connected Modal */}
+      {isNotConnectedModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-lg font-semibold mb-4">Mark as Not Connected</h3>
+            <textarea
+              className="form-control mb-4"
+              rows="3"
+              placeholder="Add remarks (optional)"
+              id="notConnectedRemarks"
+            />
+            <div className="flex justify-end gap-2">
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={() => {
+                  setIsNotConnectedModalOpen(false);
+                  setSelectedFollowup(null);
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={() => {
+                  const remarks = document.getElementById('notConnectedRemarks')?.value || '';
+                  handleNotConnectedSubmit(remarks);
+                }}
+              >
+                Mark Not Connected
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

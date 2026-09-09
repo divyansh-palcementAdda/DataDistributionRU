@@ -8,6 +8,7 @@ import AddGradeModal from '../component/reusable/grade/addGradeModel';
 import DeleteModal from '../component/reusable/deleteModel';
 import gradsService from '../Services/Grads/gradsService';
 import { usePermissions } from '../PermissionContext';
+import * as XLSX from 'xlsx';
 
 const Grades = () => {
   const navigate = useNavigate();
@@ -124,6 +125,47 @@ const Grades = () => {
     setCurrentPage(1);
   };
 
+  const downloadExcel = () => {
+    try {
+      // Flatten the grades data for Excel export
+      const excelData = grades.map((grade, index) => {
+        return {
+          'S.No': (currentPage - 1) * rowsPerPage + index + 1,
+          'Grade': typeof grade.name === 'object' ? grade.name?.name || grade.name?.gradeName || '-' : grade.name || grade.gradeName || '-',
+          'Grade Code': grade.gradeCode || 'N/A',
+          'Description': typeof grade.description === 'object' ? grade.description?.description || '-' : grade.description || '-',
+          'Total Data': grade.totalData ?? 0,
+          'Total Allotted Data': grade.totalAllottedData ?? 0,
+          'Total Unallotted Data': grade.totalUnallottedData ?? 0,
+          'Total Availed Data': grade.totalAvailedData ?? 0,
+          'Status': grade.active ? 'Active' : 'Inactive',
+          'Display Order': grade.displayOrder ?? 'N/A',
+          'Created Date': grade.createdAt ? new Date(grade.createdAt).toLocaleDateString() : 'N/A',
+          'Updated Date': grade.updatedAt ? new Date(grade.updatedAt).toLocaleDateString() : 'N/A'
+        };
+      });
+
+      // Create worksheet
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      
+      // Create workbook
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Grades');
+      
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const filename = `grades_${timestamp}.xlsx`;
+      
+      // Download the file
+      XLSX.writeFile(workbook, filename);
+      
+      toast.success('Excel file downloaded successfully');
+    } catch (error) {
+      console.error('Error downloading Excel:', error);
+      toast.error('Failed to download Excel file');
+    }
+  };
+
   const allColumns = [
     {
       key: "sno",
@@ -208,6 +250,26 @@ const Grades = () => {
           onChange={handleSearch}
           className="border border-gray-300 rounded-lg px-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
+
+        {/* Download Excel */}
+        <button
+          className="flex items-center gap-1.5"
+          style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '4px 10px', fontSize: '12px', borderRadius: '4px', cursor: 'pointer', boxShadow: 'none' }}
+          onClick={downloadExcel}
+          disabled={grades.length === 0}
+        >
+          <svg
+            width="10"
+            height="10"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+          </svg>
+          Download
+        </button>
 
         {hasPermission('GRADE_CREATE') && (
           <CustomButton

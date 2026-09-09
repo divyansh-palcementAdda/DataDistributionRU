@@ -36,6 +36,8 @@ import BoardDetails from "./pages/boardsDetails";
 import CounselorDetails from "./pages/counselorsDetails";
 import Department from "./pages/Department";
 import DepartmentDetails from "./pages/departmentDetails";
+import Programs from "./pages/Programs";
+import ProgramDetails from "./pages/ProgramDetails";
 
 // Settings Sub-pages
 import UserManagement from "./pages/settings/UserManagement";
@@ -100,6 +102,8 @@ const Allroutes = () => {
         <Route path="/department-details/:id" element={<DepartmentDetails />} />
         <Route path="/data-segregation" element={<Datasegregation />} />
         <Route path="/data-segregation-details/:id" element={<DatasegregationDetail />} />
+        <Route path="/programs" element={<Programs />} />
+        <Route path="/program-details/:id" element={<ProgramDetails />} />
       </Route>
 
       {/* Standalone Route for Student Form from QR */}

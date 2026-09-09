@@ -6,6 +6,7 @@ import { createLead, updateLead } from '../../../Services/lead/leadService';
 import { getCountries, getStates, getCities } from '../../../Services/location/locationService';
 import {
   getLeadSourcesDropdown,
+  getProgramsDropdown,
   getCoursesDropdown,
   getGradesDropdown,
   getBoardsDropdown,
@@ -38,6 +39,7 @@ const AddLeadModal = () => {
     registeredCourseId: '',
     boardId: '',
     gradeId: '',
+    programId: '',
     courseTypeId: '',
     departmentId: '',
     remarks: '',
@@ -89,6 +91,7 @@ const AddLeadModal = () => {
   const [cities, setCities] = useState([]);
   const [preferredStates, setPreferredStates] = useState([]);
   const [preferredCities, setPreferredCities] = useState([]);
+  const [programs, setPrograms] = useState([]);
   const [courses, setCourses] = useState([]);
   const [grades, setGrades] = useState([]);
   const [boards, setBoards] = useState([]);
@@ -106,6 +109,7 @@ const AddLeadModal = () => {
     cities: false,
   });
   const [dropdownLoading, setDropdownLoading] = useState({
+    programs: false,
     courses: false,
     grades: false,
     boards: false,
@@ -141,10 +145,24 @@ const AddLeadModal = () => {
       }
     };
 
-    const fetchCourses = async () => {
+    const fetchPrograms = async () => {
+      setDropdownLoading((prev) => ({ ...prev, programs: true }));
+      try {
+        const res = await getProgramsDropdown();
+        if (res?.success && res?.data) {
+          setPrograms(res.data || []);
+        }
+      } catch (err) {
+        console.error('Failed to fetch programs:', err);
+      } finally {
+        setDropdownLoading((prev) => ({ ...prev, programs: false }));
+      }
+    };
+
+    const fetchCourses = async (progId = formData.programId) => {
       setDropdownLoading((prev) => ({ ...prev, courses: true }));
       try {
-        const res = await getCoursesDropdown();
+        const res = await getCoursesDropdown(formData.courseTypeId || '', progId || '');
         if (res?.success && res?.data) {
           setCourses(res.data || []);
         }
@@ -260,6 +278,7 @@ const AddLeadModal = () => {
       fetchLeadSources();
       fetchCountries();
       fetchPreferredStates();
+      fetchPrograms();
       fetchCourses();
       fetchGrades();
       fetchBoards();
@@ -281,9 +300,11 @@ const AddLeadModal = () => {
         fullName, phoneNumber, alternatePhoneNumber, email, city, state, country, 
         preferredStudyState, preferredStudyCity,
         leadSourceIds, sourceDetails, interestedCourseIds,
-        courseId, registeredCourseId, boardId, gradeId, courseTypeId, departmentId, remarks, 
+        courseId, registeredCourseId, boardId, gradeId, programId, courseTypeId, departmentId, remarks, 
         assignedToUserId, statusId, active, nextFollowUpDate 
       } = editLeadData;
+
+      const editProgramId = editLeadData.program?.id || editLeadData.programId || programId || '';
 
       // Convert all IDs to strings so they match HTML <select> / <option value="..."> comparisons
       const toStr = (v) => (v !== undefined && v !== null && v !== '') ? String(v) : '';
@@ -306,6 +327,7 @@ const AddLeadModal = () => {
         registeredCourseId: toStr(registeredCourseId),
         boardId: toStr(boardId),
         gradeId: toStr(gradeId),
+        programId: toStr(editProgramId),
         courseTypeId: toStr(courseTypeId),
         departmentId: toStr(departmentId),
         remarks: remarks || '',
@@ -314,6 +336,14 @@ const AddLeadModal = () => {
         active: active !== undefined ? active : true,
         nextFollowUpDate: nextFollowUpDate ? (typeof nextFollowUpDate === 'string' ? nextFollowUpDate.slice(0, 10) : new Date(nextFollowUpDate).toLocaleDateString('en-CA')) : '',
       });
+
+      if (editProgramId) {
+        getCoursesDropdown(toStr(courseTypeId), toStr(editProgramId)).then(res => {
+          if (res?.success && res?.data) {
+            setCourses(res.data || []);
+          }
+        });
+      }
 
       const fetchEditLocationData = async () => {
         if (editLeadData?.country) {
@@ -526,6 +556,7 @@ const AddLeadModal = () => {
       registeredCourseId: '',
       boardId: '',
       gradeId: '',
+      programId: '',
       courseTypeId: '',
       departmentId: '',
       remarks: '',
@@ -562,6 +593,7 @@ const AddLeadModal = () => {
       registeredCourseId: formData.registeredCourseId,
       boardId: formData.boardId,
       gradeId: formData.gradeId,
+      programId: formData.programId || null,
       courseTypeId: formData.courseTypeId,
       departmentId: formData.departmentId,
       remarks: formData.remarks,
@@ -934,6 +966,42 @@ const AddLeadModal = () => {
               value={formData.sourceDetails}
               onChange={handleChange('sourceDetails')}
             /> */}
+            <div>
+              <label className="form-label">Program</label>
+              <select
+                className="form-control"
+                value={formData.programId || ''}
+                onChange={async (e) => {
+                  const selectedProgramId = e.target.value;
+                  setFormData((prev) => ({
+                    ...prev,
+                    programId: selectedProgramId,
+                    courseId: '',
+                    registeredCourseId: '',
+                    interestedCourseIds: [],
+                  }));
+                  setDropdownLoading((prev) => ({ ...prev, courses: true }));
+                  try {
+                    const res = await getCoursesDropdown(formData.courseTypeId || '', selectedProgramId || '');
+                    if (res?.success && res?.data) {
+                      setCourses(res.data || []);
+                    }
+                  } catch (err) {
+                    console.error('Failed to fetch courses for program:', err);
+                  } finally {
+                    setDropdownLoading((prev) => ({ ...prev, courses: false }));
+                  }
+                }}
+              >
+                <option value="">Select Program</option>
+                {programs.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} {p.code ? `(${p.code})` : ''}
+                  </option>
+                ))}
+              </select>
+              {dropdownLoading.programs && <small className="text-muted">Loading programs...</small>}
+            </div>
             <div>
               <label className="form-label">Interested Courses</label>
               <div className="custom-dropdown-container" ref={interestedCoursesDropdownRef}>

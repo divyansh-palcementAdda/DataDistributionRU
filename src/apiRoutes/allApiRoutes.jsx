@@ -202,6 +202,7 @@ const ApiRoutes = {
     Dropdowns: {
         boards: '/api/dropdowns/boards',
         courseTypes: '/api/dropdowns/course-types',
+        programs: '/api/dropdowns/programs',
         courses: '/api/dropdowns/courses',
         departments: '/api/dropdowns/departments',
         grades: '/api/dropdowns/grades',
@@ -213,6 +214,18 @@ const ApiRoutes = {
         followupLeadStatuses: '/api/dropdowns/followup-lead-statuses',
         states: '/api/dropdowns/states',
         cities: '/api/dropdowns/cities'
+    },
+
+    Program: {
+        create: '/api/programs',
+        getAll: '/api/programs',
+        getActive: '/api/programs/active',
+        getById: '/api/programs/{id}',
+        update: '/api/programs/{id}',
+        delete: '/api/programs/{id}',
+        toggle: '/api/programs/{id}/toggle-active',
+        mapCourses: '/api/programs/{id}/courses',
+        getCourses: '/api/programs/{id}/courses',
     },
 
     DataSegregation: {

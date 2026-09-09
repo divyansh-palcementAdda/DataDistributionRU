@@ -289,7 +289,7 @@ axiosInstance.interceptors.response.use(
         originalRequest.url?.includes("/api/auth/refresh-token") ||
         originalRequest.url?.includes("/api/auth/login")
       ) {
-        logoutUser("MANUAL_LOGOUT");
+        logoutUser("SESSION_EXPIRED");
         return Promise.reject(error);
       }
 
@@ -315,7 +315,7 @@ axiosInstance.interceptors.response.use(
         const refreshToken = Cookies.get("refreshToken");
         if (!refreshToken) {
           isRefreshing = false;
-          logoutUser("MANUAL_LOGOUT");
+          logoutUser("SESSION_EXPIRED");
           return Promise.reject(error);
         }
 
@@ -369,7 +369,7 @@ axiosInstance.interceptors.response.use(
         processQueue(refreshError);
 
         // Immediate logout on refresh failure to stop any infinite retry loops
-        logoutUser("MANUAL_LOGOUT");
+        logoutUser("SESSION_EXPIRED");
 
         return Promise.reject(refreshError);
       } finally {

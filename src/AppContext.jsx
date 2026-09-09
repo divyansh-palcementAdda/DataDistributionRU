@@ -73,6 +73,8 @@ useEffect(() => {
     newPage = 'counselors';
   } else if (path.startsWith('/department-details')) {
     newPage = 'department';
+  } else if (path.startsWith('/program-details')) {
+    newPage = 'programs';
   } else if (path.startsWith('/lead-source-details')) {
     newPage = 'lead-source';
   } else if (path.startsWith('/')) {

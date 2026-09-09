@@ -21,10 +21,21 @@ const getCourseTypesDropdown = async (search = '') => {
     }
 };
 
-const getCoursesDropdown = async (courseTypeId = '', search = '') => {
+const getProgramsDropdown = async (search = '') => {
+    try {
+        const params = search ? { search } : {};
+        const response = await axiosInstance.get(ApiRoutes.Dropdowns.programs, { params });
+        return response.data;
+    } catch (error) {
+        return error;
+    }
+};
+
+const getCoursesDropdown = async (courseTypeId = '', programId = '', search = '') => {
     try {
         const params = {};
         if (courseTypeId) params.courseTypeId = courseTypeId;
+        if (programId) params.programId = programId;
         if (search) params.search = search;
         const response = await axiosInstance.get(ApiRoutes.Dropdowns.courses, { params });
         return response.data;
@@ -141,6 +152,7 @@ const getCitiesDropdown = async (state = '', search = '') => {
 export {
     getBoardsDropdown,
     getCourseTypesDropdown,
+    getProgramsDropdown,
     getCoursesDropdown,
     getDepartmentsDropdown,
     getGradesDropdown,

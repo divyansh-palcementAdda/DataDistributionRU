@@ -3,6 +3,7 @@ import { FiUploadCloud, FiX, FiFile, FiAlertCircle, FiDownload } from 'react-ico
 import CustomButton from '../CustomButton';
 import {
   getCourseTypesDropdown,
+  getProgramsDropdown,
   getGradesDropdown,
   getBoardsDropdown,
   getLeadSourcesDropdown,
@@ -27,6 +28,7 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
 
   /* ── filter dropdowns ── */
   const [filters, setFilters] = useState({
+    programId: '',
     courseTypeId: '',
     gradeId: '',
     boardId: '',
@@ -37,6 +39,7 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
   });
 
   /* ── data lists ── */
+  const [programs, setPrograms] = useState([]);
   const [courseTypes, setCourseTypes] = useState([]);
   const [grades, setGrades] = useState([]);
   const [boards, setBoards] = useState([]);
@@ -62,6 +65,7 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
     setFile(null);
     setError('');
     setFilters({
+      programId: '',
       courseTypeId: '',
       gradeId: '',
       boardId: '',
@@ -75,7 +79,8 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
   const fetchMasterData = async () => {
     setDataLoading(true);
     try {
-      const [ctRes, gradeRes, boardRes, lsRes, lsStatusRes, deptRes, userRes] = await Promise.allSettled([
+      const [progRes, ctRes, gradeRes, boardRes, lsRes, lsStatusRes, deptRes, userRes] = await Promise.allSettled([
+        getProgramsDropdown(),
         getCourseTypesDropdown(),
         getGradesDropdown(),
         getBoardsDropdown(),
@@ -84,6 +89,12 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
         getDepartmentsDropdown(),
         getUsersDropdown(),
       ]);
+
+      /* programs */
+      if (progRes.status === 'fulfilled') {
+        const d = progRes.value;
+        setPrograms(d?.data || []);
+      }
 
       /* course types */
       if (ctRes.status === 'fulfilled') {
@@ -171,6 +182,7 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
 
       /* build query params – only include filled ones */
       const params = {};
+      if (filters.programId)       params.programId         = filters.programId;
       if (filters.courseTypeId)    params.courseTypeId      = filters.courseTypeId;
       if (filters.gradeId)         params.gradeId           = filters.gradeId;
       if (filters.boardId)         params.boardId           = filters.boardId;
@@ -399,6 +411,16 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 14px' }}>
+
+              {/* Program */}
+              <SelectField
+                label="Program"
+                placeholder="— Program / School —"
+                value={filters.programId}
+                onChange={(v) => setFilters((p) => ({ ...p, programId: v }))}
+                options={programs}
+                labelKey="name"
+              />
 
               {/* Course Type */}
               <SelectField

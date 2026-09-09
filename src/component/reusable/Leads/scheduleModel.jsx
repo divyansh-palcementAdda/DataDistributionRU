@@ -1,44 +1,27 @@
 import React, { useState, useEffect } from "react";
-import { getFollowupStatusesDropdown, getFollowupLeadStatusesDropdown } from "../../../Services/drop-down/dropDownService";
+import { getFollowupLeadStatusesDropdown } from "../../../Services/drop-down/dropDownService";
 
 const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
+    // Get local date in YYYY-MM-DD format (not UTC)
+    const todayStr = new Date().toLocaleDateString('en-CA');
+
     const [formData, setFormData] = useState({
         followUpDate: "",
+        followUpTime: "",
         remarks: "",
-        status: "",
-        statusCode: "",
         leadStatus: "",
         leadStatusCode: "",
     });
     const [errors, setErrors] = useState({});
     const [leadStatuses, setLeadStatuses] = useState([]);
-    const [statuses, setStatuses] = useState([]);
 
     useEffect(() => {
         const fetchDropdowns = async () => {
             try {
-                const [statusesResponse, leadStatusesResponse] = await Promise.all([
-                    getFollowupStatusesDropdown(),
-                    getFollowupLeadStatusesDropdown()
-                ]);
-
-                setStatuses(statusesResponse?.data || []);
+                const leadStatusesResponse = await getFollowupLeadStatusesDropdown();
                 setLeadStatuses(leadStatusesResponse?.data || []);
-
-                // Set default status to "pending"
-                const pendingStatus = statusesResponse?.data?.find(status => 
-                    status.name?.toLowerCase() === "pending"
-                );
-                if (pendingStatus) {
-                    setFormData(prev => ({
-                        ...prev,
-                        status: pendingStatus.id,
-                        statusCode: pendingStatus.code || "",
-                    }));
-                }
             } catch (error) {
                 console.error("Error fetching dropdowns:", error);
-                setStatuses([]);
                 setLeadStatuses([]);
             }
         };
@@ -64,13 +47,6 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
                 [name]: value,
                 leadStatusCode: selectedStatus?.code || "",
             }));
-        } else if (name === "status") {
-            const selectedStatus = statuses.find(status => status.id === value);
-            setFormData((prev) => ({
-                ...prev,
-                [name]: value,
-                statusCode: selectedStatus?.code || "",
-            }));
         } else {
             setFormData((prev) => ({
                 ...prev,
@@ -84,12 +60,12 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
         const newErrors = {};
         if (!formData.followUpDate) {
             newErrors.followUpDate = "Follow Up Date is required";
+        } else if (formData.followUpDate < todayStr) {
+            newErrors.followUpDate = "Follow Up Date cannot be in the past";
         }
-        if (!formData.remarks) {
+
+        if (!formData.remarks?.trim()) {
             newErrors.remarks = "Remarks is required";
-        }
-        if (!formData.status) {
-            newErrors.status = "Status is required";
         }
         if (!formData.leadStatus) {
             newErrors.leadStatus = "Lead Status is required";
@@ -100,11 +76,15 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
             return;
         }
 
+        const localDate = formData.followUpDate;
+        const localTime = formData.followUpTime
+            ? (formData.followUpTime.length === 5 ? `${formData.followUpTime}:00` : formData.followUpTime)
+            : "00:00:00";
+
         const payload = {
             ...formData,
-            followUpDate: formData.followUpDate
-                ? new Date(formData.followUpDate).toISOString()
-                : "",
+            // Format as standard ISO local datetime without trailing 'Z' to preserve exact business calendar date
+            followUpDate: `${localDate}T${localTime}`,
         };
 
         const success = await onSubmit(payload);
@@ -112,9 +92,8 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
         if (success) {
             setFormData({
                 followUpDate: "",
+                followUpTime: "",
                 remarks: "",
-                status: "",
-                statusCode: "",
                 leadStatus: "",
                 leadStatusCode: "",
             });
@@ -145,25 +124,48 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
 
                 {/* Body */}
                 <div className="space-y-4 p-5">
-                    <div>
-                        <label className="mb-2 block text-sm font-medium text-gray-700">
-                            Follow Up Date <span className="text-red-500">*</span>
-                        </label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label className="mb-2 block text-sm font-medium text-gray-700">
+                                Follow Up Date <span className="text-red-500">*</span>
+                            </label>
 
-                        <div 
-                            className={`w-full rounded-lg border px-3 py-2 cursor-pointer ${errors.followUpDate ? 'border-red-500' : 'border-gray-300'}`}
-                            onClick={() => document.querySelector('input[name="followUpDate"]').showPicker?.() || document.querySelector('input[name="followUpDate"]').focus()}
-                        >
-                            <input
-                                type="date"
-                                name="followUpDate"
-                                value={formData.followUpDate}
-                                onChange={handleChange}
-                                className="w-full outline-none cursor-pointer"
-                                style={{ border: 'none', background: 'transparent' }}
-                            />
+                            <div
+                                className={`w-full rounded-lg border px-3 py-2 cursor-pointer ${errors.followUpDate ? 'border-red-500' : 'border-gray-300'}`}
+                                onClick={() => document.querySelector('input[name="followUpDate"]').showPicker?.() || document.querySelector('input[name="followUpDate"]').focus()}
+                            >
+                                <input
+                                    type="date"
+                                    name="followUpDate"
+                                    min={todayStr}
+                                    value={formData.followUpDate}
+                                    onChange={handleChange}
+                                    className="w-full outline-none cursor-pointer"
+                                    style={{ border: 'none', background: 'transparent' }}
+                                />
+                            </div>
+                            {errors.followUpDate && <p className="mt-1 text-sm text-red-500">{errors.followUpDate}</p>}
                         </div>
-                        {errors.followUpDate && <p className="mt-1 text-sm text-red-500">{errors.followUpDate}</p>}
+
+                        {/* <div>
+                            <label className="mb-2 block text-sm font-medium text-gray-700">
+                                Follow Up Time
+                            </label>
+
+                            <div 
+                                className="w-full rounded-lg border px-3 py-2 cursor-pointer border-gray-300"
+                                onClick={() => document.querySelector('input[name="followUpTime"]')?.showPicker?.() || document.querySelector('input[name="followUpTime"]')?.focus()}
+                            >
+                                <input
+                                    type="time"
+                                    name="followUpTime"
+                                    value={formData.followUpTime}
+                                    onChange={handleChange}
+                                    className="w-full outline-none cursor-pointer"
+                                    style={{ border: 'none', background: 'transparent' }}
+                                />
+                            </div>
+                        </div> */}
                     </div>
 
                     <div>
@@ -180,27 +182,6 @@ const ScheduleModal = ({ isOpen, onClose, onSubmit }) => {
                             className={`w-full rounded-lg border px-3 py-2 outline-none focus:border-blue-500 ${errors.remarks ? 'border-red-500' : 'border-gray-300'}`}
                         />
                         {errors.remarks && <p className="mt-1 text-sm text-red-500">{errors.remarks}</p>}
-                    </div>
-
-                    <div>
-                        <label className="mb-2 block text-sm font-medium text-gray-700">
-                            Status <span className="text-red-500">*</span>
-                        </label>
-
-                        <select
-                            name="status"
-                            value={formData.status}
-                            onChange={handleChange}
-                            className={`w-full rounded-lg border px-3 py-2 outline-none focus:border-blue-500 ${errors.status ? 'border-red-500' : 'border-gray-300'}`}
-                        >
-                            <option value="">Select Status</option>
-                            {statuses.map((status) => (
-                                <option key={status.id} value={status.id}>
-                                    {status.name}
-                                </option>
-                            ))}
-                        </select>
-                        {errors.status && <p className="mt-1 text-sm text-red-500">{errors.status}</p>}
                     </div>
 
                     <div>

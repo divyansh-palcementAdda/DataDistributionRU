@@ -22,6 +22,7 @@ import GradWiseCard from '../../component/reusable/DashBoards/gradWiseCard';
 import UnallottedCard from '../../component/reusable/DashBoards/UnallottedCard';
 import AvailedCard from '../../component/reusable/DashBoards/availedCard';
 import AllottedCard from '../../component/reusable/DashBoards/allottedCard';
+import TodayFollowUpsCard from '../../component/reusable/DashBoards/TodayFollowUpsCard';
 import { getLeadSourceBreakdown, getGradeBreakdown, getBoardBreakdown } from '../../Services/cards/cardService';
 import { getRecentActivity, getDashboardSummary } from '../../Services/Dashboard/Dashboard';
 
@@ -269,6 +270,11 @@ const Dashboard = () => {
   }, [leads]);
 
   const handleCardClick = (cardInfo) => {
+    if (cardInfo.type === 'todayFollowUps') {
+      navigate('/followups', { state: { activeTab: 'TODAY' } });
+      return;
+    }
+
     const existingFilterIndex = activeFilters.findIndex(
       f => f.type === cardInfo.type && f.value === cardInfo.value
     );
@@ -684,6 +690,11 @@ const Dashboard = () => {
                 filterRequest={filterRequest}
               />
                 <AvailedCard
+                onCardClick={handleCardClick}
+                activeFilters={activeFilters}
+                filterRequest={filterRequest}
+              />
+              <TodayFollowUpsCard
                 onCardClick={handleCardClick}
                 activeFilters={activeFilters}
                 filterRequest={filterRequest}

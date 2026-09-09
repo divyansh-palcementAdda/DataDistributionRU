@@ -21,6 +21,7 @@ import BoardWiseCard from '../../component/reusable/DashBoards/BoardWiseCard';
 import GradWiseCard from '../../component/reusable/DashBoards/gradWiseCard';
 import AllottedCard from '../../component/reusable/DashBoards/allottedCard';
 import AvailedCard from '../../component/reusable/DashBoards/availedCard';
+import TodayFollowUpsCard from '../../component/reusable/DashBoards/TodayFollowUpsCard';
 import { getLeadSourceBreakdown, getGradeBreakdown, getBoardBreakdown } from '../../Services/cards/cardService';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, ArcElement, Tooltip, Legend);
@@ -207,6 +208,11 @@ const CallersDashboard = () => {
   }, [allLeadsData, currentCaller]);
 
   const handleCardClick = (cardInfo) => {
+    if (cardInfo.type === 'todayFollowUps') {
+      navigate('/followups', { state: { activeTab: 'TODAY' } });
+      return;
+    }
+
     // Toggle: same card click kare toh filter clear ho jaye
     const existingFilterIndex = activeFilters.findIndex(
       f => f.type === cardInfo.type && f.value === cardInfo.value
@@ -301,14 +307,19 @@ const CallersDashboard = () => {
       </div> */}
 
       {/* ── Reusable Dashboard Cards ── */}
-      {/* Availed and Allotted Cards in Flex Row */}
-      <div style={{ display: 'flex', gap: '16px', marginBottom: '16px' }}>
+      {/* Availed, Allotted, and Today Follow-ups Cards in Flex Row */}
+      <div style={{ display: 'flex', gap: '16px', marginBottom: '16px', flexWrap: 'wrap' }}>
         <AllottedCard 
           onCardClick={handleCardClick}
           activeFilters={activeFilters}
           filterRequest={filterRequest}
         />
         <AvailedCard 
+          onCardClick={handleCardClick}
+          activeFilters={activeFilters}
+          filterRequest={filterRequest}
+        />
+        <TodayFollowUpsCard
           onCardClick={handleCardClick}
           activeFilters={activeFilters}
           filterRequest={filterRequest}

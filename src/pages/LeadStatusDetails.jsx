@@ -820,6 +820,12 @@ const LeadStatusDetails = () => {
         <AssignLeadModal
             isOpen={isAssignModalOpen}
             onClose={() => setIsAssignModalOpen(false)}
+            selectedLeadIds={Array.from(selectedRows)}
+            onAssign={() => {
+                setSelectedRows(new Set());
+                setIsAssignModalOpen(false);
+                setTablePage((p) => p);
+            }}
             filters={{
                 leadStatusIds: id ? [id] : [],
                 ...activeFilters.reduce((acc, filter) => {

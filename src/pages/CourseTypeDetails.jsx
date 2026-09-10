@@ -819,6 +819,12 @@ const CourseTypeDetails = () => {
         <AssignLeadModal
             isOpen={isAssignModalOpen}
             onClose={() => setIsAssignModalOpen(false)}
+            selectedLeadIds={Array.from(selectedRows)}
+            onAssign={() => {
+                setSelectedRows(new Set());
+                setIsAssignModalOpen(false);
+                setTablePage((p) => p);
+            }}
             filters={{
                 courseTypeIds: id ? [id] : [],
                 ...(activeFilters.some(f => f.type === 'leadStatus') && {

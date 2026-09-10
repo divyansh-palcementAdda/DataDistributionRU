@@ -422,13 +422,11 @@ const Leads = () => {
     setSelectedLeadForAllot(null);
   };
 
-  const handleAllotLead = async (leadOrIds, userId) => {
-    // TODO: Implement the actual API call to allot the lead(s)
-    if (Array.isArray(leadOrIds)) {
-      showToast(`${leadOrIds.length} leads allotted successfully`);
-    } else {
-      showToast('Lead allotted successfully');
-    }
+  const handleAllotLead = async () => {
+    setSelectedIds([]);
+    setSelectAll(false);
+    setAutoSelectCount('');
+    setSelectedLeadForAllot(null);
     await fetchLeads();
   };
 
@@ -1138,8 +1136,9 @@ const Leads = () => {
         isOpen={isAllotModalOpen}
         onClose={closeAllotModal}
         onAssign={handleAllotLead}
-        currentLead={selectedLeadForAllot}
-        users={usersData}
+        selectedLeadIds={selectedLeadForAllot || selectedIds}
+        filters={convertFilterRequest(filterRequest)}
+        showToast={showToast}
       />
 
       {/* Bulk Upload Modal */}

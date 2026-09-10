@@ -802,6 +802,12 @@ const GradesDetails = () => {
         <AssignLeadModal
             isOpen={isAssignModalOpen}
             onClose={() => setIsAssignModalOpen(false)}
+            selectedLeadIds={Array.from(selectedRows)}
+            onAssign={() => {
+                setSelectedRows(new Set());
+                setIsAssignModalOpen(false);
+                setTablePage((p) => p);
+            }}
             filters={{
                 gradeIds: id ? [id] : [],
                 ...(activeFilters.some(f => f.type === 'leadStatus') && {

@@ -166,24 +166,28 @@ const Leads = () => {
 
   const handleCardClick = (cardInfo) => {
     // Toggle: same card click kare toh filter clear ho jaye
-    const existingFilterIndex = activeFilters.findIndex(
-      f => f.type === cardInfo.type && f.value === cardInfo.value
-    );
-    
-    if (existingFilterIndex !== -1) {
-      setActiveFilters(activeFilters.filter((_, index) => index !== existingFilterIndex));
-    } else {
-      setActiveFilters(
-        activeFilters.filter(f => f.type !== cardInfo.type).concat(cardInfo)
+    setActiveFilters(prevFilters => {
+      const existingFilterIndex = prevFilters.findIndex(
+        f => f.type === cardInfo.type && f.value === cardInfo.value
       );
-    }
+      
+      if (existingFilterIndex !== -1) {
+        // Remove the filter if it exists (same card clicked again)
+        return prevFilters.filter((_, index) => index !== existingFilterIndex);
+      } else {
+        // Remove any existing filter of same type and add new one
+        return prevFilters.filter(f => f.type !== cardInfo.type).concat(cardInfo);
+      }
+    });
     
     // Also update selectedCard for backward compatibility with LeadCards
-    if (selectedCard?.type === cardInfo.type && selectedCard?.value === cardInfo.value) {
-      setSelectedCard(null);
-    } else {
-      setSelectedCard(cardInfo);
-    }
+    setSelectedCard(prevSelectedCard => {
+      if (prevSelectedCard?.type === cardInfo.type && prevSelectedCard?.value === cardInfo.value) {
+        return null;
+      } else {
+        return cardInfo;
+      }
+    });
     
     setPage(0); // filter change hone par page reset
   };
@@ -357,7 +361,14 @@ const Leads = () => {
           break;
       }
     });
-    setFilterRequest(newFilterRequest);
+    
+    // Ensure filterRequest is properly cleared when no active filters
+    if (activeFilters.length === 0) {
+      setFilterRequest({});
+      setSelectedCard(null); // Also clear selectedCard when no filters
+    } else {
+      setFilterRequest(newFilterRequest);
+    }
   }, [activeFilters]);
 
   useEffect(() => {
@@ -647,7 +658,8 @@ const Leads = () => {
             <span>{filter.label}</span>
             <button
               onClick={() => {
-                setActiveFilters(activeFilters.filter((_, i) => i !== index));
+                setActiveFilters(prevFilters => prevFilters.filter((_, i) => i !== index));
+                setSelectedCard(null); // Also clear selectedCard
                 setPage(0);
               }}
               className="ml-1 text-indigo-400 hover:text-indigo-700 bg-transparent border-none cursor-pointer leading-none"
@@ -657,25 +669,16 @@ const Leads = () => {
             </button>
           </div>
         ))}
-        {/* Legacy selectedCard support */}
-        {selectedCard && !activeFilters.some(f => f.type === selectedCard.type && f.value === selectedCard.value) && (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-indigo-50 border border-indigo-200 rounded-md text-sm text-indigo-700 font-medium">
-            <span>Filter: {selectedCard.label}</span>
-            <button
-              onClick={() => { setSelectedCard(null); setPage(0); }}
-              className="ml-1 text-indigo-400 hover:text-indigo-700 bg-transparent border-none cursor-pointer leading-none"
-              title="Clear filter"
-            >
-              ✕
-            </button>
-          </div>
-        )}
         {/* Lead Status filter badge */}
         {filterLeadStatus && (
           <div className="flex items-center gap-1.5 px-3 py-1 bg-indigo-50 border border-indigo-200 rounded-md text-sm text-indigo-700 font-medium">
             <span>Lead Status: {filterLeadStatusName}</span>
             <button
-              onClick={() => { setFilterLeadStatus(''); setFilterLeadStatusName(''); setPage(0); }}
+              onClick={() => { 
+                setFilterLeadStatus(''); 
+                setFilterLeadStatusName(''); 
+                setPage(0); 
+              }}
               className="ml-1 text-indigo-400 hover:text-indigo-700 bg-transparent border-none cursor-pointer leading-none"
               title="Clear filter"
             >
@@ -684,7 +687,7 @@ const Leads = () => {
           </div>
         )}
         {/* Clear all filters button */}
-        {(activeFilters.length > 0 || selectedCard || filterLeadStatus) && (
+        {(activeFilters.length > 0 || filterLeadStatus) && (
           <button
             onClick={() => {
               setActiveFilters([]);

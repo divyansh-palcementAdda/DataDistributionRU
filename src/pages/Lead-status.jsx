@@ -216,7 +216,11 @@ const LeadStatus = () => {
     {
       key: "description",
       header: "Description",
-      render: (value) => (typeof value === "object" && value !== null ? value?.description || "-" : value || "-"),
+      render: (value) => {
+        const text = typeof value === "object" && value !== null ? value?.description || "-" : value || "-";
+        const maxLength = 50;
+        return text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
+      },
     },
     {
       key: "active",

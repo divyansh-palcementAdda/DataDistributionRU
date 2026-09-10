@@ -619,7 +619,7 @@ const Leads = () => {
       {/* ── Stat Cards ── */}
       <LeadCards
         onCardClick={handleCardClick}
-        selectedCard={selectedCard}
+        activeFilters={activeFilters}
       />
 
       {/* ── Filter Bar ── */}

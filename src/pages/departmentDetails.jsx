@@ -1179,6 +1179,12 @@ const DepartmentDetails = () => {
         <AssignLeadModal
             isOpen={isAssignModalOpen}
             onClose={() => setIsAssignModalOpen(false)}
+            selectedLeadIds={Array.from(selectedRows)}
+            onAssign={() => {
+                setSelectedRows(new Set());
+                setIsAssignModalOpen(false);
+                setTablePage((p) => p);
+            }}
             filters={{
                 departmentId: id || '',
                 ...(activeFilters.some(f => f.type === 'leadStatus') && { 

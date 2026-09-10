@@ -47,10 +47,33 @@ const AssignLeadModal = ({
 
   // Effective selected lead IDs
   const effectiveLeadIds = React.useMemo(() => {
-    if (selectedLeadIds && selectedLeadIds.length > 0) return selectedLeadIds;
-    if (leadIds && leadIds.length > 0) return leadIds;
-    if (currentLead?.id) return [currentLead.id];
-    if (currentLead?.leadId) return [currentLead.leadId];
+    // 1. Check selectedLeadIds or leadIds (handles array or Set)
+    const rawList = (selectedLeadIds && (selectedLeadIds.length > 0 || selectedLeadIds.size > 0))
+      ? selectedLeadIds
+      : ((leadIds && (leadIds.length > 0 || leadIds.size > 0)) ? leadIds : null);
+
+    if (rawList) {
+      const arr = Array.isArray(rawList) ? rawList : Array.from(rawList);
+      return arr
+        .map((item) => (typeof item === 'object' && item !== null ? (item.id || item.leadId) : item))
+        .filter(Boolean);
+    }
+
+    // 2. Check if currentLead is passed as an array or Set of IDs / objects
+    if (currentLead && (Array.isArray(currentLead) || currentLead instanceof Set)) {
+      const arr = Array.isArray(currentLead) ? currentLead : Array.from(currentLead);
+      return arr
+        .map((item) => (typeof item === 'object' && item !== null ? (item.id || item.leadId) : item))
+        .filter(Boolean);
+    }
+
+    // 3. Check if currentLead is a single object or single ID string
+    if (currentLead) {
+      if (typeof currentLead === 'string') return [currentLead];
+      if (currentLead.id) return [currentLead.id];
+      if (currentLead.leadId) return [currentLead.leadId];
+    }
+
     return [];
   }, [selectedLeadIds, leadIds, currentLead]);
 

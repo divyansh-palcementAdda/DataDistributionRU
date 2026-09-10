@@ -97,8 +97,8 @@ const LeadStatus = () => {
       return;
     }
     try {
-      console.log('Calling API with:', { name: row.name, followUpStatus: newStatus });
-      await updateLeadStatus(id, { name: row.name, followUpStatus: newStatus });
+      console.log('Calling API with:', { name: row.name, isFollowUpStatus: newStatus });
+      await updateLeadStatus(id, { name: row.name, isFollowUpStatus: newStatus });
       toast.success("Follow up status updated successfully");
       fetchLeadStatuses();
     } catch (error) {

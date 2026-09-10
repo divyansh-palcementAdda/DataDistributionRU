@@ -19,6 +19,7 @@ const AddLeadStatusModal = ({
         active: true,
         displayOrder: 1,
         sentimentCategory: "NEUTRAL",
+        isFollowUpStatus: false,
     });
 
     const [errors, setErrors] = useState({});
@@ -34,6 +35,7 @@ const AddLeadStatusModal = ({
                     active: initialData.active !== undefined ? initialData.active : true,
                     displayOrder: initialData.displayOrder || 1,
                     sentimentCategory: initialData.sentimentCategory || "NEUTRAL",
+                    isFollowUpStatus: initialData.isFollowUpStatus !== undefined ? initialData.isFollowUpStatus : false,
                 });
             } else {
                 setFormData({
@@ -43,6 +45,7 @@ const AddLeadStatusModal = ({
                     active: true,
                     displayOrder: 1,
                     sentimentCategory: "NEUTRAL",
+                    isFollowUpStatus: false,
                 });
             }
 
@@ -104,6 +107,7 @@ const AddLeadStatusModal = ({
                     active: formData.active,
                     displayOrder: parseInt(formData.displayOrder),
                     sentimentCategory: formData.sentimentCategory,
+                    isFollowUpStatus: formData.isFollowUpStatus,
                 };
 
                 if (initialData?.id) {
@@ -201,7 +205,7 @@ const AddLeadStatusModal = ({
                             error={errors.displayOrder}
                         />
 
-                        <div>
+                        {/* <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                 Sentiment Category
                             </label>
@@ -215,6 +219,21 @@ const AddLeadStatusModal = ({
                                 <option value="POSITIVE">Positive</option>
                                 <option value="NEGATIVE">Negative</option>
                             </select>
+                        </div> */}
+
+                        <div className="md:col-span-2 flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <div>
+                                <div className="text-sm font-semibold text-gray-700">
+                                    Follow Up Status
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                    {formData.isFollowUpStatus ? "Yes - This status is marked as follow up" : "No - This status is not a follow up"}
+                                </div>
+                            </div>
+                            <Toggle
+                                checked={formData.isFollowUpStatus}
+                                onChange={() => setFormData(prev => ({ ...prev, isFollowUpStatus: !prev.isFollowUpStatus }))}
+                            />
                         </div>
 
                         <div className="md:col-span-2 flex items-center justify-between p-4 bg-gray-50 rounded-lg">

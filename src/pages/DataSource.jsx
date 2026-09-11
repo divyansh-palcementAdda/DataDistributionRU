@@ -8,6 +8,7 @@ import CustomToggle from '../component/reusable/custumToggle';
 import StatsCard from '../component/reusable/StatsCard';
 import DeleteModal from '../component/reusable/deleteModel';
 import { usePermissions } from '../PermissionContext';
+import * as XLSX from 'xlsx';
 
 
 /* ── Date formatter ── */
@@ -191,6 +192,53 @@ const LeadSource = () => {
         }
     };
 
+    // Download Excel function
+    const downloadExcel = async () => {
+        try {
+            // Fetch all lead sources data without pagination
+            const params = { page: 0, size: 10000, sortBy, sortDirection };
+            if (search.trim()) params.search = search.trim();
+            if (statusFilter !== 'all') params.active = statusFilter === 'active';
+            
+            const res = await getAllLeadSource(params);
+            const allData = res?.data?.data?.content ?? [];
+
+            // Flatten the data source data for Excel export
+            const excelData = allData.map((item, index) => {
+                return {
+                    'S.No': index + 1,
+                    'Lead Source': item.name || 'N/A',
+                    'Description': item.description || 'N/A',
+                    'Total Data': item.totalData ?? 0,
+                    'Total Allotted Data': item.totalAllottedData ?? 0,
+                    'Total Unallotted Data': item.totalUnallottedData ?? 0,
+                    'Total Availed Data': item.totalAvailedData ?? 0,
+                    'Status': item.active ? 'Active' : 'Inactive',
+                    'Created At': item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'N/A'
+                };
+            });
+
+            // Create worksheet
+            const worksheet = XLSX.utils.json_to_sheet(excelData);
+            
+            // Create workbook
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Data Sources');
+            
+            // Generate filename with timestamp
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+            const filename = `data_sources_${timestamp}.xlsx`;
+            
+            // Download the file
+            XLSX.writeFile(workbook, filename);
+            
+            showToast('Excel file downloaded successfully');
+        } catch (error) {
+            console.error('Error downloading Excel:', error);
+            showToast('Failed to download Excel file', 'error');
+        }
+    };
+
     /* ── Table columns ── */
     const allColumns = [
         {
@@ -316,6 +364,25 @@ const LeadSource = () => {
                     </h1>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
+                    {/* Download Excel */}
+                    <button
+                        className="flex items-center gap-1.5"
+                        style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '4px 10px', fontSize: '12px', borderRadius: '4px', cursor: 'pointer', boxShadow: 'none' }}
+                        onClick={downloadExcel}
+                        disabled={totalElements === 0}
+                    >
+                        <svg
+                            width="10"
+                            height="10"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                        >
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                        </svg>
+                        Download
+                    </button>
                     {hasPermission('LEADSOURCE_CREATE') && (
                         <button
                             className="btn btn-primary btn-sm"

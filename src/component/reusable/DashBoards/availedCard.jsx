@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getAvailedCount } from '../../../Services/cards/cardService';
+import { usePermissions } from '../../../PermissionContext';
 
 const AvailedIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -11,6 +12,7 @@ const AvailedIcon = () => (
 const AvailedCard = ({ data, onCardClick, activeFilters = [], filterRequest = {}, courseTypeId, leadSourceId, boardId, gradeId, counselorId, departmentId, statusId }) => {
   const [availedData, setAvailedData] = useState(null);
   const [loading, setLoading] = useState(false);
+  const { hasPermission } = usePermissions();
 
   useEffect(() => {
     if (data !== undefined) {
@@ -50,6 +52,10 @@ const AvailedCard = ({ data, onCardClick, activeFilters = [], filterRequest = {}
   const count = availedData?.count ?? 0;
   const type = availedData?.type ?? 'Availed';
   const isSelected = activeFilters.some(f => f.type === 'availed');
+
+  if (!hasPermission('DASHBOARD_CARD_TOTAL_AVAILED_DATA')) {
+    return null;
+  }
 
   const cardStyle = {
     background: '#ffffff',

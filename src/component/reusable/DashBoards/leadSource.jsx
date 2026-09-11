@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getLeadSourceBreakdown } from '../../../Services/cards/cardService';
+import { usePermissions } from '../../../PermissionContext';
 
 // Generic icon for lead source items
 const SourceIcon = () => (
@@ -23,6 +24,7 @@ const COLORS = [
 const LeadSource = ({ data, onCardClick, activeFilters = [], courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId }) => {
   // API returns an array: [{id, name, code, count, percentage}, ...]
   const [sourceData, setSourceData] = useState([]);
+  const { hasPermission } = usePermissions();
 
   useEffect(() => {
     if (data !== undefined) {
@@ -59,6 +61,11 @@ const LeadSource = ({ data, onCardClick, activeFilters = [], courseTypeId, leadS
     : Object.entries(sourceData)
         .filter(([, val]) => val > 0)
         .map(([key, val], i) => ({ id: key, code: key, name: key, count: val, percentage: 0 }));
+
+  // Section-level permission check: hide entire section if permission is false
+  if (!hasPermission('DASHBOARD_CARD_LEAD_SOURCE_DISTRIBUTION')) {
+    return null;
+  }
 
   const gridStyle = {
     display: 'grid',

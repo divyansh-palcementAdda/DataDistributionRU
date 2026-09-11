@@ -11,6 +11,7 @@ import {
     getBoardBreakdown,
     getCourseTypesBreakdown,
 } from '../Services/cards/cardService';
+import * as XLSX from 'xlsx';
 
 import axiosInstance from '../axiosInstance/axios';
 import ApiRoutes from '../apiRoutes/allApiRoutes';
@@ -278,6 +279,7 @@ const DepartmentDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { hasPermission } = usePermissions();
+    const { showToast } = useAppContext();
 
     // detail state
     const [department, setDepartment] = useState(null);
@@ -536,6 +538,56 @@ const DepartmentDetails = () => {
         setTablePage(0);
     };
 
+    // ── download Excel function ──
+    const downloadExcel = () => {
+        try {
+            // Flatten the table data for Excel export
+            const excelData = tableData.map((lead, index) => {
+                const rowId = typeof lead.id === 'object' ? lead.id?.id : lead.id;
+                const rowLeadId = typeof lead.leadId === 'object' ? lead.leadId?.id : lead.leadId;
+                const idToUse = rowId || rowLeadId;
+                
+                return {
+                    'S.No': (tablePage * tableSize) + index + 1,
+                    'Lead Code': typeof lead.leadCode === 'object' ? lead.leadCode?.code || lead.leadCode?.name || 'N/A' : lead.leadCode || 'N/A',
+                    'Lead Name': typeof lead.fullName === 'object' ? lead.fullName?.name || lead.fullName?.firstName || 'N/A' : lead.fullName || 'N/A',
+                    'Phone Number': lead.phoneNumber || 'N/A',
+                    'Email': lead.email || 'N/A',
+                    'Course': lead.course?.courseName || lead.registeredCourse?.courseName || lead.courseInterested || 'N/A',
+                    'Source': lead.sourceDetails || (Array.isArray(lead.leadSources) && lead.leadSources[0]?.name) || (typeof lead.source === 'object' ? lead.source?.name : lead.source) || 'N/A',
+                    'Status': typeof lead.currentStatus === 'object' ? lead.currentStatus?.name || lead.currentStatus?.code || 'N/A' : lead.currentStatus || 'N/A',
+                    'Counselor': typeof lead.assignedTo === 'object' ? `${lead.assignedTo.firstName || ''} ${lead.assignedTo.lastName || ''}`.trim() || 'Not Allotted' : lead.assignedTo || 'Not Allotted',
+                    'Follow-up Date': lead.nextFollowUpDate ? new Date(lead.nextFollowUpDate).toLocaleDateString() : 'None',
+                    'Created By': typeof lead.createdBy === 'object' ? `${lead.createdBy.firstName || ''} ${lead.createdBy.lastName || ''}`.trim() || 'N/A' : lead.createdBy || 'N/A',
+                    'Created Date': lead.createdAt ? new Date(lead.createdAt).toLocaleDateString() : 'N/A',
+                    'Remarks': lead.remarks || 'N/A',
+                    'City': typeof lead.city === 'object' ? lead.city?.name || '' : lead.city || 'N/A',
+                    'State': typeof lead.state === 'object' ? lead.state?.name || '' : lead.state || 'N/A',
+                    'Country': typeof lead.country === 'object' ? lead.country?.name || '' : lead.country || 'N/A'
+                };
+            });
+
+            // Create worksheet
+            const worksheet = XLSX.utils.json_to_sheet(excelData);
+            
+            // Create workbook
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Leads');
+            
+            // Generate filename with timestamp
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+            const filename = `department_leads_${timestamp}.xlsx`;
+            
+            // Download the file
+            XLSX.writeFile(workbook, filename);
+            
+            showToast('Excel file downloaded successfully');
+        } catch (error) {
+            console.error('Error downloading Excel:', error);
+            showToast('Failed to download Excel file', 'error');
+        }
+    };
+
     // ── loading / error / not-found guards ──
     if (loading) {
         return (
@@ -592,17 +644,58 @@ const DepartmentDetails = () => {
                         <p style={{ margin: '2px 0 0', fontSize: '13px', color: '#64748B' }}>View comprehensive department information</p>
                     </div>
                 </div>
-                {hasPermission('DEPARTMENT_UPDATE') && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <button
-                        onClick={() => setIsEditModalOpen(true)}
-                        style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #2563EB', backgroundColor: '#2563EB', color: '#FFFFFF', fontSize: '13px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s' }}
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1D4ED8'}
-                        onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563EB'}
+                        onClick={downloadExcel}
+                        disabled={tableData.length === 0}
+                        style={{
+                            backgroundColor: '#10b981',
+                            color: 'white',
+                            border: 'none',
+                            padding: '8px 16px',
+                            fontSize: '13px',
+                            borderRadius: '8px',
+                            cursor: tableData.length === 0 ? 'not-allowed' : 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            fontWeight: '600',
+                            opacity: tableData.length === 0 ? 0.5 : 1,
+                            transition: 'all 0.2s'
+                        }}
+                        onMouseEnter={(e) => {
+                            if (tableData.length > 0) {
+                                e.currentTarget.style.backgroundColor = '#059669';
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = '#10b981';
+                        }}
                     >
-                        <FiEdit style={{ fontSize: '14px' }} />
-                        Edit Department
+                        <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                        >
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                        </svg>
+                        Download
                     </button>
-                )}
+                    {hasPermission('DEPARTMENT_UPDATE') && (
+                        <button
+                            onClick={() => setIsEditModalOpen(true)}
+                            style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid #2563EB', backgroundColor: '#2563EB', color: '#FFFFFF', fontSize: '13px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s' }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1D4ED8'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563EB'}
+                        >
+                            <FiEdit style={{ fontSize: '14px' }} />
+                            Edit Department
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* ── Detail Card (TOP) ── */}
@@ -898,13 +991,14 @@ const DepartmentDetails = () => {
                             filterRequest={filterRequest}
                             departmentId={id}
                         />
-                        <AvailedCard
+                        
+                        <UnallottedCard
                             onCardClick={handleCardClick}
                             activeFilters={activeFilters}
                             filterRequest={filterRequest}
                             departmentId={id}
                         />
-                        <UnallottedCard
+                        <AvailedCard
                             onCardClick={handleCardClick}
                             activeFilters={activeFilters}
                             filterRequest={filterRequest}
@@ -1085,6 +1179,12 @@ const DepartmentDetails = () => {
         <AssignLeadModal
             isOpen={isAssignModalOpen}
             onClose={() => setIsAssignModalOpen(false)}
+            selectedLeadIds={Array.from(selectedRows)}
+            onAssign={() => {
+                setSelectedRows(new Set());
+                setIsAssignModalOpen(false);
+                setTablePage((p) => p);
+            }}
             filters={{
                 departmentId: id || '',
                 ...(activeFilters.some(f => f.type === 'leadStatus') && { 

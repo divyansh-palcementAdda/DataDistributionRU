@@ -21,10 +21,21 @@ const getCourseTypesDropdown = async (search = '') => {
     }
 };
 
-const getCoursesDropdown = async (courseTypeId = '', search = '') => {
+const getProgramsDropdown = async (search = '') => {
+    try {
+        const params = search ? { search } : {};
+        const response = await axiosInstance.get(ApiRoutes.Dropdowns.programs, { params });
+        return response.data;
+    } catch (error) {
+        return error;
+    }
+};
+
+const getCoursesDropdown = async (courseTypeId = '', programId = '', search = '') => {
     try {
         const params = {};
         if (courseTypeId) params.courseTypeId = courseTypeId;
+        if (programId) params.programId = programId;
         if (search) params.search = search;
         const response = await axiosInstance.get(ApiRoutes.Dropdowns.courses, { params });
         return response.data;
@@ -116,11 +127,32 @@ const getFollowupLeadStatusesDropdown = async () => {
     }
 };
 
+const getStatesDropdown = async (search = '') => {
+    try {
+        const params = search ? { search } : {};
+        const response = await axiosInstance.get(ApiRoutes.Dropdowns.states, { params });
+        return response.data;
+    } catch (error) {
+        return error;
+    }
+};
 
+const getCitiesDropdown = async (state = '', search = '') => {
+    try {
+        const params = {};
+        if (state) params.state = state;
+        if (search) params.search = search;
+        const response = await axiosInstance.get(ApiRoutes.Dropdowns.cities, { params });
+        return response.data;
+    } catch (error) {
+        return error;
+    }
+};
 
 export {
     getBoardsDropdown,
     getCourseTypesDropdown,
+    getProgramsDropdown,
     getCoursesDropdown,
     getDepartmentsDropdown,
     getGradesDropdown,
@@ -129,5 +161,7 @@ export {
     getRolesDropdown,
     getUsersDropdown,
     getFollowupStatusesDropdown,
-    getFollowupLeadStatusesDropdown
+    getFollowupLeadStatusesDropdown,
+    getStatesDropdown,
+    getCitiesDropdown
 };

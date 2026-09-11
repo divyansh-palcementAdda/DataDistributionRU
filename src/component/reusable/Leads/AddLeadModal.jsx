@@ -6,13 +6,16 @@ import { createLead, updateLead } from '../../../Services/lead/leadService';
 import { getCountries, getStates, getCities } from '../../../Services/location/locationService';
 import {
   getLeadSourcesDropdown,
+  getProgramsDropdown,
   getCoursesDropdown,
   getGradesDropdown,
   getBoardsDropdown,
   getLeadStatusesDropdown,
   getUsersDropdown,
   getCourseTypesDropdown,
-  getDepartmentsDropdown
+  getDepartmentsDropdown,
+  getStatesDropdown,
+  getCitiesDropdown
 } from '../../../Services/drop-down/dropDownService';
 
 const AddLeadModal = () => {
@@ -27,6 +30,8 @@ const AddLeadModal = () => {
     city: '',
     state: '',
     country: '',
+    preferredStudyState: '',
+    preferredStudyCity: '',
     leadSourceIds: [],
     sourceDetails: '',
     interestedCourseIds: [],
@@ -34,6 +39,7 @@ const AddLeadModal = () => {
     registeredCourseId: '',
     boardId: '',
     gradeId: '',
+    programId: '',
     courseTypeId: '',
     departmentId: '',
     remarks: '',
@@ -83,6 +89,9 @@ const AddLeadModal = () => {
   const [countries, setCountries] = useState([]);
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
+  const [preferredStates, setPreferredStates] = useState([]);
+  const [preferredCities, setPreferredCities] = useState([]);
+  const [programs, setPrograms] = useState([]);
   const [courses, setCourses] = useState([]);
   const [grades, setGrades] = useState([]);
   const [boards, setBoards] = useState([]);
@@ -95,7 +104,12 @@ const AddLeadModal = () => {
     states: false,
     cities: false,
   });
+  const [preferredLocationLoading, setPreferredLocationLoading] = useState({
+    states: false,
+    cities: false,
+  });
   const [dropdownLoading, setDropdownLoading] = useState({
+    programs: false,
     courses: false,
     grades: false,
     boards: false,
@@ -131,10 +145,24 @@ const AddLeadModal = () => {
       }
     };
 
-    const fetchCourses = async () => {
+    const fetchPrograms = async () => {
+      setDropdownLoading((prev) => ({ ...prev, programs: true }));
+      try {
+        const res = await getProgramsDropdown();
+        if (res?.success && res?.data) {
+          setPrograms(res.data || []);
+        }
+      } catch (err) {
+        console.error('Failed to fetch programs:', err);
+      } finally {
+        setDropdownLoading((prev) => ({ ...prev, programs: false }));
+      }
+    };
+
+    const fetchCourses = async (progId = formData.programId) => {
       setDropdownLoading((prev) => ({ ...prev, courses: true }));
       try {
-        const res = await getCoursesDropdown();
+        const res = await getCoursesDropdown(formData.courseTypeId || '', progId || '');
         if (res?.success && res?.data) {
           setCourses(res.data || []);
         }
@@ -228,10 +256,29 @@ const AddLeadModal = () => {
         setDropdownLoading((prev) => ({ ...prev, departments: false }));
       }
     };
+
+    const fetchPreferredStates = async () => {
+      setPreferredLocationLoading((prev) => ({ ...prev, states: true }));
+      try {
+        const res = await getStatesDropdown();
+        if (res?.success && res?.data) {
+          setPreferredStates(res.data || []);
+        } else {
+          setPreferredStates([]);
+        }
+      } catch (err) {
+        console.error('Failed to fetch preferred states:', err);
+        setPreferredStates([]);
+      } finally {
+        setPreferredLocationLoading((prev) => ({ ...prev, states: false }));
+      }
+    };
     
     if (isAddLeadModalOpen) {
       fetchLeadSources();
       fetchCountries();
+      fetchPreferredStates();
+      fetchPrograms();
       fetchCourses();
       fetchGrades();
       fetchBoards();
@@ -242,6 +289,7 @@ const AddLeadModal = () => {
       if (!editLeadData) {
         setStates([]);
         setCities([]);
+        setPreferredCities([]);
       }
     }
   }, [isAddLeadModalOpen, editLeadData]);
@@ -250,10 +298,13 @@ const AddLeadModal = () => {
     if (editLeadData) {
       const { 
         fullName, phoneNumber, alternatePhoneNumber, email, city, state, country, 
+        preferredStudyState, preferredStudyCity,
         leadSourceIds, sourceDetails, interestedCourseIds,
-        courseId, registeredCourseId, boardId, gradeId, courseTypeId, departmentId, remarks, 
+        courseId, registeredCourseId, boardId, gradeId, programId, courseTypeId, departmentId, remarks, 
         assignedToUserId, statusId, active, nextFollowUpDate 
       } = editLeadData;
+
+      const editProgramId = editLeadData.program?.id || editLeadData.programId || programId || '';
 
       // Convert all IDs to strings so they match HTML <select> / <option value="..."> comparisons
       const toStr = (v) => (v !== undefined && v !== null && v !== '') ? String(v) : '';
@@ -267,6 +318,8 @@ const AddLeadModal = () => {
         city: city || '',
         state: state || '',
         country: country || '',
+        preferredStudyState: preferredStudyState || '',
+        preferredStudyCity: preferredStudyCity || '',
         leadSourceIds: toStrArr(leadSourceIds),
         sourceDetails: sourceDetails || '',
         interestedCourseIds: toStrArr(interestedCourseIds),
@@ -274,14 +327,23 @@ const AddLeadModal = () => {
         registeredCourseId: toStr(registeredCourseId),
         boardId: toStr(boardId),
         gradeId: toStr(gradeId),
+        programId: toStr(editProgramId),
         courseTypeId: toStr(courseTypeId),
         departmentId: toStr(departmentId),
         remarks: remarks || '',
         assignedToUserId: toStr(assignedToUserId),
         statusId: toStr(statusId),
         active: active !== undefined ? active : true,
-        nextFollowUpDate: nextFollowUpDate ? new Date(nextFollowUpDate).toISOString().slice(0, 10) : '',
+        nextFollowUpDate: nextFollowUpDate ? (typeof nextFollowUpDate === 'string' ? nextFollowUpDate.slice(0, 10) : new Date(nextFollowUpDate).toLocaleDateString('en-CA')) : '',
       });
+
+      if (editProgramId) {
+        getCoursesDropdown(toStr(courseTypeId), toStr(editProgramId)).then(res => {
+          if (res?.success && res?.data) {
+            setCourses(res.data || []);
+          }
+        });
+      }
 
       const fetchEditLocationData = async () => {
         if (editLeadData?.country) {
@@ -311,6 +373,20 @@ const AddLeadModal = () => {
             setLocationLoading((prev) => ({ ...prev, cities: false }));
           }
         }
+
+        if (editLeadData?.preferredStudyState) {
+          setPreferredLocationLoading((prev) => ({ ...prev, cities: true }));
+          try {
+            const res = await getCitiesDropdown(editLeadData.preferredStudyState);
+            if (res?.success && res?.data) {
+              setPreferredCities(res.data || []);
+            }
+          } catch (err) {
+            console.error('Failed to fetch preferred cities for edit:', err);
+          } finally {
+            setPreferredLocationLoading((prev) => ({ ...prev, cities: false }));
+          }
+        }
       };
 
       fetchEditLocationData();
@@ -329,6 +405,8 @@ const AddLeadModal = () => {
         city: '',
         state: '',
         country: '',
+        preferredStudyState: '',
+        preferredStudyCity: '',
         leadSourceIds: [],
         sourceDetails: '',
         interestedCourseIds: [],
@@ -344,6 +422,7 @@ const AddLeadModal = () => {
         active: true,
         nextFollowUpDate: '',
       });
+      setPreferredCities([]);
     }
   }, [editLeadData]);
 
@@ -400,6 +479,32 @@ const AddLeadModal = () => {
     fetchCities();
   }, [formData.country, formData.state]);
 
+  useEffect(() => {
+    const fetchPreferredCities = async () => {
+      if (!formData.preferredStudyState) {
+        setPreferredCities([]);
+        return;
+      }
+
+      setPreferredLocationLoading((prev) => ({ ...prev, cities: true }));
+      try {
+        const res = await getCitiesDropdown(formData.preferredStudyState);
+        if (res?.success && res?.data) {
+          setPreferredCities(res.data || []);
+        } else {
+          setPreferredCities([]);
+        }
+      } catch (err) {
+        console.error('Failed to fetch preferred cities:', err);
+        setPreferredCities([]);
+      } finally {
+        setPreferredLocationLoading((prev) => ({ ...prev, cities: false }));
+      }
+    };
+
+    fetchPreferredCities();
+  }, [formData.preferredStudyState]);
+
   // Set default status to "raw" when leadStatuses are loaded and it's a new lead
   useEffect(() => {
     if (!editLeadData && leadStatuses.length > 0 && !formData.statusId) {
@@ -420,6 +525,8 @@ const AddLeadModal = () => {
       setFormData((prev) => ({ ...prev, country: value, state: '', city: '' }));
     } else if (field === 'state') {
       setFormData((prev) => ({ ...prev, state: value, city: '' }));
+    } else if (field === 'preferredStudyState') {
+      setFormData((prev) => ({ ...prev, preferredStudyState: value, preferredStudyCity: '' }));
     } else {
       setFormData((prev) => ({ ...prev, [field]: value }));
     }
@@ -440,6 +547,8 @@ const AddLeadModal = () => {
       city: '',
       state: '',
       country: '',
+      preferredStudyState: '',
+      preferredStudyCity: '',
       leadSourceIds: [],
       sourceDetails: '',
       interestedCourseIds: [],
@@ -447,6 +556,7 @@ const AddLeadModal = () => {
       registeredCourseId: '',
       boardId: '',
       gradeId: '',
+      programId: '',
       courseTypeId: '',
       departmentId: '',
       remarks: '',
@@ -457,6 +567,7 @@ const AddLeadModal = () => {
     });
     setStates([]);
     setCities([]);
+    setPreferredCities([]);
   };
 
   const handleSubmit = async () => {
@@ -473,6 +584,8 @@ const AddLeadModal = () => {
       city: formData.city,
       state: formData.state,
       country: formData.country,
+      preferredStudyState: formData.preferredStudyState || null,
+      preferredStudyCity: formData.preferredStudyCity || null,
       leadSourceIds: formData.leadSourceIds,
       sourceDetails: formData.sourceDetails,
       interestedCourseIds: formData.interestedCourseIds,
@@ -480,6 +593,7 @@ const AddLeadModal = () => {
       registeredCourseId: formData.registeredCourseId,
       boardId: formData.boardId,
       gradeId: formData.gradeId,
+      programId: formData.programId || null,
       courseTypeId: formData.courseTypeId,
       departmentId: formData.departmentId,
       remarks: formData.remarks,
@@ -727,6 +841,56 @@ const AddLeadModal = () => {
               </select>
               {locationLoading.cities && <small className="text-muted">Loading cities...</small>}
             </div>
+
+            {/* Preferred Place to Study */}
+            <div className="col-span-1 sm:col-span-2 pt-2 border-t border-gray-100">
+              <label className="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2">
+                Preferred Place to Study
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="form-label text-xs">Preferred State</label>
+                  <select
+                    className="form-control"
+                    value={formData.preferredStudyState}
+                    onChange={handleChange('preferredStudyState')}
+                    disabled={preferredLocationLoading.states}
+                  >
+                    <option value="">Select Preferred State</option>
+                    {preferredStates.map((st) => (
+                      <option key={st.id || st.code || st.name} value={st.name}>
+                        {st.name}
+                      </option>
+                    ))}
+                  </select>
+                  {preferredLocationLoading.states && <small className="text-muted">Loading states...</small>}
+                </div>
+                <div>
+                  <label className="form-label text-xs">Preferred City</label>
+                  <select
+                    className="form-control"
+                    value={formData.preferredStudyCity}
+                    onChange={handleChange('preferredStudyCity')}
+                    disabled={!formData.preferredStudyState || preferredLocationLoading.cities}
+                  >
+                    <option value="">Select Preferred City</option>
+                    {preferredCities.length > 0 ? (
+                      preferredCities.map((ct) => (
+                        <option key={ct.id || ct.code || ct.name} value={ct.name}>
+                          {ct.name}
+                        </option>
+                      ))
+                    ) : (
+                      formData.preferredStudyState && !preferredLocationLoading.cities && (
+                        <option disabled>No cities found</option>
+                      )
+                    )}
+                  </select>
+                  {preferredLocationLoading.cities && <small className="text-muted">Loading cities...</small>}
+                </div>
+              </div>
+            </div>
+
             <div>
               <label className="form-label">Lead Sources</label>
               <div className="custom-dropdown-container" ref={leadSourcesDropdownRef}>
@@ -802,6 +966,42 @@ const AddLeadModal = () => {
               value={formData.sourceDetails}
               onChange={handleChange('sourceDetails')}
             /> */}
+            <div>
+              <label className="form-label">Program</label>
+              <select
+                className="form-control"
+                value={formData.programId || ''}
+                onChange={async (e) => {
+                  const selectedProgramId = e.target.value;
+                  setFormData((prev) => ({
+                    ...prev,
+                    programId: selectedProgramId,
+                    courseId: '',
+                    registeredCourseId: '',
+                    interestedCourseIds: [],
+                  }));
+                  setDropdownLoading((prev) => ({ ...prev, courses: true }));
+                  try {
+                    const res = await getCoursesDropdown(formData.courseTypeId || '', selectedProgramId || '');
+                    if (res?.success && res?.data) {
+                      setCourses(res.data || []);
+                    }
+                  } catch (err) {
+                    console.error('Failed to fetch courses for program:', err);
+                  } finally {
+                    setDropdownLoading((prev) => ({ ...prev, courses: false }));
+                  }
+                }}
+              >
+                <option value="">Select Program</option>
+                {programs.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} {p.code ? `(${p.code})` : ''}
+                  </option>
+                ))}
+              </select>
+              {dropdownLoading.programs && <small className="text-muted">Loading programs...</small>}
+            </div>
             <div>
               <label className="form-label">Interested Courses</label>
               <div className="custom-dropdown-container" ref={interestedCoursesDropdownRef}>
@@ -1047,12 +1247,20 @@ const AddLeadModal = () => {
             </div>
             <div>
               <label className="form-label">Next Follow-Up Date</label>
-              <input
-                type="date"
-                className="form-control"
-                value={formData.nextFollowUpDate}
-                onChange={handleChange('nextFollowUpDate')}
-              />
+              <div 
+                className="form-control cursor-pointer"
+                style={{ position: 'relative', padding: 0 }}
+                onClick={() => document.querySelector('input[type="date"][name="nextFollowUpDate"]')?.showPicker?.() || document.querySelector('input[type="date"][name="nextFollowUpDate"]')?.focus()}
+              >
+                <input
+                  type="date"
+                  name="nextFollowUpDate"
+                  className="form-control"
+                  value={formData.nextFollowUpDate}
+                  onChange={handleChange('nextFollowUpDate')}
+                  style={{ border: 'none', background: 'transparent', width: '100%' }}
+                />
+              </div>
             </div>
           </div>
 

@@ -8,6 +8,7 @@ import AddBoardModal from '../component/reusable/board/addBoardModel';
 import DeleteModal from '../component/reusable/deleteModel';
 import { getAllBoards, deleteBoard, toggleBoardStatus } from '../Services/Boards/boardsService';
 import { usePermissions } from '../PermissionContext';
+import * as XLSX from 'xlsx';
 
 const Boards = () => {
   const navigate = useNavigate();
@@ -112,6 +113,56 @@ const Boards = () => {
     setCurrentPage(1);
   };
 
+  const downloadExcel = async () => {
+    try {
+      // Fetch all boards data without pagination
+      const res = await getAllBoards({
+        page: 0,
+        size: 10000, // Large size to get all data
+        search: debouncedSearch,
+        sortBy,
+        sortDirection,
+      });
+
+      const allBoards = res.data?.content || [];
+
+      // Flatten the boards data for Excel export
+      const excelData = allBoards.map((board, index) => {
+        return {
+          'S.No': index + 1,
+          'Board': typeof board.name === 'object' ? board.name?.name || '-' : board.name || '-',
+          'Description': typeof board.description === 'object' ? board.description?.description || '-' : board.description || '-',
+          'Total Data': board.totalData ?? 0,
+          'Total Allotted Data': board.totalAllottedData ?? 0,
+          'Total Unallotted Data': board.totalUnallottedData ?? 0,
+          'Total Availed Data': board.totalAvailedData ?? 0,
+          'Status': board.active ? 'Active' : 'Inactive',
+          'Created Date': board.createdAt ? new Date(board.createdAt).toLocaleDateString() : 'N/A',
+          'Updated Date': board.updatedAt ? new Date(board.updatedAt).toLocaleDateString() : 'N/A'
+        };
+      });
+
+      // Create worksheet
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      
+      // Create workbook
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Boards');
+      
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const filename = `boards_${timestamp}.xlsx`;
+      
+      // Download the file
+      XLSX.writeFile(workbook, filename);
+      
+      toast.success('Excel file downloaded successfully');
+    } catch (error) {
+      console.error('Error downloading Excel:', error);
+      toast.error('Failed to download Excel file');
+    }
+  };
+
   const allColumns = [
     {
       key: "sno",
@@ -189,23 +240,45 @@ const Boards = () => {
           <p className="text-sm text-gray-500 mt-1">Manage education boards and affiliations</p>
         </div>
 
-        <input
-          type="text"
-          placeholder="Search boards..."
-          value={search}
-          onChange={handleSearch}
-          className="border border-gray-300 rounded-lg px-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+        <div className="flex gap-2 flex-wrap">
+          <input
+            type="text"
+            placeholder="Search boards..."
+            value={search}
+            onChange={handleSearch}
+            className="border border-gray-300 rounded-lg px-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
 
-        {hasPermission('BOARD_CREATE') && (
-          <CustomButton
-            variant="primary"
-            onClick={() => { setEditData(null); setIsAddModalOpen(true); }}
-            className="text-sm py-2 px-4 shadow-sm hover:shadow-md transition-shadow"
+          {/* Download Excel */}
+          <button
+            className="flex items-center gap-1.5"
+            style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '8px 16px', fontSize: '13px', borderRadius: '9999px', cursor: 'pointer', boxShadow: 'none', fontWeight: '600' }}
+            onClick={downloadExcel}
+            disabled={totalElements === 0}
           >
-            + Add Board
-          </CustomButton>
-        )}
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+            </svg>
+            Download
+          </button>
+
+          {hasPermission('BOARD_CREATE') && (
+            <CustomButton
+              variant="primary"
+              onClick={() => { setEditData(null); setIsAddModalOpen(true); }}
+              className="text-sm py-2 px-4 shadow-sm hover:shadow-md transition-shadow"
+            >
+              + Add Board
+            </CustomButton>
+          )}
+        </div>
       </div>
 
       {/* Main Content Area */}

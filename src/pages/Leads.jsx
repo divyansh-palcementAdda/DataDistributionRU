@@ -17,6 +17,7 @@ import AvailedCard from '../component/reusable/DashBoards/availedCard';
 import AllottedCard from '../component/reusable/DashBoards/allottedCard';
 import BulkUploadModal from '../component/reusable/Leads/BulkUploadModal';
 import PreviewDistributionModal from '../component/reusable/Leads/PreviewDistributionModal';
+import * as XLSX from 'xlsx';
 
 
 const Leads = () => {
@@ -33,6 +34,19 @@ const Leads = () => {
   const [selectedCard, setSelectedCard] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
+  const [autoSelectCount, setAutoSelectCount] = useState('');
+
+  const handleAutoSelectCount = (e) => {
+    const val = e.target.value;
+    setAutoSelectCount(val);
+    const count = parseInt(val, 10);
+    if (!isNaN(count) && count > 0) {
+      const topIds = leadsData.slice(0, count).map(lead => lead.id || lead.leadId);
+      setSelectedIds(topIds);
+    } else {
+      setSelectedIds([]);
+    }
+  };
   const [activeFilters, setActiveFilters] = useState([]);
   const [filterRequest, setFilterRequest] = useState({});
 
@@ -152,24 +166,28 @@ const Leads = () => {
 
   const handleCardClick = (cardInfo) => {
     // Toggle: same card click kare toh filter clear ho jaye
-    const existingFilterIndex = activeFilters.findIndex(
-      f => f.type === cardInfo.type && f.value === cardInfo.value
-    );
-    
-    if (existingFilterIndex !== -1) {
-      setActiveFilters(activeFilters.filter((_, index) => index !== existingFilterIndex));
-    } else {
-      setActiveFilters(
-        activeFilters.filter(f => f.type !== cardInfo.type).concat(cardInfo)
+    setActiveFilters(prevFilters => {
+      const existingFilterIndex = prevFilters.findIndex(
+        f => f.type === cardInfo.type && f.value === cardInfo.value
       );
-    }
+      
+      if (existingFilterIndex !== -1) {
+        // Remove the filter if it exists (same card clicked again)
+        return prevFilters.filter((_, index) => index !== existingFilterIndex);
+      } else {
+        // Remove any existing filter of same type and add new one
+        return prevFilters.filter(f => f.type !== cardInfo.type).concat(cardInfo);
+      }
+    });
     
     // Also update selectedCard for backward compatibility with LeadCards
-    if (selectedCard?.type === cardInfo.type && selectedCard?.value === cardInfo.value) {
-      setSelectedCard(null);
-    } else {
-      setSelectedCard(cardInfo);
-    }
+    setSelectedCard(prevSelectedCard => {
+      if (prevSelectedCard?.type === cardInfo.type && prevSelectedCard?.value === cardInfo.value) {
+        return null;
+      } else {
+        return cardInfo;
+      }
+    });
     
     setPage(0); // filter change hone par page reset
   };
@@ -343,7 +361,14 @@ const Leads = () => {
           break;
       }
     });
-    setFilterRequest(newFilterRequest);
+    
+    // Ensure filterRequest is properly cleared when no active filters
+    if (activeFilters.length === 0) {
+      setFilterRequest({});
+      setSelectedCard(null); // Also clear selectedCard when no filters
+    } else {
+      setFilterRequest(newFilterRequest);
+    }
   }, [activeFilters]);
 
   useEffect(() => {
@@ -397,13 +422,11 @@ const Leads = () => {
     setSelectedLeadForAllot(null);
   };
 
-  const handleAllotLead = async (leadOrIds, userId) => {
-    // TODO: Implement the actual API call to allot the lead(s)
-    if (Array.isArray(leadOrIds)) {
-      showToast(`${leadOrIds.length} leads allotted successfully`);
-    } else {
-      showToast('Lead allotted successfully');
-    }
+  const handleAllotLead = async () => {
+    setSelectedIds([]);
+    setSelectAll(false);
+    setAutoSelectCount('');
+    setSelectedLeadForAllot(null);
     await fetchLeads();
   };
 
@@ -425,6 +448,76 @@ const Leads = () => {
     const backendField = fieldMapping[columnKey] || columnKey;
     setSortBy(backendField);
     setSortDirection(direction);
+  };
+
+  const downloadExcel = async () => {
+    try {
+      // Fetch all leads with current filters applied
+      const params = {
+        page: 0,
+        size: 10000,
+        search: search || undefined,
+        sortBy: sortBy || undefined,
+        sortDirection: sortDirection || undefined,
+        // Add filterRequest parameters with smart conversion
+        ...convertFilterRequest(filterRequest),
+        // Card filter — statusId send karo agar koi card selected hai (for backward compatibility)
+        ...(selectedCard?.type === 'leadStatus' && selectedCard?.value
+          ? { statusId: selectedCard.value }
+          : {}),
+        // Lead Status dropdown filter
+        ...(filterLeadStatus
+          ? { leadStatusHistoryIds: [filterLeadStatus] }
+          : {}),
+      };
+      const res = await getAllLeads(params);
+      const allLeadsData = res?.data?.data?.content || [];
+      
+      // Flatten the leads data for Excel export
+      const excelData = allLeadsData.map((lead, index) => {
+        const rowId = typeof lead.id === 'object' ? lead.id?.id : lead.id;
+        const rowLeadId = typeof lead.leadId === 'object' ? lead.leadId?.id : lead.leadId;
+        const idToUse = rowId || rowLeadId;
+        
+        return {
+          'S.No': index + 1,
+          'Lead Code': typeof lead.leadCode === 'object' ? lead.leadCode?.code || lead.leadCode?.name || 'N/A' : lead.leadCode || 'N/A',
+          'Lead Name': typeof lead.fullName === 'object' ? lead.fullName?.name || lead.fullName?.firstName || 'N/A' : lead.fullName || 'N/A',
+          'Phone Number': lead.phoneNumber || 'N/A',
+          'Email': lead.email || 'N/A',
+          'Course': lead.course?.courseName || lead.registeredCourse?.courseName || lead.courseInterested || 'N/A',
+          'Source': lead.sourceDetails || (Array.isArray(lead.leadSources) && lead.leadSources[0]?.name) || (typeof lead.source === 'object' ? lead.source?.name : lead.source) || 'N/A',
+          'Status': typeof lead.currentStatus === 'object' ? lead.currentStatus?.name || lead.currentStatus?.code || 'N/A' : lead.currentStatus || 'N/A',
+          'Counselor': typeof lead.assignedTo === 'object' ? `${lead.assignedTo.firstName || ''} ${lead.assignedTo.lastName || ''}`.trim() || 'Not Allotted' : lead.assignedTo || 'Not Allotted',
+          'Follow-up Date': lead.nextFollowUpDate ? new Date(lead.nextFollowUpDate).toLocaleDateString() : 'None',
+          'Created By': typeof lead.createdBy === 'object' ? `${lead.createdBy.firstName || ''} ${lead.createdBy.lastName || ''}`.trim() || 'N/A' : lead.createdBy || 'N/A',
+          'Created Date': lead.createdAt ? new Date(lead.createdAt).toLocaleDateString() : 'N/A',
+          'Remarks': lead.remarks || 'N/A',
+          'City': typeof lead.city === 'object' ? lead.city?.name || '' : lead.city || 'N/A',
+          'State': typeof lead.state === 'object' ? lead.state?.name || '' : lead.state || 'N/A',
+          'Country': typeof lead.country === 'object' ? lead.country?.name || '' : lead.country || 'N/A'
+        };
+      });
+
+      // Create worksheet
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      
+      // Create workbook
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Leads');
+      
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const filename = `leads_export_${timestamp}.xlsx`;
+      
+      // Download the file
+      XLSX.writeFile(workbook, filename);
+      
+      showToast('Excel file downloaded successfully');
+    } catch (error) {
+      console.error('Error downloading Excel:', error);
+      showToast('Failed to download Excel file', 'error');
+    }
   };
 
   return (
@@ -459,6 +552,25 @@ const Leads = () => {
               Import
             </button>
           )}
+          {/* Download Excel */}
+          <button
+            className="flex items-center gap-1.5"
+            style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '4px 10px', fontSize: '12px', borderRadius: '4px', cursor: 'pointer', boxShadow: 'none' }}
+            onClick={downloadExcel}
+            disabled={leadsData.length === 0}
+          >
+            <svg
+              width="10"
+              height="10"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+            </svg>
+            Download
+          </button>
           {/* Add Lead */}
           {hasPermission('LEAD_CREATE') && (
             <button
@@ -489,12 +601,13 @@ const Leads = () => {
           activeFilters={activeFilters}
           filterRequest={filterRequest}
         />
-        <AvailedCard 
+       
+        <AllottedCard 
           onCardClick={handleCardClick}
           activeFilters={activeFilters}
           filterRequest={filterRequest}
         />
-        <AllottedCard 
+         <AvailedCard 
           onCardClick={handleCardClick}
           activeFilters={activeFilters}
           filterRequest={filterRequest}
@@ -504,7 +617,7 @@ const Leads = () => {
       {/* ── Stat Cards ── */}
       <LeadCards
         onCardClick={handleCardClick}
-        selectedCard={selectedCard}
+        activeFilters={activeFilters}
       />
 
       {/* ── Filter Bar ── */}
@@ -516,7 +629,7 @@ const Leads = () => {
           value={search}
           onChange={(e) => { setSearch(e.target.value); }}
         />
-        <select
+        {/* <select
           className="form-control max-w-[200px]"
           value={filterLeadStatus}
           onChange={(e) => { 
@@ -532,7 +645,8 @@ const Leads = () => {
               {status.name}
             </option>
           ))}
-        </select>
+        </select> */}
+
         {/* Active card filter badges */}
         {activeFilters.map((filter, index) => (
           <div 
@@ -542,7 +656,8 @@ const Leads = () => {
             <span>{filter.label}</span>
             <button
               onClick={() => {
-                setActiveFilters(activeFilters.filter((_, i) => i !== index));
+                setActiveFilters(prevFilters => prevFilters.filter((_, i) => i !== index));
+                setSelectedCard(null); // Also clear selectedCard
                 setPage(0);
               }}
               className="ml-1 text-indigo-400 hover:text-indigo-700 bg-transparent border-none cursor-pointer leading-none"
@@ -552,25 +667,16 @@ const Leads = () => {
             </button>
           </div>
         ))}
-        {/* Legacy selectedCard support */}
-        {selectedCard && !activeFilters.some(f => f.type === selectedCard.type && f.value === selectedCard.value) && (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-indigo-50 border border-indigo-200 rounded-md text-sm text-indigo-700 font-medium">
-            <span>Filter: {selectedCard.label}</span>
-            <button
-              onClick={() => { setSelectedCard(null); setPage(0); }}
-              className="ml-1 text-indigo-400 hover:text-indigo-700 bg-transparent border-none cursor-pointer leading-none"
-              title="Clear filter"
-            >
-              ✕
-            </button>
-          </div>
-        )}
         {/* Lead Status filter badge */}
         {filterLeadStatus && (
           <div className="flex items-center gap-1.5 px-3 py-1 bg-indigo-50 border border-indigo-200 rounded-md text-sm text-indigo-700 font-medium">
             <span>Lead Status: {filterLeadStatusName}</span>
             <button
-              onClick={() => { setFilterLeadStatus(''); setFilterLeadStatusName(''); setPage(0); }}
+              onClick={() => { 
+                setFilterLeadStatus(''); 
+                setFilterLeadStatusName(''); 
+                setPage(0); 
+              }}
               className="ml-1 text-indigo-400 hover:text-indigo-700 bg-transparent border-none cursor-pointer leading-none"
               title="Clear filter"
             >
@@ -579,7 +685,7 @@ const Leads = () => {
           </div>
         )}
         {/* Clear all filters button */}
-        {(activeFilters.length > 0 || selectedCard || filterLeadStatus) && (
+        {(activeFilters.length > 0 || filterLeadStatus) && (
           <button
             onClick={() => {
               setActiveFilters([]);
@@ -595,6 +701,19 @@ const Leads = () => {
           </button>
         )}
         {/* Allot Lead */}
+        {hasPermission('LEAD_ASSIGN') && (
+          <input
+            type="number"
+            min="1"
+            max={leadsData.length}
+            value={autoSelectCount}
+            onChange={handleAutoSelectCount}
+            onWheel={(e) => e.target.blur()}
+            placeholder="Count"
+            className="form-control"
+            style={{ width: '80px' }}
+          />
+        )}
         {hasPermission('LEAD_ASSIGN') && (
           <button
             className="btn btn-secondary btn-sm flex items-center gap-1.5"
@@ -621,7 +740,7 @@ const Leads = () => {
             Allot Lead
           </button>
         )}
-        <button
+        {/* <button
           className="btn btn-ghost btn-sm flex items-center gap-1.5"
         >
           <svg
@@ -637,7 +756,7 @@ const Leads = () => {
             <line x1="11" y1="18" x2="13" y2="18" />
           </svg>
           Filters
-        </button>
+        </button> */}
       </div>
 
       {/* ── Table Card ── */}
@@ -1017,8 +1136,9 @@ const Leads = () => {
         isOpen={isAllotModalOpen}
         onClose={closeAllotModal}
         onAssign={handleAllotLead}
-        currentLead={selectedLeadForAllot}
-        users={usersData}
+        selectedLeadIds={selectedLeadForAllot || selectedIds}
+        filters={convertFilterRequest(filterRequest)}
+        showToast={showToast}
       />
 
       {/* Bulk Upload Modal */}

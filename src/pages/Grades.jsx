@@ -8,6 +8,7 @@ import AddGradeModal from '../component/reusable/grade/addGradeModel';
 import DeleteModal from '../component/reusable/deleteModel';
 import gradsService from '../Services/Grads/gradsService';
 import { usePermissions } from '../PermissionContext';
+import * as XLSX from 'xlsx';
 
 const Grades = () => {
   const navigate = useNavigate();
@@ -124,6 +125,72 @@ const Grades = () => {
     setCurrentPage(1);
   };
 
+  const downloadExcel = async () => {
+    try {
+      // Fetch all grades data without pagination
+      const res = await gradsService.getAllGrades({
+        page: 0,
+        size: 10000, // Large size to get all data
+        search: debouncedSearch,
+        sortBy,
+        sortDirection,
+      });
+
+      // Map API response to UI format
+      const allGrades = (res.data?.content || []).map(grade => ({
+        id: grade.id,
+        name: grade.name,
+        gradeName: grade.name,
+        gradeCode: grade.code,
+        description: grade.description,
+        status: grade.active ? "ACTIVE" : "INACTIVE",
+        active: grade.active,
+        displayOrder: grade.displayOrder,
+        totalData: grade.totalData ?? 0,
+        totalAllottedData: grade.totalAllottedData ?? 0,
+        totalUnallottedData: grade.totalUnallottedData ?? 0,
+        totalAvailedData: grade.totalAvailedData ?? 0
+      }));
+
+      // Flatten the grades data for Excel export
+      const excelData = allGrades.map((grade, index) => {
+        return {
+          'S.No': index + 1,
+          'Grade': typeof grade.name === 'object' ? grade.name?.name || grade.name?.gradeName || '-' : grade.name || grade.gradeName || '-',
+          'Grade Code': grade.gradeCode || 'N/A',
+          'Description': typeof grade.description === 'object' ? grade.description?.description || '-' : grade.description || '-',
+          'Total Data': grade.totalData ?? 0,
+          'Total Allotted Data': grade.totalAllottedData ?? 0,
+          'Total Unallotted Data': grade.totalUnallottedData ?? 0,
+          'Total Availed Data': grade.totalAvailedData ?? 0,
+          'Status': grade.active ? 'Active' : 'Inactive',
+          'Display Order': grade.displayOrder ?? 'N/A',
+          'Created Date': grade.createdAt ? new Date(grade.createdAt).toLocaleDateString() : 'N/A',
+          'Updated Date': grade.updatedAt ? new Date(grade.updatedAt).toLocaleDateString() : 'N/A'
+        };
+      });
+
+      // Create worksheet
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      
+      // Create workbook
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Grades');
+      
+      // Generate filename with timestamp
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      const filename = `grades_${timestamp}.xlsx`;
+      
+      // Download the file
+      XLSX.writeFile(workbook, filename);
+      
+      toast.success('Excel file downloaded successfully');
+    } catch (error) {
+      console.error('Error downloading Excel:', error);
+      toast.error('Failed to download Excel file');
+    }
+  };
+
   const allColumns = [
     {
       key: "sno",
@@ -201,23 +268,45 @@ const Grades = () => {
           <p className="text-sm text-gray-500 mt-1">Manage grade levels and academic standards</p>
         </div>
 
-        <input
-          type="text"
-          placeholder="Search grades..."
-          value={search}
-          onChange={handleSearch}
-          className="border border-gray-300 rounded-lg px-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+        <div className="flex gap-2 flex-wrap">
+          <input
+            type="text"
+            placeholder="Search grades..."
+            value={search}
+            onChange={handleSearch}
+            className="border border-gray-300 rounded-lg px-4 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
 
-        {hasPermission('GRADE_CREATE') && (
-          <CustomButton
-            variant="primary"
-            onClick={() => { setEditData(null); setIsAddModalOpen(true); }}
-            className="text-sm py-2 px-4 shadow-sm hover:shadow-md transition-shadow"
+          {/* Download Excel */}
+          <button
+            className="flex items-center gap-1.5"
+            style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '8px 16px', fontSize: '13px', borderRadius: '9999px', cursor: 'pointer', boxShadow: 'none', fontWeight: '600' }}
+            onClick={downloadExcel}
+            disabled={totalElements === 0}
           >
-            + Add Grade
-          </CustomButton>
-        )}
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+            </svg>
+            Download
+          </button>
+
+          {hasPermission('GRADE_CREATE') && (
+            <CustomButton
+              variant="primary"
+              onClick={() => { setEditData(null); setIsAddModalOpen(true); }}
+              className="text-sm py-2 px-4 shadow-sm hover:shadow-md transition-shadow"
+            >
+              + Add Grade
+            </CustomButton>
+          )}
+        </div>
       </div>
 
       {/* Main Content Area */}

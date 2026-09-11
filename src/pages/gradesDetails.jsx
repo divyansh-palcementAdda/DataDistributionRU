@@ -21,6 +21,7 @@ import AllottedCard from '../component/reusable/DashBoards/allottedCard';
 import ReusableTable from '../component/reusable/table';
 import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import AssignLeadModal from '../component/reusable/Leads/AssignLeadModal';
+import * as XLSX from 'xlsx';
 
 // ─── Lead table columns ───────────────────────────────────────────────────────
 const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, currentData, hasPermission) => [
@@ -208,7 +209,7 @@ const fetchLeadsForCard = async (activeFilters, gradeId, page, size, sortBy, sor
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const GradesDetails = () => {
-    const { navTo } = useAppContext();
+    const { navTo, showToast } = useAppContext();
     const { hasPermission } = usePermissions();
     const { id } = useParams();
 
@@ -441,6 +442,59 @@ const GradesDetails = () => {
 
     const goBack = () => navTo('grades');
 
+    // ── download Excel function ──
+    const downloadExcel = async () => {
+        try {
+            // Fetch all leads with current filters applied
+            const allLeadsData = await fetchLeadsForCard(activeFilters, id, 0, 10000, tableSortBy, tableSortDir, filterRequest);
+            
+            // Flatten the table data for Excel export
+            const excelData = allLeadsData.content.map((lead, index) => {
+                const rowId = typeof lead.id === 'object' ? lead.id?.id : lead.id;
+                const rowLeadId = typeof lead.leadId === 'object' ? lead.leadId?.id : lead.leadId;
+                const idToUse = rowId || rowLeadId;
+                
+                return {
+                    'S.No': index + 1,
+                    'Lead Code': typeof lead.leadCode === 'object' ? lead.leadCode?.code || lead.leadCode?.name || 'N/A' : lead.leadCode || 'N/A',
+                    'Lead Name': typeof lead.fullName === 'object' ? lead.fullName?.name || lead.fullName?.firstName || 'N/A' : lead.fullName || 'N/A',
+                    'Phone Number': lead.phoneNumber || 'N/A',
+                    'Email': lead.email || 'N/A',
+                    'Course': lead.course?.courseName || lead.registeredCourse?.courseName || lead.courseInterested || 'N/A',
+                    'Source': lead.sourceDetails || (Array.isArray(lead.leadSources) && lead.leadSources[0]?.name) || (typeof lead.source === 'object' ? lead.source?.name : lead.source) || 'N/A',
+                    'Status': typeof lead.currentStatus === 'object' ? lead.currentStatus?.name || lead.currentStatus?.code || 'N/A' : lead.currentStatus || 'N/A',
+                    'Counselor': typeof lead.assignedTo === 'object' ? `${lead.assignedTo.firstName || ''} ${lead.assignedTo.lastName || ''}`.trim() || 'Not Allotted' : lead.assignedTo || 'Not Allotted',
+                    'Follow-up Date': lead.nextFollowUpDate ? new Date(lead.nextFollowUpDate).toLocaleDateString() : 'None',
+                    'Created By': typeof lead.createdBy === 'object' ? `${lead.createdBy.firstName || ''} ${lead.createdBy.lastName || ''}`.trim() || 'N/A' : lead.createdBy || 'N/A',
+                    'Created Date': lead.createdAt ? new Date(lead.createdAt).toLocaleDateString() : 'N/A',
+                    'Remarks': lead.remarks || 'N/A',
+                    'City': typeof lead.city === 'object' ? lead.city?.name || '' : lead.city || 'N/A',
+                    'State': typeof lead.state === 'object' ? lead.state?.name || '' : lead.state || 'N/A',
+                    'Country': typeof lead.country === 'object' ? lead.country?.name || '' : lead.country || 'N/A'
+                };
+            });
+
+            // Create worksheet
+            const worksheet = XLSX.utils.json_to_sheet(excelData);
+            
+            // Create workbook
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Leads');
+            
+            // Generate filename with timestamp
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+            const filename = `grade_leads_${timestamp}.xlsx`;
+            
+            // Download the file
+            XLSX.writeFile(workbook, filename);
+            
+            showToast('Excel file downloaded successfully');
+        } catch (error) {
+            console.error('Error downloading Excel:', error);
+            showToast('Failed to download Excel file', 'error');
+        }
+    };
+
     return (
         <>
         <div className="block p-4 sm:p-6" id="page-grade-detail">
@@ -460,6 +514,27 @@ const GradesDetails = () => {
                         <h1 className="text-xl font-bold text-gray-900 leading-tight">Grade Details</h1>
                         <p className="text-sm text-gray-500 mt-1">View comprehensive details for this grade</p>
                     </div>
+                </div>
+                <div className="flex gap-2">
+                    {/* Download Excel */}
+                    <button
+                        className="flex items-center gap-1.5"
+                        style={{ backgroundColor: '#10b981', color: 'white', border: 'none', padding: '4px 10px', fontSize: '12px', borderRadius: '4px', cursor: 'pointer', boxShadow: 'none' }}
+                        onClick={downloadExcel}
+                        disabled={tableData.length === 0}
+                    >
+                        <svg
+                            width="10"
+                            height="10"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                        >
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                        </svg>
+                        Download
+                    </button>
                 </div>
             </div>
 
@@ -554,14 +629,13 @@ const GradesDetails = () => {
                             gradeId={id}
                         />
 
-                        <AvailedCard
+                        <UnallottedCard
                             onCardClick={handleCardClick}
                             activeFilters={activeFilters}
                             filterRequest={filterRequest}
                             gradeId={id}
                         />
-
-                        <UnallottedCard
+                          <AvailedCard
                             onCardClick={handleCardClick}
                             activeFilters={activeFilters}
                             filterRequest={filterRequest}
@@ -728,6 +802,12 @@ const GradesDetails = () => {
         <AssignLeadModal
             isOpen={isAssignModalOpen}
             onClose={() => setIsAssignModalOpen(false)}
+            selectedLeadIds={Array.from(selectedRows)}
+            onAssign={() => {
+                setSelectedRows(new Set());
+                setIsAssignModalOpen(false);
+                setTablePage((p) => p);
+            }}
             filters={{
                 gradeIds: id ? [id] : [],
                 ...(activeFilters.some(f => f.type === 'leadStatus') && {

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getBoardBreakdown } from '../../../Services/cards/cardService';
+import { usePermissions } from '../../../PermissionContext';
 
 const BoardIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -23,6 +24,7 @@ const COLORS = [
 const BoardWiseCard = ({ data, onCardClick, activeFilters = [], courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId }) => {
   // API returns an array: [{id, name, code, count, percentage}, ...]
   const [boardData, setBoardData] = useState([]);
+  const { hasPermission } = usePermissions();
 
   useEffect(() => {
     if (data !== undefined) {
@@ -59,6 +61,11 @@ const BoardWiseCard = ({ data, onCardClick, activeFilters = [], courseTypeId, le
     : Object.entries(boardData)
         .filter(([, val]) => val > 0)
         .map(([key, val]) => ({ id: key, code: key, name: key, count: val, percentage: 0 }));
+
+  // Permission gate: hide entire section if permission is false
+  if (!hasPermission('DASHBOARD_CARD_BOARD_GRADE_DISTRIBUTION')) {
+    return null;
+  }
 
   const gridStyle = {
     display: 'grid',

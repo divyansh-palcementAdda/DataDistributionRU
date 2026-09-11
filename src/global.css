@@ -787,28 +787,19 @@ select.form-control {
 }
 
 /* ===========================
-   Toast
+   React Toastify Override
 =========================== */
-.toast {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  background: var(--gray-900);
-  color: #fff;
-  padding: 12px 18px;
-  border-radius: 10px;
-  font-size: 13px;
-  font-weight: 500;
-  box-shadow: var(--shadow-lg);
-  z-index: 2000;
-  transform: translateY(80px);
-  opacity: 0;
-  transition: all .3s;
+.toast-container-custom {
+  position: fixed !important;
+  top: 0 !important;
+  right: 0 !important;
+  z-index: 9999 !important;
+  pointer-events: none !important;
 }
 
-.toast.show {
-  transform: translateY(0);
-  opacity: 1;
+.toast-container-custom .Toastify__toast-container {
+  position: fixed !important;
+  pointer-events: auto !important;
 }
 
 /* ===========================

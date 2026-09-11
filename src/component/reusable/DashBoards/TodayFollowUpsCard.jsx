@@ -1,27 +1,31 @@
 import React, { useEffect, useState } from 'react';
-import { getUnallottedCount } from '../../../Services/cards/cardService';
+import { useNavigate } from 'react-router-dom';
+import { getTodayFollowUpsCount } from '../../../Services/cards/cardService';
 import { usePermissions } from '../../../PermissionContext';
 
-const UnallottedIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="12" cy="12" r="10" />
-    <path d="M8 12h8" />
-    <path d="M12 8v8" />
+const CalendarClockIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+    <line x1="16" y1="2" x2="16" y2="6" />
+    <line x1="8" y1="2" x2="8" y2="6" />
+    <line x1="3" y1="10" x2="21" y2="10" />
+    <polyline points="12 14 12 17 14 17" />
   </svg>
 );
 
-const UnallottedCard = ({ data, onCardClick, activeFilters = [], filterRequest = {}, courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId, statusId }) => {
-  const [unallottedData, setUnallottedData] = useState(null);
+const TodayFollowUpsCard = ({ data, onCardClick, activeFilters = [], filterRequest = {}, courseTypeId, leadSourceId, boardId, gradeId, counselorId, departmentId, statusId }) => {
+  const [followUpData, setFollowUpData] = useState(null);
   const [loading, setLoading] = useState(false);
   const { hasPermission } = usePermissions();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (data !== undefined) {
-      setUnallottedData(data);
+      setFollowUpData(data);
       return;
     }
 
-    const fetchUnallottedCount = async () => {
+    const fetchTodayFollowUps = async () => {
       try {
         setLoading(true);
         const params = {};
@@ -29,34 +33,33 @@ const UnallottedCard = ({ data, onCardClick, activeFilters = [], filterRequest =
         if (leadSourceId) params.leadSourceId = leadSourceId;
         if (boardId) params.boardId = boardId;
         if (gradeId) params.gradeId = gradeId;
-        if (assignedUserIds) params.assignedUserIds = assignedUserIds;
+        if (counselorId) params.counselorId = counselorId;
         if (departmentId) params.departmentId = departmentId;
         if (statusId) params.statusId = statusId;
-        
-        // Merge with filterRequest if provided
+
         const finalParams = { ...params, ...filterRequest };
-        
-        const response = await getUnallottedCount(finalParams);
+
+        const response = await getTodayFollowUpsCount(finalParams);
         const payload = response?.data?.data ?? response?.data ?? response;
-        setUnallottedData(payload);
+        setFollowUpData(payload);
       } catch (error) {
-        console.error('Error fetching unallotted count:', error);
-        setUnallottedData(null);
+        console.error('Error fetching today follow-ups count:', error);
+        setFollowUpData(null);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchUnallottedCount();
-  }, [data, filterRequest, courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId, statusId]);
+    fetchTodayFollowUps();
+  }, [data, filterRequest, courseTypeId, leadSourceId, boardId, gradeId, counselorId, departmentId, statusId]);
 
-  const count = unallottedData?.count ?? 0;
-  const type = unallottedData?.type ?? 'Unallotted';
-  const isSelected = activeFilters.some(f => f.type === 'unallotted');
-
-  if (!hasPermission('DASHBOARD_CARD_TOTAL_UNALLOTTED_DATA')) {
+  if (!hasPermission('DASHBOARD_CARD_TOTAL_FOLLOWUPS_TODAY')) {
     return null;
   }
+
+  const count = followUpData?.count ?? 0;
+  const type = "Today's Follow-ups";
+  const isSelected = activeFilters.some(f => f.type === 'todayFollowUps');
 
   const cardStyle = {
     background: '#ffffff',
@@ -80,7 +83,7 @@ const UnallottedCard = ({ data, onCardClick, activeFilters = [], filterRequest =
     width: '40px',
     height: '40px',
     borderRadius: '10px',
-    background: 'var(--primary-light)',
+    background: '#EFF6FF',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -113,6 +116,14 @@ const UnallottedCard = ({ data, onCardClick, activeFilters = [], filterRequest =
     if (!isSelected) e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
   };
 
+  const handleClick = () => {
+    if (onCardClick) {
+      onCardClick({ type: 'todayFollowUps', value: true, label: "Today's Follow-ups" });
+    } else {
+      navigate('/followups', { state: { activeTab: 'TODAY' } });
+    }
+  };
+
   return (
     <>
       {loading ? (
@@ -125,11 +136,12 @@ const UnallottedCard = ({ data, onCardClick, activeFilters = [], filterRequest =
         </div>
       ) : (
         <div
-          className="unallotted-card-item"
-          onClick={() => onCardClick && onCardClick({ type: 'unallotted', value: true, label: 'Unallotted' })}
+          className="today-followup-card-item"
+          onClick={handleClick}
           style={cardStyle}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
+          title="Scheduled follow-ups for today"
         >
           {/* Active indicator badge */}
           {isSelected && (
@@ -146,30 +158,31 @@ const UnallottedCard = ({ data, onCardClick, activeFilters = [], filterRequest =
           )}
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
-            <div className="unallotted-icon-container" style={iconContainerStyle}>
-              <div className="unallotted-icon" style={{ color: 'var(--primary)' }}><UnallottedIcon /></div>
+            <div className="today-followup-icon-container" style={iconContainerStyle}>
+              <div className="today-followup-icon" style={{ color: '#2563EB' }}>
+                <CalendarClockIcon />
+              </div>
             </div>
-            <div className="unallotted-label" style={labelStyle}>
+            <div className="today-followup-label" style={labelStyle}>
               {type}
             </div>
           </div>
 
-          <div className="unallotted-count" style={countStyle}>
+          <div className="today-followup-count" style={countStyle}>
             {count.toLocaleString()}
           </div>
         </div>
       )}
       <style>{`
-        /* Unallotted Card Item Responsive */
         @media (max-width: 1024px) {
-          .unallotted-card-item {
+          .today-followup-card-item {
             height: 95px !important;
             padding: 14px !important;
           }
         }
 
         @media (max-width: 768px) {
-          .unallotted-card-item {
+          .today-followup-card-item {
             height: 90px !important;
             padding: 12px !important;
             border-radius: 10px !important;
@@ -177,7 +190,7 @@ const UnallottedCard = ({ data, onCardClick, activeFilters = [], filterRequest =
         }
 
         @media (max-width: 480px) {
-          .unallotted-card-item {
+          .today-followup-card-item {
             height: 85px !important;
             padding: 10px !important;
             border-radius: 8px !important;
@@ -185,16 +198,15 @@ const UnallottedCard = ({ data, onCardClick, activeFilters = [], filterRequest =
         }
 
         @media (max-width: 360px) {
-          .unallotted-card-item {
+          .today-followup-card-item {
             height: 80px !important;
             padding: 8px !important;
             border-radius: 8px !important;
           }
         }
 
-        /* Unallotted Icon Container Responsive */
         @media (max-width: 1024px) {
-          .unallotted-icon-container {
+          .today-followup-icon-container {
             width: 36px !important;
             height: 36px !important;
             border-radius: 8px !important;
@@ -202,7 +214,7 @@ const UnallottedCard = ({ data, onCardClick, activeFilters = [], filterRequest =
         }
 
         @media (max-width: 768px) {
-          .unallotted-icon-container {
+          .today-followup-icon-container {
             width: 32px !important;
             height: 32px !important;
             border-radius: 7px !important;
@@ -210,7 +222,7 @@ const UnallottedCard = ({ data, onCardClick, activeFilters = [], filterRequest =
         }
 
         @media (max-width: 480px) {
-          .unallotted-icon-container {
+          .today-followup-icon-container {
             width: 28px !important;
             height: 28px !important;
             border-radius: 6px !important;
@@ -218,93 +230,10 @@ const UnallottedCard = ({ data, onCardClick, activeFilters = [], filterRequest =
         }
 
         @media (max-width: 360px) {
-          .unallotted-icon-container {
+          .today-followup-icon-container {
             width: 24px !important;
             height: 24px !important;
             border-radius: 5px !important;
-          }
-        }
-
-        /* Unallotted Icon Responsive */
-        @media (max-width: 1024px) {
-          .unallotted-icon svg {
-            width: 18px !important;
-            height: 18px !important;
-          }
-        }
-
-        @media (max-width: 768px) {
-          .unallotted-icon svg {
-            width: 16px !important;
-            height: 16px !important;
-          }
-        }
-
-        @media (max-width: 480px) {
-          .unallotted-icon svg {
-            width: 14px !important;
-            height: 14px !important;
-          }
-        }
-
-        @media (max-width: 360px) {
-          .unallotted-icon svg {
-            width: 12px !important;
-            height: 12px !important;
-          }
-        }
-
-        /* Unallotted Label Responsive */
-        @media (max-width: 1024px) {
-          .unallotted-label {
-            font-size: 13px !important;
-          }
-        }
-
-        @media (max-width: 768px) {
-          .unallotted-label {
-            font-size: 12px !important;
-          }
-        }
-
-        @media (max-width: 480px) {
-          .unallotted-label {
-            font-size: 11px !important;
-          }
-        }
-
-        @media (max-width: 360px) {
-          .unallotted-label {
-            font-size: 10px !important;
-          }
-        }
-
-        /* Unallotted Count Responsive */
-        @media (max-width: 1024px) {
-          .unallotted-count {
-            font-size: 24px !important;
-            margin-left: 10px !important;
-          }
-        }
-
-        @media (max-width: 768px) {
-          .unallotted-count {
-            font-size: 22px !important;
-            margin-left: 8px !important;
-          }
-        }
-
-        @media (max-width: 480px) {
-          .unallotted-count {
-            font-size: 20px !important;
-            margin-left: 6px !important;
-          }
-        }
-
-        @media (max-width: 360px) {
-          .unallotted-count {
-            font-size: 18px !important;
-            margin-left: 4px !important;
           }
         }
       `}</style>
@@ -312,4 +241,4 @@ const UnallottedCard = ({ data, onCardClick, activeFilters = [], filterRequest =
   );
 };
 
-export default UnallottedCard;
+export default TodayFollowUpsCard;

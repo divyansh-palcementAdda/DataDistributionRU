@@ -22,6 +22,7 @@ import GradWiseCard from '../../component/reusable/DashBoards/gradWiseCard';
 import UnallottedCard from '../../component/reusable/DashBoards/UnallottedCard';
 import AvailedCard from '../../component/reusable/DashBoards/availedCard';
 import AllottedCard from '../../component/reusable/DashBoards/allottedCard';
+import TodayFollowUpsCard from '../../component/reusable/DashBoards/TodayFollowUpsCard';
 import { getLeadSourceBreakdown, getGradeBreakdown, getBoardBreakdown } from '../../Services/cards/cardService';
 import { getRecentActivity, getDashboardSummary } from '../../Services/Dashboard/Dashboard';
 
@@ -269,6 +270,11 @@ const Dashboard = () => {
   }, [leads]);
 
   const handleCardClick = (cardInfo) => {
+    if (cardInfo.type === 'todayFollowUps') {
+      navigate('/followups', { state: { activeTab: 'TODAY' } });
+      return;
+    }
+
     const existingFilterIndex = activeFilters.findIndex(
       f => f.type === cardInfo.type && f.value === cardInfo.value
     );
@@ -677,12 +683,18 @@ const Dashboard = () => {
                 activeFilters={activeFilters}
                 filterRequest={filterRequest}
               />
-              <AvailedCard
+            
+              <AllottedCard
                 onCardClick={handleCardClick}
                 activeFilters={activeFilters}
                 filterRequest={filterRequest}
               />
-              <AllottedCard
+                <AvailedCard
+                onCardClick={handleCardClick}
+                activeFilters={activeFilters}
+                filterRequest={filterRequest}
+              />
+              <TodayFollowUpsCard
                 onCardClick={handleCardClick}
                 activeFilters={activeFilters}
                 filterRequest={filterRequest}
@@ -961,7 +973,8 @@ const Dashboard = () => {
             boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
             border: '1px solid #e2e8f0',
             display: 'flex',
-            flexDirection: 'column'
+            flexDirection: 'column',
+            height: '1750px'
           }}>
             <div style={{
               display: 'flex',
@@ -984,7 +997,7 @@ const Dashboard = () => {
             {/* Activity List */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {recentActivityData.length > 0 ? (
-                recentActivityData.map((activity, index) => {
+                recentActivityData.slice(0, 12).map((activity, index) => {
                   // Determine icon and background color based on activity type
                   const getActivityIcon = () => {
                     if (activity.feedback && activity.feedback.toLowerCase().includes('registered')) {

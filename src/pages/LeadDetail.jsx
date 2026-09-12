@@ -12,7 +12,7 @@ import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import PlanUniversityVisitModal from '../component/reusable/Leads/PlanUniversityVisitModal';
 import ReusableTable from '../component/reusable/table';
 import { createLeadSchedule, getLeadById, getLeadInfoPanel, sendLeadWhatsApp, sendLeadEmail, changeLeadStatus, getLeadStatusHistory, getLeadFollowUps, manualApproveLeadRegistration, retryCmsStudentVerification } from '../Services/lead/leadService';
-import { getAllCourses } from '../Services/course/course';
+import { getCoursesDropdown } from '../Services/drop-down/dropDownService';
 import { completeFollowup, cancelFollowup, markFollowupNotConnected } from '../Services/followUp/followService';
 
 const BASE_URL = import.meta.env.VITE_BASE_URL || '';
@@ -90,9 +90,9 @@ const LeadDetail = () => {
     const fetchCourses = async () => {
       setCoursesLoading(true);
       try {
-        const res = await getAllCourses({ page: 0, size: 20, search: courseSearch });
-        if (res?.success && res?.data?.content) {
-          setCourses(res.data.content);
+        const res = await getCoursesDropdown('', '', courseSearch);
+        if (res?.success && res?.data) {
+          setCourses(res.data);
         } else {
           setCourses([]);
         }

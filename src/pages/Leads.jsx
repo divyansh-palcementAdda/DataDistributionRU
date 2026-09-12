@@ -277,20 +277,20 @@ const Leads = () => {
     }
   };
 
-  const fetchCourses = async () => {
-    try {
-      const res = await getAllCourses({ page: 0, size: 100 });
-      if (res?.success) {
-        const courses = res.data.content;
-        const courseNames = courses.map(course => course.courseName);
+  // const fetchCourses = async () => {
+  //   try {
+  //     const res = await getAllCourses({ page: 0, size: 100 });
+  //     if (res?.success) {
+  //       const courses = res.data.content;
+  //       const courseNames = courses.map(course => course.courseName);
        
-        setCoursesData(['All Courses', ...courseNames]);
-      } else {
-      }
-    } catch (error) {
-      console.error("Failed to fetch courses", error);
-    }
-  };
+  //       setCoursesData(['All Courses', ...courseNames]);
+  //     } else {
+  //     }
+  //   } catch (error) {
+  //     console.error("Failed to fetch courses", error);
+  //   }
+  // };
 
   const fetchLeadStatuses = async () => {
     try {
@@ -372,7 +372,7 @@ const Leads = () => {
   }, [activeFilters]);
 
   useEffect(() => {
-    fetchCourses();
+    // fetchCourses();
     fetchLeadStatuses();
   }, []);
 

@@ -209,7 +209,7 @@ const FollowUps = () => {
           : Array.isArray(payload?.data)
             ? payload.data
             : [];
-      
+
       // Flatten the followups data for Excel export
       const excelData = allFollowupsData.map((followup, index) => {
         return {
@@ -228,18 +228,18 @@ const FollowUps = () => {
 
       // Create worksheet
       const worksheet = XLSX.utils.json_to_sheet(excelData);
-      
+
       // Create workbook
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Follow-ups');
-      
+
       // Generate filename with timestamp
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
       const filename = `followups_export_${timestamp}.xlsx`;
-      
+
       // Download the file
       XLSX.writeFile(workbook, filename);
-      
+
       showToast('Excel file downloaded successfully');
     } catch (error) {
       console.error('Error downloading Excel:', error);
@@ -481,7 +481,7 @@ const FollowUps = () => {
               )
             },
             {
-              value: "PENDING", label: "PENDING", iconBg: '#FFF7ED', iconStroke: '#EA580C', icon: (
+              value: "NOT_CONNECTED", label: "NOT CONNECTED", iconBg: '#FFF7ED', iconStroke: '#EA580C', icon: (
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="12" r="10" />
                   <polyline points="12 6 12 12 16 14" />

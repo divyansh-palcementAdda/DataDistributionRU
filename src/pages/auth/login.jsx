@@ -49,7 +49,7 @@ const Login = () => {
         const roleId = response.data.data.role?.id;
         localStorage.setItem('userRole', roleName);
         localStorage.setItem('roleId', roleId);
-        
+
         // Store user info with role embedded
         const userData = {
           ...response.data.data.user,
@@ -116,7 +116,7 @@ const Login = () => {
             Email address
           </label>
           <input
-            type="email"
+            type="text"
             name="email"
             value={form.email}
             onChange={handleChange}

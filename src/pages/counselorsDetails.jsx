@@ -26,6 +26,7 @@ import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import AssignLeadModal from '../component/reusable/Leads/AssignLeadModal';
 import ReassignModal from '../component/reusable/Leads/ReassignModal';
 import * as XLSX from 'xlsx';
+import { getCourseLeadMatrix, getProgramLeadMatrix } from '../Services/user/userLeadMatrixService';
 
 // ─── Lead table columns ───────────────────────────────────────────────────────
 const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, currentData, hasPermission) => [
@@ -146,7 +147,7 @@ const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, cu
 ];
 
 // ─── Follow-up table columns ───────────────────────────────────────────────────
-const buildFollowUpColumns = (page, size, isReassignableMode = false, selectedRows = new Set(), onToggleRow = () => {}, onToggleAll = () => {}, currentData = []) => {
+const buildFollowUpColumns = (page, size, isReassignableMode = false, selectedRows = new Set(), onToggleRow = () => { }, onToggleAll = () => { }, currentData = []) => {
     if (isReassignableMode) {
         // Columns for reassignable follow-ups API response
         return [
@@ -375,37 +376,37 @@ const fetchLeadsForCard = async (activeFilters, counselorId, page, size, sortBy,
     // Smart conversion function: array to singular/plural based on length
     const convertFilterRequest = (request) => {
         const converted = { ...request };
-        
+
         // Convert leadStatusIds → statusId or statusIds
         if (converted.leadStatusIds?.length === 1) {
             converted.statusId = converted.leadStatusIds[0];
             delete converted.leadStatusIds;
         }
-        
+
         // Convert boardIds → boardId or boardIds
         if (converted.boardIds?.length === 1) {
             converted.boardId = converted.boardIds[0];
             delete converted.boardIds;
         }
-        
+
         // Convert gradeIds → gradeId or gradeIds
         if (converted.gradeIds?.length === 1) {
             converted.gradeId = converted.gradeIds[0];
             delete converted.gradeIds;
         }
-        
+
         // Convert courseTypeIds → courseTypeId or courseTypeIds
         if (converted.courseTypeIds?.length === 1) {
             converted.courseTypeId = converted.courseTypeIds[0];
             delete converted.courseTypeIds;
         }
-        
+
         // Convert leadSourceIds → leadSourceId or leadSourceIds
         if (converted.leadSourceIds?.length === 1) {
             converted.leadSourceId = converted.leadSourceIds[0];
             delete converted.leadSourceIds;
         }
-        
+
         return converted;
     };
 
@@ -416,9 +417,9 @@ const fetchLeadsForCard = async (activeFilters, counselorId, page, size, sortBy,
         const res = await axiosInstance.get(ApiRoutes.Lead.getAllLeads, { params });
         const d = res?.data?.data || res?.data || {};
         return {
-            content:       d.content       ?? (Array.isArray(d) ? d : []),
+            content: d.content ?? (Array.isArray(d) ? d : []),
             totalElements: d.totalElements ?? 0,
-            totalPages:    d.totalPages    ?? 0,
+            totalPages: d.totalPages ?? 0,
         };
     } catch (err) {
         console.error('Failed to fetch lead table data', err);
@@ -442,9 +443,9 @@ const fetchFollowUpsForUser = async (userId, page, size) => {
         const res = await axiosInstance.get(url, { params });
         const d = res?.data?.data || res?.data || {};
         return {
-            content:       d.content       ?? (Array.isArray(d) ? d : []),
+            content: d.content ?? (Array.isArray(d) ? d : []),
             totalElements: d.totalElements ?? 0,
-            totalPages:    d.totalPages    ?? 0,
+            totalPages: d.totalPages ?? 0,
         };
     } catch (err) {
         console.error('Failed to fetch follow-up data', err);
@@ -459,11 +460,11 @@ const fetchReassignableLeads = async (assignedUserId, page = 0, size = 10) => {
             params: { assignedUserId, page, size }
         });
         const d = res?.data?.data || res?.data || {};
-        console.log(d,"this is data of D")
+        console.log(d, "this is data of D")
         return {
-            content:       d.content       ?? (Array.isArray(d) ? d : []),
+            content: d.content ?? (Array.isArray(d) ? d : []),
             totalElements: d.totalElements ?? 0,
-            totalPages:    d.totalPages    ?? 0,
+            totalPages: d.totalPages ?? 0,
         };
     } catch (err) {
         console.error('Failed to fetch reassignable leads', err);
@@ -479,14 +480,229 @@ const fetchReassignableFollowUps = async (responsibleUserId, page = 0, size = 10
         });
         const d = res?.data?.data || res?.data || {};
         return {
-            content:       d.content       ?? (Array.isArray(d) ? d : []),
+            content: d.content ?? (Array.isArray(d) ? d : []),
             totalElements: d.totalElements ?? 0,
-            totalPages:    d.totalPages    ?? 0,
+            totalPages: d.totalPages ?? 0,
         };
     } catch (err) {
         console.error('Failed to fetch reassignable follow-ups', err);
         return { content: [], totalElements: 0, totalPages: 0 };
     }
+};
+
+// ─── Reusable Lead Matrix Table Section ────────────────────────────────────────
+const LeadMatrixSection = ({
+    title,
+    subtitle,
+    itemLabel, // "Course" or "Program"
+    matrix,
+    loading,
+    accentColor = "indigo",
+    onExport,
+}) => {
+    const [search, setSearch] = useState('');
+
+    const statuses = matrix?.statuses || [];
+    const rows = (matrix?.rows || []).filter((r) => {
+        if (!search.trim()) return true;
+        const name = itemLabel === 'Course' ? r.courseName : r.programName;
+        return name?.toLowerCase().includes(search.toLowerCase().trim());
+    });
+
+    const totalAllotted = rows.reduce((acc, r) => acc + (r.totalAllotted || 0), 0);
+    const totalAvailed = rows.reduce((acc, r) => acc + (r.totalAvailed || 0), 0);
+
+    const getStatusSentimentStyle = (sentiment) => {
+        switch (sentiment) {
+            case 'POSITIVE':
+                return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+            case 'NEGATIVE':
+                return 'bg-rose-50 text-rose-700 border-rose-200';
+            case 'NEUTRAL':
+            default:
+                return 'bg-slate-50 text-slate-700 border-slate-200';
+        }
+    };
+
+    return (
+        <div className="mt-6 bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden">
+            {/* Header */}
+            <div className="p-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-3 bg-gray-50/50">
+                <div className="flex items-center gap-2.5">
+                    <div className={`w-1.5 h-6 rounded-full ${accentColor === 'purple' ? 'bg-purple-600' : 'bg-indigo-600'}`} />
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <h3 className="text-base font-bold text-gray-900">{title}</h3>
+                            <span className="text-xs font-medium text-gray-500 bg-gray-200/70 px-2 py-0.5 rounded-full">
+                                {matrix?.rows?.length || 0} {itemLabel}s
+                            </span>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    {/* Search input */}
+                    <div className="relative">
+                        <input
+                            type="text"
+                            placeholder={`Search ${itemLabel}...`}
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="text-xs border border-gray-300 rounded-lg pl-8 pr-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-44"
+                        />
+                        <svg className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+
+                    {/* Export to Excel */}
+                    {rows.length > 0 && onExport && (
+                        <button
+                            onClick={onExport}
+                            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-all shadow-xs cursor-pointer"
+                            title={`Export ${title} to Excel`}
+                        >
+                            <svg className="w-3.5 h-3.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Export Excel
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            {/* Content / Table */}
+            {loading ? (
+                <div className="flex justify-center items-center h-44">
+                    <div className={`animate-spin rounded-full h-7 w-7 border-b-2 ${accentColor === 'purple' ? 'border-purple-600' : 'border-indigo-600'}`} />
+                    <span className="ml-2.5 text-sm font-medium text-gray-500">Loading {title}...</span>
+                </div>
+            ) : rows.length === 0 ? (
+                <div className="p-8 text-center text-gray-400">
+                    <svg className="w-9 h-9 mx-auto text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <p className="text-sm font-medium text-gray-500">No active leads or {itemLabel.toLowerCase()} records found</p>
+                </div>
+            ) : (
+                <div className="overflow-x-auto max-h-[500px]">
+                    <table className="w-full text-left border-collapse text-xs">
+                        <thead className="sticky top-0 z-10 bg-gray-100/95 backdrop-blur-xs border-b border-gray-200">
+                            <tr>
+                                <th className="p-3 font-semibold text-gray-700 min-w-[200px] sticky left-0 z-20 bg-gray-100">
+                                    {itemLabel} Name
+                                </th>
+                                {statuses.map((st) => (
+                                    <th
+                                        key={st.statusId}
+                                        className="p-2.5 text-center font-semibold min-w-[110px] whitespace-nowrap"
+                                    >
+                                        <div className="flex flex-col items-center gap-1">
+                                            <span
+                                                className={`px-2 py-0.5 rounded-md border text-[11px] font-semibold tracking-wide ${getStatusSentimentStyle(
+                                                    st.sentimentCategory
+                                                )}`}
+                                                title={`Code: ${st.code}`}
+                                            >
+                                                {st.name}
+                                            </span>
+                                            {st.followUpStatus && (
+                                                <span className="text-[10px] text-blue-600 font-medium">
+                                                    ● Follow-up
+                                                </span>
+                                            )}
+                                        </div>
+                                    </th>
+                                ))}
+                                <th className="p-3 text-center font-bold text-indigo-700 min-w-[110px] bg-indigo-50/50 border-l border-indigo-100">
+                                    Total Allotted
+                                </th>
+                                <th className="p-3 text-center font-bold text-emerald-700 min-w-[110px] bg-emerald-50/50 border-l border-emerald-100">
+                                    Total Availed
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                            {rows.map((row, idx) => {
+                                const name = itemLabel === 'Course' ? row.courseName : row.programName;
+                                const rowId = itemLabel === 'Course' ? row.courseId : row.programId;
+                                return (
+                                    <tr
+                                        key={rowId || idx}
+                                        className="hover:bg-indigo-50/20 transition-colors"
+                                    >
+                                        <td className="p-3 font-medium text-gray-800 sticky left-0 z-10 bg-white hover:bg-indigo-50/20 shadow-xs">
+                                            <span className="line-clamp-1" title={name}>
+                                                {name || 'Unknown'}
+                                            </span>
+                                        </td>
+                                        {statuses.map((st) => {
+                                            const count = row.statusCounts?.[st.statusId] ?? 0;
+                                            return (
+                                                <td
+                                                    key={st.statusId}
+                                                    className="p-2.5 text-center font-medium"
+                                                >
+                                                    {count > 0 ? (
+                                                        <span className="inline-flex items-center justify-center px-2 py-0.5 rounded font-semibold text-gray-800 bg-gray-100 text-xs min-w-[24px]">
+                                                            {count}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-gray-300 font-normal">0</span>
+                                                    )}
+                                                </td>
+                                            );
+                                        })}
+                                        <td className="p-3 text-center font-bold text-indigo-700 bg-indigo-50/20 border-l border-indigo-100">
+                                            {row.totalAllotted}
+                                        </td>
+                                        <td className="p-3 text-center font-bold text-emerald-700 bg-emerald-50/20 border-l border-emerald-100">
+                                            {row.totalAvailed}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                        {/* Summary / Grand Total Row */}
+                        <tfoot className="sticky bottom-0 z-10 bg-gray-100 font-bold border-t-2 border-gray-300">
+                            <tr>
+                                <td className="p-3 text-gray-900 sticky left-0 z-20 bg-gray-100 uppercase tracking-wider text-xs">
+                                    TOTAL
+                                </td>
+                                {statuses.map((st) => {
+                                    const colTotal = rows.reduce(
+                                        (acc, r) => acc + (r.statusCounts?.[st.statusId] ?? 0),
+                                        0
+                                    );
+                                    return (
+                                        <td
+                                            key={st.statusId}
+                                            className="p-2.5 text-center text-gray-900 text-xs font-bold"
+                                        >
+                                            {colTotal > 0 ? (
+                                                <span className="inline-flex items-center justify-center px-2 py-0.5 rounded font-bold text-gray-900 bg-white border border-gray-300 shadow-2xs">
+                                                    {colTotal}
+                                                </span>
+                                            ) : (
+                                                <span className="text-gray-400 font-normal">0</span>
+                                            )}
+                                        </td>
+                                    );
+                                })}
+                                <td className="p-3 text-center font-extrabold text-indigo-900 bg-indigo-100/60 border-l border-indigo-200">
+                                    {totalAllotted}
+                                </td>
+                                <td className="p-3 text-center font-extrabold text-emerald-900 bg-emerald-100/60 border-l border-emerald-200">
+                                    {totalAvailed}
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            )}
+        </div>
+    );
 };
 
 const CounselorDetails = () => {
@@ -499,6 +715,12 @@ const CounselorDetails = () => {
     const [details, setDetails] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+
+    // Lead Matrices state
+    const [courseMatrix, setCourseMatrix] = useState({ statuses: [], rows: [] });
+    const [courseMatrixLoading, setCourseMatrixLoading] = useState(false);
+    const [programMatrix, setProgramMatrix] = useState({ statuses: [], rows: [] });
+    const [programMatrixLoading, setProgramMatrixLoading] = useState(false);
 
     // dashboard card data
     const [dashData, setDashData] = useState({ leadSource: [], courseType: [], board: [], grade: [] });
@@ -607,6 +829,86 @@ const CounselorDetails = () => {
         };
         fetchDashboardData();
     }, [id]);
+
+    // ── fetch lead matrices ──
+    const fetchCourseMatrix = useCallback(async () => {
+        if (!id || !hasPermission('USER_COURSE_MATRIX_VIEW')) return;
+        setCourseMatrixLoading(true);
+        try {
+            const res = await getCourseLeadMatrix(id);
+            if (res?.data?.success && res?.data?.data) {
+                setCourseMatrix(res.data.data);
+            }
+        } catch (err) {
+            console.error('Failed to fetch course lead matrix', err);
+        } finally {
+            setCourseMatrixLoading(false);
+        }
+    }, [id, hasPermission]);
+
+    const fetchProgramMatrix = useCallback(async () => {
+        if (!id || !hasPermission('USER_PROGRAM_MATRIX_VIEW')) return;
+        setProgramMatrixLoading(true);
+        try {
+            const res = await getProgramLeadMatrix(id);
+            if (res?.data?.success && res?.data?.data) {
+                setProgramMatrix(res.data.data);
+            }
+        } catch (err) {
+            console.error('Failed to fetch program lead matrix', err);
+        } finally {
+            setProgramMatrixLoading(false);
+        }
+    }, [id, hasPermission]);
+
+    useEffect(() => {
+        fetchCourseMatrix();
+    }, [fetchCourseMatrix]);
+
+    useEffect(() => {
+        fetchProgramMatrix();
+    }, [fetchProgramMatrix]);
+
+    const handleExportMatrix = (matrix, type) => {
+        if (!matrix?.rows?.length) return;
+        const headers = [
+            `${type} Name`,
+            ...(matrix.statuses || []).map((s) => s.name),
+            'Total Allotted',
+            'Total Availed',
+        ];
+        const data = matrix.rows.map((row) => {
+            const rowData = [type === 'Course' ? row.courseName : row.programName];
+            (matrix.statuses || []).forEach((s) => {
+                rowData.push(row.statusCounts?.[s.statusId] ?? 0);
+            });
+            rowData.push(row.totalAllotted ?? 0);
+            rowData.push(row.totalAvailed ?? 0);
+            return rowData;
+        });
+
+        // Add TOTAL row
+        const totalRow = ['TOTAL'];
+        (matrix.statuses || []).forEach((s) => {
+            const sum = matrix.rows.reduce(
+                (acc, r) => acc + (r.statusCounts?.[s.statusId] ?? 0),
+                0
+            );
+            totalRow.push(sum);
+        });
+        totalRow.push(
+            matrix.rows.reduce((acc, r) => acc + (r.totalAllotted ?? 0), 0)
+        );
+        totalRow.push(
+            matrix.rows.reduce((acc, r) => acc + (r.totalAvailed ?? 0), 0)
+        );
+        data.push(totalRow);
+
+        const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, `${type}_Matrix`);
+        XLSX.writeFile(wb, `${type}_Lead_Status_Matrix_${id}.xlsx`);
+    };
 
     // ── fetch leads when filters change or pagination/sort changes ──
     useEffect(() => {
@@ -725,7 +1027,7 @@ const CounselorDetails = () => {
         setActiveFilters(prev => {
             // Check if this filter is already active
             const existingIndex = prev.findIndex(f => f.type === card.type && f.value === card.value);
-            
+
             if (existingIndex !== -1) {
                 // Remove the filter (toggle off)
                 const newFilters = [...prev];
@@ -837,7 +1139,7 @@ const CounselorDetails = () => {
     };
 
     // ── remark modal handlers ──
-    const openRemarkModal  = (lead) => { setSelectedLeadForRemark(lead); setIsRemarkModalOpen(true); };
+    const openRemarkModal = (lead) => { setSelectedLeadForRemark(lead); setIsRemarkModalOpen(true); };
     const closeRemarkModal = () => { setIsRemarkModalOpen(false); setSelectedLeadForRemark(null); };
 
     // ── reassign modal handler ──
@@ -853,7 +1155,7 @@ const CounselorDetails = () => {
                 setReassignableFollowUpsSelectedRows(new Set());
                 setReassignableFollowUpsPage((prev) => prev);
             }
-            
+
             return Promise.resolve();
         } catch (error) {
             console.error('Reassign failed:', error);
@@ -864,14 +1166,14 @@ const CounselorDetails = () => {
     // ── lead table sort handler ──
     const handleLeadSort = (columnKey, direction) => {
         const fieldMap = {
-            leadCode:         'leadCode',
-            lead:             'fullName',
+            leadCode: 'leadCode',
+            lead: 'fullName',
             courseInterested: 'courseInterested',
-            source:           'source.name',
-            currentStatus:    'currentStatus',
-            assignedTo:       'assignedTo',
+            source: 'source.name',
+            currentStatus: 'currentStatus',
+            assignedTo: 'assignedTo',
             nextFollowUpDate: 'nextFollowUpDate',
-            createdBy:        'createdAt',
+            createdBy: 'createdAt',
         };
         setTableSortBy(fieldMap[columnKey] || columnKey);
         setTableSortDir(direction);
@@ -903,102 +1205,102 @@ const CounselorDetails = () => {
     // ── fetch all leads data for download ──
     const fetchAllLeadsForDownload = async () => {
         if (!id) return [];
-        
+
         const allLeads = [];
         let page = 0;
         let hasMore = true;
-        
+
         const params = {
             assignedUserIds: id,
             sortBy: tableSortBy || 'createdAt',
             sortDirection: tableSortDir || 'desc',
             size: 100, // Fetch larger pages for download
         };
-        
+
         // Apply current filters
         const convertFilterRequest = (request) => {
             const converted = { ...request };
-            
+
             if (converted.leadStatusIds?.length === 1) {
                 converted.statusId = converted.leadStatusIds[0];
                 delete converted.leadStatusIds;
             }
-            
+
             if (converted.boardIds?.length === 1) {
                 converted.boardId = converted.boardIds[0];
                 delete converted.boardIds;
             }
-            
+
             if (converted.gradeIds?.length === 1) {
                 converted.gradeId = converted.gradeIds[0];
                 delete converted.gradeIds;
             }
-            
+
             if (converted.courseTypeIds?.length === 1) {
                 converted.courseTypeId = converted.courseTypeIds[0];
                 delete converted.courseTypeIds;
             }
-            
+
             if (converted.leadSourceIds?.length === 1) {
                 converted.leadSourceId = converted.leadSourceIds[0];
                 delete converted.leadSourceIds;
             }
-            
+
             return converted;
         };
-        
+
         Object.assign(params, convertFilterRequest(filterRequest));
-        
+
         try {
             while (hasMore) {
-                const res = await axiosInstance.get(ApiRoutes.Lead.getAllLeads, { 
-                    params: { ...params, page } 
+                const res = await axiosInstance.get(ApiRoutes.Lead.getAllLeads, {
+                    params: { ...params, page }
                 });
                 const d = res?.data?.data || res?.data || {};
                 const content = d.content ?? (Array.isArray(d) ? d : []);
-                
+
                 allLeads.push(...content);
-                
+
                 const totalPages = d.totalPages ?? 0;
                 hasMore = page < totalPages - 1;
                 page++;
             }
-            
+
             return allLeads;
         } catch (err) {
             console.error('Failed to fetch all leads for download', err);
             return [];
         }
     };
-    
+
     // ── fetch all follow-ups data for download ──
     const fetchAllFollowUpsForDownload = async () => {
         if (!id) return [];
-        
+
         const allFollowUps = [];
         let page = 0;
         let hasMore = true;
-        
+
         const params = {
             sortBy: 'followUpDate',
             sortDirection: 'desc',
             size: 100,
         };
-        
+
         try {
             while (hasMore) {
                 const url = ApiRoutes.FollowUp.getByUser.replace('{userId}', id);
                 const res = await axiosInstance.get(url, { params: { ...params, page } });
                 const d = res?.data?.data || res?.data || {};
                 const content = d.content ?? (Array.isArray(d) ? d : []);
-                
+
                 allFollowUps.push(...content);
-                
+
                 const totalPages = d.totalPages ?? 0;
                 hasMore = page < totalPages - 1;
                 page++;
             }
-            
+
             return allFollowUps;
         } catch (err) {
             console.error('Failed to fetch all follow-ups for download', err);
@@ -1010,15 +1312,15 @@ const CounselorDetails = () => {
     const downloadLeadsExcel = async () => {
         try {
             showToast('Fetching all leads data for download...', 'info');
-            
+
             // Fetch all leads data
             const allLeads = await fetchAllLeadsForDownload();
-            
+
             if (allLeads.length === 0) {
                 showToast('No data available to download', 'error');
                 return;
             }
-            
+
             // Flatten the table data for Excel export
             const excelData = allLeads.map((lead, index) => {
                 return {
@@ -1043,38 +1345,38 @@ const CounselorDetails = () => {
 
             // Create worksheet
             const worksheet = XLSX.utils.json_to_sheet(excelData);
-            
+
             // Create workbook
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, 'All Leads');
-            
+
             // Generate filename with timestamp
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
             const filename = `counselor_all_leads_${timestamp}.xlsx`;
-            
+
             // Download the file
             XLSX.writeFile(workbook, filename);
-            
+
             showToast(`Excel file downloaded successfully with ${allLeads.length} records`);
         } catch (error) {
             console.error('Error downloading Excel:', error);
             showToast('Failed to download Excel file', 'error');
         }
     };
-    
+
     // ── download Excel function for Follow-up table ──
     const downloadFollowUpsExcel = async () => {
         try {
             showToast('Fetching all follow-ups data for download...', 'info');
-            
+
             // Fetch all follow-ups data
             const allFollowUps = await fetchAllFollowUpsForDownload();
-            
+
             if (allFollowUps.length === 0) {
                 showToast('No follow-up data available to download', 'error');
                 return;
             }
-            
+
             // Flatten the follow-up data for Excel export
             const excelData = allFollowUps.map((followUp, index) => {
                 return {
@@ -1091,18 +1393,18 @@ const CounselorDetails = () => {
 
             // Create worksheet
             const worksheet = XLSX.utils.json_to_sheet(excelData);
-            
+
             // Create workbook
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, 'Follow-ups');
-            
+
             // Generate filename with timestamp
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
             const filename = `counselor_followups_${timestamp}.xlsx`;
-            
+
             // Download the file
             XLSX.writeFile(workbook, filename);
-            
+
             showToast(`Follow-ups Excel file downloaded successfully with ${allFollowUps.length} records`);
         } catch (error) {
             console.error('Error downloading follow-ups Excel:', error);
@@ -1188,11 +1490,10 @@ const CounselorDetails = () => {
                                 <div className="flex-1">
                                     <h2 className="text-2xl font-extrabold text-gray-900 mb-2">{fullName}</h2>
                                     <div className="flex flex-wrap gap-2 items-center">
-                                        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border uppercase tracking-wide ${
-                                            isActive
-                                                ? 'bg-green-50 text-green-700 border-green-200'
-                                                : 'bg-red-50 text-red-700 border-red-200'
-                                        }`}>
+                                        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border uppercase tracking-wide ${isActive
+                                            ? 'bg-green-50 text-green-700 border-green-200'
+                                            : 'bg-red-50 text-red-700 border-red-200'
+                                            }`}>
                                             {isActive ? 'Active' : 'Inactive'}
                                         </span>
                                         <span className="bg-gray-50 text-gray-500 text-[10px] font-medium px-2.5 py-1 rounded-full border border-gray-200">
@@ -1368,6 +1669,32 @@ const CounselorDetails = () => {
                         />
                     </div>
 
+                    {/* ── Course-wise Lead Status Matrix ── */}
+                    {hasPermission('USER_COURSE_MATRIX_VIEW') && (
+                        <LeadMatrixSection
+                            title="Course-wise Lead Status Matrix"
+                            subtitle="Dynamic breakdown of active leads across courses and lead statuses for this user"
+                            itemLabel="Course"
+                            matrix={courseMatrix}
+                            loading={courseMatrixLoading}
+                            accentColor="indigo"
+                            onExport={() => handleExportMatrix(courseMatrix, 'Course')}
+                        />
+                    )}
+
+                    {/* ── Program-wise Lead Status Matrix ── */}
+                    {hasPermission('USER_PROGRAM_MATRIX_VIEW') && (
+                        <LeadMatrixSection
+                            title="Program-wise Lead Status Matrix"
+                            subtitle="Dynamic breakdown of active leads across programs and lead statuses for this user"
+                            itemLabel="Program"
+                            matrix={programMatrix}
+                            loading={programMatrixLoading}
+                            accentColor="purple"
+                            onExport={() => handleExportMatrix(programMatrix, 'Program')}
+                        />
+                    )}
+
                     {/* ── Filtered Lead Table ── */}
                     <div className="mt-6">
                         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
@@ -1377,7 +1704,7 @@ const CounselorDetails = () => {
                                 <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
                                     {tableTotalElements} records
                                 </span>
-                                
+
                                 {/* Active Filters Display */}
                                 {activeFilters.length > 0 && (
                                     <div className="flex items-center gap-2 flex-wrap ml-2">
@@ -1454,7 +1781,7 @@ const CounselorDetails = () => {
                                     actions={(row) => {
                                         const safeRow = {
                                             ...row,
-                                            id:     typeof row.id     === 'object' ? row.id?.id     : row.id,
+                                            id: typeof row.id === 'object' ? row.id?.id : row.id,
                                             leadId: typeof row.leadId === 'object' ? row.leadId?.id : row.leadId,
                                         };
                                         return (
@@ -1534,7 +1861,7 @@ const CounselorDetails = () => {
                                         actions={(row) => {
                                             const safeRow = {
                                                 ...row,
-                                                id:     typeof row.id     === 'object' ? row.id?.id     : row.id,
+                                                id: typeof row.id === 'object' ? row.id?.id : row.id,
                                                 leadId: typeof row.leadId === 'object' ? row.leadId?.id : row.leadId,
                                             };
                                             return (
@@ -1603,7 +1930,7 @@ const CounselorDetails = () => {
                         ) : (
                             <div className="card">
                                 <ReusableTable
-                                    columns={buildFollowUpColumns(followUpPage, followUpSize, false, new Set(), () => {}, () => {}, followUpData)}
+                                    columns={buildFollowUpColumns(followUpPage, followUpSize, false, new Set(), () => { }, () => { }, followUpData)}
                                     data={followUpData}
                                     isServerSide={true}
                                     totalElements={followUpTotalElements}
@@ -1731,8 +2058,8 @@ const CounselorDetails = () => {
                         isOpen={isReassignModalOpen}
                         onClose={() => setIsReassignModalOpen(false)}
                         currentAssignedUserId={id}
-                        selectedRows={reassignDataType === 'leads' ? 
-                            (showReassignableLeads ? reassignableLeadsSelectedRows : selectedRows) : 
+                        selectedRows={reassignDataType === 'leads' ?
+                            (showReassignableLeads ? reassignableLeadsSelectedRows : selectedRows) :
                             reassignableFollowUpsSelectedRows}
                         dataType={reassignDataType}
                         showToast={showToast}

@@ -6,7 +6,7 @@ import { getAllCourses } from '../Services/course/course';
 import { getLeadStatusesDropdown } from '../Services/drop-down/dropDownService';
 import { useAppContext } from '../AppContext';
 import { usePermissions } from '../PermissionContext';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import ReusableTable from '../component/reusable/table';
 // import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import DeleteModal from "../component/reusable/deleteModel"
@@ -24,6 +24,7 @@ const Leads = () => {
   const { openAddLeadModal, navTo, showToast, leadRefreshTrigger } = useAppContext();
   const { canCreate, canUpdate, canDelete, canView, hasPermission } = usePermissions();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -386,14 +387,197 @@ const Leads = () => {
     fetchLeadStatuses();
   }, []);
 
-  // Check for filters passed from navigation (e.g., from adminDashboard)
+  // Parse active filters from URL query parameters (or state fallback)
+  const parseFiltersFromUrlAndState = () => {
+    const filters = [];
+
+    const courseTypeId = searchParams.get('courseTypeId');
+    const courseTypeName = searchParams.get('courseTypeName');
+    if (courseTypeId) {
+      filters.push({
+        type: 'courseType',
+        value: courseTypeId,
+        label: `Category: ${courseTypeName || 'Selected Category'}`
+      });
+    }
+
+    const leadSourceId = searchParams.get('leadSourceId') || searchParams.get('sourceId');
+    const sourceName = searchParams.get('sourceName');
+    if (leadSourceId) {
+      filters.push({
+        type: 'leadSource',
+        value: leadSourceId,
+        label: `Source: ${sourceName || 'Selected Source'}`
+      });
+    }
+
+    const boardId = searchParams.get('boardId');
+    const boardName = searchParams.get('boardName');
+    if (boardId) {
+      filters.push({
+        type: 'board',
+        value: boardId,
+        label: `Specialization: ${boardName || 'Selected Specialization'}`
+      });
+    }
+
+    const gradeId = searchParams.get('gradeId');
+    const gradeName = searchParams.get('gradeName');
+    if (gradeId) {
+      filters.push({
+        type: 'grade',
+        value: gradeId,
+        label: `Grade: ${gradeName || 'Selected Grade'}`
+      });
+    }
+
+    const courseId = searchParams.get('courseId');
+    const courseName = searchParams.get('courseName');
+    if (courseId) {
+      filters.push({
+        type: 'course',
+        value: courseId,
+        label: `Course: ${courseName || 'Selected Course'}`
+      });
+    }
+
+    const allotted = searchParams.get('allotted');
+    const unallotted = searchParams.get('unallotted');
+    if (unallotted === 'true' || allotted === 'false') {
+      filters.push({
+        type: 'unallotted',
+        value: true,
+        label: 'Allocation: Unallocated'
+      });
+    } else if (allotted === 'true') {
+      filters.push({
+        type: 'allotted',
+        value: true,
+        label: 'Allocation: Allotted'
+      });
+    }
+
+    const availed = searchParams.get('availed');
+    if (availed === 'true') {
+      filters.push({
+        type: 'availed',
+        value: true,
+        label: 'Allocation: Availed'
+      });
+    }
+
+    const assignedUserId = searchParams.get('assignedUserId') || searchParams.get('userId');
+    const userName = searchParams.get('userName');
+    if (assignedUserId) {
+      filters.push({
+        type: 'assignedUser',
+        value: assignedUserId,
+        label: `User: ${userName || 'Assigned User'}`
+      });
+    }
+
+    const statusId = searchParams.get('statusId');
+    const statusName = searchParams.get('statusName');
+    if (statusId) {
+      filters.push({
+        type: 'leadStatus',
+        value: statusId,
+        label: `Status: ${statusName || 'Status'}`
+      });
+    }
+
+    if (filters.length > 0) {
+      return filters;
+    }
+
+    if (location.state?.activeFilters && Array.isArray(location.state.activeFilters) && location.state.activeFilters.length > 0) {
+      return location.state.activeFilters;
+    }
+
+    return [];
+  };
+
+  // Sync activeFilters on URL search params change
   useEffect(() => {
-    if (location.state?.activeFilters && Array.isArray(location.state.activeFilters)) {
+    const filters = parseFiltersFromUrlAndState();
+    if (filters.length > 0) {
+      setActiveFilters(filters);
+    }
+  }, [location.search]);
+
+  // Sync activeFilters and URL params from location.state navigation
+  useEffect(() => {
+    if (location.state?.activeFilters && Array.isArray(location.state.activeFilters) && location.state.activeFilters.length > 0) {
       setActiveFilters(location.state.activeFilters);
-      // Clear the state after applying
-      window.history.replaceState({}, document.title);
+      const params = new URLSearchParams(location.search);
+      location.state.activeFilters.forEach(f => {
+        if (f.type === 'courseType') params.set('courseTypeId', f.value);
+        if (f.type === 'leadSource') params.set('leadSourceId', f.value);
+        if (f.type === 'board') params.set('boardId', f.value);
+        if (f.type === 'grade') params.set('gradeId', f.value);
+        if (f.type === 'course') params.set('courseId', f.value);
+        if (f.type === 'unallotted') params.set('allotted', 'false');
+        if (f.type === 'allotted') params.set('allotted', 'true');
+        if (f.type === 'availed') params.set('availed', 'true');
+        if (f.type === 'assignedUser' || f.type === 'user') params.set('assignedUserId', f.value);
+        if (f.type === 'leadStatus') params.set('statusId', f.value);
+      });
+      setSearchParams(params, { replace: true });
     }
   }, [location.state]);
+
+  const handleRemoveFilterAtIndex = (indexToRemove) => {
+    const filterToRemove = activeFilters[indexToRemove];
+    const newFilters = activeFilters.filter((_, i) => i !== indexToRemove);
+    setActiveFilters(newFilters);
+    setSelectedCard(null);
+    setPage(0);
+
+    if (filterToRemove) {
+      const params = new URLSearchParams(searchParams);
+      if (filterToRemove.type === 'courseType') {
+        params.delete('courseTypeId');
+        params.delete('courseTypeName');
+      } else if (filterToRemove.type === 'leadSource') {
+        params.delete('leadSourceId');
+        params.delete('sourceId');
+        params.delete('sourceName');
+      } else if (filterToRemove.type === 'board') {
+        params.delete('boardId');
+        params.delete('boardName');
+      } else if (filterToRemove.type === 'grade') {
+        params.delete('gradeId');
+        params.delete('gradeName');
+      } else if (filterToRemove.type === 'course') {
+        params.delete('courseId');
+        params.delete('courseIds');
+        params.delete('courseName');
+      } else if (filterToRemove.type === 'unallotted' || filterToRemove.type === 'allotted') {
+        params.delete('allotted');
+        params.delete('unallotted');
+      } else if (filterToRemove.type === 'availed') {
+        params.delete('availed');
+      } else if (filterToRemove.type === 'assignedUser' || filterToRemove.type === 'user') {
+        params.delete('assignedUserId');
+        params.delete('userId');
+        params.delete('userName');
+      } else if (filterToRemove.type === 'leadStatus') {
+        params.delete('statusId');
+        params.delete('statusName');
+      }
+      setSearchParams(params, { replace: true });
+    }
+  };
+
+  const handleClearAllFilters = () => {
+    setActiveFilters([]);
+    setFilterRequest({});
+    setSelectedCard(null);
+    setFilterLeadStatus('');
+    setFilterLeadStatusName('');
+    setPage(0);
+    setSearchParams({}, { replace: true });
+  };
 
   // Remark system commented out
   // const [isRemarkModalOpen, setIsRemarkModalOpen] = useState(false);
@@ -665,11 +849,7 @@ const Leads = () => {
           >
             <span>{filter.label}</span>
             <button
-              onClick={() => {
-                setActiveFilters(prevFilters => prevFilters.filter((_, i) => i !== index));
-                setSelectedCard(null); // Also clear selectedCard
-                setPage(0);
-              }}
+              onClick={() => handleRemoveFilterAtIndex(index)}
               className="ml-1 text-indigo-400 hover:text-indigo-700 bg-transparent border-none cursor-pointer leading-none"
               title="Clear filter"
             >
@@ -697,13 +877,7 @@ const Leads = () => {
         {/* Clear all filters button */}
         {(activeFilters.length > 0 || filterLeadStatus) && (
           <button
-            onClick={() => {
-              setActiveFilters([]);
-              setSelectedCard(null);
-              setFilterLeadStatus('');
-              setFilterLeadStatusName('');
-              setPage(0);
-            }}
+            onClick={handleClearAllFilters}
             className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 rounded border border-gray-300 cursor-pointer"
             title="Clear all filters"
           >

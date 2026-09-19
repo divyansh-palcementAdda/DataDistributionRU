@@ -74,7 +74,7 @@ const LeadStatusSegregationModal = ({
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
       <div className="w-full max-w-4xl rounded-2xl bg-white shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in fade-in zoom-in-95 duration-200">
-        
+
         {/* Modal Header */}
         <div className="bg-gradient-to-r from-indigo-700 via-purple-700 to-indigo-800 text-white p-5 flex items-center justify-between shrink-0">
           <div>
@@ -155,7 +155,7 @@ const LeadStatusSegregationModal = ({
                           <h4 className="font-bold text-gray-900 text-base group-hover:text-purple-700 transition-colors">
                             {status.name}
                           </h4>
-                          {getSentimentBadge(status.sentimentCategory)}
+                          {/* {getSentimentBadge(status.sentimentCategory)} */}
                         </div>
                         <span className="text-xl font-extrabold text-gray-900 bg-gray-50 px-2.5 py-0.5 rounded-lg border border-gray-100">
                           {count}

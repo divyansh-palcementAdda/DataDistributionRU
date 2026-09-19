@@ -10,7 +10,8 @@ const CourseSegregationModal = ({
   scopeTitle,
   filterScope,
   canViewCourseUser,
-  onViewUsers
+  onViewUsers,
+  onNavigateToLeads
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('total');
@@ -293,8 +294,10 @@ const CourseSegregationModal = ({
                           </span>
                         </th>
                       ))}
-                      {canViewCourseUser && (
-                        <th className="py-3 px-4 text-center min-w-[130px] sticky right-0 bg-gray-100 z-10">Actions</th>
+                      {(canViewCourseUser || onNavigateToLeads) && (
+                        <th className="py-3 px-4 text-center min-w-[220px] sticky right-0 bg-gray-100 z-10 whitespace-nowrap shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)]">
+                          Actions
+                        </th>
                       )}
                     </tr>
                   </thead>
@@ -342,18 +345,48 @@ const CourseSegregationModal = ({
                         })}
 
                         {/* Action Drill Down */}
-                        {canViewCourseUser && (
-                          <td className="py-3 px-4 text-center sticky right-0 bg-white group-hover:bg-blue-50/40 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)]">
-                            <button
-                              onClick={() => onViewUsers(course, filterScope)}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs rounded-lg transition-all shadow-2xs hover:shadow-xs cursor-pointer"
-                              title={`View users for ${course.courseName}`}
-                            >
-                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                              </svg>
-                              View Users
-                            </button>
+                        {(canViewCourseUser || onNavigateToLeads) && (
+                          <td className="py-3 px-4 text-center min-w-[220px] sticky right-0 bg-white group-hover:bg-blue-50/40 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)] whitespace-nowrap">
+                            <div className="flex items-center justify-center gap-2">
+                              {onNavigateToLeads && (
+                                <button
+                                  onClick={() =>
+                                    onNavigateToLeads({
+                                      courseId: course.courseId,
+                                      courseName: course.courseName,
+                                      courseTypeId: filterScope?.courseTypeId,
+                                      courseTypeName: courseTypeName,
+                                      leadSourceId: filterScope?.leadSourceId,
+                                      sourceName: filterScope?.sourceName,
+                                      boardId: filterScope?.boardId,
+                                      boardName: filterScope?.boardName,
+                                      gradeId: filterScope?.gradeId,
+                                      gradeName: filterScope?.gradeName
+                                    })
+                                  }
+                                  className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white hover:bg-blue-50 text-blue-700 border border-blue-300 hover:border-blue-400 rounded-lg text-xs font-semibold shadow-2xs hover:shadow-xs transition-all whitespace-nowrap cursor-pointer shrink-0"
+                                  title={`View leads for ${course.courseName}`}
+                                >
+                                  <svg className="w-3.5 h-3.5 text-blue-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                  </svg>
+                                  <span>View Leads</span>
+                                </button>
+                              )}
+                              {canViewCourseUser && (
+                                <button
+                                  onClick={() => onViewUsers(course, filterScope)}
+                                  className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-2xs hover:shadow-xs transition-all whitespace-nowrap cursor-pointer shrink-0"
+                                  title={`View users for ${course.courseName}`}
+                                >
+                                  <svg className="w-3.5 h-3.5 text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                  </svg>
+                                  <span>View Users</span>
+                                </button>
+                              )}
+                            </div>
                           </td>
                         )}
                       </tr>

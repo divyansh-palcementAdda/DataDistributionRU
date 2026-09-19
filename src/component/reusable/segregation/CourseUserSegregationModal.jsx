@@ -380,6 +380,8 @@ const CourseUserSegregationModal = ({
                                   courseId: selectedCourse?.courseId,
                                   unallocated: true,
                                   courseName: courseDisplayName,
+                                  courseTypeId: filterScope?.courseTypeId,
+                                  courseTypeName: filterScope?.courseTypeName,
                                   leadSourceId: filterScope?.leadSourceId,
                                   sourceName: filterScope?.sourceName,
                                   boardId: filterScope?.boardId,
@@ -388,9 +390,13 @@ const CourseUserSegregationModal = ({
                                   gradeName: filterScope?.gradeName
                                 })
                               }
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-medium text-xs rounded-lg transition-all shadow-2xs cursor-pointer"
+                              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs rounded-lg transition-all shadow-2xs hover:shadow-xs whitespace-nowrap cursor-pointer shrink-0"
                               title="View unallocated leads in Leads page"
                             >
+                              <svg className="w-3.5 h-3.5 text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
                               <span>View Leads</span>
                             </button>
                           </td>
@@ -462,6 +468,8 @@ const CourseUserSegregationModal = ({
                                   assignedUserId: user.userId,
                                   userName: user.fullName || user.username,
                                   courseName: courseDisplayName,
+                                  courseTypeId: filterScope?.courseTypeId,
+                                  courseTypeName: filterScope?.courseTypeName,
                                   leadSourceId: filterScope?.leadSourceId,
                                   sourceName: filterScope?.sourceName,
                                   boardId: filterScope?.boardId,
@@ -470,9 +478,13 @@ const CourseUserSegregationModal = ({
                                   gradeName: filterScope?.gradeName
                                 })
                               }
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs rounded-lg transition-all shadow-2xs hover:shadow-xs cursor-pointer"
+                              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-lg transition-all shadow-2xs hover:shadow-xs whitespace-nowrap cursor-pointer shrink-0"
                               title={`View leads of ${user.fullName || user.username}`}
                             >
+                              <svg className="w-3.5 h-3.5 text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                              </svg>
                               <span>View Leads</span>
                             </button>
                           </td>

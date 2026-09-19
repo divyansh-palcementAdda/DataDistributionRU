@@ -245,72 +245,128 @@ const DataSegregation = () => {
   // =========================================================================
   const navigateToLeads = (filters) => {
     const activeFilters = [];
+    const searchParams = new URLSearchParams();
 
-    if (filters.courseTypeId && selectedCourseType && canViewCourseType) {
+    // 1. Category / Course Type (Unconditionally preserve)
+    const effectiveCourseTypeId = filters.courseTypeId || selectedCourseType?.id;
+    const effectiveCourseTypeName = filters.courseTypeName || selectedCourseType?.name;
+    if (effectiveCourseTypeId) {
       activeFilters.push({
         type: 'courseType',
-        value: filters.courseTypeId,
-        label: `Category: ${selectedCourseType.name}`
+        value: effectiveCourseTypeId,
+        label: `Category: ${effectiveCourseTypeName || 'Selected Category'}`
       });
+      searchParams.set('courseTypeId', effectiveCourseTypeId);
+      if (effectiveCourseTypeName) {
+        searchParams.set('courseTypeName', effectiveCourseTypeName);
+      }
     }
 
-    if (filters.leadSourceId && filters.sourceName && canViewSource) {
+    // 2. Source (Unconditionally preserve)
+    if (filters.leadSourceId) {
       activeFilters.push({
         type: 'leadSource',
         value: filters.leadSourceId,
-        label: `Source: ${filters.sourceName}`
+        label: `Source: ${filters.sourceName || 'Selected Source'}`
       });
+      searchParams.set('leadSourceId', filters.leadSourceId);
+      if (filters.sourceName) {
+        searchParams.set('sourceName', filters.sourceName);
+      }
     }
 
-    if (filters.boardId && filters.boardName && canViewBoard) {
+    // 3. Specialization / Board (Unconditionally preserve)
+    if (filters.boardId) {
       activeFilters.push({
         type: 'board',
         value: filters.boardId,
-        label: `Specialization: ${filters.boardName}`
+        label: `Specialization: ${filters.boardName || 'Selected Specialization'}`
       });
+      searchParams.set('boardId', filters.boardId);
+      if (filters.boardName) {
+        searchParams.set('boardName', filters.boardName);
+      }
     }
 
-    if (filters.gradeId && filters.gradeName && canViewGrade) {
+    // 4. Grade (Unconditionally preserve)
+    if (filters.gradeId) {
       activeFilters.push({
         type: 'grade',
         value: filters.gradeId,
-        label: `Grade: ${filters.gradeName}`
+        label: `Grade: ${filters.gradeName || 'Selected Grade'}`
       });
+      searchParams.set('gradeId', filters.gradeId);
+      if (filters.gradeName) {
+        searchParams.set('gradeName', filters.gradeName);
+      }
     }
 
+    // 5. Course (Unconditionally preserve)
     if (filters.courseId) {
       activeFilters.push({
         type: 'course',
         value: filters.courseId,
         label: `Course: ${filters.courseName || 'Selected Course'}`
       });
+      searchParams.set('courseId', filters.courseId);
+      if (filters.courseName) {
+        searchParams.set('courseName', filters.courseName);
+      }
     }
 
+    // 6. Allocation (Unallocated / Allotted)
     if (filters.unallocated) {
       activeFilters.push({
         type: 'unallotted',
         value: true,
         label: 'Allocation: Unallocated'
       });
+      searchParams.set('allotted', 'false');
+    } else if (filters.allotted === true) {
+      activeFilters.push({
+        type: 'allotted',
+        value: true,
+        label: 'Allocation: Allotted'
+      });
+      searchParams.set('allotted', 'true');
     }
 
+    // 7. Assigned User
     if (filters.assignedUserId) {
       activeFilters.push({
         type: 'assignedUser',
         value: filters.assignedUserId,
         label: `User: ${filters.userName || 'Assigned User'}`
       });
+      searchParams.set('assignedUserId', filters.assignedUserId);
+      if (filters.userName) {
+        searchParams.set('userName', filters.userName);
+      }
     }
 
+    // 8. Lead Status
     if (filters.statusId) {
       activeFilters.push({
         type: 'leadStatus',
         value: filters.statusId,
         label: `Status: ${filters.statusName || 'Status'}`
       });
+      searchParams.set('statusId', filters.statusId);
+      if (filters.statusName) {
+        searchParams.set('statusName', filters.statusName);
+      }
     }
 
-    navigate('/leads', { state: { activeFilters } });
+    const searchString = searchParams.toString();
+    navigate(
+      {
+        pathname: '/leads',
+        search: searchString ? `?${searchString}` : ''
+      },
+      {
+        state: { activeFilters }
+      }
+    );
   };
 
   // =========================================================================
@@ -446,7 +502,11 @@ const DataSegregation = () => {
 
     setSelectedCourseForUserModal(course);
     setCourseUserScopeTitle(courseScopeTitle);
-    setCourseUserScopeFilter(filterScope);
+    setCourseUserScopeFilter({
+      ...filterScope,
+      courseTypeId: filterScope?.courseTypeId || selectedCourseType?.id,
+      courseTypeName: filterScope?.courseTypeName || selectedCourseType?.name
+    });
     setIsCourseModalOpen(false);
     setIsCourseUserModalOpen(true);
     setLoadingCourseUserModal(true);
@@ -479,7 +539,8 @@ const DataSegregation = () => {
   const handleNavigateFromCourseUser = (params) => {
     setIsCourseUserModalOpen(false);
     navigateToLeads({
-      courseTypeId: selectedCourseType?.id,
+      courseTypeId: params.courseTypeId || selectedCourseType?.id,
+      courseTypeName: params.courseTypeName || selectedCourseType?.name,
       courseId: params.courseId,
       courseName: params.courseName,
       leadSourceId: params.leadSourceId,
@@ -1254,6 +1315,21 @@ const DataSegregation = () => {
           filterScope={courseScopeFilter}
           canViewCourseUser={canViewCourseUser}
           onViewUsers={handleOpenCourseUserSegregation}
+          onNavigateToLeads={(params) => {
+            setIsCourseModalOpen(false);
+            navigateToLeads({
+              courseTypeId: params.courseTypeId || courseScopeFilter?.courseTypeId || selectedCourseType?.id,
+              courseTypeName: params.courseTypeName || courseScopeFilter?.courseTypeName || selectedCourseType?.name,
+              courseId: params.courseId,
+              courseName: params.courseName,
+              leadSourceId: params.leadSourceId,
+              sourceName: params.sourceName,
+              boardId: params.boardId,
+              boardName: params.boardName,
+              gradeId: params.gradeId,
+              gradeName: params.gradeName
+            });
+          }}
         />
       )}
 

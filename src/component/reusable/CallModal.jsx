@@ -368,7 +368,9 @@ const CallModal = ({ isOpen, onClose, studentData, followups, onScheduleOpen, on
                             <div className="flex-1">
                                 <p className="text-xs text-gray-500 font-medium">Interested Course</p>
                                 <p className="text-sm text-gray-900 font-medium">
-                                    {studentData?.courseInterested || studentData?.course?.courseName || studentData?.interestedCourse || 'N/A'}
+                                    {(Array.isArray(studentData?.interestedCourses) && studentData.interestedCourses.length > 0
+                                        ? (studentData.interestedCourses[0]?.courseName || studentData.interestedCourses[0]?.name)
+                                        : studentData?.course?.courseName) || 'N/A'}
                                 </p>
                             </div>
                         </div>

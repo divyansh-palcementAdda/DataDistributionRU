@@ -16,8 +16,11 @@ const LeadRemarkModal = ({ isOpen, onClose, lead, onSave, followUpId }) => {
   const getLeadCourse = (item) => {
     if (!item) return 'N/A';
 
-    if (typeof item.courseInterested === 'string' && item.courseInterested.trim()) {
-      return item.courseInterested;
+    // Check interestedCourses array first (replaces legacy courseInterested string)
+    if (Array.isArray(item.interestedCourses) && item.interestedCourses.length > 0) {
+      const c = item.interestedCourses[0];
+      if (typeof c === 'object' && c !== null) return c.courseName || c.courseCode || 'N/A';
+      if (typeof c === 'string' && c.trim()) return c;
     }
 
     if (typeof item.course === 'string' && item.course.trim()) {

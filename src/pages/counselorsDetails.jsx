@@ -85,12 +85,16 @@ const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, cu
         ),
     },
     {
-        key: 'courseInterested',
+        key: 'interestedCourses',
         header: 'Course',
         render: (value, row) => {
-            const v = value || row.courseInterested;
-            if (typeof v === 'object' && v !== null) return v?.courseName || v?.name || 'N/A';
-            return v || 'N/A';
+            // Priority: interestedCourses[0] > registered course
+            if (Array.isArray(row.interestedCourses) && row.interestedCourses.length > 0) {
+                const c = row.interestedCourses[0];
+                return (typeof c === 'object' && c !== null) ? (c.courseName || c.name || 'N/A') : (c || 'N/A');
+            }
+            if (row.course && typeof row.course === 'object') return row.course.courseName || row.course.name || 'N/A';
+            return 'N/A';
         },
     },
     {
@@ -1168,7 +1172,7 @@ const CounselorDetails = () => {
         const fieldMap = {
             leadCode: 'leadCode',
             lead: 'fullName',
-            courseInterested: 'courseInterested',
+            interestedCourses: 'interestedCourses',
             source: 'source.name',
             currentStatus: 'currentStatus',
             assignedTo: 'assignedTo',
@@ -1329,7 +1333,7 @@ const CounselorDetails = () => {
                     'Lead Name': typeof lead.fullName === 'object' ? lead.fullName?.name || lead.fullName?.firstName || 'N/A' : lead.fullName || 'N/A',
                     'Phone Number': lead.phoneNumber || 'N/A',
                     'Email': lead.email || 'N/A',
-                    'Course': lead.course?.courseName || lead.registeredCourse?.courseName || lead.courseInterested || 'N/A',
+                    'Course': (() => { const c = lead.interestedCourses?.[0]; return (c && typeof c === 'object') ? (c.courseName || c.name || 'N/A') : lead.course?.courseName || 'N/A'; })(),
                     'Source': lead.sourceDetails || (Array.isArray(lead.leadSources) && lead.leadSources[0]?.name) || (typeof lead.source === 'object' ? lead.source?.name : lead.source) || 'N/A',
                     'Status': typeof lead.currentStatus === 'object' ? lead.currentStatus?.name || lead.currentStatus?.code || 'N/A' : lead.currentStatus || 'N/A',
                     'Counselor': typeof lead.assignedTo === 'object' ? `${lead.assignedTo.firstName || ''} ${lead.assignedTo.lastName || ''}`.trim() || 'Not Allotted' : lead.assignedTo || 'Not Allotted',

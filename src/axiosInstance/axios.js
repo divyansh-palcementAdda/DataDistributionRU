@@ -14,6 +14,9 @@ const axiosInstance = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  paramsSerializer: {
+    indexes: null, // serializes arrays as key=val1&key=val2 for Spring MVC compatibility
+  },
 });
 
 let isRefreshing = false;

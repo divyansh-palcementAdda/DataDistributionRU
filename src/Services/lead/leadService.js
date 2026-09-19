@@ -15,7 +15,7 @@ export const getAllLeads = async (params) => {
         const response = await axiosInstance.get(ApiRoutes.Lead.getAllLeads, { params });
         return response;
     } catch (error) {
-        return error;
+        throw error;
     }
 };
 export const updateLead = async (id, data) => {

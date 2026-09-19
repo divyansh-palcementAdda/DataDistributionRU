@@ -36,6 +36,7 @@ const LeadSource = ({ data, onCardClick, activeFilters = [], filterRequest = {},
       return;
     }
 
+    let isCancelled = false;
     const fetchSourceData = async () => {
       try {
         // Start with individual scalar props (backward-compat for non-Leads usages)
@@ -52,15 +53,22 @@ const LeadSource = ({ data, onCardClick, activeFilters = [], filterRequest = {},
         const params = { ...baseParams, ...filterRequest };
 
         const response = await getLeadSourceBreakdown(params);
-        const payload = response?.data?.data ?? response?.data ?? response ?? [];
-        // Normalise: always store as an array
-        setSourceData(Array.isArray(payload) ? payload : Object.values(payload));
+        if (!isCancelled) {
+          const payload = response?.data?.data ?? response?.data ?? response ?? [];
+          // Normalise: always store as an array
+          setSourceData(Array.isArray(payload) ? payload : Object.values(payload));
+        }
       } catch (error) {
-        console.error('Error fetching lead source breakdown:', error);
+        if (!isCancelled) {
+          console.error('Error fetching lead source breakdown:', error);
+        }
       }
     };
 
     fetchSourceData();
+    return () => {
+      isCancelled = true;
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, filterRequestKey, courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId]);
 

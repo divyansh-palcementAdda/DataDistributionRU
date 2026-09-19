@@ -23,33 +23,43 @@ const AvailedCard = ({ data, onCardClick, activeFilters = [], filterRequest = {}
       return;
     }
 
+    let isCancelled = false;
     const fetchAvailedCount = async () => {
-      try {
-        setLoading(true);
-        const params = {};
-        if (courseTypeId) params.courseTypeId = courseTypeId;
-        if (leadSourceId) params.leadSourceId = leadSourceId;
-        if (boardId) params.boardId = boardId;
-        if (gradeId) params.gradeId = gradeId;
-        if (counselorId) params.counselorId = counselorId;
-        if (departmentId) params.departmentId = departmentId;
-        if (statusId) params.statusId = statusId;
-        
-        // Merge with filterRequest if provided
-        const finalParams = { ...params, ...filterRequest };
-        
-        const response = await getAvailedCount(finalParams);
-        const payload = response?.data?.data ?? response?.data ?? response;
-        setAvailedData(payload);
-      } catch (error) {
-        console.error('Error fetching availed count:', error);
-        setAvailedData(null);
-      } finally {
-        setLoading(false);
-      }
-    };
+       try {
+         setLoading(true);
+         const params = {};
+         if (courseTypeId) params.courseTypeId = courseTypeId;
+         if (leadSourceId) params.leadSourceId = leadSourceId;
+         if (boardId) params.boardId = boardId;
+         if (gradeId) params.gradeId = gradeId;
+         if (counselorId) params.counselorId = counselorId;
+         if (departmentId) params.departmentId = departmentId;
+         if (statusId) params.statusId = statusId;
+         
+         // Merge with filterRequest if provided
+         const finalParams = { ...params, ...filterRequest };
+         
+         const response = await getAvailedCount(finalParams);
+         if (!isCancelled) {
+           const payload = response?.data?.data ?? response?.data ?? response;
+           setAvailedData(payload);
+         }
+       } catch (error) {
+         if (!isCancelled) {
+           console.error('Error fetching availed count:', error);
+           setAvailedData(null);
+         }
+       } finally {
+         if (!isCancelled) {
+           setLoading(false);
+         }
+       }
+     };
 
-    fetchAvailedCount();
+     fetchAvailedCount();
+     return () => {
+       isCancelled = true;
+     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, filterRequestKey, courseTypeId, leadSourceId, boardId, gradeId, counselorId, departmentId, statusId]);
 

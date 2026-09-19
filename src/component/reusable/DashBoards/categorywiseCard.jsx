@@ -2,10 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { getCourseTypesBreakdown } from '../../../Services/cards/cardService';
 import { usePermissions } from '../../../PermissionContext';
 
-const CategorywiseCard = ({ data, onCardClick, activeFilters = [], courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId }) => {
+const CategorywiseCard = ({ data, onCardClick, activeFilters = [], filterRequest = {}, courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId }) => {
   // API returns an array: [{id, name, code, count, percentage}, ...]
   const [courseTypesData, setCourseTypesData] = useState([]);
   const { hasPermission } = usePermissions();
+
+  const filterRequestKey = JSON.stringify(filterRequest);
 
   useEffect(() => {
     if (data !== undefined) {
@@ -14,27 +16,38 @@ const CategorywiseCard = ({ data, onCardClick, activeFilters = [], courseTypeId,
       return;
     }
 
+    let isCancelled = false;
     const fetchCourseTypes = async () => {
       try {
-        const params = {};
-        if (courseTypeId) params.courseTypeId = courseTypeId;
-        if (leadSourceId) params.leadSourceId = leadSourceId;
-        if (boardId) params.boardId = boardId;
-        if (gradeId) params.gradeId = gradeId;
-        if (assignedUserIds) params.assignedUserIds = assignedUserIds;
-        if (departmentId) params.departmentId = departmentId;
+        const baseParams = {};
+        if (courseTypeId) baseParams.courseTypeId = courseTypeId;
+        if (leadSourceId) baseParams.leadSourceId = leadSourceId;
+        if (boardId) baseParams.boardId = boardId;
+        if (gradeId) baseParams.gradeId = gradeId;
+        if (assignedUserIds) baseParams.assignedUserIds = assignedUserIds;
+        if (departmentId) baseParams.departmentId = departmentId;
         
+        const params = { ...baseParams, ...filterRequest };
+
         const response = await getCourseTypesBreakdown(params);
-        const payload = response?.data?.data ?? response?.data ?? response ?? [];
-        // Normalise: always store as an array
-        setCourseTypesData(Array.isArray(payload) ? payload : Object.values(payload));
+        if (!isCancelled) {
+          const payload = response?.data?.data ?? response?.data ?? response ?? [];
+          // Normalise: always store as an array
+          setCourseTypesData(Array.isArray(payload) ? payload : Object.values(payload));
+        }
       } catch (error) {
-        console.error('Error fetching course types:', error);
+        if (!isCancelled) {
+          console.error('Error fetching course types:', error);
+        }
       }
     };
 
     fetchCourseTypes();
-  }, [data, courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId]);
+    return () => {
+      isCancelled = true;
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, filterRequestKey, courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId]);
 
   // Permission gate: hide entire section if permission is false
   if (!hasPermission('DASHBOARD_COURSE_TYPE_VIEW')) {
@@ -103,13 +116,13 @@ const CategorywiseCard = ({ data, onCardClick, activeFilters = [], courseTypeId,
             const iconStroke = getIconStroke(color);
             const label = item.name || item.code || `Category ${index + 1}`;
             const count = typeof item.count === 'number' ? item.count.toLocaleString() : item.count ?? '0';
-            const isSelected = activeFilters.some(f => f.type === 'courseType' && (f.value === item.code || f.value === item.id));
+            const isSelected = activeFilters.some(f => f.type === 'courseType' && (f.value === item.id || f.value === item.code));
 
             return (
             <div
               key={item.id ?? index}
               className="categorywise-card-item"
-              onClick={() => onCardClick && onCardClick({ type: 'courseType', value: item.code || item.id, label })}
+              onClick={() => onCardClick && onCardClick({ type: 'courseType', value: item.id || item.code, label })}
               style={{
                 background: '#ffffff',
                 borderRadius: '12px',

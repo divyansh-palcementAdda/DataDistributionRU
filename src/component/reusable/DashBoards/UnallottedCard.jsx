@@ -24,6 +24,7 @@ const UnallottedCard = ({ data, onCardClick, activeFilters = [], filterRequest =
       return;
     }
 
+    let isCancelled = false;
     const fetchUnallottedCount = async () => {
       try {
         setLoading(true);
@@ -40,17 +41,26 @@ const UnallottedCard = ({ data, onCardClick, activeFilters = [], filterRequest =
         const finalParams = { ...params, ...filterRequest };
         
         const response = await getUnallottedCount(finalParams);
-        const payload = response?.data?.data ?? response?.data ?? response;
-        setUnallottedData(payload);
+        if (!isCancelled) {
+          const payload = response?.data?.data ?? response?.data ?? response;
+          setUnallottedData(payload);
+        }
       } catch (error) {
-        console.error('Error fetching unallotted count:', error);
-        setUnallottedData(null);
+        if (!isCancelled) {
+          console.error('Error fetching unallotted count:', error);
+          setUnallottedData(null);
+        }
       } finally {
-        setLoading(false);
+        if (!isCancelled) {
+          setLoading(false);
+        }
       }
     };
 
     fetchUnallottedCount();
+    return () => {
+      isCancelled = true;
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, filterRequestKey, courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId, statusId]);
 

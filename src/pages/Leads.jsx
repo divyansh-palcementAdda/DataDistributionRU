@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { FiEye, FiEdit, FiTrash2 } from 'react-icons/fi';
 import { statusConfig } from '../mockData';
 import { getAllLeads, deleteLead, getLeadById, availLead } from '../Services/lead/leadService';
@@ -16,10 +16,120 @@ import LeadSource from '../component/reusable/DashBoards/leadSource';
 import UnallottedCard from '../component/reusable/DashBoards/UnallottedCard';
 import AvailedCard from '../component/reusable/DashBoards/availedCard';
 import AllottedCard from '../component/reusable/DashBoards/allottedCard';
+import CategorywiseCard from '../component/reusable/DashBoards/categorywiseCard';
 import BulkUploadModal from '../component/reusable/Leads/BulkUploadModal';
 import PreviewDistributionModal from '../component/reusable/Leads/PreviewDistributionModal';
 import * as XLSX from 'xlsx';
 
+// Parse active filters from URL query parameters (or state fallback)
+const parseFiltersFromUrlAndState = (searchParams, state) => {
+  const filters = [];
+
+  const courseTypeId = searchParams.get('courseTypeId');
+  const courseTypeName = searchParams.get('courseTypeName');
+  if (courseTypeId) {
+    filters.push({
+      type: 'courseType',
+      value: courseTypeId,
+      label: `Category: ${courseTypeName || 'Selected Category'}`
+    });
+  }
+
+  const leadSourceId = searchParams.get('leadSourceId') || searchParams.get('sourceId');
+  const sourceName = searchParams.get('sourceName');
+  if (leadSourceId) {
+    filters.push({
+      type: 'leadSource',
+      value: leadSourceId,
+      label: `Source: ${sourceName || 'Selected Source'}`
+    });
+  }
+
+  const boardId = searchParams.get('boardId');
+  const boardName = searchParams.get('boardName');
+  if (boardId) {
+    filters.push({
+      type: 'board',
+      value: boardId,
+      label: `Specialization: ${boardName || 'Selected Specialization'}`
+    });
+  }
+
+  const gradeId = searchParams.get('gradeId');
+  const gradeName = searchParams.get('gradeName');
+  if (gradeId) {
+    filters.push({
+      type: 'grade',
+      value: gradeId,
+      label: `Grade: ${gradeName || 'Selected Grade'}`
+    });
+  }
+
+  const courseId = searchParams.get('courseId');
+  const courseName = searchParams.get('courseName');
+  if (courseId) {
+    filters.push({
+      type: 'course',
+      value: courseId,
+      label: `Course: ${courseName || 'Selected Course'}`
+    });
+  }
+
+  const allotted = searchParams.get('allotted');
+  const unallotted = searchParams.get('unallotted');
+  if (unallotted === 'true' || allotted === 'false') {
+    filters.push({
+      type: 'unallotted',
+      value: true,
+      label: 'Allocation: Unallocated'
+    });
+  } else if (allotted === 'true') {
+    filters.push({
+      type: 'allotted',
+      value: true,
+      label: 'Allocation: Allotted'
+    });
+  }
+
+  const availed = searchParams.get('availed');
+  if (availed === 'true') {
+    filters.push({
+      type: 'availed',
+      value: true,
+      label: 'Allocation: Availed'
+    });
+  }
+
+  const assignedUserId = searchParams.get('assignedUserId') || searchParams.get('userId');
+  const userName = searchParams.get('userName');
+  if (assignedUserId) {
+    filters.push({
+      type: 'assignedUser',
+      value: assignedUserId,
+      label: `User: ${userName || 'Assigned User'}`
+    });
+  }
+
+  const statusId = searchParams.get('statusId');
+  const statusName = searchParams.get('statusName');
+  if (statusId) {
+    filters.push({
+      type: 'leadStatus',
+      value: statusId,
+      label: `Status: ${statusName || 'Status'}`
+    });
+  }
+
+  if (filters.length > 0) {
+    return filters;
+  }
+
+  if (state?.activeFilters && Array.isArray(state.activeFilters) && state.activeFilters.length > 0) {
+    return state.activeFilters;
+  }
+
+  return [];
+};
 
 const Leads = () => {
   const { openAddLeadModal, navTo, showToast, leadRefreshTrigger } = useAppContext();
@@ -28,6 +138,15 @@ const Leads = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   const [filterStatus, setFilterStatus] = useState('');
   const [filterCounselor, setFilterCounselor] = useState('All Counselors');
   const [filterCourse, setFilterCourse] = useState('All Courses');
@@ -49,8 +168,9 @@ const Leads = () => {
       setSelectedIds([]);
     }
   };
-  const [activeFilters, setActiveFilters] = useState([]);
-  const [filterRequest, setFilterRequest] = useState({});
+
+  const [activeFilters, setActiveFilters] = useState(() => parseFiltersFromUrlAndState(searchParams, location.state));
+  const requestIdRef = useRef(0);
 
   const handleSelectAll = (checked) => {
     setSelectAll(checked);
@@ -88,53 +208,116 @@ const Leads = () => {
   const [coursesData, setCoursesData] = useState([]);
   const [leadStatusesData, setLeadStatusesData] = useState([]);
 
-  // Calculate stat cards data for LeadCards component
-  const leadCardsData = useMemo(() => {
-    const rawLeads = leadsData.filter(l => l.currentStatus === 'raw' || l.currentStatus === 'RAW').length;
-    const connectedLeads = leadsData.filter(l => l.currentStatus === 'connected' || l.currentStatus === 'CONNECTED').length;
-    const notConnectedLeads = leadsData.filter(l => l.currentStatus === 'notconnected' || l.currentStatus === 'NOTCONNECTED').length;
-    const interestedLeads = leadsData.filter(l => l.currentStatus === 'interested' || l.currentStatus === 'INTERESTED').length;
-    const registeredLeads = leadsData.filter(l => l.currentStatus === 'registered' || l.currentStatus === 'REGISTERED').length;
-    const myAllottedLeads = leadsData.filter(l => l.assignedTo && l.assignedTo !== '').length;
-    const allottedLeads = leadsData.filter(l => l.assignedTo && l.assignedTo !== '').length;
-    const notAllotted = leadsData.filter(l => !l.assignedTo || l.assignedTo === '').length;
-    const formFollowUp = leadsData.filter(l => l.currentStatus === 'formfollowup' || l.currentStatus === 'FORMFOLLOWUP').length;
-    const notInterestedLeads = leadsData.filter(l => l.currentStatus === 'notinterested' || l.currentStatus === 'NOTINTERESTED').length;
-    const finallyNotInterested = leadsData.filter(l => l.currentStatus === 'finallynotinterested' || l.currentStatus === 'FINALLYNOTINTERESTED').length;
-    const badLeads = leadsData.filter(l => l.currentStatus === 'bad' || l.currentStatus === 'BAD').length;
-    const firstCall = leadsData.filter(l => l.currentStatus === 'firstcall' || l.currentStatus === 'FIRSTCALL').length;
-    const secondCall = leadsData.filter(l => l.currentStatus === 'secondcall' || l.currentStatus === 'SECONDCALL').length;
-    const thirdCall = leadsData.filter(l => l.currentStatus === 'thirdcall' || l.currentStatus === 'THIRDCALL').length;
-    const fourthCall = leadsData.filter(l => l.currentStatus === 'fourthcall' || l.currentStatus === 'FOURTHCALL').length;
+  // Single authoritative filter model for cards, table, and Excel export
+  const filterRequest = useMemo(() => {
+    const req = {};
 
-    return {
-      rowData: rawLeads,
-      totalAllotted: allottedLeads,
-      totalUnallotted: notAllotted,
-      totalAvailed: registeredLeads,
-      connected: connectedLeads,
-      interested: interestedLeads,
-      notInterested: notInterestedLeads,
-      formFollowUp: formFollowUp,
-      counselingFollowUp: 0,
-      registered: registeredLeads,
-      formNotInterested: 0,
-      continueFormFollowUp: 0,
-      counselingFollowUp2: 0,
-      continuesCounselingFollowUp: 0,
-      interestedFollowUp: 0,
-      counselingToFormFollowUp: 0,
-      notInterestedAfterCounseling: 0,
-      goesToFormFollowUpAfterCounseling: 0,
-      badData: badLeads,
-      notConnected: notConnectedLeads,
-      firstNotConnected: firstCall,
-      secondNotConnected: secondCall,
-      thirdNotConnected: thirdCall,
-      fourthNotConnected: fourthCall,
-      finallyNotConnected: finallyNotInterested,
-    };
-  }, [leadsData]);
+    activeFilters.forEach(filter => {
+      switch (filter.type) {
+        case 'unallotted':
+          req.allotted = false;
+          break;
+        case 'allotted':
+          req.allotted = true;
+          break;
+        case 'availed':
+          req.availed = true;
+          break;
+        case 'leadStatus':
+          if (!req.statusIds) req.statusIds = [];
+          if (!req.statusIds.includes(filter.value)) {
+            req.statusIds.push(filter.value);
+          }
+          break;
+        case 'board':
+          if (!req.boardIds) req.boardIds = [];
+          if (!req.boardIds.includes(filter.value)) {
+            req.boardIds.push(filter.value);
+          }
+          break;
+        case 'grade':
+          if (!req.gradeIds) req.gradeIds = [];
+          if (!req.gradeIds.includes(filter.value)) {
+            req.gradeIds.push(filter.value);
+          }
+          break;
+        case 'courseType':
+          if (!req.courseTypeIds) req.courseTypeIds = [];
+          if (!req.courseTypeIds.includes(filter.value)) {
+            req.courseTypeIds.push(filter.value);
+          }
+          break;
+        case 'leadSource':
+          if (!req.leadSourceIds) req.leadSourceIds = [];
+          if (!req.leadSourceIds.includes(filter.value)) {
+            req.leadSourceIds.push(filter.value);
+          }
+          break;
+        case 'assignedUser':
+        case 'user':
+          if (!req.assignedUserIds) req.assignedUserIds = [];
+          if (!req.assignedUserIds.includes(filter.value)) {
+            req.assignedUserIds.push(filter.value);
+          }
+          break;
+        case 'course':
+          if (!req.courseIds) req.courseIds = [];
+          if (!req.courseIds.includes(filter.value)) {
+            req.courseIds.push(filter.value);
+          }
+          break;
+        default:
+          break;
+      }
+    });
+
+    if (selectedCard?.type === 'leadStatus' && selectedCard?.value) {
+      if (!req.statusIds) req.statusIds = [];
+      if (!req.statusIds.includes(selectedCard.value)) {
+        req.statusIds.push(selectedCard.value);
+      }
+    }
+
+    if (filterLeadStatus) {
+      if (!req.leadStatusHistoryIds) req.leadStatusHistoryIds = [];
+      if (!req.leadStatusHistoryIds.includes(filterLeadStatus)) {
+        req.leadStatusHistoryIds.push(filterLeadStatus);
+      }
+    }
+
+    if (debouncedSearch && debouncedSearch.trim()) {
+      req.search = debouncedSearch.trim();
+    }
+
+    // Provide singular aliases for backward compatibility with endpoints that check singular fields
+    if (req.statusIds?.length === 1) {
+      req.statusId = req.statusIds[0];
+    }
+    if (req.boardIds?.length === 1) {
+      req.boardId = req.boardIds[0];
+    }
+    if (req.gradeIds?.length === 1) {
+      req.gradeId = req.gradeIds[0];
+    }
+    if (req.courseTypeIds?.length === 1) {
+      req.courseTypeId = req.courseTypeIds[0];
+    }
+    if (req.leadSourceIds?.length === 1) {
+      req.leadSourceId = req.leadSourceIds[0];
+      req.sourceId = req.leadSourceIds[0];
+    }
+    if (req.leadStatusHistoryIds?.length === 1) {
+      req.leadStatusHistoryId = req.leadStatusHistoryIds[0];
+    }
+    if (req.assignedUserIds?.length === 1) {
+      req.assignedUserId = req.assignedUserIds[0];
+    }
+    if (req.courseIds?.length === 1) {
+      req.courseId = req.courseIds[0];
+    }
+
+    return req;
+  }, [activeFilters, selectedCard, filterLeadStatus, debouncedSearch]);
 
   const openDeleteModal = (lead) => {
     setLeadToDelete(lead);
@@ -167,22 +350,26 @@ const Leads = () => {
   };
 
   const handleCardClick = (cardInfo) => {
-    // Toggle: same card click kare toh filter clear ho jaye
     setActiveFilters(prevFilters => {
       const existingFilterIndex = prevFilters.findIndex(
         f => f.type === cardInfo.type && f.value === cardInfo.value
       );
       
+      let nextFilters;
       if (existingFilterIndex !== -1) {
-        // Remove the filter if it exists (same card clicked again)
-        return prevFilters.filter((_, index) => index !== existingFilterIndex);
+        nextFilters = prevFilters.filter((_, index) => index !== existingFilterIndex);
       } else {
-        // Remove any existing filter of same type and add new one
-        return prevFilters.filter(f => f.type !== cardInfo.type).concat(cardInfo);
+        let filtered = prevFilters;
+        if (cardInfo.type === 'allotted') {
+          filtered = filtered.filter(f => f.type !== 'unallotted');
+        } else if (cardInfo.type === 'unallotted') {
+          filtered = filtered.filter(f => f.type !== 'allotted');
+        }
+        nextFilters = filtered.filter(f => f.type !== cardInfo.type).concat(cardInfo);
       }
+      return nextFilters;
     });
     
-    // Also update selectedCard for backward compatibility with LeadCards
     setSelectedCard(prevSelectedCard => {
       if (prevSelectedCard?.type === cardInfo.type && prevSelectedCard?.value === cardInfo.value) {
         return null;
@@ -191,114 +378,47 @@ const Leads = () => {
       }
     });
     
-    setPage(0); // filter change hone par page reset
-  };
-
-  // Smart conversion function: array to singular/plural based on length
-  const convertFilterRequest = (request) => {
-    const converted = { ...request };
-    
-    // Convert leadStatusIds → statusId or statusIds
-    if (converted.leadStatusIds?.length === 1) {
-      converted.statusId = converted.leadStatusIds[0];
-      delete converted.leadStatusIds;
-    }
-    
-    // Convert boardIds → boardId or boardIds
-    if (converted.boardIds?.length === 1) {
-      converted.boardId = converted.boardIds[0];
-      delete converted.boardIds;
-    }
-    
-    // Convert gradeIds → gradeId or gradeIds
-    if (converted.gradeIds?.length === 1) {
-      converted.gradeId = converted.gradeIds[0];
-      delete converted.gradeIds;
-    }
-    
-    // Convert courseTypeIds → courseTypeId or courseTypeIds
-    if (converted.courseTypeIds?.length === 1) {
-      converted.courseTypeId = converted.courseTypeIds[0];
-      delete converted.courseTypeIds;
-    }
-    
-    // Convert leadSourceIds → leadSourceId or leadSourceIds
-    if (converted.leadSourceIds?.length === 1) {
-      converted.leadSourceId = converted.leadSourceIds[0];
-      delete converted.leadSourceIds;
-    }
-    
-    // Convert leadStatusHistoryIds → leadStatusHistoryId or leadStatusHistoryIds
-    if (converted.leadStatusHistoryIds?.length === 1) {
-      converted.leadStatusHistoryId = converted.leadStatusHistoryIds[0];
-      delete converted.leadStatusHistoryIds;
-    }
-
-    // Convert assignedUserIds → assignedUserId or assignedUserIds
-    if (converted.assignedUserIds?.length === 1) {
-      converted.assignedUserId = converted.assignedUserIds[0];
-      delete converted.assignedUserIds;
-    }
-
-    // Convert courseIds → courseId or courseIds
-    if (converted.courseIds?.length === 1) {
-      converted.courseId = converted.courseIds[0];
-      delete converted.courseIds;
-    }
-    
-    return converted;
+    setPage(0);
   };
 
   const fetchLeads = async () => {
+    const currentRequestId = ++requestIdRef.current;
     setLoading(true);
     try {
       const params = {
         page: page,
         size: size,
-        search: search || undefined,
         sortBy: sortBy || undefined,
         sortDirection: sortDirection || undefined,
-        // Add filterRequest parameters with smart conversion
-        ...convertFilterRequest(filterRequest),
-        // Card filter — statusId send karo agar koi card selected hai (for backward compatibility)
-        ...(selectedCard?.type === 'leadStatus' && selectedCard?.value
-          ? { statusId: selectedCard.value }
-          : {}),
-        // Lead Status dropdown filter
-        ...(filterLeadStatus
-          ? { leadStatusHistoryIds: [filterLeadStatus] }
-          : {}),
+        ...filterRequest,
       };
       const res = await getAllLeads(params);
+      if (currentRequestId !== requestIdRef.current) {
+        return; // Stale request, ignore
+      }
       if (res?.data?.success) {
-        const content = res.data.data.content;
-        if (content?.length > 0) {
-        }
-        setLeadsData(content);
-        setTotalElements(res.data.data.totalElements);
-        setTotalPages(res.data.data.totalPages);
+        const pageData = res.data.data;
+        setLeadsData(pageData?.content || []);
+        setTotalElements(pageData?.totalElements || 0);
+        setTotalPages(pageData?.totalPages || 0);
+      } else {
+        setLeadsData([]);
+        setTotalElements(0);
+        setTotalPages(0);
       }
     } catch (error) {
-      console.error("Failed to fetch leads", error);
+      if (currentRequestId === requestIdRef.current) {
+        console.error("Failed to fetch leads", error);
+        setLeadsData([]);
+        setTotalElements(0);
+        setTotalPages(0);
+      }
     } finally {
-      setLoading(false);
+      if (currentRequestId === requestIdRef.current) {
+        setLoading(false);
+      }
     }
   };
-
-  // const fetchCourses = async () => {
-  //   try {
-  //     const res = await getAllCourses({ page: 0, size: 100 });
-  //     if (res?.success) {
-  //       const courses = res.data.content;
-  //       const courseNames = courses.map(course => course.courseName);
-       
-  //       setCoursesData(['All Courses', ...courseNames]);
-  //     } else {
-  //     }
-  //   } catch (error) {
-  //     console.error("Failed to fetch courses", error);
-  //   }
-  // };
 
   const fetchLeadStatuses = async () => {
     try {
@@ -306,204 +426,26 @@ const Leads = () => {
       if (res?.success) {
         const leadStatuses = res.data;
         setLeadStatusesData(leadStatuses);
-      } else {
       }
     } catch (error) {
       console.error("Failed to fetch lead statuses", error);
     }
   };
 
-  useEffect(() => {
-    const delayDebounceFn = setTimeout(() => {
-      fetchLeads();
-    }, 500);
-    return () => clearTimeout(delayDebounceFn);
-  }, [page, size, search, sortBy, sortDirection, leadRefreshTrigger, selectedCard, filterRequest, filterLeadStatus]);
-
-  // Update filterRequest when activeFilters changes
-  useEffect(() => {
-    const newFilterRequest = {};
-    activeFilters.forEach(filter => {
-      switch (filter.type) {
-        case 'unallotted':
-          newFilterRequest.allotted = false;
-          break;
-        case 'availed':
-          newFilterRequest.availed = true;
-          break;
-        case 'allotted':
-          newFilterRequest.allotted = true;
-          break;
-        case 'leadStatus':
-          if (!newFilterRequest.leadStatusIds) newFilterRequest.leadStatusIds = [];
-          newFilterRequest.leadStatusIds.push(filter.value);
-          break;
-        case 'board':
-          if (!newFilterRequest.boardIds) newFilterRequest.boardIds = [];
-          newFilterRequest.boardIds.push(filter.value);
-          break;
-        case 'grade':
-          if (!newFilterRequest.gradeIds) newFilterRequest.gradeIds = [];
-          newFilterRequest.gradeIds.push(filter.value);
-          break;
-        case 'courseType':
-          if (!newFilterRequest.courseTypeIds) newFilterRequest.courseTypeIds = [];
-          newFilterRequest.courseTypeIds.push(filter.value);
-          break;
-        case 'leadSource':
-          if (!newFilterRequest.leadSourceIds) newFilterRequest.leadSourceIds = [];
-          newFilterRequest.leadSourceIds.push(filter.value);
-          break;
-        case 'assignedUser':
-        case 'user':
-          if (!newFilterRequest.assignedUserIds) newFilterRequest.assignedUserIds = [];
-          newFilterRequest.assignedUserIds.push(filter.value);
-          break;
-        case 'course':
-          if (!newFilterRequest.courseIds) newFilterRequest.courseIds = [];
-          newFilterRequest.courseIds.push(filter.value);
-          break;
-        case 'allLeads':
-          // No specific filter needed, just show all leads
-          break;
-        case 'allSources':
-          // No specific filter needed, just show all leads
-          break;
-        default:
-          break;
-      }
-    });
-    
-    // Ensure filterRequest is properly cleared when no active filters
-    if (activeFilters.length === 0) {
-      setFilterRequest({});
-      setSelectedCard(null); // Also clear selectedCard when no filters
-    } else {
-      setFilterRequest(newFilterRequest);
-    }
-  }, [activeFilters]);
+  const filterRequestKey = useMemo(() => JSON.stringify(filterRequest), [filterRequest]);
 
   useEffect(() => {
-    // fetchCourses();
+    fetchLeads();
+  }, [page, size, sortBy, sortDirection, leadRefreshTrigger, filterRequestKey]);
+
+  useEffect(() => {
     fetchLeadStatuses();
   }, []);
 
-  // Parse active filters from URL query parameters (or state fallback)
-  const parseFiltersFromUrlAndState = () => {
-    const filters = [];
-
-    const courseTypeId = searchParams.get('courseTypeId');
-    const courseTypeName = searchParams.get('courseTypeName');
-    if (courseTypeId) {
-      filters.push({
-        type: 'courseType',
-        value: courseTypeId,
-        label: `Category: ${courseTypeName || 'Selected Category'}`
-      });
-    }
-
-    const leadSourceId = searchParams.get('leadSourceId') || searchParams.get('sourceId');
-    const sourceName = searchParams.get('sourceName');
-    if (leadSourceId) {
-      filters.push({
-        type: 'leadSource',
-        value: leadSourceId,
-        label: `Source: ${sourceName || 'Selected Source'}`
-      });
-    }
-
-    const boardId = searchParams.get('boardId');
-    const boardName = searchParams.get('boardName');
-    if (boardId) {
-      filters.push({
-        type: 'board',
-        value: boardId,
-        label: `Specialization: ${boardName || 'Selected Specialization'}`
-      });
-    }
-
-    const gradeId = searchParams.get('gradeId');
-    const gradeName = searchParams.get('gradeName');
-    if (gradeId) {
-      filters.push({
-        type: 'grade',
-        value: gradeId,
-        label: `Grade: ${gradeName || 'Selected Grade'}`
-      });
-    }
-
-    const courseId = searchParams.get('courseId');
-    const courseName = searchParams.get('courseName');
-    if (courseId) {
-      filters.push({
-        type: 'course',
-        value: courseId,
-        label: `Course: ${courseName || 'Selected Course'}`
-      });
-    }
-
-    const allotted = searchParams.get('allotted');
-    const unallotted = searchParams.get('unallotted');
-    if (unallotted === 'true' || allotted === 'false') {
-      filters.push({
-        type: 'unallotted',
-        value: true,
-        label: 'Allocation: Unallocated'
-      });
-    } else if (allotted === 'true') {
-      filters.push({
-        type: 'allotted',
-        value: true,
-        label: 'Allocation: Allotted'
-      });
-    }
-
-    const availed = searchParams.get('availed');
-    if (availed === 'true') {
-      filters.push({
-        type: 'availed',
-        value: true,
-        label: 'Allocation: Availed'
-      });
-    }
-
-    const assignedUserId = searchParams.get('assignedUserId') || searchParams.get('userId');
-    const userName = searchParams.get('userName');
-    if (assignedUserId) {
-      filters.push({
-        type: 'assignedUser',
-        value: assignedUserId,
-        label: `User: ${userName || 'Assigned User'}`
-      });
-    }
-
-    const statusId = searchParams.get('statusId');
-    const statusName = searchParams.get('statusName');
-    if (statusId) {
-      filters.push({
-        type: 'leadStatus',
-        value: statusId,
-        label: `Status: ${statusName || 'Status'}`
-      });
-    }
-
-    if (filters.length > 0) {
-      return filters;
-    }
-
-    if (location.state?.activeFilters && Array.isArray(location.state.activeFilters) && location.state.activeFilters.length > 0) {
-      return location.state.activeFilters;
-    }
-
-    return [];
-  };
-
   // Sync activeFilters on URL search params change
   useEffect(() => {
-    const filters = parseFiltersFromUrlAndState();
-    if (filters.length > 0) {
-      setActiveFilters(filters);
-    }
+    const filters = parseFiltersFromUrlAndState(searchParams, location.state);
+    setActiveFilters(filters);
   }, [location.search]);
 
   // Sync activeFilters and URL params from location.state navigation
@@ -572,8 +514,9 @@ const Leads = () => {
 
   const handleClearAllFilters = () => {
     setActiveFilters([]);
-    setFilterRequest({});
     setSelectedCard(null);
+    setSearch('');
+    setDebouncedSearch('');
     setFilterLeadStatus('');
     setFilterLeadStatusName('');
     setPage(0);
@@ -631,7 +574,7 @@ const Leads = () => {
       'sno': 'id',
       'leadCode': 'leadCode',
       'lead': 'fullName',
-      'courseInterested': 'courseInterested',
+      'interestedCourses': 'interestedCourses',
       'source': 'source.name',
       'currentStatus': 'currentStatus',
       'assignedTo': 'assignedTo',
@@ -651,19 +594,9 @@ const Leads = () => {
       const params = {
         page: 0,
         size: 10000,
-        search: search || undefined,
         sortBy: sortBy || undefined,
         sortDirection: sortDirection || undefined,
-        // Add filterRequest parameters with smart conversion
-        ...convertFilterRequest(filterRequest),
-        // Card filter — statusId send karo agar koi card selected hai (for backward compatibility)
-        ...(selectedCard?.type === 'leadStatus' && selectedCard?.value
-          ? { statusId: selectedCard.value }
-          : {}),
-        // Lead Status dropdown filter
-        ...(filterLeadStatus
-          ? { leadStatusHistoryIds: [filterLeadStatus] }
-          : {}),
+        ...filterRequest,
       };
       const res = await getAllLeads(params);
       const allLeadsData = res?.data?.data?.content || [];
@@ -680,7 +613,7 @@ const Leads = () => {
           'Lead Name': typeof lead.fullName === 'object' ? lead.fullName?.name || lead.fullName?.firstName || 'N/A' : lead.fullName || 'N/A',
           'Phone Number': lead.phoneNumber || 'N/A',
           'Email': lead.email || 'N/A',
-          'Course': lead.course?.courseName || lead.registeredCourse?.courseName || lead.courseInterested || 'N/A',
+          'Course': (() => { const c = lead.interestedCourses?.[0]; return (c && typeof c === 'object') ? (c.courseName || c.name || 'N/A') : lead.course?.courseName || 'N/A'; })(),
           'Source': lead.sourceDetails || (Array.isArray(lead.leadSources) && lead.leadSources[0]?.name) || (typeof lead.source === 'object' ? lead.source?.name : lead.source) || 'N/A',
           'Status': typeof lead.currentStatus === 'object' ? lead.currentStatus?.name || lead.currentStatus?.code || 'N/A' : lead.currentStatus || 'N/A',
           'Counselor': typeof lead.assignedTo === 'object' ? `${lead.assignedTo.firstName || ''} ${lead.assignedTo.lastName || ''}`.trim() || 'Not Allotted' : lead.assignedTo || 'Not Allotted',
@@ -809,6 +742,13 @@ const Leads = () => {
         />
       </div>
 
+      {/* ── Category / Course Type breakdown ── */}
+      <CategorywiseCard
+        onCardClick={handleCardClick}
+        activeFilters={activeFilters}
+        filterRequest={filterRequest}
+      />
+
       {/* ── Stat Cards: Status breakdown ── */}
       <LeadCards
         onCardClick={handleCardClick}
@@ -830,7 +770,10 @@ const Leads = () => {
           className="form-control max-w-[240px]"
           placeholder="Search leads…"
           value={search}
-          onChange={(e) => { setSearch(e.target.value); }}
+          onChange={(e) => { 
+            setSearch(e.target.value); 
+            setPage(0);
+          }}
         />
         {/* <select
           className="form-control max-w-[200px]"
@@ -884,7 +827,7 @@ const Leads = () => {
           </div>
         )}
         {/* Clear all filters button */}
-        {(activeFilters.length > 0 || filterLeadStatus) && (
+        {(activeFilters.length > 0 || filterLeadStatus || search) && (
           <button
             onClick={handleClearAllFilters}
             className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 rounded border border-gray-300 cursor-pointer"
@@ -1025,34 +968,21 @@ const Leads = () => {
                 ),
               },
               { 
-                key: 'courseInterested', 
+                key: 'interestedCourses', 
                 header: 'Course',
                 render: (value, row) => {
-                  // Priority order: course > registeredCourse > courseInterested > interestedCourses
+                  // Priority: interestedCourses[0] > registered course
                   let displayValue = 'N/A';
-                  
-                  // Check course object first
-                  if (row.course && typeof row.course === 'object' && row.course !== null) {
+                  if (Array.isArray(row.interestedCourses) && row.interestedCourses.length > 0) {
+                    const firstCourse = row.interestedCourses[0];
+                    displayValue = (typeof firstCourse === 'object' && firstCourse !== null)
+                      ? (firstCourse.courseName || firstCourse.name || 'N/A')
+                      : (firstCourse || 'N/A');
+                  } else if (row.course && typeof row.course === 'object') {
                     displayValue = row.course.courseName || row.course.name || 'N/A';
-                  }
-                  // Check registeredCourse object
-                  else if (row.registeredCourse && typeof row.registeredCourse === 'object' && row.registeredCourse !== null) {
+                  } else if (row.registeredCourse && typeof row.registeredCourse === 'object') {
                     displayValue = row.registeredCourse.courseName || row.registeredCourse.name || 'N/A';
                   }
-                  // Check courseInterested string
-                  else if (row.courseInterested && typeof row.courseInterested === 'string') {
-                    displayValue = row.courseInterested;
-                  }
-                  // Check interestedCourses array
-                  else if (Array.isArray(row.interestedCourses) && row.interestedCourses.length > 0) {
-                    const firstCourse = row.interestedCourses[0];
-                    if (typeof firstCourse === 'object' && firstCourse !== null) {
-                      displayValue = firstCourse.courseName || firstCourse.name || 'N/A';
-                    } else {
-                      displayValue = firstCourse || 'N/A';
-                    }
-                  }
-                  
                   return displayValue;
                 },
               },
@@ -1330,7 +1260,7 @@ const Leads = () => {
         onClose={closeAllotModal}
         onAssign={handleAllotLead}
         selectedLeadIds={selectedLeadForAllot || selectedIds}
-        filters={convertFilterRequest(filterRequest)}
+        filters={filterRequest}
         showToast={showToast}
       />
 

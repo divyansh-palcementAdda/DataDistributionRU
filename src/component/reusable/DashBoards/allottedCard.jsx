@@ -25,6 +25,7 @@ const AllottedCard = ({ data, onCardClick, activeFilters = [], filterRequest = {
       return;
     }
 
+    let isCancelled = false;
     const fetchAllottedCount = async () => {
       try {
         setLoading(true);
@@ -41,17 +42,26 @@ const AllottedCard = ({ data, onCardClick, activeFilters = [], filterRequest = {
         const finalParams = { ...params, ...filterRequest };
         
         const response = await getAllottedCount(finalParams);
-        const payload = response?.data?.data ?? response?.data ?? response;
-        setAllottedData(payload);
+        if (!isCancelled) {
+          const payload = response?.data?.data ?? response?.data ?? response;
+          setAllottedData(payload);
+        }
       } catch (error) {
-        console.error('Error fetching allotted count:', error);
-        setAllottedData(null);
+        if (!isCancelled) {
+          console.error('Error fetching allotted count:', error);
+          setAllottedData(null);
+        }
       } finally {
-        setLoading(false);
+        if (!isCancelled) {
+          setLoading(false);
+        }
       }
     };
 
     fetchAllottedCount();
+    return () => {
+      isCancelled = true;
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, filterRequestKey, courseTypeId, leadSourceId, boardId, gradeId, counselorId, departmentId, statusId]);
 

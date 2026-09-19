@@ -1007,7 +1007,9 @@ const LeadDetail = () => {
                     </div>
                   ) : (
                     <div className="text-xs font-bold text-blue-600">
-                      {leadDetails.courseInterested || leadDetails.course?.courseName || 'N/A'}
+                      {(Array.isArray(leadDetails.interestedCourses) && leadDetails.interestedCourses.length > 0
+                        ? (leadDetails.interestedCourses[0]?.courseName || leadDetails.interestedCourses[0]?.name)
+                        : leadDetails.course?.courseName) || 'N/A'}
                     </div>
                   )}
                 </div>

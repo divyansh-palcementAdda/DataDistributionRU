@@ -10,6 +10,7 @@ const LeadCards = ({ onCardClick, activeFilters = [], filterRequest = {}, course
   const filterRequestKey = JSON.stringify(filterRequest);
 
   useEffect(() => {
+    let isCancelled = false;
     const fetchLeadStatusData = async () => {
       try {
         // Start with individual scalar props (backward-compat for non-Leads usages)
@@ -26,13 +27,20 @@ const LeadCards = ({ onCardClick, activeFilters = [], filterRequest = {}, course
         const params = { ...baseParams, ...filterRequest };
 
         const response = await getLeadStatusBreakdown(params);
-        setLeadData(response.data?.data || []);
+        if (!isCancelled) {
+          setLeadData(response.data?.data || []);
+        }
       } catch (error) {
-        console.error('Error fetching lead status breakdown:', error);
+        if (!isCancelled) {
+          console.error('Error fetching lead status breakdown:', error);
+        }
       }
     };
 
     fetchLeadStatusData();
+    return () => {
+      isCancelled = true;
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filterRequestKey, courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId]);
 

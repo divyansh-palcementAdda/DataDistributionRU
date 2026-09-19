@@ -12,6 +12,7 @@ import ReusableTable from '../component/reusable/table';
 import DeleteModal from "../component/reusable/deleteModel"
 import AssignLeadModal from '../component/reusable/Leads/AssignLeadModal';
 import LeadCards from '../component/reusable/DashBoards/leadCards';
+import LeadSource from '../component/reusable/DashBoards/leadSource';
 import UnallottedCard from '../component/reusable/DashBoards/UnallottedCard';
 import AvailedCard from '../component/reusable/DashBoards/availedCard';
 import AllottedCard from '../component/reusable/DashBoards/allottedCard';
@@ -808,10 +809,18 @@ const Leads = () => {
         />
       </div>
 
-      {/* ── Stat Cards ── */}
+      {/* ── Stat Cards: Status breakdown ── */}
       <LeadCards
         onCardClick={handleCardClick}
         activeFilters={activeFilters}
+        filterRequest={filterRequest}
+      />
+
+      {/* ── Stat Cards: Source breakdown ── */}
+      <LeadSource
+        onCardClick={handleCardClick}
+        activeFilters={activeFilters}
+        filterRequest={filterRequest}
       />
 
       {/* ── Filter Bar ── */}

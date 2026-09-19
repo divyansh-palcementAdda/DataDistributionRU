@@ -2,23 +2,30 @@ import React, { useState, useEffect } from 'react';
 import { getLeadStatusBreakdown } from '../../../Services/cards/cardService';
 import { usePermissions } from '../../../PermissionContext';
 
-const LeadCards = ({ onCardClick, activeFilters = [], courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId }) => {
+const LeadCards = ({ onCardClick, activeFilters = [], filterRequest = {}, courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId }) => {
   const [leadData, setLeadData] = useState([]);
   const { hasPermission } = usePermissions();
+
+  // Stable JSON key for filterRequest so useEffect only re-runs on actual changes
+  const filterRequestKey = JSON.stringify(filterRequest);
 
   useEffect(() => {
     const fetchLeadStatusData = async () => {
       try {
-        const params = {};
-        if (courseTypeId) params.courseTypeId = courseTypeId;
-        if (leadSourceId) params.leadSourceId = leadSourceId;
-        if (boardId) params.boardId = boardId;
-        if (gradeId) params.gradeId = gradeId;
-        if (assignedUserIds) params.assignedUserIds = assignedUserIds;
-        if (departmentId) params.departmentId = departmentId;
-        console.log('LeadCards fetching with params:', params);
+        // Start with individual scalar props (backward-compat for non-Leads usages)
+        const baseParams = {};
+        if (courseTypeId) baseParams.courseTypeId = courseTypeId;
+        if (leadSourceId) baseParams.leadSourceId = leadSourceId;
+        if (boardId) baseParams.boardId = boardId;
+        if (gradeId) baseParams.gradeId = gradeId;
+        if (assignedUserIds) baseParams.assignedUserIds = assignedUserIds;
+        if (departmentId) baseParams.departmentId = departmentId;
+
+        // Merge filterRequest last so it takes precedence — this is what makes
+        // card counts stay in sync with the lead table filters.
+        const params = { ...baseParams, ...filterRequest };
+
         const response = await getLeadStatusBreakdown(params);
-        console.log('LeadCards response:', response);
         setLeadData(response.data?.data || []);
       } catch (error) {
         console.error('Error fetching lead status breakdown:', error);
@@ -26,7 +33,8 @@ const LeadCards = ({ onCardClick, activeFilters = [], courseTypeId, leadSourceId
     };
 
     fetchLeadStatusData();
-  }, [courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filterRequestKey, courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId]);
 
   // Section-level permission check: hide entire section if permission is false
   if (!hasPermission('DASHBOARD_CARD_TOTAL_LEADS')) {

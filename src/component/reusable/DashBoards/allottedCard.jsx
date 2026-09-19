@@ -16,6 +16,9 @@ const AllottedCard = ({ data, onCardClick, activeFilters = [], filterRequest = {
   const [loading, setLoading] = useState(false);
   const { hasPermission } = usePermissions();
 
+  // Stable key so useEffect only fires when filter contents actually change
+  const filterRequestKey = JSON.stringify(filterRequest);
+
   useEffect(() => {
     if (data !== undefined) {
       setAllottedData(data);
@@ -49,7 +52,8 @@ const AllottedCard = ({ data, onCardClick, activeFilters = [], filterRequest = {
     };
 
     fetchAllottedCount();
-  }, [data, filterRequest, courseTypeId, leadSourceId, boardId, gradeId, counselorId, departmentId, statusId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, filterRequestKey, courseTypeId, leadSourceId, boardId, gradeId, counselorId, departmentId, statusId]);
 
   const count = allottedData?.count ?? 0;
   const type = allottedData?.type ?? 'Allotted';

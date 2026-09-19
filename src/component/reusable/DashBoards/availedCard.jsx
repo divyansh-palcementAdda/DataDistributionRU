@@ -14,6 +14,9 @@ const AvailedCard = ({ data, onCardClick, activeFilters = [], filterRequest = {}
   const [loading, setLoading] = useState(false);
   const { hasPermission } = usePermissions();
 
+  // Stable key so useEffect only fires when filter contents actually change
+  const filterRequestKey = JSON.stringify(filterRequest);
+
   useEffect(() => {
     if (data !== undefined) {
       setAvailedData(data);
@@ -47,7 +50,8 @@ const AvailedCard = ({ data, onCardClick, activeFilters = [], filterRequest = {}
     };
 
     fetchAvailedCount();
-  }, [data, filterRequest, courseTypeId, leadSourceId, boardId, gradeId, counselorId, departmentId, statusId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, filterRequestKey, courseTypeId, leadSourceId, boardId, gradeId, counselorId, departmentId, statusId]);
 
   const count = availedData?.count ?? 0;
   const type = availedData?.type ?? 'Availed';

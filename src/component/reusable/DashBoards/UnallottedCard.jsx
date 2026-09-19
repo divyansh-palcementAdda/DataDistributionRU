@@ -15,6 +15,9 @@ const UnallottedCard = ({ data, onCardClick, activeFilters = [], filterRequest =
   const [loading, setLoading] = useState(false);
   const { hasPermission } = usePermissions();
 
+  // Stable key so useEffect only fires when filter contents actually change
+  const filterRequestKey = JSON.stringify(filterRequest);
+
   useEffect(() => {
     if (data !== undefined) {
       setUnallottedData(data);
@@ -48,7 +51,8 @@ const UnallottedCard = ({ data, onCardClick, activeFilters = [], filterRequest =
     };
 
     fetchUnallottedCount();
-  }, [data, filterRequest, courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId, statusId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, filterRequestKey, courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId, statusId]);
 
   const count = unallottedData?.count ?? 0;
   const type = unallottedData?.type ?? 'Unallotted';

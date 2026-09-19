@@ -21,10 +21,13 @@ const COLORS = [
   { iconBg: '#FCE7F3',              iconStroke: '#DB2777' },
 ];
 
-const LeadSource = ({ data, onCardClick, activeFilters = [], courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId }) => {
+const LeadSource = ({ data, onCardClick, activeFilters = [], filterRequest = {}, courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId }) => {
   // API returns an array: [{id, name, code, count, percentage}, ...]
   const [sourceData, setSourceData] = useState([]);
   const { hasPermission } = usePermissions();
+
+  // Stable JSON key for filterRequest so useEffect only re-runs on actual changes
+  const filterRequestKey = JSON.stringify(filterRequest);
 
   useEffect(() => {
     if (data !== undefined) {
@@ -35,14 +38,19 @@ const LeadSource = ({ data, onCardClick, activeFilters = [], courseTypeId, leadS
 
     const fetchSourceData = async () => {
       try {
-        const params = {};
-        if (courseTypeId) params.courseTypeId = courseTypeId;
-        if (leadSourceId) params.leadSourceId = leadSourceId;
-        if (boardId) params.boardId = boardId;
-        if (gradeId) params.gradeId = gradeId;
-        if (assignedUserIds) params.assignedUserIds = assignedUserIds;
-        if (departmentId) params.departmentId = departmentId;
-        
+        // Start with individual scalar props (backward-compat for non-Leads usages)
+        const baseParams = {};
+        if (courseTypeId) baseParams.courseTypeId = courseTypeId;
+        if (leadSourceId) baseParams.leadSourceId = leadSourceId;
+        if (boardId) baseParams.boardId = boardId;
+        if (gradeId) baseParams.gradeId = gradeId;
+        if (assignedUserIds) baseParams.assignedUserIds = assignedUserIds;
+        if (departmentId) baseParams.departmentId = departmentId;
+
+        // Merge filterRequest last so it takes precedence — keeps counts in sync
+        // with the lead table when filters are active.
+        const params = { ...baseParams, ...filterRequest };
+
         const response = await getLeadSourceBreakdown(params);
         const payload = response?.data?.data ?? response?.data ?? response ?? [];
         // Normalise: always store as an array
@@ -53,7 +61,8 @@ const LeadSource = ({ data, onCardClick, activeFilters = [], courseTypeId, leadS
     };
 
     fetchSourceData();
-  }, [data, courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, filterRequestKey, courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId]);
 
   // Accept both array (new) and object (legacy) formats
   const items = Array.isArray(sourceData)

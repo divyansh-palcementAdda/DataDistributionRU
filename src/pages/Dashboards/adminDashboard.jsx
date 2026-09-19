@@ -390,16 +390,19 @@ const Dashboard = () => {
       {/* Page Header */}
       <div className="page-header" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '24px', background: 'linear-gradient(135deg, #435fff, #a571ff)', padding: '20px', borderRadius: '12px' }}>
         <div>
-          <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#ffffff' }}>   Welcome to Dashboard </h1>
-          <p style={{ fontSize: '13px', color: '#e0e7ff', marginTop: '4px' }}>
-            Good morning, {userName}! Here&apos;s what&apos;s happening today.
+          <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#ffffff', margin: 0 }}>Welcome to Dashboard</h1>
+          <p style={{ fontSize: '13px', color: '#e0e7ff', marginTop: '6px', margin: 0 }}>
+            {(() => {
+              const hour = new Date().getHours();
+              const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+              return `${greeting}, ${userName}! Here's what's happening today.`;
+            })()}
           </p>
         </div>
-     
       </div>
 
       {/* ── Main Content Layout ── */}
-      <div className="dashboard-main-layout" style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '20px', marginBottom: '20px' }}>
+      <div className="dashboard-main-layout" style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '20px', marginBottom: '24px', alignItems: 'start' }}>
         {/* Left Column: Metrics and Cards */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           {/* ── Full Width Metrics Card ── */}
@@ -745,15 +748,39 @@ const Dashboard = () => {
               }
 
               /* Main Dashboard Layout Responsive */
+              @media (min-width: 1440px) {
+                .dashboard-main-layout {
+                  grid-template-columns: 1fr 380px !important;
+                }
+              }
+
+              @media (max-width: 1200px) {
+                .dashboard-main-layout {
+                  grid-template-columns: 1fr 320px !important;
+                  gap: 16px !important;
+                }
+              }
+
               @media (max-width: 1024px) {
                 .dashboard-main-layout {
                   grid-template-columns: 1fr !important;
+                  gap: 16px !important;
+                }
+                .dashboard-sidebar-column {
+                  position: static !important;
+                  top: auto !important;
+                }
+                .recent-activity-card {
+                  max-height: none !important;
+                }
+                .recent-activity-list {
+                  max-height: 400px !important;
                 }
               }
 
               @media (max-width: 768px) {
                 .dashboard-main-layout {
-                  gap: 16px !important;
+                  gap: 14px !important;
                 }
               }
 
@@ -761,6 +788,22 @@ const Dashboard = () => {
                 .dashboard-main-layout {
                   gap: 12px !important;
                 }
+              }
+
+              /* Recent Activity Custom Scrollbar */
+              .recent-activity-list::-webkit-scrollbar {
+                width: 5px;
+              }
+              .recent-activity-list::-webkit-scrollbar-track {
+                background: #f1f5f9;
+                border-radius: 4px;
+              }
+              .recent-activity-list::-webkit-scrollbar-thumb {
+                background: #cbd5e1;
+                border-radius: 4px;
+              }
+              .recent-activity-list::-webkit-scrollbar-thumb:hover {
+                background: #94a3b8;
               }
 
               /* Recent Activity Card Responsive */
@@ -964,7 +1007,14 @@ const Dashboard = () => {
         </div>
 
         {/* Right Column: Recent Activity */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div className="dashboard-sidebar-column" style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '20px',
+          position: 'sticky',
+          top: '20px',
+          alignSelf: 'start',
+        }}>
           {/* ── Recent Activity Card ── */}
           <div className="recent-activity-card" style={{
             background: '#ffffff',
@@ -974,7 +1024,7 @@ const Dashboard = () => {
             border: '1px solid #e2e8f0',
             display: 'flex',
             flexDirection: 'column',
-            height: '1750px'
+            maxHeight: 'calc(100vh - 40px)',
           }}>
             <div style={{
               display: 'flex',
@@ -984,18 +1034,40 @@ const Dashboard = () => {
               paddingBottom: '12px',
               borderBottom: '1px solid #e2e8f0'
             }}>
-              <h3 style={{
-                fontSize: '16px',
-                fontWeight: '600',
-                color: '#1e293b',
-                margin: 0
-              }}>
-                Recent Activity
-              </h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h3 style={{
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  color: '#1e293b',
+                  margin: 0
+                }}>
+                  Recent Activity
+                </h3>
+                {recentActivityData.length > 0 && (
+                  <span style={{
+                    fontSize: '11px',
+                    fontWeight: '600',
+                    color: '#2563eb',
+                    background: '#eff6ff',
+                    padding: '2px 8px',
+                    borderRadius: '12px',
+                    border: '1px solid #dbeafe'
+                  }}>
+                    {recentActivityData.length}
+                  </span>
+                )}
+              </div>
             </div>
 
             {/* Activity List */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className="recent-activity-list" style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px',
+              overflowY: 'auto',
+              maxHeight: '520px',
+              paddingRight: '4px'
+            }}>
               {recentActivityData.length > 0 ? (
                 recentActivityData.slice(0, 12).map((activity, index) => {
                   // Determine icon and background color based on activity type
@@ -1074,6 +1146,7 @@ const Dashboard = () => {
                       padding: '12px',
                       borderRadius: '8px',
                       background: '#f8fafc',
+                      border: '1px solid #f1f5f9',
                       transition: 'background 0.2s'
                     }}>
                       <div className="recent-activity-icon" style={{
@@ -1127,40 +1200,55 @@ const Dashboard = () => {
                   );
                 })
               ) : (
-                <div style={{ textAlign: 'center', padding: '20px', color: '#64748b' }}>
+                <div style={{ textAlign: 'center', padding: '30px 20px', color: '#94a3b8', fontSize: '13px' }}>
                   No recent activity
                 </div>
               )}
             </div>
           </div>
-
-          {/* ── Lead Status Card (Current Distribution) ── */}
-          {/* <div className="card">
-            <div className="card-header">
-              <div>
-                <div className="card-title">Lead Status</div>
-                <div className="card-sub">Current distribution</div>
-              </div>
-            </div>
-            <div style={{ height: '220px' }}>
-              <Doughnut data={statusChartData} options={statusChartOptions} />
-            </div>
-          </div> */}
         </div>
       </div>
 
       {/* ── Charts Row ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', marginBottom: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', marginBottom: '24px' }}>
         {/* Monthly Bar Chart — full width */}
-        <div className="card">
-          <div className="card-header">
+        <div className="card" style={{
+          background: '#ffffff',
+          borderRadius: '16px',
+          padding: '20px',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+          border: '1px solid #e2e8f0',
+        }}>
+          <div className="card-header" style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '16px',
+            paddingBottom: '12px',
+            borderBottom: '1px solid #f1f5f9'
+          }}>
             <div>
-              <div className="card-title">Monthly Registrations</div>
-              <div className="card-sub">Registrations per month in 2025</div>
+              <div className="card-title" style={{ fontSize: '16px', fontWeight: '600', color: '#1e293b' }}>
+                Monthly Registrations
+              </div>
+              <div className="card-sub" style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
+                Registrations per month in {new Date().getFullYear()}
+              </div>
             </div>
-            <button className="btn btn-ghost btn-sm">Export</button>
+            <button className="btn btn-ghost btn-sm" style={{
+              fontSize: '12px',
+              padding: '6px 12px',
+              borderRadius: '8px',
+              border: '1px solid #e2e8f0',
+              background: '#f8fafc',
+              cursor: 'pointer',
+              color: '#475569',
+              fontWeight: 500
+            }}>
+              Export
+            </button>
           </div>
-          <div style={{ height: '220px' }}>
+          <div style={{ height: '240px' }}>
             <Bar data={monthlyChartData} options={monthlyChartOptions} />
           </div>
         </div>

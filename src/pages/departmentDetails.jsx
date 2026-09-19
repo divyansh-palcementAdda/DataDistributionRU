@@ -699,117 +699,189 @@ const DepartmentDetails = () => {
             </div>
 
             {/* ── Detail Card (TOP) ── */}
-            <div style={{ backgroundColor: '#FFFFFF', borderRadius: '12px', border: '1px solid #E2E8F0', padding: '24px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
-                {/* Header */}
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', marginBottom: '24px', paddingBottom: '24px', borderBottom: '1px solid #F1F5F9' }}>
-                    <div style={{ width: '64px', height: '64px', borderRadius: '12px', background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', fontWeight: '700', flexShrink: 0 }}>
-                        {department.name ? department.name.substring(0, 2).toUpperCase() : 'DP'}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                        <h2 style={{ fontSize: '24px', fontWeight: '700', color: '#0F172A', margin: '0 0 8px 0' }}>{department.name}</h2>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
-                            <span style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em', backgroundColor: department.active ? '#DCFCE7' : '#F1F5F9', color: department.active ? '#15803D' : '#64748B', border: `1px solid ${department.active ? '#BBF7D0' : '#E2E8F0'}` }}>
-                                {department.active ? 'Active' : 'Inactive'}
-                            </span>
-                            <span style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', backgroundColor: '#EFF6FF', color: '#1D4ED8', border: '1px solid #DBEAFE' }}>
-                                {department.code}
-                            </span>
+            <div style={{ backgroundColor: '#FFFFFF', borderRadius: '16px', border: '1px solid #E2E8F0', padding: '24px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                {/* Header Profile & Metadata */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px', paddingBottom: '20px', borderBottom: '1px solid #F1F5F9' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                            <div style={{ width: '56px', height: '56px', borderRadius: '14px', background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)', color: '#FFFFFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '22px', fontWeight: '700', flexShrink: 0, boxShadow: '0 4px 12px rgba(37,99,235,0.25)' }}>
+                                {department.name ? department.name.substring(0, 2).toUpperCase() : 'DP'}
+                            </div>
+                            <div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                                    <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#0F172A', margin: 0 }}>{department.name}</h2>
+                                    <span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.04em', backgroundColor: department.active ? '#DCFCE7' : '#F1F5F9', color: department.active ? '#15803D' : '#64748B', border: `1px solid ${department.active ? '#BBF7D0' : '#E2E8F0'}` }}>
+                                        {department.active ? 'Active' : 'Inactive'}
+                                    </span>
+                                    {department.code && (
+                                        <span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '600', backgroundColor: '#EFF6FF', color: '#1D4ED8', border: '1px solid #DBEAFE' }}>
+                                            {department.code}
+                                        </span>
+                                    )}
+                                </div>
+                                {department.description && (
+                                    <p style={{ fontSize: '13px', color: '#64748B', margin: '4px 0 0', lineHeight: '1.5' }}>
+                                        {department.description}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Audit Meta Tags */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#64748B', backgroundColor: '#F8FAFC', padding: '6px 12px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                                <FiCalendar style={{ color: '#94A3B8', fontSize: '13px' }} />
+                                <span>Created: <strong style={{ color: '#334155', fontWeight: '600' }}>{formatDate(department.createdAt)}</strong></span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: '#64748B', backgroundColor: '#F8FAFC', padding: '6px 12px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                                <FiEdit style={{ color: '#94A3B8', fontSize: '13px' }} />
+                                <span>Updated: <strong style={{ color: '#334155', fontWeight: '600' }}>{formatDate(department.updatedAt)}</strong></span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Details Grid */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-                    <div style={{ backgroundColor: '#F8FAFC', padding: '16px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                            <FiLayers style={{ color: '#64748B', fontSize: '14px' }} />
-                            <span style={{ fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Description</span>
-                        </div>
-                        <p style={{ fontSize: '14px', color: '#334155', margin: 0, lineHeight: '1.5' }}>
-                            {department.description || 'No description provided'}
-                        </p>
-                    </div>
-
+                {/* 3 Interactive Staff KPI Cards Grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
                     {/* ── Total Users Card ── */}
                     <div
                         onClick={() => handleStaffCardClick('users')}
-                        style={{ backgroundColor: activeStaffView === 'users' ? '#DBEAFE' : '#EFF6FF', padding: '16px', borderRadius: '8px', border: `2px solid ${activeStaffView === 'users' ? '#2563EB' : '#BFDBFE'}`, cursor: 'pointer', transition: 'all 0.2s', position: 'relative' }}
-                        onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 4px 12px rgba(37,99,235,0.15)'}
-                        onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
+                        style={{
+                            backgroundColor: activeStaffView === 'users' ? '#EFF6FF' : '#FFFFFF',
+                            padding: '18px 20px',
+                            borderRadius: '12px',
+                            border: `2px solid ${activeStaffView === 'users' ? '#2563EB' : '#E2E8F0'}`,
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            position: 'relative',
+                            boxShadow: activeStaffView === 'users' ? '0 4px 14px rgba(37,99,235,0.15)' : '0 1px 3px rgba(0,0,0,0.02)'
+                        }}
+                        onMouseEnter={(e) => {
+                            if (activeStaffView !== 'users') {
+                                e.currentTarget.style.borderColor = '#93C5FD';
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 6px 16px rgba(37,99,235,0.08)';
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            if (activeStaffView !== 'users') {
+                                e.currentTarget.style.borderColor = '#E2E8F0';
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.02)';
+                            }
+                        }}
                     >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                            <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <FiUsers style={{ color: '#FFFFFF', fontSize: '15px' }} />
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: '700', color: '#1D4ED8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                Total Users
+                            </span>
+                            <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563EB' }}>
+                                <FiUsers style={{ fontSize: '16px' }} />
                             </div>
-                            <span style={{ fontSize: '11px', fontWeight: '700', color: '#1D4ED8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Total Users</span>
                         </div>
-                        <p style={{ fontSize: '28px', fontWeight: '800', color: '#1E40AF', margin: '0 0 2px 0', lineHeight: 1 }}>
+                        <p style={{ fontSize: '30px', fontWeight: '800', color: '#0F172A', margin: 0, lineHeight: 1 }}>
                             {users.length > 0 ? users.length : (department.userCount ?? 0)}
                         </p>
-                        <p style={{ fontSize: '11px', color: '#3B82F6', margin: 0 }}>Click to view list</p>
+                        <p style={{ fontSize: '12px', color: '#3B82F6', margin: '8px 0 0', fontWeight: '500' }}>
+                            Click to view list →
+                        </p>
                         {activeStaffView === 'users' && (
-                            <div style={{ position: 'absolute', top: '8px', right: '8px', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#2563EB' }} />
+                            <div style={{ position: 'absolute', top: '10px', right: '10px', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#2563EB' }} />
                         )}
                     </div>
 
-                    {/* ── HODs Card ── */}
+                    {/* ── Heads of Dept. Card ── */}
                     <div
                         onClick={() => handleStaffCardClick('hods')}
-                        style={{ backgroundColor: activeStaffView === 'hods' ? '#EDE9FE' : '#F5F3FF', padding: '16px', borderRadius: '8px', border: `2px solid ${activeStaffView === 'hods' ? '#7C3AED' : '#DDD6FE'}`, cursor: 'pointer', transition: 'all 0.2s', position: 'relative' }}
-                        onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 4px 12px rgba(124,58,237,0.15)'}
-                        onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
+                        style={{
+                            backgroundColor: activeStaffView === 'hods' ? '#F5F3FF' : '#FFFFFF',
+                            padding: '18px 20px',
+                            borderRadius: '12px',
+                            border: `2px solid ${activeStaffView === 'hods' ? '#7C3AED' : '#E2E8F0'}`,
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            position: 'relative',
+                            boxShadow: activeStaffView === 'hods' ? '0 4px 14px rgba(124,58,237,0.15)' : '0 1px 3px rgba(0,0,0,0.02)'
+                        }}
+                        onMouseEnter={(e) => {
+                            if (activeStaffView !== 'hods') {
+                                e.currentTarget.style.borderColor = '#C4B5FD';
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 6px 16px rgba(124,58,237,0.08)';
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            if (activeStaffView !== 'hods') {
+                                e.currentTarget.style.borderColor = '#E2E8F0';
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.02)';
+                            }
+                        }}
                     >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                            <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: '#7C3AED', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <FiUser style={{ color: '#FFFFFF', fontSize: '15px' }} />
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: '700', color: '#6D28D9', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                Heads of Dept.
+                            </span>
+                            <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: '#EDE9FE', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#7C3AED' }}>
+                                <FiUser style={{ fontSize: '16px' }} />
                             </div>
-                            <span style={{ fontSize: '11px', fontWeight: '700', color: '#6D28D9', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Heads of Dept.</span>
                         </div>
-                        <p style={{ fontSize: '28px', fontWeight: '800', color: '#5B21B6', margin: '0 0 2px 0', lineHeight: 1 }}>
+                        <p style={{ fontSize: '30px', fontWeight: '800', color: '#0F172A', margin: 0, lineHeight: 1 }}>
                             {hods.length > 0 ? hods.length : (department.hods?.length ?? 0)}
                         </p>
-                        <p style={{ fontSize: '11px', color: '#8B5CF6', margin: 0 }}>Click to view list</p>
+                        <p style={{ fontSize: '12px', color: '#7C3AED', margin: '8px 0 0', fontWeight: '500' }}>
+                            Click to view list →
+                        </p>
                         {activeStaffView === 'hods' && (
-                            <div style={{ position: 'absolute', top: '8px', right: '8px', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#7C3AED' }} />
+                            <div style={{ position: 'absolute', top: '10px', right: '10px', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#7C3AED' }} />
                         )}
                     </div>
 
                     {/* ── Counsellors Card ── */}
                     <div
                         onClick={() => handleStaffCardClick('counsellors')}
-                        style={{ backgroundColor: activeStaffView === 'counsellors' ? '#DCFCE7' : '#F0FDF4', padding: '16px', borderRadius: '8px', border: `2px solid ${activeStaffView === 'counsellors' ? '#16A34A' : '#BBF7D0'}`, cursor: 'pointer', transition: 'all 0.2s', position: 'relative' }}
-                        onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 4px 12px rgba(22,163,74,0.15)'}
-                        onMouseLeave={(e) => e.currentTarget.style.boxShadow = 'none'}
+                        style={{
+                            backgroundColor: activeStaffView === 'counsellors' ? '#F0FDF4' : '#FFFFFF',
+                            padding: '18px 20px',
+                            borderRadius: '12px',
+                            border: `2px solid ${activeStaffView === 'counsellors' ? '#16A34A' : '#E2E8F0'}`,
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            position: 'relative',
+                            boxShadow: activeStaffView === 'counsellors' ? '0 4px 14px rgba(22,163,74,0.15)' : '0 1px 3px rgba(0,0,0,0.02)'
+                        }}
+                        onMouseEnter={(e) => {
+                            if (activeStaffView !== 'counsellors') {
+                                e.currentTarget.style.borderColor = '#86EFAC';
+                                e.currentTarget.style.transform = 'translateY(-2px)';
+                                e.currentTarget.style.boxShadow = '0 6px 16px rgba(22,163,74,0.08)';
+                            }
+                        }}
+                        onMouseLeave={(e) => {
+                            if (activeStaffView !== 'counsellors') {
+                                e.currentTarget.style.borderColor = '#E2E8F0';
+                                e.currentTarget.style.transform = 'translateY(0)';
+                                e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.02)';
+                            }
+                        }}
                     >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                            <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: '#16A34A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <FiUsers style={{ color: '#FFFFFF', fontSize: '15px' }} />
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                            <span style={{ fontSize: '11px', fontWeight: '700', color: '#15803D', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                Counsellors
+                            </span>
+                            <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: '#DCFCE7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#16A34A' }}>
+                                <FiUsers style={{ fontSize: '16px' }} />
                             </div>
-                            <span style={{ fontSize: '11px', fontWeight: '700', color: '#15803D', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Counsellors</span>
                         </div>
-                        <p style={{ fontSize: '28px', fontWeight: '800', color: '#166534', margin: '0 0 2px 0', lineHeight: 1 }}>
+                        <p style={{ fontSize: '30px', fontWeight: '800', color: '#0F172A', margin: 0, lineHeight: 1 }}>
                             {counsellors.length > 0 ? counsellors.length : (department.counsellors?.length ?? 0)}
                         </p>
-                        <p style={{ fontSize: '11px', color: '#22C55E', margin: 0 }}>Click to view list</p>
+                        <p style={{ fontSize: '12px', color: '#16A34A', margin: '8px 0 0', fontWeight: '500' }}>
+                            Click to view list →
+                        </p>
                         {activeStaffView === 'counsellors' && (
-                            <div style={{ position: 'absolute', top: '8px', right: '8px', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#16A34A' }} />
+                            <div style={{ position: 'absolute', top: '10px', right: '10px', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#16A34A' }} />
                         )}
-                    </div>
-
-                    <div style={{ backgroundColor: '#F8FAFC', padding: '16px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                            <FiCalendar style={{ color: '#64748B', fontSize: '14px' }} />
-                            <span style={{ fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Created Date</span>
-                        </div>
-                        <p style={{ fontSize: '14px', color: '#334155', margin: 0 }}>{formatDate(department.createdAt)}</p>
-                    </div>
-
-                    <div style={{ backgroundColor: '#F8FAFC', padding: '16px', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                            <FiEdit style={{ color: '#64748B', fontSize: '14px' }} />
-                            <span style={{ fontSize: '11px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Last Updated</span>
-                        </div>
-                        <p style={{ fontSize: '14px', color: '#334155', margin: 0 }}>{formatDate(department.updatedAt)}</p>
                     </div>
                 </div>
             </div>
@@ -982,30 +1054,30 @@ const DepartmentDetails = () => {
 
 
       
-       <div style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '12px', marginTop: '16px' }}>
-                    <h3 style={{ fontSize: '16px', fontWeight: '700', color: '#0F172A', marginBottom: '16px' }}>Lead Assignment Statistics</h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
-                        <AllottedCard
-                            onCardClick={handleCardClick}
-                            activeFilters={activeFilters}
-                            filterRequest={filterRequest}
-                            departmentId={id}
-                        />
-                        
-                        <UnallottedCard
-                            onCardClick={handleCardClick}
-                            activeFilters={activeFilters}
-                            filterRequest={filterRequest}
-                            departmentId={id}
-                        />
-                        <AvailedCard
-                            onCardClick={handleCardClick}
-                            activeFilters={activeFilters}
-                            filterRequest={filterRequest}
-                            departmentId={id}
-                        />
-                    </div>
+            {/* ── Lead Assignment Statistics ── */}
+            <div style={{ backgroundColor: '#FFFFFF', padding: '24px', borderRadius: '16px', border: '1px solid #E2E8F0', marginTop: '20px', marginBottom: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#0F172A', margin: '0 0 16px 0' }}>Lead Assignment Statistics</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
+                    <AllottedCard
+                        onCardClick={handleCardClick}
+                        activeFilters={activeFilters}
+                        filterRequest={filterRequest}
+                        departmentId={id}
+                    />
+                    <UnallottedCard
+                        onCardClick={handleCardClick}
+                        activeFilters={activeFilters}
+                        filterRequest={filterRequest}
+                        departmentId={id}
+                    />
+                    <AvailedCard
+                        onCardClick={handleCardClick}
+                        activeFilters={activeFilters}
+                        filterRequest={filterRequest}
+                        departmentId={id}
+                    />
                 </div>
+            </div>
             {/* ── Dashboard Cards (BOTTOM) ── */}
             <div style={{ marginBottom: '24px' }}>
                 <LeadCards

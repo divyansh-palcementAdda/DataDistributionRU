@@ -237,6 +237,12 @@ const Leads = () => {
       converted.assignedUserId = converted.assignedUserIds[0];
       delete converted.assignedUserIds;
     }
+
+    // Convert courseIds → courseId or courseIds
+    if (converted.courseIds?.length === 1) {
+      converted.courseId = converted.courseIds[0];
+      delete converted.courseIds;
+    }
     
     return converted;
   };
@@ -350,6 +356,10 @@ const Leads = () => {
         case 'user':
           if (!newFilterRequest.assignedUserIds) newFilterRequest.assignedUserIds = [];
           newFilterRequest.assignedUserIds.push(filter.value);
+          break;
+        case 'course':
+          if (!newFilterRequest.courseIds) newFilterRequest.courseIds = [];
+          newFilterRequest.courseIds.push(filter.value);
           break;
         case 'allLeads':
           // No specific filter needed, just show all leads

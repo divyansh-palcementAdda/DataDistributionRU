@@ -63,3 +63,32 @@ export const getLeadStatusSegregationAnalytics = async (params = {}) => {
         throw error;
     }
 };
+
+/**
+ * Fetch course-wise lead segregation for a selected course type
+ * @param {Object} params - { courseTypeId, search, page, size, sortBy, sortDirection }
+ */
+export const getCourseWiseSegregation = async (params = {}) => {
+    try {
+        const response = await axiosInstance.get(ApiRoutes.DataSegregation.courseWise, { params });
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
+/**
+ * Fetch user-wise lead segregation and status counts for a selected course
+ * @param {string} courseId
+ * @param {Object} params - { search, page, size, sortBy, sortDirection }
+ */
+export const getCourseUserWiseSegregation = async (courseId, params = {}) => {
+    try {
+        const url = ApiRoutes.DataSegregation.courseUsers.replace('{courseId}', courseId);
+        const response = await axiosInstance.get(url, { params });
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+

@@ -7,10 +7,14 @@ import {
   getCourseTypesSummary,
   getSegregationMatrix,
   getUserSegregationAnalytics,
-  getLeadStatusSegregationAnalytics
+  getLeadStatusSegregationAnalytics,
+  getCourseWiseSegregation,
+  getCourseUserWiseSegregation
 } from '../Services/segregation/dataSegregationService';
 import UserSegregationAnalyticsModal from '../component/reusable/segregation/UserSegregationAnalyticsModal';
 import LeadStatusSegregationModal from '../component/reusable/segregation/LeadStatusSegregationModal';
+import CourseSegregationModal from '../component/reusable/segregation/CourseSegregationModal';
+import CourseUserSegregationModal from '../component/reusable/segregation/CourseUserSegregationModal';
 import * as XLSX from 'xlsx';
 
 const DataSegregation = () => {
@@ -46,6 +50,21 @@ const DataSegregation = () => {
   const [statusModalData, setStatusModalData] = useState(null);
   const [loadingStatusModal, setLoadingStatusModal] = useState(false);
   const [statusModalTotalLeads, setStatusModalTotalLeads] = useState(0);
+
+  // State: Course Segregation Modal
+  const [isCourseModalOpen, setIsCourseModalOpen] = useState(false);
+  const [courseModalData, setCourseModalData] = useState(null);
+  const [loadingCourseModal, setLoadingCourseModal] = useState(false);
+  const [courseScopeTitle, setCourseScopeTitle] = useState('');
+  const [courseScopeFilter, setCourseScopeFilter] = useState(null);
+
+  // State: Course User Segregation Modal
+  const [isCourseUserModalOpen, setIsCourseUserModalOpen] = useState(false);
+  const [courseUserModalData, setCourseUserModalData] = useState(null);
+  const [loadingCourseUserModal, setLoadingCourseUserModal] = useState(false);
+  const [selectedCourseForUserModal, setSelectedCourseForUserModal] = useState(null);
+  const [courseUserScopeTitle, setCourseUserScopeTitle] = useState('');
+  const [courseUserScopeFilter, setCourseUserScopeFilter] = useState(null);
 
   // =========================================================================
   // Derived Capability Flags (Server Capabilities prioritized, fallback to Context)
@@ -94,6 +113,18 @@ const DataSegregation = () => {
     if (canViewFullFlow) return true;
     if (capabilities) return capabilities.canViewLeadStatusAnalytics;
     return hasPermission('DATA_SEGREGATION_LEAD_STATUS_ANALYTICS') || hasPermission('DATA_SEGREGATION_VIEW');
+  }, [canViewFullFlow, capabilities, hasPermission]);
+
+  const canViewCourse = useMemo(() => {
+    if (canViewFullFlow) return true;
+    if (capabilities) return capabilities.canViewCourse;
+    return hasPermission('DATA_SEGREGATION_COURSE_VIEW') || hasPermission('DATA_SEGREGATION_VIEW');
+  }, [canViewFullFlow, capabilities, hasPermission]);
+
+  const canViewCourseUser = useMemo(() => {
+    if (canViewFullFlow) return true;
+    if (capabilities) return capabilities.canViewCourseUser;
+    return hasPermission('DATA_SEGREGATION_COURSE_USER_VIEW') || hasPermission('DATA_SEGREGATION_VIEW');
   }, [canViewFullFlow, capabilities, hasPermission]);
 
   // Fetch Capabilities and Course Types on Mount
@@ -247,6 +278,22 @@ const DataSegregation = () => {
       });
     }
 
+    if (filters.courseId) {
+      activeFilters.push({
+        type: 'course',
+        value: filters.courseId,
+        label: `Course: ${filters.courseName || 'Selected Course'}`
+      });
+    }
+
+    if (filters.unallocated) {
+      activeFilters.push({
+        type: 'unallotted',
+        value: true,
+        label: 'Allocation: Unallocated'
+      });
+    }
+
     if (filters.assignedUserId) {
       activeFilters.push({
         type: 'assignedUser',
@@ -267,7 +314,7 @@ const DataSegregation = () => {
   };
 
   // =========================================================================
-  // Modal Open Handlers
+  // Modal Open Handlers: User Analytics
   // =========================================================================
   const handleOpenUserAnalytics = async ({ leadSourceId, sourceName, boardId, boardName, gradeId, gradeName }) => {
     if (!canViewUserAnalytics) return;
@@ -299,6 +346,9 @@ const DataSegregation = () => {
     }
   };
 
+  // =========================================================================
+  // Modal Open Handlers: Status Analytics
+  // =========================================================================
   const handleOpenStatusAnalytics = async ({ leadSourceId, sourceName, boardId, boardName, gradeId, gradeName, totalLeads }) => {
     if (!canViewStatusAnalytics) return;
     const scopeParts = [
@@ -328,6 +378,120 @@ const DataSegregation = () => {
     } finally {
       setLoadingStatusModal(false);
     }
+  };
+
+  // =========================================================================
+  // Modal Open Handlers: Course-Wise Segregation
+  // =========================================================================
+  const handleOpenCourseSegregation = async ({
+    courseTypeId = selectedCourseType?.id,
+    leadSourceId,
+    sourceName,
+    boardId,
+    boardName,
+    gradeId,
+    gradeName
+  } = {}) => {
+    if (!canViewCourse || !courseTypeId) return;
+
+    const scopeParts = [
+      selectedCourseType?.name,
+      sourceName,
+      canViewBoard ? boardName : null,
+      canViewGrade ? gradeName : null
+    ].filter(Boolean);
+
+    const title = scopeParts.join(' → ');
+    const filterScope = {
+      courseTypeId,
+      leadSourceId: leadSourceId || undefined,
+      sourceName,
+      boardId: (canViewBoard && boardId) ? boardId : undefined,
+      boardName,
+      gradeId: (canViewGrade && gradeId) ? gradeId : undefined,
+      gradeName
+    };
+
+    setCourseScopeTitle(title);
+    setCourseScopeFilter(filterScope);
+    setIsCourseModalOpen(true);
+    setLoadingCourseModal(true);
+
+    try {
+      const res = await getCourseWiseSegregation({
+        courseTypeId,
+        leadSourceId: leadSourceId || undefined,
+        boardId: (canViewBoard && boardId) ? boardId : undefined,
+        gradeId: (canViewGrade && gradeId) ? gradeId : undefined,
+        size: 1000
+      });
+      if (res?.success) {
+        setCourseModalData(res.data);
+      } else {
+        toast.error(res?.message || 'Failed to load course segregation');
+      }
+    } catch (err) {
+      console.error('Failed to load course segregation:', err);
+      toast.error('Failed to load course-wise segregation.');
+    } finally {
+      setLoadingCourseModal(false);
+    }
+  };
+
+  // =========================================================================
+  // Modal Open Handlers: Course User-Wise Segregation Drilldown
+  // =========================================================================
+  const handleOpenCourseUserSegregation = async (course, filterScope) => {
+    if (!canViewCourseUser || !course?.courseId) return;
+
+    setSelectedCourseForUserModal(course);
+    setCourseUserScopeTitle(courseScopeTitle);
+    setCourseUserScopeFilter(filterScope);
+    setIsCourseModalOpen(false);
+    setIsCourseUserModalOpen(true);
+    setLoadingCourseUserModal(true);
+
+    try {
+      const res = await getCourseUserWiseSegregation(course.courseId, {
+        leadSourceId: filterScope?.leadSourceId,
+        boardId: filterScope?.boardId,
+        gradeId: filterScope?.gradeId,
+        size: 1000
+      });
+      if (res?.success) {
+        setCourseUserModalData(res.data);
+      } else {
+        toast.error(res?.message || 'Failed to load user segregation for course');
+      }
+    } catch (err) {
+      console.error('Failed to load user segregation for course:', err);
+      toast.error('Failed to load user segregation for course.');
+    } finally {
+      setLoadingCourseUserModal(false);
+    }
+  };
+
+  const handleBackToCoursesFromUserModal = () => {
+    setIsCourseUserModalOpen(false);
+    setIsCourseModalOpen(true);
+  };
+
+  const handleNavigateFromCourseUser = (params) => {
+    setIsCourseUserModalOpen(false);
+    navigateToLeads({
+      courseTypeId: selectedCourseType?.id,
+      courseId: params.courseId,
+      courseName: params.courseName,
+      leadSourceId: params.leadSourceId,
+      sourceName: params.sourceName,
+      boardId: params.boardId,
+      boardName: params.boardName,
+      gradeId: params.gradeId,
+      gradeName: params.gradeName,
+      assignedUserId: params.assignedUserId,
+      userName: params.userName,
+      unallocated: params.unallocated
+    });
   };
 
   // Filter sources by search term
@@ -481,7 +645,7 @@ const DataSegregation = () => {
         </div>
 
         {/* Global actions */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center flex-wrap gap-2.5">
           <button
             onClick={() => selectedCourseType && fetchMatrix(selectedCourseType.id)}
             className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 font-medium text-sm rounded-xl shadow-2xs transition-all cursor-pointer"
@@ -502,6 +666,20 @@ const DataSegregation = () => {
             </svg>
             Download
           </button>
+
+          {/* Course-wise Segregation Action */}
+          {selectedCourseType && canViewCourse && (
+            <button
+              onClick={() => handleOpenCourseSegregation()}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-xl shadow-xs hover:shadow transition-all cursor-pointer"
+              title="View Course-wise segregation breakdown"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+              Course Breakdown
+            </button>
+          )}
 
           {selectedCourseType && canViewCourseType && (
             <button
@@ -548,19 +726,21 @@ const DataSegregation = () => {
                         : 'bg-white hover:bg-gray-50/80 text-gray-800 border-gray-200 shadow-2xs hover:border-blue-300'
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-1 mb-2">
-                      <span className="font-bold text-base tracking-tight truncate" title={ct.name}>
+                    <div className="flex items-start justify-between gap-1 mb-2">
+                      <span className={`text-xs font-semibold uppercase tracking-wider line-clamp-1 ${isSelected ? 'text-blue-100' : 'text-gray-500'}`}>
                         {ct.name}
                       </span>
                       {isSelected && (
-                        <span className="w-2 h-2 rounded-full bg-emerald-400 ring-4 ring-white/30"></span>
+                        <span className="w-2 h-2 rounded-full bg-white animate-ping shrink-0"></span>
                       )}
                     </div>
-                    <div className="flex items-baseline justify-between">
-                      <span className={`text-xs ${isSelected ? 'text-blue-100' : 'text-gray-500'}`}>Total Leads</span>
-                      <span className={`text-lg font-black ${isSelected ? 'text-white' : 'text-gray-900'}`}>
-                        {ct.totalLeads}
-                      </span>
+                    <div>
+                      <div className="text-2xl font-bold leading-tight">
+                        {ct.totalLeads?.toLocaleString() || 0}
+                      </div>
+                      <div className={`text-xs mt-0.5 ${isSelected ? 'text-blue-100' : 'text-gray-400'}`}>
+                        Total Leads
+                      </div>
                     </div>
                   </div>
                 );
@@ -570,10 +750,10 @@ const DataSegregation = () => {
         </div>
       )}
 
-      {/* Overview Statistics Banner */}
+      {/* Summary KPI Cards for Selected Course Type */}
       {matrixData && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white p-4.5 rounded-2xl border border-gray-200 shadow-2xs flex items-center gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs flex items-center gap-3">
             <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -585,7 +765,7 @@ const DataSegregation = () => {
             </div>
           </div>
 
-          <div className="bg-white p-4.5 rounded-2xl border border-gray-200 shadow-2xs flex items-center gap-4">
+          <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs flex items-center gap-3">
             <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -597,19 +777,19 @@ const DataSegregation = () => {
             </div>
           </div>
 
-          <div className="bg-white p-4.5 rounded-2xl border border-gray-200 shadow-2xs flex items-center gap-4">
+          <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs flex items-center gap-3">
             <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Unallotted Data</p>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Unallocated Data</p>
               <h3 className="text-2xl font-bold text-amber-700">{matrixData.unallottedLeads}</h3>
             </div>
           </div>
 
-          <div className="bg-white p-4.5 rounded-2xl border border-gray-200 shadow-2xs flex items-center gap-4">
+          <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs flex items-center gap-3">
             <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
@@ -690,7 +870,7 @@ const DataSegregation = () => {
                     <th className="py-3.5 px-4 text-center min-w-[100px]">Allotted</th>
                     <th className="py-3.5 px-4 text-center min-w-[100px]">Unallotted</th>
                     <th className="py-3.5 px-4 text-center min-w-[100px]">Availed</th>
-                    <th className="py-3.5 px-6 text-right min-w-[280px]">Actions</th>
+                    <th className="py-3.5 px-6 text-right min-w-[340px]">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -751,6 +931,22 @@ const DataSegregation = () => {
                               >
                                 View Leads
                               </button>
+
+                              {/* Course Breakdown */}
+                              {canViewCourse && (
+                                <button
+                                  onClick={() =>
+                                    handleOpenCourseSegregation({
+                                      leadSourceId: source.sourceId,
+                                      sourceName: source.sourceName
+                                    })
+                                  }
+                                  className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-semibold shadow-2xs hover:shadow transition-all cursor-pointer"
+                                  title="View course-wise breakdown for this source"
+                                >
+                                  Courses
+                                </button>
+                              )}
 
                               {/* User Analytics */}
                               {canViewUserAnalytics && (
@@ -842,6 +1038,22 @@ const DataSegregation = () => {
                                       >
                                         Leads
                                       </button>
+                                      {canViewCourse && (
+                                        <button
+                                          onClick={() =>
+                                            handleOpenCourseSegregation({
+                                              leadSourceId: source.sourceId,
+                                              sourceName: source.sourceName,
+                                              boardId: board.boardId,
+                                              boardName: board.boardName
+                                            })
+                                          }
+                                          className="px-2 py-0.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded text-xs font-medium cursor-pointer"
+                                          title="View course breakdown"
+                                        >
+                                          Courses
+                                        </button>
+                                      )}
                                       {canViewUserAnalytics && (
                                         <button
                                           onClick={() =>
@@ -914,6 +1126,24 @@ const DataSegregation = () => {
                                           >
                                             Leads
                                           </button>
+                                          {canViewCourse && (
+                                            <button
+                                              onClick={() =>
+                                                handleOpenCourseSegregation({
+                                                  leadSourceId: source.sourceId,
+                                                  sourceName: source.sourceName,
+                                                  boardId: board.boardId,
+                                                  boardName: board.boardName,
+                                                  gradeId: grade.gradeId,
+                                                  gradeName: grade.gradeName
+                                                })
+                                              }
+                                              className="px-2 py-0.5 bg-indigo-50/60 hover:bg-indigo-100 text-indigo-700 border border-indigo-100 rounded text-xs cursor-pointer"
+                                              title="View course breakdown"
+                                            >
+                                              Courses
+                                            </button>
+                                          )}
                                           {canViewUserAnalytics && (
                                             <button
                                               onClick={() =>
@@ -1009,6 +1239,36 @@ const DataSegregation = () => {
               statusName: status.name
             });
           }}
+        />
+      )}
+
+      {/* Course Segregation Modal */}
+      {canViewCourse && (
+        <CourseSegregationModal
+          isOpen={isCourseModalOpen}
+          onClose={() => setIsCourseModalOpen(false)}
+          data={courseModalData}
+          loading={loadingCourseModal}
+          courseTypeName={selectedCourseType?.name}
+          scopeTitle={courseScopeTitle}
+          filterScope={courseScopeFilter}
+          canViewCourseUser={canViewCourseUser}
+          onViewUsers={handleOpenCourseUserSegregation}
+        />
+      )}
+
+      {/* Course User Segregation Modal */}
+      {canViewCourseUser && (
+        <CourseUserSegregationModal
+          isOpen={isCourseUserModalOpen}
+          onClose={() => setIsCourseUserModalOpen(false)}
+          onBackToCourses={handleBackToCoursesFromUserModal}
+          data={courseUserModalData}
+          loading={loadingCourseUserModal}
+          selectedCourse={selectedCourseForUserModal}
+          scopeTitle={courseUserScopeTitle}
+          filterScope={courseUserScopeFilter}
+          onNavigateToLeads={handleNavigateFromCourseUser}
         />
       )}
     </div>

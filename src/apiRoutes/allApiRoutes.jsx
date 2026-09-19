@@ -235,7 +235,9 @@ const ApiRoutes = {
         courseTypes: '/api/data-segregation/course-types',
         matrix: '/api/data-segregation/matrix',
         userAnalytics: '/api/data-segregation/user-analytics',
-        leadStatusAnalytics: '/api/data-segregation/lead-status-analytics'
+        leadStatusAnalytics: '/api/data-segregation/lead-status-analytics',
+        courseWise: '/api/data-segregation/course-wise',
+        courseUsers: '/api/data-segregation/courses/{courseId}/users'
     }
 }
 

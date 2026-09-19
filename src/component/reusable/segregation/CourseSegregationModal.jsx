@@ -346,7 +346,7 @@ const CourseSegregationModal = ({
 
                         {/* Action Drill Down */}
                         {(canViewCourseUser || onNavigateToLeads) && (
-                          <td className="py-3 px-4 text-center min-w-[220px] sticky right-0 bg-white group-hover:bg-blue-50/40 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)] whitespace-nowrap">
+                          <td className="py-3 px-4 text-center min-w-[210px] sticky right-0 bg-white group-hover:bg-blue-50/40 shadow-[-4px_0_6px_-2px_rgba(0,0,0,0.05)] whitespace-nowrap">
                             <div className="flex items-center justify-center gap-2">
                               {onNavigateToLeads && (
                                 <button
@@ -364,7 +364,7 @@ const CourseSegregationModal = ({
                                       gradeName: filterScope?.gradeName
                                     })
                                   }
-                                  className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white hover:bg-blue-50 text-blue-700 border border-blue-300 hover:border-blue-400 rounded-lg text-xs font-semibold shadow-2xs hover:shadow-xs transition-all whitespace-nowrap cursor-pointer shrink-0"
+                                  className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-white hover:bg-blue-50 text-blue-600 hover:text-blue-700 border border-blue-400 hover:border-blue-500 rounded-full text-xs font-semibold shadow-2xs hover:shadow-xs transition-all whitespace-nowrap cursor-pointer shrink-0"
                                   title={`View leads for ${course.courseName}`}
                                 >
                                   <svg className="w-3.5 h-3.5 text-blue-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -377,13 +377,13 @@ const CourseSegregationModal = ({
                               {canViewCourseUser && (
                                 <button
                                   onClick={() => onViewUsers(course, filterScope)}
-                                  className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-2xs hover:shadow-xs transition-all whitespace-nowrap cursor-pointer shrink-0"
+                                  className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-xs font-semibold shadow-2xs hover:shadow-xs transition-all whitespace-nowrap cursor-pointer shrink-0"
                                   title={`View users for ${course.courseName}`}
                                 >
                                   <svg className="w-3.5 h-3.5 text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                                   </svg>
-                                  <span>View Users</span>
+                                  <span>Users</span>
                                 </button>
                               )}
                             </div>

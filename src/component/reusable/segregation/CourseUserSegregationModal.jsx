@@ -390,7 +390,7 @@ const CourseUserSegregationModal = ({
                                   gradeName: filterScope?.gradeName
                                 })
                               }
-                              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs rounded-lg transition-all shadow-2xs hover:shadow-xs whitespace-nowrap cursor-pointer shrink-0"
+                              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs rounded-full transition-all shadow-2xs hover:shadow-xs whitespace-nowrap cursor-pointer shrink-0"
                               title="View unallocated leads in Leads page"
                             >
                               <svg className="w-3.5 h-3.5 text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -478,7 +478,7 @@ const CourseUserSegregationModal = ({
                                   gradeName: filterScope?.gradeName
                                 })
                               }
-                              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-lg transition-all shadow-2xs hover:shadow-xs whitespace-nowrap cursor-pointer shrink-0"
+                              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded-full transition-all shadow-2xs hover:shadow-xs whitespace-nowrap cursor-pointer shrink-0"
                               title={`View leads of ${user.fullName || user.username}`}
                             >
                               <svg className="w-3.5 h-3.5 text-white shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">

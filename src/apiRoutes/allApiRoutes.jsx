@@ -57,6 +57,7 @@ const ApiRoutes = {
     },
     Permission: {
         getAll: "/api/permissions",
+        getUnmapped: "/api/permissions/unmapped",
         create: "/api/permissions",
         getDetailsById: "/api/permissions/{id}",
         update: "/api/permissions/{id}",

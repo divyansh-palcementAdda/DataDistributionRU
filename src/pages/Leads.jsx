@@ -24,6 +24,7 @@ import {
 import LeadFilterDrawer from '../component/reusable/Leads/LeadFilterDrawer';
 import { useAppContext } from '../AppContext';
 import { usePermissions } from '../PermissionContext';
+import { canViewLeadField } from '../config/leadFieldPermissions';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import ReusableTable from '../component/reusable/table';
 // import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
@@ -506,6 +507,215 @@ const Leads = () => {
     }
   };
 
+  const tableColumns = useMemo(() => {
+    const cols = [];
+
+    // Select Checkbox column
+    cols.push({
+      key: 'select',
+      header: hasPermission('LEAD_ASSIGN') ? (
+        <input
+          type="checkbox"
+          checked={selectAll}
+          onChange={(e) => handleSelectAll(e.target.checked)}
+          className="cursor-pointer"
+        />
+      ) : null,
+      sortable: false,
+      render: (value, row) => {
+        if (!hasPermission('LEAD_ASSIGN')) return null;
+        
+        const rowId = typeof row.id === 'object' ? row.id?.id : row.id;
+        const rowLeadId = typeof row.leadId === 'object' ? row.leadId?.id : row.leadId;
+        const idToUse = rowId || rowLeadId;
+        
+        return (
+          <input
+            type="checkbox"
+            checked={selectedIds.includes(idToUse)}
+            onChange={(e) => handleSelectRow(idToUse, e.target.checked)}
+            className="cursor-pointer"
+          />
+        );
+      },
+    });
+
+    // S.No
+    cols.push({
+      key: 'sno',
+      header: 'S.No',
+      sortable: false,
+      render: (value, row, index) => {
+        const serialNumber = (page * size) + index + 1;
+        return <span className="font-semibold text-gray-700">{typeof serialNumber === 'number' ? serialNumber : 'N/A'}</span>;
+      },
+    });
+
+    // Lead Code
+    if (canViewLeadField(hasPermission, 'leadCode')) {
+      cols.push({
+        key: 'leadCode',
+        header: 'Lead Code',
+        render: (value, row) => {
+          const leadCodeValue = value || row.leadCode;
+          let displayValue = 'N/A';
+          if (typeof leadCodeValue === 'object' && leadCodeValue !== null) {
+            displayValue = leadCodeValue?.code || leadCodeValue?.name || 'N/A';
+          } else if (typeof leadCodeValue === 'string') {
+            displayValue = leadCodeValue;
+          }
+          return <span className="font-semibold text-blue-600">{displayValue}</span>;
+        },
+      });
+    }
+
+    // Lead Info (Full Name)
+    if (canViewLeadField(hasPermission, 'fullName')) {
+      cols.push({
+        key: 'lead',
+        header: 'Lead Info',
+        render: (value, row) => (
+          <div>
+            <div className="font-semibold text-gray-800">
+              {typeof row.fullName === 'object' ? row.fullName?.name || row.fullName?.firstName || 'N/A' : row.fullName || 'N/A'}
+            </div>
+          </div>
+        ),
+      });
+    }
+
+    // Course (Interested Courses / Course)
+    if (canViewLeadField(hasPermission, 'course') || canViewLeadField(hasPermission, 'interestedCourses')) {
+      cols.push({
+        key: 'interestedCourses',
+        header: 'Course',
+        render: (value, row) => {
+          let displayValue = 'N/A';
+          if (Array.isArray(row.interestedCourses) && row.interestedCourses.length > 0) {
+            const firstCourse = row.interestedCourses[0];
+            displayValue = (typeof firstCourse === 'object' && firstCourse !== null)
+              ? (firstCourse.courseName || firstCourse.name || 'N/A')
+              : (firstCourse || 'N/A');
+          } else if (row.course && typeof row.course === 'object') {
+            displayValue = row.course.courseName || row.course.name || 'N/A';
+          } else if (row.registeredCourse && typeof row.registeredCourse === 'object') {
+            displayValue = row.registeredCourse.courseName || row.registeredCourse.name || 'N/A';
+          }
+          return displayValue;
+        },
+      });
+    }
+
+    // Source
+    if (canViewLeadField(hasPermission, 'leadSources')) {
+      cols.push({
+        key: 'source',
+        header: 'Source',
+        render: (value, row) => {
+          const sources = Array.isArray(row.leadSources) && row.leadSources.length > 0
+            ? row.leadSources.map(s => (typeof s === 'object' ? s.name || s.code : s)).filter(Boolean)
+            : (row.sourceDetails ? [row.sourceDetails] : (row.source ? [(typeof row.source === 'object' ? row.source?.name : row.source)] : []));
+
+          if (sources.length === 0) return 'N/A';
+
+          const primarySource = sources[0];
+          const hasMultiple = row.isMultiSource || sources.length > 1;
+
+          if (!hasMultiple || sources.length <= 1) {
+            return <span>{primarySource}</span>;
+          }
+
+          const extraCount = sources.length - 1;
+          const allSourcesTooltip = sources.join(', ');
+
+          return (
+            <div className="flex items-center gap-1.5 flex-wrap" title={allSourcesTooltip}>
+              <span>{primarySource}</span>
+              <span
+                className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold bg-purple-100 text-purple-800 cursor-pointer"
+                title={allSourcesTooltip}
+              >
+                +{extraCount}
+              </span>
+            </div>
+          );
+        },
+      });
+    }
+
+    // Status
+    if (canViewLeadField(hasPermission, 'currentStatus')) {
+      cols.push({
+        key: 'currentStatus',
+        header: 'Status',
+        render: (value, row) => {
+          const statusValue = value || row.currentStatus;
+          let displayValue = 'N/A';
+          if (typeof statusValue === 'object' && statusValue !== null) {
+            displayValue = statusValue?.name || statusValue?.code || 'N/A';
+          } else if (typeof statusValue === 'string') {
+            displayValue = statusValue;
+          }
+          return (
+            <span className="badge bg-slate-200 text-slate-800 px-2 py-1 rounded text-xs font-medium">
+              {displayValue}
+            </span>
+          );
+        },
+      });
+    }
+
+    // Counselor (Assigned To)
+    if (canViewLeadField(hasPermission, 'assignedTo')) {
+      cols.push({
+        key: 'assignedTo',
+        header: 'Counselor',
+        render: (value, row) => {
+          if (typeof row.assignedTo === 'object' && row.assignedTo !== null) {
+            return `${row.assignedTo.firstName || ''} ${row.assignedTo.lastName || ''}`.trim() || 'Not Allotted';
+          }
+          return row.assignedTo || 'Not Allotted';
+        },
+      });
+    }
+
+    // Follow-up
+    if (canViewLeadField(hasPermission, 'nextFollowUpDate')) {
+      cols.push({
+        key: 'nextFollowUpDate',
+        header: 'Follow-up',
+        render: (value, row) => {
+          const followUpDate = row.nextFollowUpDate;
+          if (followUpDate) {
+            try {
+              return new Date(followUpDate).toLocaleDateString();
+            } catch (e) {
+              return 'Invalid Date';
+            }
+          }
+          return 'None';
+        },
+      });
+    }
+
+    // Created By (Audit Info)
+    if (canViewLeadField(hasPermission, 'auditInfo')) {
+      cols.push({
+        key: 'createdBy',
+        header: 'Created By',
+        render: (value, row) => {
+          const createdByValue = value || row.createdBy;
+          if (typeof createdByValue === 'object' && createdByValue !== null) {
+            return `${createdByValue.firstName || ''} ${createdByValue.lastName || ''}`.trim() || 'N/A';
+          }
+          return createdByValue || 'N/A';
+        },
+      });
+    }
+
+    return cols;
+  }, [hasPermission, selectAll, selectedIds, page, size]);
+
   return (
     <div>
       {/* ── Page Header ── */}
@@ -769,186 +979,7 @@ const Leads = () => {
       <div className="card">
         <div className="table-wrap">
           <ReusableTable
-            columns={[
-              {
-                key: 'select',
-                header: hasPermission('LEAD_ASSIGN') ? (
-                  <input
-                    type="checkbox"
-                    checked={selectAll}
-                    onChange={(e) => handleSelectAll(e.target.checked)}
-                    className="cursor-pointer"
-                  />
-                ) : null,
-                sortable: false,
-                render: (value, row) => {
-                  if (!hasPermission('LEAD_ASSIGN')) return null;
-                  
-                  const rowId = typeof row.id === 'object' ? row.id?.id : row.id;
-                  const rowLeadId = typeof row.leadId === 'object' ? row.leadId?.id : row.leadId;
-                  const idToUse = rowId || rowLeadId;
-                  
-                  return (
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.includes(idToUse)}
-                      onChange={(e) => handleSelectRow(idToUse, e.target.checked)}
-                      className="cursor-pointer"
-                    />
-                  );
-                },
-              },
-              {
-                key: 'sno',
-                header: 'S.No',
-                sortable: false,
-                render: (value, row, index) => {
-                  const serialNumber = (page * size) + index + 1;
-                  return <span className="font-semibold text-gray-700">{typeof serialNumber === 'number' ? serialNumber : 'N/A'}</span>;
-                },
-              },
-              {
-                key: 'leadCode',
-                header: 'Lead Code',
-                render: (value, row) => {
-                  // Handle both value parameter and row.leadCode
-                  const leadCodeValue = value || row.leadCode;
-                  let displayValue = 'N/A';
-                  
-                  if (typeof leadCodeValue === 'object' && leadCodeValue !== null) {
-                    displayValue = leadCodeValue?.code || leadCodeValue?.name || 'N/A';
-                  } else if (typeof leadCodeValue === 'string') {
-                    displayValue = leadCodeValue;
-                  } else if (leadCodeValue === null || leadCodeValue === undefined) {
-                    displayValue = 'N/A';
-                  }
-                  
-                  return <span className="font-semibold text-blue-600">{displayValue}</span>;
-                },
-              },
-              {
-                key: 'lead',
-                header: 'Lead Info',
-                render: (value, row) => (
-                  <div>
-                    <div className="font-semibold text-gray-800">
-                      {typeof row.fullName === 'object' ? row.fullName?.name || row.fullName?.firstName || 'N/A' : row.fullName || 'N/A'}
-                    </div>
-                  </div>
-                ),
-              },
-              { 
-                key: 'interestedCourses', 
-                header: 'Course',
-                render: (value, row) => {
-                  // Priority: interestedCourses[0] > registered course
-                  let displayValue = 'N/A';
-                  if (Array.isArray(row.interestedCourses) && row.interestedCourses.length > 0) {
-                    const firstCourse = row.interestedCourses[0];
-                    displayValue = (typeof firstCourse === 'object' && firstCourse !== null)
-                      ? (firstCourse.courseName || firstCourse.name || 'N/A')
-                      : (firstCourse || 'N/A');
-                  } else if (row.course && typeof row.course === 'object') {
-                    displayValue = row.course.courseName || row.course.name || 'N/A';
-                  } else if (row.registeredCourse && typeof row.registeredCourse === 'object') {
-                    displayValue = row.registeredCourse.courseName || row.registeredCourse.name || 'N/A';
-                  }
-                  return displayValue;
-                },
-              },
-              {
-                key: 'source',
-                header: 'Source',
-                render: (value, row) => {
-                  const sources = Array.isArray(row.leadSources) && row.leadSources.length > 0
-                    ? row.leadSources.map(s => (typeof s === 'object' ? s.name || s.code : s)).filter(Boolean)
-                    : (row.sourceDetails ? [row.sourceDetails] : (row.source ? [(typeof row.source === 'object' ? row.source?.name : row.source)] : []));
-
-                  if (sources.length === 0) return 'N/A';
-
-                  const primarySource = sources[0];
-                  const hasMultiple = row.isMultiSource || sources.length > 1;
-
-                  if (!hasMultiple || sources.length <= 1) {
-                    return <span>{primarySource}</span>;
-                  }
-
-                  const extraCount = sources.length - 1;
-                  const allSourcesTooltip = sources.join(', ');
-
-                  return (
-                    <div className="flex items-center gap-1.5 flex-wrap" title={allSourcesTooltip}>
-                      <span>{primarySource}</span>
-                      <span
-                        className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold bg-purple-100 text-purple-800 cursor-pointer"
-                        title={allSourcesTooltip}
-                      >
-                        +{extraCount}
-                      </span>
-                    </div>
-                  );
-                },
-              },
-              {
-                key: 'currentStatus',
-                header: 'Status',
-                render: (value, row) => {
-                  // Handle both value parameter and row.currentStatus
-                  const statusValue = value || row.currentStatus;
-                  let displayValue = 'N/A';
-                  
-                  if (typeof statusValue === 'object' && statusValue !== null) {
-                    displayValue = statusValue?.name || statusValue?.code || 'N/A';
-                  } else if (typeof statusValue === 'string') {
-                    displayValue = statusValue;
-                  } else if (statusValue === null || statusValue === undefined) {
-                    displayValue = 'N/A';
-                  }
-                  
-                  return (
-                    <span className="badge bg-slate-200 text-slate-800 px-2 py-1 rounded text-xs font-medium">
-                      {displayValue}
-                    </span>
-                  );
-                },
-              },
-              {
-                key: 'assignedTo',
-                header: 'Counselor',
-                render: (value, row) => {
-                  if (typeof row.assignedTo === 'object' && row.assignedTo !== null) {
-                    return `${row.assignedTo.firstName || ''} ${row.assignedTo.lastName || ''}`.trim() || 'Not Allotted';
-                  }
-                  return row.assignedTo || 'Not Allotted';
-                },
-              },
-              {
-                key: 'nextFollowUpDate',
-                header: 'Follow-up',
-                render: (value, row) => {
-                  const followUpDate = row.nextFollowUpDate;
-                  if (followUpDate) {
-                    try {
-                      return new Date(followUpDate).toLocaleDateString();
-                    } catch (e) {
-                      return 'Invalid Date';
-                    }
-                  }
-                  return 'None';
-                },
-              },
-              {
-                key: 'createdBy',
-                header: 'Created By',
-                render: (value, row) => {
-                  const createdByValue = value || row.createdBy;
-                  if (typeof createdByValue === 'object' && createdByValue !== null) {
-                    return `${createdByValue.firstName || ''} ${createdByValue.lastName || ''}`.trim() || 'N/A';
-                  }
-                  return createdByValue || 'N/A';
-                },
-              },
-            ]}
+            columns={tableColumns}
             data={leadsData}
             isServerSide={true}
             totalElements={totalElements}

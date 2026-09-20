@@ -87,10 +87,41 @@ export const PermissionProvider = ({ children }) => {
     return hasPermission(deletePermission);
   };
 
+  // Refresh permissions on demand
+  const refreshPermissions = async () => {
+    try {
+      const userRole = localStorage.getItem('userRole');
+      if (userRole) {
+        let roleId = localStorage.getItem('roleId');
+        if (!roleId) {
+          const userInfo = localStorage.getItem('userInfo');
+          if (userInfo) {
+            const parsedUserInfo = JSON.parse(userInfo);
+            roleId = parsedUserInfo.role?.id;
+          }
+        }
+        if (roleId) {
+          const permissionsResponse = await getRolePermissions(roleId);
+          if (permissionsResponse && permissionsResponse.status === 200) {
+            const permissionsData = permissionsResponse.data.data || permissionsResponse.data;
+            if (Array.isArray(permissionsData)) {
+              const permissionNames = permissionsData.map(perm => perm.name);
+              setPermissions(permissionNames);
+              return permissionNames;
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Failed to refresh permissions:", err);
+    }
+  };
+
   const value = {
     permissions,
     setPermissionsData,
     clearPermissions,
+    refreshPermissions,
     hasPermission,
     canRead,
     canCreate,

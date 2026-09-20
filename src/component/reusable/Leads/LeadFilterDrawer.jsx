@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { FiX, FiFilter, FiRotateCcw, FiCheck, FiSearch, FiChevronDown } from 'react-icons/fi';
 import { DEFAULT_LEAD_FILTERS, countActiveFilters } from '../../../Services/lead/leadFilterModel';
+import { usePermissions } from '../../../PermissionContext';
+import { canViewLeadField } from '../../../config/leadFieldPermissions';
 
 /**
  * Reusable searchable multi-select dropdown component
@@ -275,6 +277,7 @@ const LeadFilterDrawer = ({
   onApply,
   lookups = {},
 }) => {
+  const { hasPermission } = usePermissions();
   const [draftFilters, setDraftFilters] = useState(() => ({ ...DEFAULT_LEAD_FILTERS, ...appliedFilters }));
 
   useEffect(() => {
@@ -441,132 +444,162 @@ const LeadFilterDrawer = ({
               </div>
             </div>
 
-            <SearchableMultiSelect
-              label="Lead Source"
-              options={lookups.sources || []}
-              selectedIds={draftFilters.leadSourceIds}
-              onChange={(ids) => setDraftFilters(prev => ({ ...prev, leadSourceIds: ids }))}
-              placeholder="All Sources"
-            />
+            {canViewLeadField(hasPermission, 'leadSources') && (
+              <SearchableMultiSelect
+                label="Lead Source"
+                options={lookups.sources || []}
+                selectedIds={draftFilters.leadSourceIds}
+                onChange={(ids) => setDraftFilters(prev => ({ ...prev, leadSourceIds: ids }))}
+                placeholder="All Sources"
+              />
+            )}
 
-            <SearchableMultiSelect
-              label="Course Category (Course Type)"
-              options={lookups.courseTypes || []}
-              selectedIds={draftFilters.courseTypeIds}
-              onChange={(ids) => setDraftFilters(prev => ({ ...prev, courseTypeIds: ids }))}
-              placeholder="All Categories"
-            />
+            {canViewLeadField(hasPermission, 'courseType') && (
+              <SearchableMultiSelect
+                label="Course Category (Course Type)"
+                options={lookups.courseTypes || []}
+                selectedIds={draftFilters.courseTypeIds}
+                onChange={(ids) => setDraftFilters(prev => ({ ...prev, courseTypeIds: ids }))}
+                placeholder="All Categories"
+              />
+            )}
 
-            <SearchableMultiSelect
-              label="Course"
-              options={lookups.courses || []}
-              selectedIds={draftFilters.courseIds}
-              onChange={(ids) => setDraftFilters(prev => ({ ...prev, courseIds: ids }))}
-              placeholder="All Courses"
-              nameKey="courseName"
-            />
+            {canViewLeadField(hasPermission, 'course') && (
+              <SearchableMultiSelect
+                label="Course"
+                options={lookups.courses || []}
+                selectedIds={draftFilters.courseIds}
+                onChange={(ids) => setDraftFilters(prev => ({ ...prev, courseIds: ids }))}
+                placeholder="All Courses"
+                nameKey="courseName"
+              />
+            )}
 
-            <SearchableMultiSelect
-              label="Department"
-              options={lookups.departments || []}
-              selectedIds={draftFilters.departmentIds}
-              onChange={(ids) => setDraftFilters(prev => ({ ...prev, departmentIds: ids }))}
-              placeholder="All Departments"
-            />
+            {canViewLeadField(hasPermission, 'department') && (
+              <SearchableMultiSelect
+                label="Department"
+                options={lookups.departments || []}
+                selectedIds={draftFilters.departmentIds}
+                onChange={(ids) => setDraftFilters(prev => ({ ...prev, departmentIds: ids }))}
+                placeholder="All Departments"
+              />
+            )}
 
-            <SearchableMultiSelect
-              label="Counselor / Assigned User"
-              options={(lookups.users || []).map(u => ({
-                id: u.id,
-                name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.username || u.email,
-              }))}
-              selectedIds={draftFilters.assignedUserIds}
-              onChange={(ids) => setDraftFilters(prev => ({ ...prev, assignedUserIds: ids }))}
-              placeholder="All Counselors"
-            />
+            {canViewLeadField(hasPermission, 'assignedTo') && (
+              <SearchableMultiSelect
+                label="Counselor / Assigned User"
+                options={(lookups.users || []).map(u => ({
+                  id: u.id,
+                  name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.username || u.email,
+                }))}
+                selectedIds={draftFilters.assignedUserIds}
+                onChange={(ids) => setDraftFilters(prev => ({ ...prev, assignedUserIds: ids }))}
+                placeholder="All Counselors"
+              />
+            )}
           </FilterSection>
 
           {/* Section 2: Academic Filters */}
-          <FilterSection title="2. Academic Filters" defaultOpen={false}>
-            <SearchableMultiSelect
-              label="Education Board"
-              options={lookups.boards || []}
-              selectedIds={draftFilters.boardIds}
-              onChange={(ids) => setDraftFilters(prev => ({ ...prev, boardIds: ids }))}
-              placeholder="All Boards"
-            />
+          {(canViewLeadField(hasPermission, 'board') || canViewLeadField(hasPermission, 'grade')) && (
+            <FilterSection title="2. Academic Filters" defaultOpen={false}>
+              {canViewLeadField(hasPermission, 'board') && (
+                <SearchableMultiSelect
+                  label="Education Board"
+                  options={lookups.boards || []}
+                  selectedIds={draftFilters.boardIds}
+                  onChange={(ids) => setDraftFilters(prev => ({ ...prev, boardIds: ids }))}
+                  placeholder="All Boards"
+                />
+              )}
 
-            <SearchableMultiSelect
-              label="Grade"
-              options={lookups.grades || []}
-              selectedIds={draftFilters.gradeIds}
-              onChange={(ids) => setDraftFilters(prev => ({ ...prev, gradeIds: ids }))}
-              placeholder="All Grades"
-            />
-          </FilterSection>
+              {canViewLeadField(hasPermission, 'grade') && (
+                <SearchableMultiSelect
+                  label="Grade"
+                  options={lookups.grades || []}
+                  selectedIds={draftFilters.gradeIds}
+                  onChange={(ids) => setDraftFilters(prev => ({ ...prev, gradeIds: ids }))}
+                  placeholder="All Grades"
+                />
+              )}
+            </FilterSection>
+          )}
 
           {/* Section 3: Status & Historical Status (CRITICAL) */}
-          <FilterSection title="3. Lead Status & History" defaultOpen={true}>
-            <div style={{ background: '#F8FAFC', padding: '12px', borderRadius: '8px', marginBottom: '14px', border: '1px solid #E2E8F0' }}>
-              <div style={{ fontSize: '11px', color: '#64748B', lineHeight: '1.4', marginBottom: '8px' }}>
-                💡 <b>Current Status</b> matches where the lead is now. <b>Historical Status</b> matches leads that ever passed through selected statuses.
-              </div>
+          {(canViewLeadField(hasPermission, 'currentStatus') || canViewLeadField(hasPermission, 'statusHistory')) && (
+            <FilterSection title="3. Lead Status & History" defaultOpen={true}>
+              <div style={{ background: '#F8FAFC', padding: '12px', borderRadius: '8px', marginBottom: '14px', border: '1px solid #E2E8F0' }}>
+                <div style={{ fontSize: '11px', color: '#64748B', lineHeight: '1.4', marginBottom: '8px' }}>
+                  💡 <b>Current Status</b> matches where the lead is now. <b>Historical Status</b> matches leads that ever passed through selected statuses.
+                </div>
 
-              <SearchableMultiSelect
-                label="Current Lead Status"
-                options={lookups.statuses || []}
-                selectedIds={draftFilters.statusIds}
-                onChange={(ids) => setDraftFilters(prev => ({ ...prev, statusIds: ids }))}
-                placeholder="Current Statuses"
-              />
+                {canViewLeadField(hasPermission, 'currentStatus') && (
+                  <SearchableMultiSelect
+                    label="Current Lead Status"
+                    options={lookups.statuses || []}
+                    selectedIds={draftFilters.statusIds}
+                    onChange={(ids) => setDraftFilters(prev => ({ ...prev, statusIds: ids }))}
+                    placeholder="Current Statuses"
+                  />
+                )}
 
-              <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px dashed #CBD5E1' }}>
-                <SearchableMultiSelect
-                  label="Historical Lead Status (Pass-Through History)"
-                  options={lookups.statuses || []}
-                  selectedIds={draftFilters.leadStatusHistoryIds}
-                  onChange={(ids) => setDraftFilters(prev => ({ ...prev, leadStatusHistoryIds: ids }))}
-                  placeholder="Select historical statuses (e.g. Connected, Follow-Up)"
-                />
+                {canViewLeadField(hasPermission, 'statusHistory') && (
+                  <div style={{ marginTop: canViewLeadField(hasPermission, 'currentStatus') ? '12px' : '0', paddingTop: canViewLeadField(hasPermission, 'currentStatus') ? '12px' : '0', borderTop: canViewLeadField(hasPermission, 'currentStatus') ? '1px dashed #CBD5E1' : 'none' }}>
+                    <SearchableMultiSelect
+                      label="Historical Lead Status (Pass-Through History)"
+                      options={lookups.statuses || []}
+                      selectedIds={draftFilters.leadStatusHistoryIds}
+                      onChange={(ids) => setDraftFilters(prev => ({ ...prev, leadStatusHistoryIds: ids }))}
+                      placeholder="Select historical statuses (e.g. Connected, Follow-Up)"
+                    />
+                  </div>
+                )}
               </div>
-            </div>
-          </FilterSection>
+            </FilterSection>
+          )}
 
           {/* Section 4: Allocation & Availability */}
-          <FilterSection title="4. Allocation & Data Type" defaultOpen={true}>
-            <SegmentedControl
-              label="Allocation Status"
-              value={draftFilters.allotted}
-              onChange={(val) => setDraftFilters(prev => ({ ...prev, allotted: val }))}
-              options={[
-                { label: 'All Leads', value: null },
-                { label: 'Allotted', value: true },
-                { label: 'Unallocated', value: false },
-              ]}
-            />
+          {(canViewLeadField(hasPermission, 'assignedTo') || canViewLeadField(hasPermission, 'leadSources') || canViewLeadField(hasPermission, 'isAvailed')) && (
+            <FilterSection title="4. Allocation & Data Type" defaultOpen={true}>
+              {canViewLeadField(hasPermission, 'assignedTo') && (
+                <SegmentedControl
+                  label="Allocation Status"
+                  value={draftFilters.allotted}
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, allotted: val }))}
+                  options={[
+                    { label: 'All Leads', value: null },
+                    { label: 'Allotted', value: true },
+                    { label: 'Unallotted', value: false },
+                  ]}
+                />
+              )}
 
-            <SegmentedControl
-              label="Multi-Source Data"
-              value={draftFilters.multiSource}
-              onChange={(val) => setDraftFilters(prev => ({ ...prev, multiSource: val }))}
-              options={[
-                { label: 'All Data', value: null },
-                { label: 'Multi-Source Only', value: true },
-                { label: 'Single Source', value: false },
-              ]}
-            />
+              {canViewLeadField(hasPermission, 'leadSources') && (
+                <SegmentedControl
+                  label="Multi-Source Data"
+                  value={draftFilters.multiSource}
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, multiSource: val }))}
+                  options={[
+                    { label: 'All Data', value: null },
+                    { label: 'Multi-Source Only', value: true },
+                    { label: 'Single Source', value: false },
+                  ]}
+                />
+              )}
 
-            <SegmentedControl
-              label="Availed Status"
-              value={draftFilters.availed}
-              onChange={(val) => setDraftFilters(prev => ({ ...prev, availed: val }))}
-              options={[
-                { label: 'All', value: null },
-                { label: 'Availed', value: true },
-                { label: 'Not Availed', value: false },
-              ]}
-            />
-          </FilterSection>
+              {canViewLeadField(hasPermission, 'isAvailed') && (
+                <SegmentedControl
+                  label="Availed Status"
+                  value={draftFilters.availed}
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, availed: val }))}
+                  options={[
+                    { label: 'All', value: null },
+                    { label: 'Availed', value: true },
+                    { label: 'Unavailed', value: false },
+                  ]}
+                />
+              )}
+            </FilterSection>
+          )}
 
           {/* Section 5: Date Filters */}
           <FilterSection title="5. Date Ranges" defaultOpen={false}>
@@ -638,39 +671,41 @@ const LeadFilterDrawer = ({
               </div>
             </div>
 
-            <div style={{ marginBottom: '14px' }}>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#334155', marginBottom: '5px' }}>
-                Availed Date Range
-              </label>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <input
-                  type="date"
-                  value={draftFilters.availedFrom}
-                  onChange={(e) => setDraftFilters(prev => ({ ...prev, availedFrom: e.target.value }))}
-                  style={{
-                    flex: 1,
-                    padding: '6px 8px',
-                    fontSize: '12px',
-                    border: '1px solid #CBD5E1',
-                    borderRadius: '6px',
-                  }}
-                  title="Availed From"
-                />
-                <input
-                  type="date"
-                  value={draftFilters.availedTo}
-                  onChange={(e) => setDraftFilters(prev => ({ ...prev, availedTo: e.target.value }))}
-                  style={{
-                    flex: 1,
-                    padding: '6px 8px',
-                    fontSize: '12px',
-                    border: '1px solid #CBD5E1',
-                    borderRadius: '6px',
-                  }}
-                  title="Availed To"
-                />
+            {canViewLeadField(hasPermission, 'availedAt') && (
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#334155', marginBottom: '5px' }}>
+                  Availed Date Range
+                </label>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <input
+                    type="date"
+                    value={draftFilters.availedFrom}
+                    onChange={(e) => setDraftFilters(prev => ({ ...prev, availedFrom: e.target.value }))}
+                    style={{
+                      flex: 1,
+                      padding: '6px 8px',
+                      fontSize: '12px',
+                      border: '1px solid #CBD5E1',
+                      borderRadius: '6px',
+                    }}
+                    title="Availed From"
+                  />
+                  <input
+                    type="date"
+                    value={draftFilters.availedTo}
+                    onChange={(e) => setDraftFilters(prev => ({ ...prev, availedTo: e.target.value }))}
+                    style={{
+                      flex: 1,
+                      padding: '6px 8px',
+                      fontSize: '12px',
+                      border: '1px solid #CBD5E1',
+                      borderRadius: '6px',
+                    }}
+                    title="Availed To"
+                  />
+                </div>
               </div>
-            </div>
+            )}
           </FilterSection>
         </div>
 

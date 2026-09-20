@@ -10,6 +10,15 @@ export const getAllPermissions = async () => {
     }
 };
 
+export const getUnmappedPermissions = async () => {
+    try {
+        const response = await axiosInstance.get(ApiRoutes.Permission.getUnmapped);
+        return response;
+    } catch (error) {
+        return error;
+    }
+};
+
 export const getPermissionById = async (id) => {
     try {
         const response = await axiosInstance.get(

@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import CustomInput from '../CustomInput';
 import CustomButton from '../CustomButton';
 import { useAppContext } from '../../../AppContext';
+import { usePermissions } from '../../../PermissionContext';
+import { canViewLeadField, canEditLeadField } from '../../../config/leadFieldPermissions';
 import { createLead, updateLead } from '../../../Services/lead/leadService';
 import { getCountries, getStates, getCities } from '../../../Services/location/locationService';
 import {
@@ -20,6 +22,20 @@ import {
 
 const AddLeadModal = () => {
   const { isAddLeadModalOpen, closeAddLeadModal, showToast, editLeadData, triggerLeadRefresh } = useAppContext();
+  const { hasPermission } = usePermissions();
+
+  const isEditMode = Boolean(editLeadData);
+
+  const isFieldVisible = (fieldKey) => {
+    if (!isEditMode) return true;
+    return canViewLeadField(hasPermission, fieldKey);
+  };
+
+  const isFieldDisabled = (fieldKey, defaultDisabled = false) => {
+    if (!isEditMode) return defaultDisabled;
+    if (defaultDisabled) return true;
+    return !canEditLeadField(hasPermission, fieldKey);
+  };
 
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -758,522 +774,682 @@ const AddLeadModal = () => {
 
         <div className="modal-body">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <CustomInput
-              label="Full Name *"
-              placeholder="Enter Your Name"
-              value={formData.fullName}
-              onChange={handleChange('fullName')}
-            />
-            <CustomInput
-              label="Phone Number *"
-              placeholder="Mobile Number"
-              value={formData.phoneNumber}
-              onChange={handleChange('phoneNumber')}
-            />
-            <CustomInput
-              label="Alternate Phone"
-              placeholder="Phone Number"
-              value={formData.alternatePhoneNumber}
-              onChange={handleChange('alternatePhoneNumber')}
-            />
-            <CustomInput
-              label="Email"
-              placeholder="example@gmail.com"
-              value={formData.email}
-              onChange={handleChange('email')}
-            />
-            <div>
-              <label className="form-label">Country</label>
-              <select
-                className="form-control"
-                value={formData.country}
-                onChange={handleChange('country')}
-                disabled={locationLoading.countries}
-              >
-                <option value="">Select Country</option>
-                {countries.map((country) => (
-                  <option key={country.iso2} value={country.country}>
-                    {country.country}
-                  </option>
-                ))}
-              </select>
-              {locationLoading.countries && <small className="text-muted">Loading countries...</small>}
-            </div>
-            <div>
-              <label className="form-label">State</label>
-              <select
-                className="form-control"
-                value={formData.state}
-                onChange={handleChange('state')}
-                disabled={!formData.country || locationLoading.states}
-              >
-                <option value="">Select State</option>
-                {states.length > 0 ? (
-                  states.map((state) => (
-                    <option key={state.state_code} value={state.name}>
-                      {state.name}
+            {isFieldVisible('fullName') && (
+              <CustomInput
+                label={
+                  <span className="flex items-center justify-between">
+                    <span>Full Name *</span>
+                    {isEditMode && !canEditLeadField(hasPermission, 'fullName') && (
+                      <span className="text-[10px] text-gray-400 font-normal">🔒 Read-only</span>
+                    )}
+                  </span>
+                }
+                placeholder="Enter Your Name"
+                value={formData.fullName}
+                onChange={handleChange('fullName')}
+                disabled={isFieldDisabled('fullName')}
+              />
+            )}
+            {isFieldVisible('phoneNumber') && (
+              <CustomInput
+                label={
+                  <span className="flex items-center justify-between">
+                    <span>Phone Number *</span>
+                    {isEditMode && !canEditLeadField(hasPermission, 'phoneNumber') && (
+                      <span className="text-[10px] text-gray-400 font-normal">🔒 Read-only</span>
+                    )}
+                  </span>
+                }
+                placeholder="Mobile Number"
+                value={formData.phoneNumber}
+                onChange={handleChange('phoneNumber')}
+                disabled={isFieldDisabled('phoneNumber')}
+              />
+            )}
+            {isFieldVisible('alternatePhoneNumber') && (
+              <CustomInput
+                label={
+                  <span className="flex items-center justify-between">
+                    <span>Alternate Phone</span>
+                    {isEditMode && !canEditLeadField(hasPermission, 'alternatePhoneNumber') && (
+                      <span className="text-[10px] text-gray-400 font-normal">🔒 Read-only</span>
+                    )}
+                  </span>
+                }
+                placeholder="Phone Number"
+                value={formData.alternatePhoneNumber}
+                onChange={handleChange('alternatePhoneNumber')}
+                disabled={isFieldDisabled('alternatePhoneNumber')}
+              />
+            )}
+            {isFieldVisible('email') && (
+              <CustomInput
+                label={
+                  <span className="flex items-center justify-between">
+                    <span>Email</span>
+                    {isEditMode && !canEditLeadField(hasPermission, 'email') && (
+                      <span className="text-[10px] text-gray-400 font-normal">🔒 Read-only</span>
+                    )}
+                  </span>
+                }
+                placeholder="example@gmail.com"
+                value={formData.email}
+                onChange={handleChange('email')}
+                disabled={isFieldDisabled('email')}
+              />
+            )}
+            {isFieldVisible('country') && (
+              <div>
+                <label className="form-label flex items-center justify-between">
+                  <span>Country</span>
+                  {isEditMode && !canEditLeadField(hasPermission, 'country') && (
+                    <span className="text-[10px] text-gray-400 font-normal">🔒 Read-only</span>
+                  )}
+                </label>
+                <select
+                  className="form-control"
+                  value={formData.country}
+                  onChange={handleChange('country')}
+                  disabled={isFieldDisabled('country', locationLoading.countries)}
+                >
+                  <option value="">Select Country</option>
+                  {countries.map((country) => (
+                    <option key={country.iso2} value={country.country}>
+                      {country.country}
                     </option>
-                  ))
-                ) : (
-                  formData.country && !locationLoading.states && <option disabled>No states found</option>
-                )}
-              </select>
-              {locationLoading.states && <small className="text-muted">Loading states...</small>}
-            </div>
-            <div>
-              <label className="form-label">City</label>
-              <select
-                className="form-control"
-                value={formData.city}
-                onChange={handleChange('city')}
-                disabled={!formData.state || locationLoading.cities}
-              >
-                <option value="">Select City</option>
-                {cities.length > 0 ? (
-                  cities.map((city, index) => (
-                    <option key={index} value={city}>
-                      {city}
-                    </option>
-                  ))
-                ) : (
-                  formData.state && !locationLoading.cities && <option disabled>No cities found</option>
-                )}
-              </select>
-              {locationLoading.cities && <small className="text-muted">Loading cities...</small>}
-            </div>
+                  ))}
+                </select>
+                {locationLoading.countries && <small className="text-muted">Loading countries...</small>}
+              </div>
+            )}
+            {isFieldVisible('state') && (
+              <div>
+                <label className="form-label flex items-center justify-between">
+                  <span>State</span>
+                  {isEditMode && !canEditLeadField(hasPermission, 'state') && (
+                    <span className="text-[10px] text-gray-400 font-normal">🔒 Read-only</span>
+                  )}
+                </label>
+                <select
+                  className="form-control"
+                  value={formData.state}
+                  onChange={handleChange('state')}
+                  disabled={isFieldDisabled('state', !formData.country || locationLoading.states)}
+                >
+                  <option value="">Select State</option>
+                  {states.length > 0 ? (
+                    states.map((state) => (
+                      <option key={state.state_code} value={state.name}>
+                        {state.name}
+                      </option>
+                    ))
+                  ) : (
+                    formData.country && !locationLoading.states && <option disabled>No states found</option>
+                  )}
+                </select>
+                {locationLoading.states && <small className="text-muted">Loading states...</small>}
+              </div>
+            )}
+            {isFieldVisible('city') && (
+              <div>
+                <label className="form-label flex items-center justify-between">
+                  <span>City</span>
+                  {isEditMode && !canEditLeadField(hasPermission, 'city') && (
+                    <span className="text-[10px] text-gray-400 font-normal">🔒 Read-only</span>
+                  )}
+                </label>
+                <select
+                  className="form-control"
+                  value={formData.city}
+                  onChange={handleChange('city')}
+                  disabled={isFieldDisabled('city', !formData.state || locationLoading.cities)}
+                >
+                  <option value="">Select City</option>
+                  {cities.length > 0 ? (
+                    cities.map((city, index) => (
+                      <option key={index} value={city}>
+                        {city}
+                      </option>
+                    ))
+                  ) : (
+                    formData.state && !locationLoading.cities && <option disabled>No cities found</option>
+                  )}
+                </select>
+                {locationLoading.cities && <small className="text-muted">Loading cities...</small>}
+              </div>
+            )}
 
             {/* Preferred Place to Study */}
-            <div className="col-span-1 sm:col-span-2 pt-2 border-t border-gray-100">
-              <label className="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2">
-                Preferred Place to Study
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="form-label text-xs">Preferred State</label>
-                  <select
-                    className="form-control"
-                    value={formData.preferredStudyState}
-                    onChange={handleChange('preferredStudyState')}
-                    disabled={preferredLocationLoading.states}
-                  >
-                    <option value="">Select Preferred State</option>
-                    {preferredStates.map((st) => (
-                      <option key={st.id || st.code || st.name} value={st.name}>
-                        {st.name}
-                      </option>
-                    ))}
-                  </select>
-                  {preferredLocationLoading.states && <small className="text-muted">Loading states...</small>}
-                </div>
-                <div>
-                  <label className="form-label text-xs">Preferred City</label>
-                  <select
-                    className="form-control"
-                    value={formData.preferredStudyCity}
-                    onChange={handleChange('preferredStudyCity')}
-                    disabled={!formData.preferredStudyState || preferredLocationLoading.cities}
-                  >
-                    <option value="">Select Preferred City</option>
-                    {preferredCities.length > 0 ? (
-                      preferredCities.map((ct) => (
-                        <option key={ct.id || ct.code || ct.name} value={ct.name}>
-                          {ct.name}
+            {isFieldVisible('preferredLocation') && (
+              <div className="col-span-1 sm:col-span-2 pt-2 border-t border-gray-100">
+                <label className="text-xs font-bold text-gray-700 uppercase tracking-wider block mb-2 flex items-center justify-between">
+                  <span>Preferred Place to Study</span>
+                  {isEditMode && !canEditLeadField(hasPermission, 'preferredLocation') && (
+                    <span className="text-[10px] text-gray-400 font-normal">🔒 Read-only</span>
+                  )}
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="form-label text-xs">Preferred State</label>
+                    <select
+                      className="form-control"
+                      value={formData.preferredStudyState}
+                      onChange={handleChange('preferredStudyState')}
+                      disabled={isFieldDisabled('preferredLocation', preferredLocationLoading.states)}
+                    >
+                      <option value="">Select Preferred State</option>
+                      {preferredStates.map((st) => (
+                        <option key={st.id || st.code || st.name} value={st.name}>
+                          {st.name}
                         </option>
-                      ))
-                    ) : (
-                      formData.preferredStudyState && !preferredLocationLoading.cities && (
-                        <option disabled>No cities found</option>
-                      )
-                    )}
-                  </select>
-                  {preferredLocationLoading.cities && <small className="text-muted">Loading cities...</small>}
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <label className="form-label">Lead Sources</label>
-              <div className="custom-dropdown-container" ref={leadSourcesDropdownRef}>
-                <div 
-                  className="custom-dropdown-header"
-                  onClick={() => setDropdownStates(prev => ({ ...prev, leadSources: !prev.leadSources }))}
-                >
-                  {formData.leadSourceIds.length > 0 
-                    ? `${formData.leadSourceIds.length} source(s) selected`
-                    : 'Select Lead Sources'
-                  }
-                  <span className="custom-dropdown-arrow">▼</span>
-                </div>
-                {dropdownStates.leadSources && (
-                  <div className="custom-dropdown-content">
-                    <div className="custom-dropdown-search">
-                      <input
-                        type="text"
-                        placeholder="Search lead sources..."
-                        value={searchTerms.leadSources}
-                        onChange={(e) => setSearchTerms(prev => ({ ...prev, leadSources: e.target.value }))}
-                        className="custom-search-input"
-                      />
-                    </div>
-                    <div className="custom-dropdown-options">
-                      {leadSources
-                        .filter(source => 
-                          source.name?.toLowerCase().includes(searchTerms.leadSources.toLowerCase())
-                        )
-                        .map((source) => (
-                        <div 
-                          key={source.id} 
-                          className={`custom-dropdown-option ${formData.leadSourceIds.includes(String(source.id)) ? 'selected' : ''}`}
-                        >
-                          <input
-                            type="checkbox"
-                            id={`custom-source-${source.id}`}
-                            value={source.id}
-                            checked={formData.leadSourceIds.includes(String(source.id))}
-                            onChange={(e) => {
-                              const sid = String(source.id);
-                              if (e.target.checked) {
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  leadSourceIds: [...prev.leadSourceIds, sid],
-                                }));
-                              } else {
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  leadSourceIds: prev.leadSourceIds.filter((id) => id !== sid),
-                                }));
-                              }
-                            }}
-                          />
-                          <label htmlFor={`custom-source-${source.id}`} className="custom-option-label">
-                            {source.name}
-                          </label>
-                        </div>
                       ))}
-                      {leadSources.filter(source => 
-                        source.name?.toLowerCase().includes(searchTerms.leadSources.toLowerCase())
-                      ).length === 0 && (
-                        <div className="custom-no-options">No lead sources found</div>
-                      )}
-                    </div>
+                    </select>
+                    {preferredLocationLoading.states && <small className="text-muted">Loading states...</small>}
                   </div>
-                )}
+                  <div>
+                    <label className="form-label text-xs">Preferred City</label>
+                    <select
+                      className="form-control"
+                      value={formData.preferredStudyCity}
+                      onChange={handleChange('preferredStudyCity')}
+                      disabled={isFieldDisabled('preferredLocation', !formData.preferredStudyState || preferredLocationLoading.cities)}
+                    >
+                      <option value="">Select Preferred City</option>
+                      {preferredCities.length > 0 ? (
+                        preferredCities.map((ct) => (
+                          <option key={ct.id || ct.code || ct.name} value={ct.name}>
+                            {ct.name}
+                          </option>
+                        ))
+                      ) : (
+                        formData.preferredStudyState && !preferredLocationLoading.cities && (
+                          <option disabled>No cities found</option>
+                        )
+                      )}
+                    </select>
+                    {preferredLocationLoading.cities && <small className="text-muted">Loading cities...</small>}
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
+
+            {isFieldVisible('leadSources') && (
+              <div>
+                <label className="form-label flex items-center justify-between">
+                  <span>Lead Sources</span>
+                  {isEditMode && !canEditLeadField(hasPermission, 'leadSources') && (
+                    <span className="text-[10px] text-gray-400 font-normal">🔒 Read-only</span>
+                  )}
+                </label>
+                <div className="custom-dropdown-container" ref={leadSourcesDropdownRef}>
+                  <div 
+                    className={`custom-dropdown-header ${isFieldDisabled('leadSources') ? 'opacity-70 pointer-events-none bg-gray-50' : ''}`}
+                    onClick={() => {
+                      if (isFieldDisabled('leadSources')) return;
+                      setDropdownStates(prev => ({ ...prev, leadSources: !prev.leadSources }));
+                    }}
+                  >
+                    {formData.leadSourceIds.length > 0 
+                      ? `${formData.leadSourceIds.length} source(s) selected`
+                      : 'Select Lead Sources'
+                    }
+                    <span className="custom-dropdown-arrow">▼</span>
+                  </div>
+                  {dropdownStates.leadSources && !isFieldDisabled('leadSources') && (
+                    <div className="custom-dropdown-content">
+                      <div className="custom-dropdown-search">
+                        <input
+                          type="text"
+                          placeholder="Search lead sources..."
+                          value={searchTerms.leadSources}
+                          onChange={(e) => setSearchTerms(prev => ({ ...prev, leadSources: e.target.value }))}
+                          className="custom-search-input"
+                        />
+                      </div>
+                      <div className="custom-dropdown-options">
+                        {leadSources
+                          .filter(source => 
+                            source.name?.toLowerCase().includes(searchTerms.leadSources.toLowerCase())
+                          )
+                          .map((source) => (
+                          <div 
+                            key={source.id} 
+                            className={`custom-dropdown-option ${formData.leadSourceIds.includes(String(source.id)) ? 'selected' : ''}`}
+                          >
+                            <input
+                              type="checkbox"
+                              id={`custom-source-${source.id}`}
+                              value={source.id}
+                              checked={formData.leadSourceIds.includes(String(source.id))}
+                              onChange={(e) => {
+                                const sid = String(source.id);
+                                if (e.target.checked) {
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    leadSourceIds: [...prev.leadSourceIds, sid],
+                                  }));
+                                } else {
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    leadSourceIds: prev.leadSourceIds.filter((id) => id !== sid),
+                                  }));
+                                }
+                              }}
+                            />
+                            <label htmlFor={`custom-source-${source.id}`} className="custom-option-label">
+                              {source.name}
+                            </label>
+                          </div>
+                        ))}
+                        {leadSources.filter(source => 
+                          source.name?.toLowerCase().includes(searchTerms.leadSources.toLowerCase())
+                        ).length === 0 && (
+                          <div className="custom-no-options">No lead sources found</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
             {/* <CustomInput
               label="Source Details"
               placeholder="Additional source details..."
               value={formData.sourceDetails}
               onChange={handleChange('sourceDetails')}
             /> */}
-            <div>
-              <label className="form-label">Program</label>
-              <select
-                className="form-control"
-                value={formData.programId || ''}
-                onChange={async (e) => {
-                  const selectedProgramId = e.target.value;
-                  setFormData((prev) => ({
-                    ...prev,
-                    programId: selectedProgramId,
-                    courseId: '',
-                    registeredCourseId: '',
-                    interestedCourseIds: [],
-                  }));
-                  setDropdownLoading((prev) => ({ ...prev, courses: true }));
-                  try {
-                    const res = await getCoursesDropdown(formData.courseTypeId || '', selectedProgramId || '');
-                    if (res?.success && res?.data) {
-                      setCourses(res.data || []);
-                    }
-                  } catch (err) {
-                    console.error('Failed to fetch courses for program:', err);
-                  } finally {
-                    setDropdownLoading((prev) => ({ ...prev, courses: false }));
-                  }
-                }}
-              >
-                <option value="">Select Program</option>
-                {programs.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} {p.code ? `(${p.code})` : ''}
-                  </option>
-                ))}
-              </select>
-              {dropdownLoading.programs && <small className="text-muted">Loading programs...</small>}
-            </div>
-            <div>
-              <label className="form-label">Interested Courses</label>
-              <div className="custom-dropdown-container" ref={interestedCoursesDropdownRef}>
-                <div 
-                  className="custom-dropdown-header"
-                  onClick={() => setDropdownStates(prev => ({ ...prev, interestedCourses: !prev.interestedCourses }))}
-                >
-                  {formData.interestedCourseIds.length > 0 
-                    ? `${formData.interestedCourseIds.length} course(s) selected`
-                    : 'Select Interested Courses'
-                  }
-                  <span className="custom-dropdown-arrow">▼</span>
-                </div>
-                {dropdownStates.interestedCourses && (
-                  <div className="custom-dropdown-content">
-                    <div className="custom-dropdown-search">
-                      <input
-                        type="text"
-                        placeholder="Search courses..."
-                        value={searchTerms.interestedCourses}
-                        onChange={(e) => setSearchTerms(prev => ({ ...prev, interestedCourses: e.target.value }))}
-                        className="custom-search-input"
-                      />
-                    </div>
-                    <div className="custom-dropdown-options">
-                      {courses
-                        .filter(course => 
-                          course.name?.toLowerCase().includes(searchTerms.interestedCourses.toLowerCase())
-                        )
-                        .map((course) => (
-                        <div 
-                          key={course.id} 
-                          className={`custom-dropdown-option ${formData.interestedCourseIds.includes(String(course.id)) ? 'selected' : ''}`}
-                        >
-                          <input
-                            type="checkbox"
-                            id={`custom-interested-course-${course.id}`}
-                            value={course.id}
-                            checked={formData.interestedCourseIds.includes(String(course.id))}
-                            onChange={(e) => {
-                              const cid = String(course.id);
-                              if (e.target.checked) {
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  interestedCourseIds: [...prev.interestedCourseIds, cid],
-                                }));
-                              } else {
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  interestedCourseIds: prev.interestedCourseIds.filter((id) => id !== cid),
-                                }));
-                              }
-                            }}
-                          />
-                          <label htmlFor={`custom-interested-course-${course.id}`} className="custom-option-label">
-                            {course.name}
-                          </label>
-                        </div>
-                      ))}
-                      {courses.filter(course => 
-                        course.courseName?.toLowerCase().includes(searchTerms.interestedCourses.toLowerCase())
-                      ).length === 0 && (
-                        <div className="custom-no-options">No courses found</div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-              {dropdownLoading.courses && <small className="text-muted">Loading courses...</small>}
-            </div>
-            <div>
-              <label className="form-label">Course</label>
-              <div className="custom-dropdown-container" ref={courseDropdownRef}>
-                <div 
-                  className="custom-dropdown-header"
-                  onClick={() => setDropdownStates(prev => ({ ...prev, course: !prev.course }))}
-                >
-                  {formData.courseId 
-                    ? courses.find(c => String(c.id) === String(formData.courseId))?.name || 'Select Course'
-                    : 'Select Course'
-                  }
-                  <span className="custom-dropdown-arrow">▼</span>
-                </div>
-                {dropdownStates.course && (
-                  <div className="custom-dropdown-content">
-                    <div className="custom-dropdown-search">
-                      <input
-                        type="text"
-                        placeholder="Search courses..."
-                        value={searchTerms.course}
-                        onChange={(e) => setSearchTerms(prev => ({ ...prev, course: e.target.value }))}
-                        className="custom-search-input"
-                      />
-                    </div>
-                    <div className="custom-dropdown-options">
-                      {courses
-                        .filter(course => 
-                          course.name?.toLowerCase().includes(searchTerms.course.toLowerCase())
-                        )
-                        .map((course) => (
-                        <div 
-                          key={course.id} 
-                          className={`custom-dropdown-option ${String(formData.courseId) === String(course.id) ? 'selected' : ''}`}
-                        >
-                          <input
-                            type="checkbox"
-                            id={`custom-course-${course.id}`}
-                            value={course.id}
-                            checked={String(formData.courseId) === String(course.id)}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  courseId: String(course.id),
-                                }));
-                              } else {
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  courseId: '',
-                                }));
-                              }
-                            }}
-                          />
-                          <label htmlFor={`custom-course-${course.id}`} className="custom-option-label">
-                            {course.name}
-                          </label>
-                        </div>
-                      ))}
-                      {courses.filter(course => 
-                        course.courseName?.toLowerCase().includes(searchTerms.course.toLowerCase())
-                      ).length === 0 && (
-                        <div className="custom-no-options">No courses found</div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-              {dropdownLoading.courses && <small className="text-muted">Loading courses...</small>}
-            </div>
-            <div>
-              <label className="form-label">Grade</label>
-              <select
-                className="form-control"
-                value={formData.gradeId}
-                onChange={handleChange('gradeId')}
-                disabled={dropdownLoading.grades}
-              >
-                <option value="">Select Grade</option>
-                {grades.length > 0 ? grades.map((grade) => (
-                  <option key={grade.id} value={String(grade.id)}>
-                    {grade.name}
-                  </option>
-                )) : <option disabled>No grades available</option>}
-              </select>
-              {dropdownLoading.grades && <small className="text-muted">Loading grades...</small>}
-            </div>
-            <div>
-              <label className="form-label">Board</label>
-              <select
-                className="form-control"
-                value={formData.boardId}
-                onChange={handleChange('boardId')}
-                disabled={dropdownLoading.boards}
-              >
-                <option value="">Select Board</option>
-                {boards.length > 0 ? boards.map((board) => (
-                  <option key={board.id} value={String(board.id)}>
-                    {board.name}
-                  </option>
-                )) : <option disabled>No boards available</option>}
-              </select>
-              {dropdownLoading.boards && <small className="text-muted">Loading boards...</small>}
-            </div>
-            <div>
-              <label className="form-label">Category</label>
-              <select
-                className="form-control"
-                value={formData.courseTypeId}
-                onChange={handleChange('courseTypeId')}
-                disabled={dropdownLoading.courseTypes}
-              >
-                <option value="">Select Category</option>
-                {courseTypes.length > 0 ? courseTypes.map((ct) => (
-                  <option key={ct.id} value={String(ct.id)}>
-                    {ct.name}
-                  </option>
-                )) : <option disabled>No categories available</option>}
-              </select>
-              {dropdownLoading.courseTypes && <small className="text-muted">Loading categories...</small>}
-            </div>
-            <div>
-              <label className="form-label">Department</label>
-              <select
-                className="form-control"
-                value={formData.departmentId}
-                onChange={handleChange('departmentId')}
-                disabled={dropdownLoading.departments}
-              >
-                <option value="">Select Department</option>
-                {departments.length > 0 ? departments.map((dept) => (
-                  <option key={dept.id} value={String(dept.id)}>
-                    {dept.name}
-                  </option>
-                )) : <option disabled>No departments available</option>}
-              </select>
-              {dropdownLoading.departments && <small className="text-muted">Loading departments...</small>}
-            </div>
-            <div>
-              <label className="form-label">Assigned To</label>
-              <select
-                className="form-control"
-                value={formData.assignedToUserId}
-                onChange={handleChange('assignedToUserId')}
-                disabled={dropdownLoading.users}
-              >
-                <option value="">Select User</option>
-                {users
-                  .filter((user) => user.username !== 'admin' && user.username !== 'superadmin')
-                  .map((user) => (
-                  <option key={user.id} value={String(user.id)}>
-                    {user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username}
-                  </option>
-                ))}
-              </select>
-              {dropdownLoading.users && <small className="text-muted">Loading users...</small>}
-            </div>
-            <div>
-              <label className="form-label">Status</label>
-              <select
-                className="form-control"
-                value={formData.statusId}
-                onChange={handleChange('statusId')}
-                disabled={true}
-              >
-                <option value="">Select Status</option>
-                {leadStatuses.length > 0 ? leadStatuses.map((status) => (
-                  <option key={status.id} value={String(status.id)}>
-                    {status.name}
-                  </option>
-                )) : <option disabled>No statuses available</option>}
-              </select>
-              {dropdownLoading.leadStatuses && <small className="text-muted">Loading statuses...</small>}
-            </div>
-            <div>
-              <label className="form-label">Next Follow-Up Date</label>
-              <div 
-                className="form-control cursor-pointer"
-                style={{ position: 'relative', padding: 0 }}
-                onClick={() => document.querySelector('input[type="date"][name="nextFollowUpDate"]')?.showPicker?.() || document.querySelector('input[type="date"][name="nextFollowUpDate"]')?.focus()}
-              >
-                <input
-                  type="date"
-                  name="nextFollowUpDate"
+            {isFieldVisible('program') && (
+              <div>
+                <label className="form-label flex items-center justify-between">
+                  <span>Program</span>
+                  {isEditMode && !canEditLeadField(hasPermission, 'program') && (
+                    <span className="text-[10px] text-gray-400 font-normal">🔒 Read-only</span>
+                  )}
+                </label>
+                <select
                   className="form-control"
-                  value={formData.nextFollowUpDate}
-                  onChange={handleChange('nextFollowUpDate')}
-                  style={{ border: 'none', background: 'transparent', width: '100%' }}
-                />
+                  value={formData.programId || ''}
+                  disabled={isFieldDisabled('program', dropdownLoading.programs)}
+                  onChange={async (e) => {
+                    const selectedProgramId = e.target.value;
+                    setFormData((prev) => ({
+                      ...prev,
+                      programId: selectedProgramId,
+                      courseId: '',
+                      registeredCourseId: '',
+                      interestedCourseIds: [],
+                    }));
+                    setDropdownLoading((prev) => ({ ...prev, courses: true }));
+                    try {
+                      const res = await getCoursesDropdown(formData.courseTypeId || '', selectedProgramId || '');
+                      if (res?.success && res?.data) {
+                        setCourses(res.data || []);
+                      }
+                    } catch (err) {
+                      console.error('Failed to fetch courses for program:', err);
+                    } finally {
+                      setDropdownLoading((prev) => ({ ...prev, courses: false }));
+                    }
+                  }}
+                >
+                  <option value="">Select Program</option>
+                  {programs.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} {p.code ? `(${p.code})` : ''}
+                    </option>
+                  ))}
+                </select>
+                {dropdownLoading.programs && <small className="text-muted">Loading programs...</small>}
               </div>
-            </div>
+            )}
+            {isFieldVisible('interestedCourses') && (
+              <div>
+                <label className="form-label flex items-center justify-between">
+                  <span>Interested Courses</span>
+                  {isEditMode && !canEditLeadField(hasPermission, 'interestedCourses') && (
+                    <span className="text-[10px] text-gray-400 font-normal">🔒 Read-only</span>
+                  )}
+                </label>
+                <div className="custom-dropdown-container" ref={interestedCoursesDropdownRef}>
+                  <div 
+                    className={`custom-dropdown-header ${isFieldDisabled('interestedCourses') ? 'opacity-70 pointer-events-none bg-gray-50' : ''}`}
+                    onClick={() => {
+                      if (isFieldDisabled('interestedCourses')) return;
+                      setDropdownStates(prev => ({ ...prev, interestedCourses: !prev.interestedCourses }));
+                    }}
+                  >
+                    {formData.interestedCourseIds.length > 0 
+                      ? `${formData.interestedCourseIds.length} course(s) selected`
+                      : 'Select Interested Courses'
+                    }
+                    <span className="custom-dropdown-arrow">▼</span>
+                  </div>
+                  {dropdownStates.interestedCourses && !isFieldDisabled('interestedCourses') && (
+                    <div className="custom-dropdown-content">
+                      <div className="custom-dropdown-search">
+                        <input
+                          type="text"
+                          placeholder="Search courses..."
+                          value={searchTerms.interestedCourses}
+                          onChange={(e) => setSearchTerms(prev => ({ ...prev, interestedCourses: e.target.value }))}
+                          className="custom-search-input"
+                        />
+                      </div>
+                      <div className="custom-dropdown-options">
+                        {courses
+                          .filter(course => 
+                            course.name?.toLowerCase().includes(searchTerms.interestedCourses.toLowerCase())
+                          )
+                          .map((course) => (
+                          <div 
+                            key={course.id} 
+                            className={`custom-dropdown-option ${formData.interestedCourseIds.includes(String(course.id)) ? 'selected' : ''}`}
+                          >
+                            <input
+                              type="checkbox"
+                              id={`custom-interested-course-${course.id}`}
+                              value={course.id}
+                              checked={formData.interestedCourseIds.includes(String(course.id))}
+                              onChange={(e) => {
+                                const cid = String(course.id);
+                                if (e.target.checked) {
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    interestedCourseIds: [...prev.interestedCourseIds, cid],
+                                  }));
+                                } else {
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    interestedCourseIds: prev.interestedCourseIds.filter((id) => id !== cid),
+                                  }));
+                                }
+                              }}
+                            />
+                            <label htmlFor={`custom-interested-course-${course.id}`} className="custom-option-label">
+                              {course.name}
+                            </label>
+                          </div>
+                        ))}
+                        {courses.filter(course => 
+                          course.courseName?.toLowerCase().includes(searchTerms.interestedCourses.toLowerCase())
+                        ).length === 0 && (
+                          <div className="custom-no-options">No courses found</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {dropdownLoading.courses && <small className="text-muted">Loading courses...</small>}
+              </div>
+            )}
+            {isFieldVisible('course') && (
+              <div>
+                <label className="form-label flex items-center justify-between">
+                  <span>Course</span>
+                  {isEditMode && !canEditLeadField(hasPermission, 'course') && (
+                    <span className="text-[10px] text-gray-400 font-normal">🔒 Read-only</span>
+                  )}
+                </label>
+                <div className="custom-dropdown-container" ref={courseDropdownRef}>
+                  <div 
+                    className={`custom-dropdown-header ${isFieldDisabled('course') ? 'opacity-70 pointer-events-none bg-gray-50' : ''}`}
+                    onClick={() => {
+                      if (isFieldDisabled('course')) return;
+                      setDropdownStates(prev => ({ ...prev, course: !prev.course }));
+                    }}
+                  >
+                    {formData.courseId 
+                      ? courses.find(c => String(c.id) === String(formData.courseId))?.name || 'Select Course'
+                      : 'Select Course'
+                    }
+                    <span className="custom-dropdown-arrow">▼</span>
+                  </div>
+                  {dropdownStates.course && !isFieldDisabled('course') && (
+                    <div className="custom-dropdown-content">
+                      <div className="custom-dropdown-search">
+                        <input
+                          type="text"
+                          placeholder="Search courses..."
+                          value={searchTerms.course}
+                          onChange={(e) => setSearchTerms(prev => ({ ...prev, course: e.target.value }))}
+                          className="custom-search-input"
+                        />
+                      </div>
+                      <div className="custom-dropdown-options">
+                        {courses
+                          .filter(course => 
+                            course.name?.toLowerCase().includes(searchTerms.course.toLowerCase())
+                          )
+                          .map((course) => (
+                          <div 
+                            key={course.id} 
+                            className={`custom-dropdown-option ${String(formData.courseId) === String(course.id) ? 'selected' : ''}`}
+                          >
+                            <input
+                              type="checkbox"
+                              id={`custom-course-${course.id}`}
+                              value={course.id}
+                              checked={String(formData.courseId) === String(course.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    courseId: String(course.id),
+                                  }));
+                                } else {
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    courseId: '',
+                                  }));
+                                }
+                              }}
+                            />
+                            <label htmlFor={`custom-course-${course.id}`} className="custom-option-label">
+                              {course.name}
+                            </label>
+                          </div>
+                        ))}
+                        {courses.filter(course => 
+                          course.courseName?.toLowerCase().includes(searchTerms.course.toLowerCase())
+                        ).length === 0 && (
+                          <div className="custom-no-options">No courses found</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {dropdownLoading.courses && <small className="text-muted">Loading courses...</small>}
+              </div>
+            )}
+            {isFieldVisible('grade') && (
+              <div>
+                <label className="form-label flex items-center justify-between">
+                  <span>Grade</span>
+                  {isEditMode && !canEditLeadField(hasPermission, 'grade') && (
+                    <span className="text-[10px] text-gray-400 font-normal">🔒 Read-only</span>
+                  )}
+                </label>
+                <select
+                  className="form-control"
+                  value={formData.gradeId}
+                  onChange={handleChange('gradeId')}
+                  disabled={isFieldDisabled('grade', dropdownLoading.grades)}
+                >
+                  <option value="">Select Grade</option>
+                  {grades.length > 0 ? grades.map((grade) => (
+                    <option key={grade.id} value={String(grade.id)}>
+                      {grade.name}
+                    </option>
+                  )) : <option disabled>No grades available</option>}
+                </select>
+                {dropdownLoading.grades && <small className="text-muted">Loading grades...</small>}
+              </div>
+            )}
+            {isFieldVisible('board') && (
+              <div>
+                <label className="form-label flex items-center justify-between">
+                  <span>Board</span>
+                  {isEditMode && !canEditLeadField(hasPermission, 'board') && (
+                    <span className="text-[10px] text-gray-400 font-normal">🔒 Read-only</span>
+                  )}
+                </label>
+                <select
+                  className="form-control"
+                  value={formData.boardId}
+                  onChange={handleChange('boardId')}
+                  disabled={isFieldDisabled('board', dropdownLoading.boards)}
+                >
+                  <option value="">Select Board</option>
+                  {boards.length > 0 ? boards.map((board) => (
+                    <option key={board.id} value={String(board.id)}>
+                      {board.name}
+                    </option>
+                  )) : <option disabled>No boards available</option>}
+                </select>
+                {dropdownLoading.boards && <small className="text-muted">Loading boards...</small>}
+              </div>
+            )}
+            {isFieldVisible('courseType') && (
+              <div>
+                <label className="form-label flex items-center justify-between">
+                  <span>Category</span>
+                  {isEditMode && !canEditLeadField(hasPermission, 'courseType') && (
+                    <span className="text-[10px] text-gray-400 font-normal">🔒 Read-only</span>
+                  )}
+                </label>
+                <select
+                  className="form-control"
+                  value={formData.courseTypeId}
+                  onChange={handleChange('courseTypeId')}
+                  disabled={isFieldDisabled('courseType', dropdownLoading.courseTypes)}
+                >
+                  <option value="">Select Category</option>
+                  {courseTypes.length > 0 ? courseTypes.map((ct) => (
+                    <option key={ct.id} value={String(ct.id)}>
+                      {ct.name}
+                    </option>
+                  )) : <option disabled>No categories available</option>}
+                </select>
+                {dropdownLoading.courseTypes && <small className="text-muted">Loading categories...</small>}
+              </div>
+            )}
+            {isFieldVisible('department') && (
+              <div>
+                <label className="form-label flex items-center justify-between">
+                  <span>Department</span>
+                  {isEditMode && !canEditLeadField(hasPermission, 'department') && (
+                    <span className="text-[10px] text-gray-400 font-normal">🔒 Read-only</span>
+                  )}
+                </label>
+                <select
+                  className="form-control"
+                  value={formData.departmentId}
+                  onChange={handleChange('departmentId')}
+                  disabled={isFieldDisabled('department', dropdownLoading.departments)}
+                >
+                  <option value="">Select Department</option>
+                  {departments.length > 0 ? departments.map((dept) => (
+                    <option key={dept.id} value={String(dept.id)}>
+                      {dept.name}
+                    </option>
+                  )) : <option disabled>No departments available</option>}
+                </select>
+                {dropdownLoading.departments && <small className="text-muted">Loading departments...</small>}
+              </div>
+            )}
+            {isFieldVisible('assignedTo') && (
+              <div>
+                <label className="form-label flex items-center justify-between">
+                  <span>Assigned To</span>
+                  {isEditMode && !canEditLeadField(hasPermission, 'assignedTo') && (
+                    <span className="text-[10px] text-gray-400 font-normal">🔒 Read-only</span>
+                  )}
+                </label>
+                <select
+                  className="form-control"
+                  value={formData.assignedToUserId}
+                  onChange={handleChange('assignedToUserId')}
+                  disabled={isFieldDisabled('assignedTo', dropdownLoading.users)}
+                >
+                  <option value="">Select User</option>
+                  {users
+                    .filter((user) => user.username !== 'admin' && user.username !== 'superadmin')
+                    .map((user) => (
+                    <option key={user.id} value={String(user.id)}>
+                      {user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username}
+                    </option>
+                  ))}
+                </select>
+                {dropdownLoading.users && <small className="text-muted">Loading users...</small>}
+              </div>
+            )}
+            {isFieldVisible('currentStatus') && (
+              <div>
+                <label className="form-label">Status</label>
+                <select
+                  className="form-control"
+                  value={formData.statusId}
+                  onChange={handleChange('statusId')}
+                  disabled={true}
+                >
+                  <option value="">Select Status</option>
+                  {leadStatuses.length > 0 ? leadStatuses.map((status) => (
+                    <option key={status.id} value={String(status.id)}>
+                      {status.name}
+                    </option>
+                  )) : <option disabled>No statuses available</option>}
+                </select>
+                {dropdownLoading.leadStatuses && <small className="text-muted">Loading statuses...</small>}
+              </div>
+            )}
+            {isFieldVisible('nextFollowUpDate') && (
+              <div>
+                <label className="form-label flex items-center justify-between">
+                  <span>Next Follow-Up Date</span>
+                  {isEditMode && !canEditLeadField(hasPermission, 'nextFollowUpDate') && (
+                    <span className="text-[10px] text-gray-400 font-normal">🔒 Read-only</span>
+                  )}
+                </label>
+                <div 
+                  className={`form-control ${isFieldDisabled('nextFollowUpDate') ? 'opacity-70 pointer-events-none bg-gray-50' : 'cursor-pointer'}`}
+                  style={{ position: 'relative', padding: 0 }}
+                  onClick={() => {
+                    if (isFieldDisabled('nextFollowUpDate')) return;
+                    document.querySelector('input[type="date"][name="nextFollowUpDate"]')?.showPicker?.() || document.querySelector('input[type="date"][name="nextFollowUpDate"]')?.focus();
+                  }}
+                >
+                  <input
+                    type="date"
+                    name="nextFollowUpDate"
+                    className="form-control"
+                    value={formData.nextFollowUpDate}
+                    onChange={handleChange('nextFollowUpDate')}
+                    disabled={isFieldDisabled('nextFollowUpDate')}
+                    style={{ border: 'none', background: 'transparent', width: '100%' }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
-          <div className="form-group mt-3">
-            <label className="form-label">Remarks</label>
-            <textarea
-              className="form-control"
-              rows="2"
-              placeholder="Initial remarks…"
-              value={formData.remarks}
-              onChange={handleChange('remarks')}
-            />
-          </div>
+          {isFieldVisible('remarks') && (
+            <div className="form-group mt-3">
+              <label className="form-label flex items-center justify-between">
+                <span>Remarks</span>
+                {isEditMode && !canEditLeadField(hasPermission, 'remarks') && (
+                  <span className="text-[10px] text-gray-400 font-normal">🔒 Read-only</span>
+                )}
+              </label>
+              <textarea
+                className="form-control"
+                rows="2"
+                placeholder="Initial remarks…"
+                value={formData.remarks}
+                onChange={handleChange('remarks')}
+                disabled={isFieldDisabled('remarks')}
+              />
+            </div>
+          )}
         </div>
 
         <div className="modal-footer">

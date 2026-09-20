@@ -180,6 +180,7 @@ const ApiRoutes = {
         unallottedCount: '/api/dashboard/leads/unallotted/count',
         availedCount: '/api/dashboard/leads/availed/count',
         allottedCount: '/api/dashboard/leads/allotted/count',
+        multiSourceCount: '/api/dashboard/leads/multi-source/count',
         todayFollowUpsCount: '/api/dashboard/followups/today/count',
         followupStatusCounts: '/api/dashboard/followups/status-counts',
     },

@@ -21,6 +21,7 @@ import BoardWiseCard from '../../component/reusable/DashBoards/BoardWiseCard';
 import GradWiseCard from '../../component/reusable/DashBoards/gradWiseCard';
 import AllottedCard from '../../component/reusable/DashBoards/allottedCard';
 import AvailedCard from '../../component/reusable/DashBoards/availedCard';
+import MultiSourceCard from '../../component/reusable/DashBoards/MultiSourceCard';
 import TodayFollowUpsCard from '../../component/reusable/DashBoards/TodayFollowUpsCard';
 import { getLeadSourceBreakdown, getGradeBreakdown, getBoardBreakdown } from '../../Services/cards/cardService';
 
@@ -244,6 +245,9 @@ const CallersDashboard = () => {
         case 'allotted':
           newFilterRequest.allotted = true;
           break;
+        case 'multiSource':
+          newFilterRequest.multiSource = true;
+          break;
         case 'leadStatus':
           if (!newFilterRequest.leadStatusIds) newFilterRequest.leadStatusIds = [];
           newFilterRequest.leadStatusIds.push(filter.value);
@@ -315,6 +319,11 @@ const CallersDashboard = () => {
           filterRequest={filterRequest}
         />
         <AvailedCard 
+          onCardClick={handleCardClick}
+          activeFilters={activeFilters}
+          filterRequest={filterRequest}
+        />
+        <MultiSourceCard 
           onCardClick={handleCardClick}
           activeFilters={activeFilters}
           filterRequest={filterRequest}

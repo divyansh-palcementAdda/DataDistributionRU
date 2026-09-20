@@ -22,6 +22,7 @@ import GradWiseCard from '../../component/reusable/DashBoards/gradWiseCard';
 import UnallottedCard from '../../component/reusable/DashBoards/UnallottedCard';
 import AvailedCard from '../../component/reusable/DashBoards/availedCard';
 import AllottedCard from '../../component/reusable/DashBoards/allottedCard';
+import MultiSourceCard from '../../component/reusable/DashBoards/MultiSourceCard';
 import TodayFollowUpsCard from '../../component/reusable/DashBoards/TodayFollowUpsCard';
 import { getLeadSourceBreakdown, getGradeBreakdown, getBoardBreakdown } from '../../Services/cards/cardService';
 import { getRecentActivity, getDashboardSummary } from '../../Services/Dashboard/Dashboard';
@@ -344,6 +345,9 @@ const Dashboard = () => {
           break;
         case 'allotted':
           newFilterRequest.allotted = true;
+          break;
+        case 'multiSource':
+          newFilterRequest.multiSource = true;
           break;
         case 'leadStatus':
           if (!newFilterRequest.leadStatusIds) newFilterRequest.leadStatusIds = [];
@@ -693,6 +697,11 @@ const Dashboard = () => {
                 filterRequest={filterRequest}
               />
                 <AvailedCard
+                onCardClick={handleCardClick}
+                activeFilters={activeFilters}
+                filterRequest={filterRequest}
+              />
+              <MultiSourceCard
                 onCardClick={handleCardClick}
                 activeFilters={activeFilters}
                 filterRequest={filterRequest}

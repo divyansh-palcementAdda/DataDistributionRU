@@ -16,6 +16,7 @@ import LeadSource from '../component/reusable/DashBoards/leadSource';
 import UnallottedCard from '../component/reusable/DashBoards/UnallottedCard';
 import AvailedCard from '../component/reusable/DashBoards/availedCard';
 import AllottedCard from '../component/reusable/DashBoards/allottedCard';
+import MultiSourceCard from '../component/reusable/DashBoards/MultiSourceCard';
 import CategorywiseCard from '../component/reusable/DashBoards/categorywiseCard';
 import BulkUploadModal from '../component/reusable/Leads/BulkUploadModal';
 import PreviewDistributionModal from '../component/reusable/Leads/PreviewDistributionModal';
@@ -97,6 +98,15 @@ const parseFiltersFromUrlAndState = (searchParams, state) => {
       type: 'availed',
       value: true,
       label: 'Allocation: Availed'
+    });
+  }
+
+  const multiSource = searchParams.get('multiSource');
+  if (multiSource === 'true') {
+    filters.push({
+      type: 'multiSource',
+      value: true,
+      label: 'Multi Source Data'
     });
   }
 
@@ -222,6 +232,9 @@ const Leads = () => {
           break;
         case 'availed':
           req.availed = true;
+          break;
+        case 'multiSource':
+          req.multiSource = true;
           break;
         case 'leadStatus':
           if (!req.statusIds) req.statusIds = [];
@@ -367,6 +380,31 @@ const Leads = () => {
         }
         nextFilters = filtered.filter(f => f.type !== cardInfo.type).concat(cardInfo);
       }
+
+      // Sync URL search params
+      const params = new URLSearchParams(searchParams);
+      if (existingFilterIndex !== -1) {
+        if (cardInfo.type === 'multiSource') params.delete('multiSource');
+        else if (cardInfo.type === 'unallotted' || cardInfo.type === 'allotted') {
+          params.delete('allotted');
+          params.delete('unallotted');
+        } else if (cardInfo.type === 'availed') {
+          params.delete('availed');
+        }
+      } else {
+        if (cardInfo.type === 'multiSource') params.set('multiSource', 'true');
+        else if (cardInfo.type === 'unallotted') {
+          params.delete('allotted');
+          params.set('unallotted', 'true');
+        } else if (cardInfo.type === 'allotted') {
+          params.delete('unallotted');
+          params.set('allotted', 'true');
+        } else if (cardInfo.type === 'availed') {
+          params.set('availed', 'true');
+        }
+      }
+      setSearchParams(params, { replace: true });
+
       return nextFilters;
     });
     
@@ -462,6 +500,7 @@ const Leads = () => {
         if (f.type === 'unallotted') params.set('allotted', 'false');
         if (f.type === 'allotted') params.set('allotted', 'true');
         if (f.type === 'availed') params.set('availed', 'true');
+        if (f.type === 'multiSource') params.set('multiSource', 'true');
         if (f.type === 'assignedUser' || f.type === 'user') params.set('assignedUserId', f.value);
         if (f.type === 'leadStatus') params.set('statusId', f.value);
       });
@@ -500,6 +539,8 @@ const Leads = () => {
         params.delete('unallotted');
       } else if (filterToRemove.type === 'availed') {
         params.delete('availed');
+      } else if (filterToRemove.type === 'multiSource') {
+        params.delete('multiSource');
       } else if (filterToRemove.type === 'assignedUser' || filterToRemove.type === 'user') {
         params.delete('assignedUserId');
         params.delete('userId');
@@ -723,7 +764,7 @@ const Leads = () => {
       </div>
 
       {/* ── New Lead Status Cards ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '20px' }}>
         <UnallottedCard 
           onCardClick={handleCardClick}
           activeFilters={activeFilters}
@@ -735,7 +776,12 @@ const Leads = () => {
           activeFilters={activeFilters}
           filterRequest={filterRequest}
         />
-         <AvailedCard 
+        <AvailedCard 
+          onCardClick={handleCardClick}
+          activeFilters={activeFilters}
+          filterRequest={filterRequest}
+        />
+        <MultiSourceCard 
           onCardClick={handleCardClick}
           activeFilters={activeFilters}
           filterRequest={filterRequest}
@@ -990,23 +1036,33 @@ const Leads = () => {
                 key: 'source',
                 header: 'Source',
                 render: (value, row) => {
-                  // First try sourceDetails (string field from API)
-                  if (row.sourceDetails && typeof row.sourceDetails === 'string') {
-                    return row.sourceDetails;
+                  const sources = Array.isArray(row.leadSources) && row.leadSources.length > 0
+                    ? row.leadSources.map(s => (typeof s === 'object' ? s.name || s.code : s)).filter(Boolean)
+                    : (row.sourceDetails ? [row.sourceDetails] : (row.source ? [(typeof row.source === 'object' ? row.source?.name : row.source)] : []));
+
+                  if (sources.length === 0) return 'N/A';
+
+                  const primarySource = sources[0];
+                  const hasMultiple = row.isMultiSource || sources.length > 1;
+
+                  if (!hasMultiple || sources.length <= 1) {
+                    return <span>{primarySource}</span>;
                   }
-                  // Fall back to leadSources array (first item's name)
-                  if (Array.isArray(row.leadSources) && row.leadSources.length > 0) {
-                    const firstSource = row.leadSources[0];
-                    if (typeof firstSource === 'object' && firstSource !== null) {
-                      return firstSource.name || 'N/A';
-                    }
-                    return firstSource || 'N/A';
-                  }
-                  // Final fallback to source field (if it exists)
-                  if (typeof row.source === 'object' && row.source !== null) {
-                    return row.source?.name || 'N/A';
-                  }
-                  return row.source || 'N/A';
+
+                  const extraCount = sources.length - 1;
+                  const allSourcesTooltip = sources.join(', ');
+
+                  return (
+                    <div className="flex items-center gap-1.5 flex-wrap" title={allSourcesTooltip}>
+                      <span>{primarySource}</span>
+                      <span
+                        className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold bg-purple-100 text-purple-800 cursor-pointer"
+                        title={allSourcesTooltip}
+                      >
+                        +{extraCount}
+                      </span>
+                    </div>
+                  );
                 },
               },
               {

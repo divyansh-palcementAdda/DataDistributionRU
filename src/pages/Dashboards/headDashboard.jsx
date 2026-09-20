@@ -21,6 +21,7 @@ import LeadSource from '../../component/reusable/DashBoards/leadSource';
 import UnallottedCard from '../../component/reusable/DashBoards/UnallottedCard';
 import AvailedCard from '../../component/reusable/DashBoards/availedCard';
 import AllottedCard from '../../component/reusable/DashBoards/allottedCard';
+import MultiSourceCard from '../../component/reusable/DashBoards/MultiSourceCard';
 import TodayFollowUpsCard from '../../component/reusable/DashBoards/TodayFollowUpsCard';
 import { getAllLeads } from '../../Services/lead/leadService';
 import { getDashboardSummary } from '../../Services/Dashboard/Dashboard';
@@ -215,6 +216,9 @@ const HeadDashboard = () => {
           break;
         case 'allotted':
           newFilterRequest.allotted = true;
+          break;
+        case 'multiSource':
+          newFilterRequest.multiSource = true;
           break;
         case 'leadStatus':
           if (!newFilterRequest.leadStatusIds) newFilterRequest.leadStatusIds = [];
@@ -606,6 +610,11 @@ const HeadDashboard = () => {
           filterRequest={filterRequest}
         />
         <AllottedCard 
+          onCardClick={handleCardClick}
+          activeFilters={activeFilters}
+          filterRequest={filterRequest}
+        />
+        <MultiSourceCard 
           onCardClick={handleCardClick}
           activeFilters={activeFilters}
           filterRequest={filterRequest}

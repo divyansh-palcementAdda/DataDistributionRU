@@ -861,15 +861,15 @@ const LeadDetail = () => {
         <div className="flex flex-col gap-5 lg:col-span-2">
 
           {/* SECTION A: Lead Identity & Priority Overview Card */}
-          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-xs relative overflow-hidden">
+          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-xs relative overflow-hidden">
             <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
-              <div className="flex items-start gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white text-lg font-bold shadow-md shadow-blue-100 flex-shrink-0">
+              <div className="flex items-start gap-3.5">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white text-base font-bold shadow-sm shadow-blue-100 flex-shrink-0">
                   {initials}
                 </div>
                 <div>
                   <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <h2 className="text-xl font-bold text-gray-900 tracking-tight">
+                    <h2 className="text-lg font-bold text-gray-900 tracking-tight">
                       {leadDetails.fullName || 'N/A'}
                     </h2>
                     <span className="text-xs font-semibold px-2 py-0.5 rounded-md bg-gray-100 text-gray-700 border border-gray-200">
@@ -1382,17 +1382,15 @@ const LeadDetail = () => {
           </div>
 
           {/* SECTION G: Status History & Follow-ups */}
-          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-xs">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-gray-100 text-gray-700 rounded-lg">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                    <circle cx="12" cy="12" r="10" />
-                    <polyline points="12 6 12 12 16 14" />
-                  </svg>
-                </div>
-                <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">Lead Status History</h3>
-              </div>
+          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-xs">
+            <div className="flex items-center justify-between mb-4 pb-2.5 border-b border-gray-100">
+              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="text-blue-600">
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
+                </svg>
+                Lead Status History
+              </h3>
             </div>
 
             {statusHistoryLoading ? (
@@ -1411,16 +1409,14 @@ const LeadDetail = () => {
             )}
 
             {/* Follow-ups Subsection */}
-            <div className="mt-6 pt-6 border-t border-gray-100">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 bg-amber-50 text-amber-700 rounded-lg">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3" />
-                    </svg>
-                  </div>
-                  <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">Follow-ups</h3>
-                </div>
+            <div className="mt-5 pt-4 border-t border-gray-100">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="text-amber-600">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3" />
+                  </svg>
+                  Follow-ups
+                </h3>
               </div>
 
               {followUpsLoading ? (
@@ -1441,85 +1437,76 @@ const LeadDetail = () => {
           </div>
 
           {/* SECTION H: Remarks & Additional Information Card */}
-          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-xs">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-yellow-50 text-yellow-700 rounded-lg">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                  </svg>
-                </div>
-                <h3 className="text-sm font-bold text-gray-800 uppercase tracking-wide">Remarks & Notes</h3>
-              </div>
+          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-xs">
+            <div className="flex items-center justify-between mb-3 pb-2.5 border-b border-gray-100">
+              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="text-amber-600">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+                Remarks & Notes
+              </h3>
               <button
                 onClick={() => setIsRemarkModalOpen(true)}
-                className="text-xs font-semibold text-purple-700 hover:text-purple-800 underline"
+                className="text-xs font-semibold text-purple-700 hover:text-purple-800 transition-colors"
               >
                 + Add Note
               </button>
             </div>
 
             {leadDetails.remarks ? (
-              <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 text-xs text-gray-800 leading-relaxed font-medium">
+              <div className="p-3.5 bg-gray-50/80 rounded-lg text-xs text-gray-800 leading-relaxed font-normal border border-gray-100">
                 {leadDetails.remarks}
               </div>
             ) : (
-              <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 text-xs text-gray-400 text-center">
+              <div className="py-2 text-xs text-gray-400 italic">
                 No remarks added for this lead yet.
               </div>
             )}
           </div>
 
           {/* University Visit Planning Card */}
-          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-xs">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-              <div className="flex items-center gap-2.5">
-                <div className={`p-2 rounded-xl ${leadDetails.planningToVisitUniversity ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-500'}`}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3 pb-2.5 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="text-indigo-600">
                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                     <line x1="16" y1="2" x2="16" y2="6" />
                     <line x1="8" y1="2" x2="8" y2="6" />
                     <line x1="3" y1="10" x2="21" y2="10" />
                   </svg>
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-gray-800">University Visit Planning</h3>
-                  <p className="text-xs text-gray-500">Track and schedule campus visits for this lead</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2.5">
+                  University Visit Planning
+                </h3>
                 <span
-                  className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold ${
+                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${
                     leadDetails.planningToVisitUniversity
                       ? 'bg-green-50 text-green-700 border border-green-200'
                       : 'bg-gray-100 text-gray-600 border border-gray-200'
                   }`}
                 >
-                  {leadDetails.planningToVisitUniversity ? '● Visit Planned' : 'No Visit Planned'}
+                  {leadDetails.planningToVisitUniversity ? 'Visit Planned' : 'No Visit'}
                 </span>
-
-                {hasPermission('LEAD_UPDATE') && (
-                  <button
-                    onClick={() => setIsVisitModalOpen(true)}
-                    className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-3 py-1.5 rounded-lg transition-colors"
-                    title={leadDetails.planningToVisitUniversity ? 'Edit Visit Plan' : 'Plan University Visit'}
-                  >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                    </svg>
-                    {leadDetails.planningToVisitUniversity ? 'Edit Visit Plan' : 'Plan University Visit'}
-                  </button>
-                )}
               </div>
+
+              {hasPermission('LEAD_UPDATE') && (
+                <button
+                  onClick={() => setIsVisitModalOpen(true)}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700 transition-colors self-start sm:self-auto"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                  {leadDetails.planningToVisitUniversity ? 'Edit Plan' : 'Plan Visit'}
+                </button>
+              )}
             </div>
 
             {leadDetails.planningToVisitUniversity ? (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
-                <div className="bg-indigo-50/50 p-3.5 rounded-xl border border-indigo-100">
-                  <div className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider mb-1">Visit Date</div>
-                  <div className="text-xs font-semibold text-gray-800 flex items-center gap-1.5">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-y-3 gap-x-6 text-xs">
+                <div>
+                  <div className="text-[11px] font-medium text-gray-400">Visit Date</div>
+                  <div className="text-sm font-semibold text-gray-900 mt-1 flex items-center gap-1.5">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-indigo-600">
                       <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                       <line x1="16" y1="2" x2="16" y2="6" />
@@ -1530,9 +1517,9 @@ const LeadDetail = () => {
                   </div>
                 </div>
 
-                <div className="bg-indigo-50/50 p-3.5 rounded-xl border border-indigo-100">
-                  <div className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider mb-1">Visit Time</div>
-                  <div className="text-xs font-semibold text-gray-800 flex items-center gap-1.5">
+                <div>
+                  <div className="text-[11px] font-medium text-gray-400">Visit Time</div>
+                  <div className="text-sm font-semibold text-gray-900 mt-1 flex items-center gap-1.5">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-indigo-600">
                       <circle cx="12" cy="12" r="10" />
                       <polyline points="12 6 12 12 16 14" />
@@ -1541,24 +1528,16 @@ const LeadDetail = () => {
                   </div>
                 </div>
 
-                <div className="bg-indigo-50/50 p-3.5 rounded-xl border border-indigo-100 sm:col-span-1">
-                  <div className="text-[10px] font-bold text-indigo-500 uppercase tracking-wider mb-1">Visit Remarks</div>
-                  <div className="text-xs font-semibold text-gray-800 break-words">
-                    {leadDetails.visitRemarks || 'None'}
+                <div>
+                  <div className="text-[11px] font-medium text-gray-400">Visit Remarks</div>
+                  <div className="text-sm font-semibold text-gray-900 mt-1 break-words">
+                    {leadDetails.visitRemarks || '-'}
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="p-4 rounded-xl bg-gray-50 border border-gray-100 text-xs text-gray-500 flex items-center justify-between">
-                <span>No university visit has been planned for this lead yet.</span>
-                {hasPermission('LEAD_UPDATE') && (
-                  <button
-                    onClick={() => setIsVisitModalOpen(true)}
-                    className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 underline"
-                  >
-                    Schedule a Visit
-                  </button>
-                )}
+              <div className="py-2 text-xs text-gray-400 italic">
+                No university visit has been planned for this lead yet.
               </div>
             )}
           </div>
@@ -1566,8 +1545,15 @@ const LeadDetail = () => {
 
         {/* RIGHT SIDE: Info Panel & Actions */}
         <div className="lg:col-span-1">
-          <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-xs w-full sticky top-4">
-            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4">Info Panel</h3>
+          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-xs w-full sticky top-4">
+            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 pb-2.5 border-b border-gray-100 flex items-center gap-2">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="text-blue-600">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg>
+              Course Information & Action Panel
+            </h3>
 
             {/* Quick Action Button for WhatsApp */}
             <div className="flex gap-2 mb-4">

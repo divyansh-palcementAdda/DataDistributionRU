@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { useAppContext } from '../../AppContext';
 import CustomButton from '../../component/reusable/CustomButton';
-import Toggle from '../../component/reusable/custumToggle';
 import { getAllRoles, deleteRole, toggleRoleStatus, getRolePermissions, allotPermissionsToRole } from '../../Services/role/roleService';
 import { getAllPermissions, deletePermission, getUnmappedPermissions } from '../../Services/permissions/permissions';
 import AddEditRoleModal from '../../component/reusable/role/addandeditRolemodel';
@@ -45,8 +44,8 @@ const formatEntityName = (entity) => {
 };
 
 const GROUP_CONFIG = {
-  LEAD_FIELD: { label: 'Lead Field Permissions', icon: '🎯' },
-  GENERAL_SYSTEM: { label: 'General System Permissions', icon: '⚙️' },
+  LEAD_FIELD: { label: 'Lead Fields', icon: '🎯' },
+  GENERAL_SYSTEM: { label: 'System Permissions', icon: '⚙️' },
   SYSTEM_CONFIG: { label: 'System Configuration', icon: '🔧' },
 };
 
@@ -86,6 +85,7 @@ const RolesAndPermissions = () => {
   // Dynamic Tabs and Search
   const [activePermissionTab, setActivePermissionTab] = useState('LEAD_FIELD');
   const [permissionSearchQuery, setPermissionSearchQuery] = useState('');
+  const [roleSearchQuery, setRoleSearchQuery] = useState('');
   const [unmappedStatus, setUnmappedStatus] = useState(null);
   const [isValidatingMetadata, setIsValidatingMetadata] = useState(false);
 
@@ -188,7 +188,7 @@ const RolesAndPermissions = () => {
       if (count === 0) {
         showToast('All permissions mapped to backend metadata!', 'success');
       } else {
-        showToast(`${count} unmapped permissions detected. Check backend mappings.`, 'warning');
+        showToast(`${count} unmapped permissions detected in database.`, 'warning');
       }
     } catch {
       // Quiet fail if endpoint is unauthenticated or loading
@@ -203,6 +203,13 @@ const RolesAndPermissions = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Auto-select first role if none is selected
+  useEffect(() => {
+    if (!selectedRoleForPermissions && Array.isArray(roles) && roles.length > 0) {
+      setSelectedRoleForPermissions(roles[0]);
+    }
+  }, [roles, selectedRoleForPermissions]);
+
   useEffect(() => {
     if (selectedRoleForPermissions) {
       const roleId = selectedRoleForPermissions?.id ?? selectedRoleForPermissions?._id ?? selectedRoleForPermissions?.roleId;
@@ -210,6 +217,23 @@ const RolesAndPermissions = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedRoleForPermissions]);
+
+  // Track unsaved modifications
+  const hasUnsavedChanges = useMemo(() => {
+    const savedSet = new Set((rolePermissions || []).map(p => p?.id ?? p?._id ?? p?.permissionId).filter(Boolean));
+    const currentSet = new Set(selectedPermissionIds || []);
+    if (savedSet.size !== currentSet.size) return true;
+    for (const id of currentSet) {
+      if (!savedSet.has(id)) return true;
+    }
+    return false;
+  }, [rolePermissions, selectedPermissionIds]);
+
+  const handleResetPermissions = () => {
+    const ids = (rolePermissions || []).map(p => p?.id ?? p?._id ?? p?.permissionId).filter(Boolean);
+    setSelectedPermissionIds(ids);
+    showToast('Unsaved changes discarded', 'info');
+  };
 
   // Dynamically extract and order permission groups from backend metadata
   const availableGroups = useMemo(() => {
@@ -245,8 +269,8 @@ const RolesAndPermissions = () => {
     });
 
     return ordered.length > 0 ? ordered : [
-      { id: 'LEAD_FIELD', label: 'Lead Field Permissions', icon: '🎯' },
-      { id: 'GENERAL_SYSTEM', label: 'General System Permissions', icon: '⚙️' },
+      { id: 'LEAD_FIELD', label: 'Lead Fields', icon: '🎯' },
+      { id: 'GENERAL_SYSTEM', label: 'System Permissions', icon: '⚙️' },
       { id: 'SYSTEM_CONFIG', label: 'System Configuration', icon: '🔧' }
     ];
   }, [permissions]);
@@ -257,6 +281,22 @@ const RolesAndPermissions = () => {
       setActivePermissionTab(availableGroups[0].id);
     }
   }, [availableGroups, activePermissionTab]);
+
+  // Tab counts for quick metrics
+  const tabCounts = useMemo(() => {
+    const counts = {};
+    const selectedSet = new Set(selectedPermissionIds || []);
+    (permissions || []).forEach(p => {
+      const g = p.permissionGroup || (p.name?.startsWith('LEAD_FIELD_') ? 'LEAD_FIELD' : 'GENERAL_SYSTEM');
+      if (!counts[g]) counts[g] = { total: 0, selected: 0 };
+      counts[g].total += 1;
+      const pid = p?.id ?? p?._id ?? p?.permissionId;
+      if (selectedSet.has(pid)) {
+        counts[g].selected += 1;
+      }
+    });
+    return counts;
+  }, [permissions, selectedPermissionIds]);
 
   // Lead field grouping derived purely from backend metadata
   const leadFieldsByGroup = useMemo(() => {
@@ -351,7 +391,32 @@ const RolesAndPermissions = () => {
     return byEntity;
   }, [permissions, activePermissionTab, permissionSearchQuery]);
 
-  // Permission toggles
+  // Permission toggles with smart paired access rules (Edit implies View)
+  const handleToggleLeadFieldPermission = (permId, complementaryPermId, isEditToggle) => {
+    if (!hasPermission('PERMISSION_UPDATE')) {
+      showToast('You do not have permission to modify permissions', 'error');
+      return;
+    }
+    setSelectedPermissionIds(prev => {
+      const isCurrentlySelected = prev.includes(permId);
+      if (isCurrentlySelected) {
+        // Toggling OFF
+        // If turning off View, also revoke Edit
+        if (!isEditToggle && complementaryPermId) {
+          return prev.filter(id => id !== permId && id !== complementaryPermId);
+        }
+        return prev.filter(id => id !== permId);
+      } else {
+        // Toggling ON
+        // If turning on Edit, also auto-grant View
+        if (isEditToggle && complementaryPermId) {
+          return Array.from(new Set([...prev, permId, complementaryPermId]));
+        }
+        return [...prev, permId];
+      }
+    });
+  };
+
   const handleTogglePermission = (permissionId) => {
     if (!hasPermission('PERMISSION_UPDATE')) {
       showToast('You do not have permission to modify permissions', 'error');
@@ -379,44 +444,31 @@ const RolesAndPermissions = () => {
     setSelectedPermissionIds(prev => Array.from(new Set([...prev, ...viewIds])));
   };
 
-  const handleClearAllLeadFieldViews = () => {
-    if (!hasPermission('PERMISSION_UPDATE')) {
-      showToast('You do not have permission to modify permissions', 'error');
-      return;
-    }
-    const viewIds = new Set(
-      (permissions || [])
-        .filter(p => (p.permissionGroup === 'LEAD_FIELD' || p.name?.startsWith('LEAD_FIELD_')) && (p.permissionType === 'VIEW' || p.name?.endsWith('_READ')))
-        .map(p => p.id ?? p._id ?? p.permissionId)
-        .filter(Boolean)
-    );
-    setSelectedPermissionIds(prev => prev.filter(id => !viewIds.has(id)));
-  };
-
   const handleSelectAllLeadFieldEdits = () => {
     if (!hasPermission('PERMISSION_UPDATE')) {
       showToast('You do not have permission to modify permissions', 'error');
       return;
     }
-    const editIds = (permissions || [])
-      .filter(p => (p.permissionGroup === 'LEAD_FIELD' || p.name?.startsWith('LEAD_FIELD_')) && (p.permissionType === 'EDIT' || p.name?.endsWith('_WRITE')))
+    // Granting all edits also grants all views
+    const allLeadFieldIds = (permissions || [])
+      .filter(p => p.permissionGroup === 'LEAD_FIELD' || p.name?.startsWith('LEAD_FIELD_'))
       .map(p => p.id ?? p._id ?? p.permissionId)
       .filter(Boolean);
-    setSelectedPermissionIds(prev => Array.from(new Set([...prev, ...editIds])));
+    setSelectedPermissionIds(prev => Array.from(new Set([...prev, ...allLeadFieldIds])));
   };
 
-  const handleClearAllLeadFieldEdits = () => {
+  const handleClearAllLeadFields = () => {
     if (!hasPermission('PERMISSION_UPDATE')) {
       showToast('You do not have permission to modify permissions', 'error');
       return;
     }
-    const editIds = new Set(
+    const leadFieldIds = new Set(
       (permissions || [])
-        .filter(p => (p.permissionGroup === 'LEAD_FIELD' || p.name?.startsWith('LEAD_FIELD_')) && (p.permissionType === 'EDIT' || p.name?.endsWith('_WRITE')))
+        .filter(p => p.permissionGroup === 'LEAD_FIELD' || p.name?.startsWith('LEAD_FIELD_'))
         .map(p => p.id ?? p._id ?? p.permissionId)
         .filter(Boolean)
     );
-    setSelectedPermissionIds(prev => prev.filter(id => !editIds.has(id)));
+    setSelectedPermissionIds(prev => prev.filter(id => !leadFieldIds.has(id)));
   };
 
   const handleCategoryLeadFieldToggle = (categoryFields, type, enable) => {
@@ -424,14 +476,24 @@ const RolesAndPermissions = () => {
       showToast('You do not have permission to modify permissions', 'error');
       return;
     }
-    const targetIds = new Set(
-      categoryFields
-        .map(f => {
-          const perm = type === 'view' ? f.viewPermission : f.editPermission;
-          return perm ? (perm.id ?? perm._id ?? perm.permissionId) : null;
-        })
-        .filter(Boolean)
-    );
+    const targetIds = new Set();
+    categoryFields.forEach(f => {
+      const vp = f.viewPermission ? (f.viewPermission.id ?? f.viewPermission._id ?? f.viewPermission.permissionId) : null;
+      const ep = f.editPermission ? (f.editPermission.id ?? f.editPermission._id ?? f.editPermission.permissionId) : null;
+
+      if (type === 'view') {
+        if (vp) targetIds.add(vp);
+        // If revoking view, also revoke edit
+        if (!enable && ep) targetIds.add(ep);
+      } else if (type === 'edit') {
+        if (ep) targetIds.add(ep);
+        // If enabling edit, also grant view
+        if (enable && vp) targetIds.add(vp);
+      } else if (type === 'both') {
+        if (vp) targetIds.add(vp);
+        if (ep) targetIds.add(ep);
+      }
+    });
 
     setSelectedPermissionIds(prev => {
       if (enable) {
@@ -490,7 +552,7 @@ const RolesAndPermissions = () => {
       if (typeof refreshPermissions === 'function') {
         await refreshPermissions();
       }
-      showToast('Permissions allotted successfully!', 'success');
+      showToast('Permissions updated and saved successfully!', 'success');
     } catch (error) {
       console.error('Failed to allot permissions', error);
       showToast('Failed to allot permissions', 'error');
@@ -670,508 +732,604 @@ const RolesAndPermissions = () => {
     }
   };
 
-  // Operation badge renderer
+  // Operation badge renderer with refined micro-tags
   const renderOperationBadge = (opType) => {
     switch (opType) {
       case 'VIEW':
-        return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">VIEW</span>;
+        return <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200/80">VIEW</span>;
       case 'CREATE':
-        return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">CREATE</span>;
+        return <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200/80">CREATE</span>;
       case 'EDIT':
       case 'UPDATE':
-        return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">UPDATE</span>;
+        return <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200/80">UPDATE</span>;
       case 'DELETE':
-        return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-50 text-red-700 border border-red-200">DELETE</span>;
+        return <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-red-50 text-red-700 border border-red-200/80">DELETE</span>;
       case 'ASSIGN':
-        return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200">ASSIGN</span>;
+        return <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200/80">ASSIGN</span>;
       case 'EXECUTE':
-        return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">EXECUTE</span>;
+        return <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200/80">EXECUTE</span>;
       case 'UPLOAD':
-        return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-teal-50 text-teal-700 border border-teal-200">UPLOAD</span>;
+        return <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-teal-50 text-teal-700 border border-teal-200/80">UPLOAD</span>;
       case 'EXPORT':
-        return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-cyan-50 text-cyan-700 border border-cyan-200">EXPORT</span>;
+        return <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-cyan-50 text-cyan-700 border border-cyan-200/80">EXPORT</span>;
       case 'MANAGE':
-        return <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">MANAGE</span>;
+        return <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200/80">MANAGE</span>;
       default:
         return opType ? (
-          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 border border-gray-200">{opType}</span>
+          <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 border border-gray-200">{opType}</span>
         ) : null;
     }
   };
 
+  const filteredRoles = useMemo(() => {
+    if (!roleSearchQuery.trim()) return roles || [];
+    const q = roleSearchQuery.toLowerCase();
+    return (roles || []).filter(r => 
+      (r.name && r.name.toLowerCase().includes(q)) || 
+      (r.description && r.description.toLowerCase().includes(q))
+    );
+  }, [roles, roleSearchQuery]);
+
   return (
-    <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden animate-fadeIn">
-      {/* Page Header */}
-      <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <h2 className="text-sm font-semibold text-gray-800">Roles & Permissions Management</h2>
-          <button
-            type="button"
-            onClick={checkMetadataIntegrity}
-            disabled={isValidatingMetadata}
-            className="inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-medium rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors"
-            title="Click to verify dynamic backend metadata mapping integrity"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            {isValidatingMetadata ? 'Checking...' : unmappedStatus === 0 ? 'Metadata Synced (0 Unmapped)' : unmappedStatus > 0 ? `${unmappedStatus} Unmapped` : 'Verify Metadata'}
-          </button>
+    <div className="bg-white border border-gray-200/90 rounded-2xl shadow-sm overflow-hidden flex flex-col min-h-[720px] max-h-[85vh]">
+      {/* 1. Header Toolbar */}
+      <div className="px-6 py-4 border-b border-gray-100 bg-white flex flex-wrap items-center justify-between gap-4 flex-shrink-0">
+        <div className="flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shadow-2xs">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+          </div>
+          <div>
+            <div className="flex items-center gap-2.5">
+              <h2 className="text-base font-bold text-gray-900 tracking-tight">Roles & Permissions</h2>
+              <button
+                type="button"
+                onClick={checkMetadataIntegrity}
+                disabled={isValidatingMetadata}
+                className="inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-medium rounded-full bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 transition-colors"
+                title="Click to check dynamic permission metadata status"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                {isValidatingMetadata ? 'Checking...' : unmappedStatus === 0 ? 'Metadata Synced' : unmappedStatus > 0 ? `${unmappedStatus} Unmapped` : 'Verify Mapping'}
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 mt-0.5">Configure role-based access control, security policies, and field-level visibility</p>
+          </div>
         </div>
+
+        {/* Global Save / Discard Actions */}
         {selectedRoleForPermissions && hasPermission('PERMISSION_UPDATE') && (
-          <CustomButton
-            variant="primary"
-            onClick={handleSaveRolePermissions}
-            disabled={isSavingPermissions}
-            className="text-xs py-1.5 px-3.5 disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
-          >
-            {isSavingPermissions ? 'Saving...' : 'Save Permissions'}
-          </CustomButton>
+          <div className="flex items-center gap-2.5">
+            {hasUnsavedChanges && (
+              <>
+                <span className="inline-flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200/80 font-medium animate-fadeIn">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+                  Unsaved changes
+                </span>
+                <button
+                  type="button"
+                  onClick={handleResetPermissions}
+                  className="text-xs text-gray-600 hover:text-gray-900 px-3 py-1.5 rounded-lg border border-gray-200 hover:bg-gray-50 font-medium transition-colors"
+                >
+                  Discard
+                </button>
+              </>
+            )}
+            <CustomButton
+              variant="primary"
+              onClick={handleSaveRolePermissions}
+              disabled={isSavingPermissions || !hasUnsavedChanges}
+              className={`text-xs py-1.5 px-4 font-semibold shadow-xs transition-all ${
+                hasUnsavedChanges
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white ring-2 ring-blue-500/20'
+                  : 'bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed'
+              }`}
+            >
+              {isSavingPermissions ? 'Saving Changes...' : 'Save Permissions'}
+            </CustomButton>
+          </div>
         )}
       </div>
 
-      <div className="flex h-[640px]">
-        {/* Left Side - Roles List */}
-        <div className="w-1/3 border-r border-gray-200 flex flex-col">
-          <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between flex-shrink-0">
-            <h3 className="text-xs font-semibold text-gray-700">All Roles</h3>
+      {/* 2. Main Master-Detail View */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* ==============================================================
+            LEFT PANEL: Roles Sidebar
+            ============================================================== */}
+        <div className="w-80 border-r border-gray-100 flex flex-col bg-slate-50/40 flex-shrink-0">
+          {/* Roles Header */}
+          <div className="p-3.5 border-b border-gray-100 flex items-center justify-between gap-2 flex-shrink-0">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">Roles</span>
+              <span className="text-[11px] font-semibold px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full">
+                {roles.length}
+              </span>
+            </div>
             {hasPermission('ROLE_CREATE') && (
-              <CustomButton
-                variant="primary"
+              <button
+                type="button"
                 onClick={handleOpenAddRoleModal}
-                className="text-xs py-1 px-2.5"
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-white border border-gray-200 text-gray-700 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50/50 shadow-2xs transition-all"
               >
-                + Add Role
-              </CustomButton>
+                <svg className="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+                </svg>
+                Add Role
+              </button>
             )}
           </div>
+
+          {/* Quick Search Roles */}
+          {roles.length > 4 && (
+            <div className="px-3 pt-2 pb-1 flex-shrink-0">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Filter roles..."
+                  value={roleSearchQuery}
+                  onChange={(e) => setRoleSearchQuery(e.target.value)}
+                  className="w-full text-xs pl-7 pr-3 py-1.5 bg-white border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 placeholder:text-gray-400"
+                />
+                <svg className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+            </div>
+          )}
+
+          {/* Role Items List */}
           {loadingRoles ? (
-            <div className="py-8 text-center text-sm text-gray-500">Loading roles...</div>
+            <div className="p-8 text-center text-xs text-gray-400 flex flex-col items-center justify-center">
+              <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+              Loading roles...
+            </div>
           ) : (
-            <div className="p-3 overflow-y-auto flex-1">
-              {Array.isArray(roles) && roles.length > 0 ? (
-                <div className="space-y-1.5">
-                  {roles.map((role) => {
-                    const roleId = role?.id ?? role?._id ?? role?.roleId;
-                    const isSelected = selectedRoleForPermissions?.id === roleId ||
-                                     selectedRoleForPermissions?._id === roleId ||
-                                     selectedRoleForPermissions?.roleId === roleId;
-                    return (
-                      <div
-                        key={roleId}
-                        className={`p-3 rounded-lg transition-all border ${
-                          isSelected
-                            ? 'bg-blue-50/80 border-blue-300 shadow-xs'
-                            : 'bg-white border-gray-200 hover:border-blue-200 hover:bg-gray-50'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div
-                            className="flex items-center gap-2 flex-1 cursor-pointer"
-                            onClick={() => setSelectedRoleForPermissions(role)}
-                          >
-                            <div className={`w-2.5 h-2.5 rounded-full ${role.active ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                            <span className="font-semibold text-gray-900 text-sm">{role.name || 'Unnamed role'}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            {hasPermission('ROLE_UPDATE') && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleOpenEditRoleModal(role);
-                                }}
-                                className="p-1 rounded hover:bg-blue-100 text-gray-400 hover:text-blue-600 transition-colors"
-                                title="Edit Role"
-                              >
-                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                              </button>
-                            )}
-                            {hasPermission('ROLE_DELETE') && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleOpenDeleteRoleModal(role);
-                                }}
-                                className="p-1 rounded hover:bg-red-100 text-gray-400 hover:text-red-600 transition-colors"
-                                title="Delete Role"
-                              >
-                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                              </button>
+            <div className="p-2.5 overflow-y-auto flex-1 space-y-1">
+              {filteredRoles.length > 0 ? (
+                filteredRoles.map((role) => {
+                  const roleId = role?.id ?? role?._id ?? role?.roleId;
+                  const isSelected = selectedRoleForPermissions?.id === roleId ||
+                                   selectedRoleForPermissions?._id === roleId ||
+                                   selectedRoleForPermissions?.roleId === roleId;
+                  return (
+                    <div
+                      key={roleId}
+                      onClick={() => setSelectedRoleForPermissions(role)}
+                      className={`group relative p-3 rounded-xl cursor-pointer transition-all border ${
+                        isSelected
+                          ? 'bg-white border-blue-500/80 shadow-xs ring-1 ring-blue-500/20'
+                          : 'bg-transparent border-transparent hover:bg-white hover:border-gray-200/80 text-gray-700'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                          <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${role.active ? 'bg-emerald-500 ring-2 ring-emerald-100' : 'bg-gray-300'}`} />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className={`font-semibold text-xs tracking-tight truncate ${isSelected ? 'text-blue-900' : 'text-gray-800'}`}>
+                                {role.name || 'Unnamed role'}
+                              </span>
+                              {isSelected && (
+                                <span className="px-1.5 py-0.2 bg-blue-50 text-blue-700 text-[9px] font-bold rounded uppercase">
+                                  Selected
+                                </span>
+                              )}
+                            </div>
+                            {role.description && (
+                              <p className="text-[11px] text-gray-500 mt-0.5 line-clamp-1">{role.description}</p>
                             )}
                           </div>
                         </div>
-                        {role.description && (
-                          <p className="text-[11px] text-gray-500 mt-1 ml-4 line-clamp-1">{role.description}</p>
-                        )}
+
+                        {/* Action buttons on hover */}
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {hasPermission('ROLE_UPDATE') && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenEditRoleModal(role);
+                              }}
+                              className="p-1 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                              title="Edit Role"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </button>
+                          )}
+                          {hasPermission('ROLE_DELETE') && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenDeleteRoleModal(role);
+                              }}
+                              className="p-1 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                              title="Delete Role"
+                            >
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    );
-                  })}
-                </div>
+                    </div>
+                  );
+                })
               ) : (
-                <div className="text-center text-sm text-gray-500 py-8">No roles found</div>
+                <div className="text-center text-xs text-gray-400 py-8">No roles match your search</div>
               )}
             </div>
           )}
         </div>
 
-        {/* Right Side - Dynamic Backend-driven Permissions Matrix */}
-        <div className="w-2/3 flex flex-col">
-          {/* Header with Dynamic Tab Switcher */}
-          <div className="px-4 py-2.5 border-b border-gray-200 bg-gray-50 flex flex-wrap items-center justify-between gap-2 flex-shrink-0">
-            <div className="flex items-center gap-3">
-              <h3 className="text-xs font-bold text-gray-800">
-                {selectedRoleForPermissions ? `Permissions: ${selectedRoleForPermissions.name}` : 'Select a role to configure permissions'}
-              </h3>
-              {selectedRoleForPermissions && (
-                <div className="flex items-center bg-gray-200/80 p-0.5 rounded-lg text-xs">
-                  {availableGroups.map(grp => (
-                    <button
-                      key={grp.id}
-                      onClick={() => setActivePermissionTab(grp.id)}
-                      className={`px-3 py-1 rounded-md font-semibold transition-all flex items-center gap-1.5 ${
-                        activePermissionTab === grp.id
-                          ? 'bg-white text-blue-700 shadow-2xs'
-                          : 'text-gray-600 hover:text-gray-900'
-                      }`}
-                    >
-                      <span>{grp.icon}</span>
-                      <span>{grp.label}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {selectedRoleForPermissions && (
-              <div>
-                <input
-                  type="text"
-                  placeholder="Search permissions..."
-                  value={permissionSearchQuery}
-                  onChange={(e) => setPermissionSearchQuery(e.target.value)}
-                  className="text-xs px-2.5 py-1 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 h-7 w-48"
-                />
-              </div>
-            )}
-          </div>
-
+        {/* ==============================================================
+            RIGHT PANEL: Permissions Matrix
+            ============================================================== */}
+        <div className="flex-1 flex flex-col min-w-0 bg-white">
           {!selectedRoleForPermissions ? (
-            <div className="py-16 text-center text-sm text-gray-400 flex flex-col items-center justify-center">
-              <svg className="w-12 h-12 text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
-              Please select a role from the left list to view and configure permissions
-            </div>
-          ) : loadingPermissions || loadingRolePermissions ? (
-            <div className="py-16 text-center text-sm text-gray-500">Loading permissions...</div>
-          ) : activePermissionTab === 'LEAD_FIELD' ? (
-            /* ==============================================================
-               TAB: LEAD FIELD PERMISSIONS (Grouped by Backend fieldGroup)
-               ============================================================== */
-            <div className="flex flex-col flex-1 overflow-hidden">
-              {/* Global Field Controls */}
-              <div className="px-4 py-2 bg-blue-50/50 border-b border-blue-100 flex flex-wrap items-center justify-between gap-2 text-xs flex-shrink-0">
-                <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wide">
-                  Global Lead Field Controls
-                </div>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleSelectAllLeadFieldViews();
-                    }}
-                    className="px-2 py-0.5 rounded bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-300 font-semibold transition-colors"
-                    title="Grant View to all lead fields"
-                  >
-                    ✓ View All
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleClearAllLeadFieldViews();
-                    }}
-                    className="px-2 py-0.5 rounded bg-white hover:bg-gray-100 text-gray-600 border border-gray-300 font-semibold transition-colors"
-                    title="Revoke View from all lead fields"
-                  >
-                    ✕ Clear View
-                  </button>
-                  <span className="text-gray-300 mx-0.5">|</span>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleSelectAllLeadFieldEdits();
-                    }}
-                    className="px-2 py-0.5 rounded bg-white hover:bg-blue-50 text-blue-700 border border-blue-300 font-semibold transition-colors"
-                    title="Grant Edit to all lead fields"
-                  >
-                    ✓ Edit All
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleClearAllLeadFieldEdits();
-                    }}
-                    className="px-2 py-0.5 rounded bg-white hover:bg-gray-100 text-gray-600 border border-gray-300 font-semibold transition-colors"
-                    title="Revoke Edit from all lead fields"
-                  >
-                    ✕ Clear Edit
-                  </button>
-                </div>
+            <div className="py-24 text-center text-sm text-gray-400 flex flex-col items-center justify-center h-full">
+              <div className="w-14 h-14 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 mb-3">
+                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
               </div>
-
-              {/* Dynamic Field Categories */}
-              <div className="p-4 overflow-y-auto flex-1 space-y-5">
-                {Object.entries(leadFieldsByGroup).map(([groupName, fields]) => (
-                  <div key={groupName} className="border border-gray-200 rounded-xl overflow-hidden shadow-2xs bg-white">
-                    {/* Category Header with Group Bulk Actions */}
-                    <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-200 flex flex-wrap items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-gray-800 uppercase tracking-wider">{groupName}</span>
-                        <span className="text-[10px] font-bold px-1.5 py-0.2 bg-gray-200 text-gray-600 rounded-full">
-                          {fields.length}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[11px]">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handleCategoryLeadFieldToggle(fields, 'view', true);
-                          }}
-                          className="px-1.5 py-0.5 rounded bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium transition-colors"
-                        >
-                          + View All
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handleCategoryLeadFieldToggle(fields, 'view', false);
-                          }}
-                          className="px-1.5 py-0.5 rounded bg-white hover:bg-gray-100 text-gray-600 border border-gray-200 font-medium transition-colors"
-                        >
-                          - Clear View
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handleCategoryLeadFieldToggle(fields, 'edit', true);
-                          }}
-                          className="px-1.5 py-0.5 rounded bg-white hover:bg-blue-50 text-blue-700 border border-blue-200 font-medium transition-colors"
-                        >
-                          + Edit All
-                        </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handleCategoryLeadFieldToggle(fields, 'edit', false);
-                          }}
-                          className="px-1.5 py-0.5 rounded bg-white hover:bg-gray-100 text-gray-600 border border-gray-200 font-medium transition-colors"
-                        >
-                          - Clear Edit
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Category Fields Table */}
-                    <table className="w-full text-left text-xs border-collapse">
-                      <thead>
-                        <tr className="bg-gray-50/50 text-[10px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100">
-                          <th className="py-2 px-4">Field Name</th>
-                          <th className="py-2 px-4 text-center w-28">View (Read)</th>
-                          <th className="py-2 px-4 text-center w-28">Edit (Write)</th>
-                          <th className="py-2 px-4 text-right w-36">Effective Access</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {fields.map((field) => {
-                          const readPermId = field.viewPermission ? (field.viewPermission.id ?? field.viewPermission._id ?? field.viewPermission.permissionId) : null;
-                          const writePermId = field.editPermission ? (field.editPermission.id ?? field.editPermission._id ?? field.editPermission.permissionId) : null;
-
-                          const isViewAllowed = readPermId && selectedPermissionIds.includes(readPermId);
-                          const isEditAllowed = writePermId && selectedPermissionIds.includes(writePermId);
-
-                          return (
-                            <tr key={field.fieldKey} className="hover:bg-blue-50/30 transition-colors">
-                              <td className="py-2.5 px-4">
-                                <div className="font-semibold text-gray-800 text-xs">{field.fieldLabel}</div>
-                                <div className="text-[10px] text-gray-400 mt-0.5 font-mono">{field.fieldKey}</div>
-                              </td>
-
-                              {/* View Toggle */}
-                              <td className="py-2.5 px-4 text-center">
-                                {readPermId ? (
-                                  <button
-                                    type="button"
-                                    role="switch"
-                                    aria-checked={Boolean(isViewAllowed)}
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      handleTogglePermission(readPermId);
-                                    }}
-                                    disabled={!hasPermission('PERMISSION_UPDATE')}
-                                    className={`w-8 h-4 rounded-full transition-colors relative inline-flex items-center cursor-pointer focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed ${
-                                      isViewAllowed ? 'bg-emerald-600' : 'bg-gray-200'
-                                    }`}
-                                    title={isViewAllowed ? 'View Allowed (click to revoke)' : 'View Disallowed (click to grant)'}
-                                  >
-                                    <span
-                                      className={`w-3 h-3 bg-white rounded-full transition-transform transform shadow-xs pointer-events-none inline-block ${
-                                        isViewAllowed ? 'translate-x-4' : 'translate-x-0.5'
-                                      }`}
-                                    />
-                                  </button>
-                                ) : (
-                                  <span className="text-[10px] text-gray-400 italic">N/A</span>
-                                )}
-                              </td>
-
-                              {/* Edit Toggle */}
-                              <td className="py-2.5 px-4 text-center">
-                                {writePermId ? (
-                                  <button
-                                    type="button"
-                                    role="switch"
-                                    aria-checked={Boolean(isEditAllowed)}
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      handleTogglePermission(writePermId);
-                                    }}
-                                    disabled={!hasPermission('PERMISSION_UPDATE')}
-                                    className={`w-8 h-4 rounded-full transition-colors relative inline-flex items-center cursor-pointer focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed ${
-                                      isEditAllowed ? 'bg-blue-600' : 'bg-gray-200'
-                                    }`}
-                                    title={isEditAllowed ? 'Edit Allowed (click to revoke)' : 'Edit Disallowed (click to grant)'}
-                                  >
-                                    <span
-                                      className={`w-3 h-3 bg-white rounded-full transition-transform transform shadow-xs pointer-events-none inline-block ${
-                                        isEditAllowed ? 'translate-x-4' : 'translate-x-0.5'
-                                      }`}
-                                    />
-                                  </button>
-                                ) : (
-                                  <span className="text-[10px] text-gray-400 italic" title="System Managed Field">Auto</span>
-                                )}
-                              </td>
-
-                              {/* Effective Status Badge */}
-                              <td className="py-2.5 px-4 text-right">
-                                {!isViewAllowed ? (
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-gray-100 text-gray-500 border border-gray-200">
-                                    Hidden
-                                  </span>
-                                ) : isEditAllowed ? (
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                    ● View & Edit
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                                    Read-Only
-                                  </span>
-                                )}
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                ))}
-              </div>
+              <p className="font-semibold text-gray-700 text-sm">No Role Selected</p>
+              <p className="text-xs text-gray-400 mt-1 max-w-xs">Select a role from the left sidebar to configure its permissions and access rules.</p>
             </div>
           ) : (
-            /* ==============================================================
-               TAB: GENERAL SYSTEM / CONFIG PERMISSIONS (Grouped by Backend Entity)
-               ============================================================== */
-            <div className="p-4 overflow-y-auto flex-1 space-y-4">
-              {Object.keys(permissionsByEntity).length > 0 ? (
-                Object.entries(permissionsByEntity).map(([entityName, entityPerms]) => (
-                  <div key={entityName} className="border border-gray-200 rounded-xl overflow-hidden shadow-2xs bg-white">
-                    {/* Entity Header */}
-                    <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-200 flex flex-wrap items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-gray-800 uppercase tracking-wide">
-                          {formatEntityName(entityName)}
-                        </span>
-                        <span className="text-[10px] font-bold px-1.5 py-0.2 bg-gray-200 text-gray-600 rounded-full">
-                          {entityPerms.length}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1.5 text-[11px]">
-                        <button
-                          type="button"
-                          onClick={() => handleEntityToggleAll(entityPerms, true)}
-                          className="px-2 py-0.5 rounded bg-white hover:bg-blue-50 text-blue-700 border border-blue-200 font-medium transition-colors"
-                        >
-                          + Select All
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleEntityToggleAll(entityPerms, false)}
-                          className="px-2 py-0.5 rounded bg-white hover:bg-gray-100 text-gray-600 border border-gray-200 font-medium transition-colors"
-                        >
-                          - Clear All
-                        </button>
-                      </div>
-                    </div>
+            <>
+              {/* Role Context Bar & Segment Tabs */}
+              <div className="px-6 py-3 border-b border-gray-100 bg-white flex flex-wrap items-center justify-between gap-3 flex-shrink-0">
+                {/* Dynamic Group Tabs with live counts */}
+                <div className="flex items-center bg-gray-100/80 p-1 rounded-xl gap-1">
+                  {availableGroups.map(grp => {
+                    const stats = tabCounts[grp.id];
+                    const isTabActive = activePermissionTab === grp.id;
+                    return (
+                      <button
+                        key={grp.id}
+                        type="button"
+                        onClick={() => setActivePermissionTab(grp.id)}
+                        className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-2 ${
+                          isTabActive
+                            ? 'bg-white text-blue-700 shadow-xs ring-1 ring-black/5'
+                            : 'text-gray-600 hover:text-gray-900 hover:bg-white/60'
+                        }`}
+                      >
+                        <span>{grp.icon}</span>
+                        <span>{grp.label}</span>
+                        {stats && stats.total > 0 && (
+                          <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                            isTabActive ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-gray-600'
+                          }`}>
+                            {stats.selected} / {stats.total}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
 
-                    {/* Entity Permissions Grid */}
-                    <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {entityPerms.map((permission) => {
-                        const permissionId = permission?.id ?? permission?._id ?? permission?.permissionId;
-                        const isSelected = selectedPermissionIds.includes(permissionId);
-                        return (
-                          <div
-                            key={permissionId}
-                            onClick={hasPermission('PERMISSION_UPDATE') ? () => handleTogglePermission(permissionId) : undefined}
-                            className={`p-2.5 rounded-lg transition-all border flex items-start gap-2.5 ${
-                              isSelected
-                                ? 'bg-blue-50/70 border-blue-200 shadow-2xs'
-                                : 'bg-white border-gray-200 hover:border-blue-200 hover:bg-gray-50'
-                            } ${!hasPermission('PERMISSION_UPDATE') ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
-                          >
-                            <div className={`w-4 h-4 rounded border mt-0.5 flex-shrink-0 flex items-center justify-center transition-colors ${
-                              isSelected
-                                ? 'bg-blue-600 border-blue-600 text-white'
-                                : 'border-gray-300 bg-white'
-                            }`}>
-                              {isSelected && (
-                                <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                </svg>
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between gap-1.5">
-                                <span className="font-semibold text-gray-900 text-xs truncate">
-                                  {permission.code || permission.name}
-                                </span>
-                                {renderOperationBadge(permission.permissionType)}
-                              </div>
-                              {permission.description && (
-                                <p className="text-[11px] text-gray-500 mt-0.5 line-clamp-2">{permission.description}</p>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                {/* Search Bar & Global Quick Toggles */}
+                <div className="flex items-center gap-2.5">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search permissions..."
+                      value={permissionSearchQuery}
+                      onChange={(e) => setPermissionSearchQuery(e.target.value)}
+                      className="text-xs pl-8 pr-7 py-1.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 w-52 placeholder:text-gray-400"
+                    />
+                    <svg className="w-3.5 h-3.5 text-gray-400 absolute left-2.5 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    {permissionSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setPermissionSearchQuery('')}
+                        className="absolute right-2 top-1.5 text-gray-400 hover:text-gray-600 text-xs w-4 h-4 rounded-full flex items-center justify-center hover:bg-gray-200"
+                      >
+                        ✕
+                      </button>
+                    )}
                   </div>
-                ))
+
+                  {/* Lead field global batch shortcuts */}
+                  {activePermissionTab === 'LEAD_FIELD' && (
+                    <div className="flex items-center bg-gray-50 border border-gray-200 rounded-lg p-0.5 text-xs">
+                      <button
+                        type="button"
+                        onClick={handleSelectAllLeadFieldViews}
+                        className="px-2 py-1 rounded text-[11px] font-medium text-emerald-700 hover:bg-white transition-colors"
+                        title="Grant View access to all lead fields"
+                      >
+                        All View
+                      </button>
+                      <span className="text-gray-200">|</span>
+                      <button
+                        type="button"
+                        onClick={handleSelectAllLeadFieldEdits}
+                        className="px-2 py-1 rounded text-[11px] font-medium text-blue-700 hover:bg-white transition-colors"
+                        title="Grant Edit access to all lead fields"
+                      >
+                        All Edit
+                      </button>
+                      <span className="text-gray-200">|</span>
+                      <button
+                        type="button"
+                        onClick={handleClearAllLeadFields}
+                        className="px-2 py-1 rounded text-[11px] font-medium text-gray-500 hover:bg-white hover:text-red-600 transition-colors"
+                        title="Revoke all lead field access"
+                      >
+                        Reset
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Body Content */}
+              {loadingPermissions || loadingRolePermissions ? (
+                <div className="py-24 text-center text-xs text-gray-400 flex flex-col items-center justify-center">
+                  <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+                  Loading permissions for {selectedRoleForPermissions.name}...
+                </div>
+              ) : activePermissionTab === 'LEAD_FIELD' ? (
+                /* ==============================================================
+                   TAB: LEAD FIELD PERMISSIONS (Grouped by Backend fieldGroup)
+                   ============================================================== */
+                <div className="p-6 overflow-y-auto flex-1 space-y-6">
+                  {Object.keys(leadFieldsByGroup).length > 0 ? (
+                    Object.entries(leadFieldsByGroup).map(([groupName, fields]) => (
+                      <div key={groupName} className="border border-gray-200/90 rounded-xl overflow-hidden shadow-2xs bg-white">
+                        {/* Category Header with Clean Inline Actions */}
+                        <div className="px-4 py-2.5 bg-slate-50/70 border-b border-gray-100 flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-gray-800 tracking-tight">{groupName}</span>
+                            <span className="text-[10px] font-semibold px-2 py-0.2 bg-gray-200/80 text-gray-600 rounded-full">
+                              {fields.length} {fields.length === 1 ? 'field' : 'fields'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-[11px]">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                handleCategoryLeadFieldToggle(fields, 'view', true);
+                              }}
+                              className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline px-1 py-0.5 rounded transition-colors"
+                            >
+                              View All
+                            </button>
+                            <span className="text-gray-300">·</span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                handleCategoryLeadFieldToggle(fields, 'edit', true);
+                              }}
+                              className="font-medium text-blue-700 hover:text-blue-800 hover:underline px-1 py-0.5 rounded transition-colors"
+                            >
+                              Edit All
+                            </button>
+                            <span className="text-gray-300">·</span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                handleCategoryLeadFieldToggle(fields, 'both', false);
+                              }}
+                              className="font-medium text-gray-500 hover:text-red-600 hover:underline px-1 py-0.5 rounded transition-colors"
+                            >
+                              Clear
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Category Fields Table */}
+                        <table className="w-full text-left text-xs border-collapse">
+                          <thead>
+                            <tr className="bg-white text-[10px] font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100">
+                              <th className="py-2 px-4 font-semibold">Field</th>
+                              <th className="py-2 px-4 text-center w-28 font-semibold">View Access</th>
+                              <th className="py-2 px-4 text-center w-28 font-semibold">Edit Access</th>
+                              <th className="py-2 px-4 text-right w-36 font-semibold">Status</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-50">
+                            {fields.map((field) => {
+                              const readPermId = field.viewPermission ? (field.viewPermission.id ?? field.viewPermission._id ?? field.viewPermission.permissionId) : null;
+                              const writePermId = field.editPermission ? (field.editPermission.id ?? field.editPermission._id ?? field.editPermission.permissionId) : null;
+
+                              const isViewAllowed = readPermId && selectedPermissionIds.includes(readPermId);
+                              const isEditAllowed = writePermId && selectedPermissionIds.includes(writePermId);
+
+                              return (
+                                <tr key={field.fieldKey} className="hover:bg-slate-50/60 transition-colors">
+                                  <td className="py-2.5 px-4">
+                                    <span className="font-medium text-gray-900 text-xs">{field.fieldLabel}</span>
+                                    <span className="text-[10px] text-gray-400 font-mono ml-2">({field.fieldKey})</span>
+                                  </td>
+
+                                  {/* View Toggle */}
+                                  <td className="py-2.5 px-4 text-center">
+                                    {readPermId ? (
+                                      <button
+                                        type="button"
+                                        role="switch"
+                                        aria-checked={Boolean(isViewAllowed)}
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          handleToggleLeadFieldPermission(readPermId, writePermId, false);
+                                        }}
+                                        disabled={!hasPermission('PERMISSION_UPDATE')}
+                                        className={`w-8 h-4 rounded-full transition-colors relative inline-flex items-center cursor-pointer focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed ${
+                                          isViewAllowed ? 'bg-emerald-500' : 'bg-gray-200'
+                                        }`}
+                                        title={isViewAllowed ? 'View Allowed (click to revoke)' : 'View Disallowed (click to grant)'}
+                                      >
+                                        <span
+                                          className={`w-3 h-3 bg-white rounded-full transition-transform transform shadow-xs pointer-events-none inline-block ${
+                                            isViewAllowed ? 'translate-x-4' : 'translate-x-0.5'
+                                          }`}
+                                        />
+                                      </button>
+                                    ) : (
+                                      <span className="text-[10px] text-gray-300 italic">None</span>
+                                    )}
+                                  </td>
+
+                                  {/* Edit Toggle */}
+                                  <td className="py-2.5 px-4 text-center">
+                                    {writePermId ? (
+                                      <button
+                                        type="button"
+                                        role="switch"
+                                        aria-checked={Boolean(isEditAllowed)}
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          handleToggleLeadFieldPermission(writePermId, readPermId, true);
+                                        }}
+                                        disabled={!hasPermission('PERMISSION_UPDATE')}
+                                        className={`w-8 h-4 rounded-full transition-colors relative inline-flex items-center cursor-pointer focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed ${
+                                          isEditAllowed ? 'bg-blue-600' : 'bg-gray-200'
+                                        }`}
+                                        title={isEditAllowed ? 'Edit Allowed (click to revoke)' : 'Edit Disallowed (click to grant)'}
+                                      >
+                                        <span
+                                          className={`w-3 h-3 bg-white rounded-full transition-transform transform shadow-xs pointer-events-none inline-block ${
+                                            isEditAllowed ? 'translate-x-4' : 'translate-x-0.5'
+                                          }`}
+                                        />
+                                      </button>
+                                    ) : (
+                                      <span className="text-[10px] text-gray-400 italic" title="System Managed Field">Auto</span>
+                                    )}
+                                  </td>
+
+                                  {/* Effective Status Badge */}
+                                  <td className="py-2.5 px-4 text-right">
+                                    {!isViewAllowed ? (
+                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-50 text-gray-400 border border-gray-200/80">
+                                        Hidden
+                                      </span>
+                                    ) : isEditAllowed ? (
+                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+                                        ● View & Edit
+                                      </span>
+                                    ) : (
+                                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200/80">
+                                        ● Read Only
+                                      </span>
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center text-xs text-gray-400 py-16">
+                      No lead fields found matching &quot;{permissionSearchQuery}&quot;
+                    </div>
+                  )}
+                </div>
               ) : (
-                <div className="text-center text-sm text-gray-500 py-12">No permissions found matching query</div>
+                /* ==============================================================
+                   TAB: GENERAL SYSTEM / CONFIG PERMISSIONS (Grouped by Backend Entity)
+                   ============================================================== */
+                <div className="p-6 overflow-y-auto flex-1 space-y-5">
+                  {Object.keys(permissionsByEntity).length > 0 ? (
+                    Object.entries(permissionsByEntity).map(([entityName, entityPerms]) => (
+                      <div key={entityName} className="border border-gray-200/90 rounded-xl overflow-hidden shadow-2xs bg-white">
+                        {/* Entity Header */}
+                        <div className="px-4 py-2.5 bg-slate-50/70 border-b border-gray-100 flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-gray-800 tracking-tight">
+                              {formatEntityName(entityName)}
+                            </span>
+                            <span className="text-[10px] font-semibold px-2 py-0.2 bg-gray-200/80 text-gray-600 rounded-full">
+                              {entityPerms.length}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-[11px]">
+                            <button
+                              type="button"
+                              onClick={() => handleEntityToggleAll(entityPerms, true)}
+                              className="font-medium text-blue-600 hover:text-blue-800 hover:underline px-1 py-0.5 transition-colors"
+                            >
+                              Select All
+                            </button>
+                            <span className="text-gray-300">·</span>
+                            <button
+                              type="button"
+                              onClick={() => handleEntityToggleAll(entityPerms, false)}
+                              className="font-medium text-gray-500 hover:text-gray-700 hover:underline px-1 py-0.5 transition-colors"
+                            >
+                              Clear
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Entity Permissions Grid */}
+                        <div className="p-3 grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {entityPerms.map((permission) => {
+                            const permissionId = permission?.id ?? permission?._id ?? permission?.permissionId;
+                            const isSelected = selectedPermissionIds.includes(permissionId);
+                            return (
+                              <div
+                                key={permissionId}
+                                onClick={hasPermission('PERMISSION_UPDATE') ? () => handleTogglePermission(permissionId) : undefined}
+                                className={`p-2.5 rounded-lg transition-all border flex items-start gap-2.5 ${
+                                  isSelected
+                                    ? 'bg-blue-50/60 border-blue-300 text-blue-900 shadow-2xs'
+                                    : 'bg-white border-gray-200 hover:border-gray-300 hover:bg-slate-50/50 text-gray-700'
+                                } ${!hasPermission('PERMISSION_UPDATE') ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+                              >
+                                <div className={`w-4 h-4 rounded border mt-0.5 flex-shrink-0 flex items-center justify-center transition-colors ${
+                                  isSelected
+                                    ? 'bg-blue-600 border-blue-600 text-white'
+                                    : 'border-gray-300 bg-white'
+                                }`}>
+                                  {isSelected && (
+                                    <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center justify-between gap-1.5">
+                                    <span className="font-semibold text-xs truncate">
+                                      {permission.code || permission.name}
+                                    </span>
+                                    {renderOperationBadge(permission.permissionType)}
+                                  </div>
+                                  {permission.description && (
+                                    <p className="text-[11px] text-gray-500 mt-0.5 line-clamp-2">{permission.description}</p>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center text-xs text-gray-400 py-16">
+                      No permissions found matching &quot;{permissionSearchQuery}&quot;
+                    </div>
+                  )}
+                </div>
               )}
-            </div>
+            </>
           )}
         </div>
       </div>

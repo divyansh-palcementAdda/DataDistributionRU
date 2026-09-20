@@ -2,8 +2,26 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { FiEye, FiEdit, FiTrash2 } from 'react-icons/fi';
 import { statusConfig } from '../mockData';
 import { getAllLeads, deleteLead, getLeadById, availLead } from '../Services/lead/leadService';
-import { getAllCourses } from '../Services/course/course';
-import { getLeadStatusesDropdown } from '../Services/drop-down/dropDownService';
+import {
+  getBoardsDropdown,
+  getCourseTypesDropdown,
+  getCoursesDropdown,
+  getDepartmentsDropdown,
+  getGradesDropdown,
+  getLeadSourcesDropdown,
+  getLeadStatusesDropdown,
+  getUsersDropdown,
+} from '../Services/drop-down/dropDownService';
+import {
+  DEFAULT_LEAD_FILTERS,
+  buildLeadQueryParams,
+  parseFiltersFromSearchParams,
+  syncFiltersToSearchParams,
+  countActiveFilters,
+  buildFilterChips,
+  removeFilterFromState,
+} from '../Services/lead/leadFilterModel';
+import LeadFilterDrawer from '../component/reusable/Leads/LeadFilterDrawer';
 import { useAppContext } from '../AppContext';
 import { usePermissions } from '../PermissionContext';
 import { useLocation, useSearchParams } from 'react-router-dom';
@@ -22,147 +40,31 @@ import BulkUploadModal from '../component/reusable/Leads/BulkUploadModal';
 import PreviewDistributionModal from '../component/reusable/Leads/PreviewDistributionModal';
 import * as XLSX from 'xlsx';
 
-// Parse active filters from URL query parameters (or state fallback)
-const parseFiltersFromUrlAndState = (searchParams, state) => {
-  const filters = [];
-
-  const courseTypeId = searchParams.get('courseTypeId');
-  const courseTypeName = searchParams.get('courseTypeName');
-  if (courseTypeId) {
-    filters.push({
-      type: 'courseType',
-      value: courseTypeId,
-      label: `Category: ${courseTypeName || 'Selected Category'}`
-    });
-  }
-
-  const leadSourceId = searchParams.get('leadSourceId') || searchParams.get('sourceId');
-  const sourceName = searchParams.get('sourceName');
-  if (leadSourceId) {
-    filters.push({
-      type: 'leadSource',
-      value: leadSourceId,
-      label: `Source: ${sourceName || 'Selected Source'}`
-    });
-  }
-
-  const boardId = searchParams.get('boardId');
-  const boardName = searchParams.get('boardName');
-  if (boardId) {
-    filters.push({
-      type: 'board',
-      value: boardId,
-      label: `Specialization: ${boardName || 'Selected Specialization'}`
-    });
-  }
-
-  const gradeId = searchParams.get('gradeId');
-  const gradeName = searchParams.get('gradeName');
-  if (gradeId) {
-    filters.push({
-      type: 'grade',
-      value: gradeId,
-      label: `Grade: ${gradeName || 'Selected Grade'}`
-    });
-  }
-
-  const courseId = searchParams.get('courseId');
-  const courseName = searchParams.get('courseName');
-  if (courseId) {
-    filters.push({
-      type: 'course',
-      value: courseId,
-      label: `Course: ${courseName || 'Selected Course'}`
-    });
-  }
-
-  const allotted = searchParams.get('allotted');
-  const unallotted = searchParams.get('unallotted');
-  if (unallotted === 'true' || allotted === 'false') {
-    filters.push({
-      type: 'unallotted',
-      value: true,
-      label: 'Allocation: Unallocated'
-    });
-  } else if (allotted === 'true') {
-    filters.push({
-      type: 'allotted',
-      value: true,
-      label: 'Allocation: Allotted'
-    });
-  }
-
-  const availed = searchParams.get('availed');
-  if (availed === 'true') {
-    filters.push({
-      type: 'availed',
-      value: true,
-      label: 'Allocation: Availed'
-    });
-  }
-
-  const multiSource = searchParams.get('multiSource');
-  if (multiSource === 'true') {
-    filters.push({
-      type: 'multiSource',
-      value: true,
-      label: 'Multi Source Data'
-    });
-  }
-
-  const assignedUserId = searchParams.get('assignedUserId') || searchParams.get('userId');
-  const userName = searchParams.get('userName');
-  if (assignedUserId) {
-    filters.push({
-      type: 'assignedUser',
-      value: assignedUserId,
-      label: `User: ${userName || 'Assigned User'}`
-    });
-  }
-
-  const statusId = searchParams.get('statusId');
-  const statusName = searchParams.get('statusName');
-  if (statusId) {
-    filters.push({
-      type: 'leadStatus',
-      value: statusId,
-      label: `Status: ${statusName || 'Status'}`
-    });
-  }
-
-  if (filters.length > 0) {
-    return filters;
-  }
-
-  if (state?.activeFilters && Array.isArray(state.activeFilters) && state.activeFilters.length > 0) {
-    return state.activeFilters;
-  }
-
-  return [];
-};
-
 const Leads = () => {
   const { openAddLeadModal, navTo, showToast, leadRefreshTrigger } = useAppContext();
   const { canCreate, canUpdate, canDelete, canView, hasPermission } = usePermissions();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
+  // Canonical filter state
+  const [filters, setFilters] = useState(() => parseFiltersFromSearchParams(searchParams, location.state));
+  const [search, setSearch] = useState(() => searchParams.get('search') || '');
+  const [debouncedSearch, setDebouncedSearch] = useState(() => searchParams.get('search') || '');
+  const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(search);
-    }, 350);
-    return () => clearTimeout(timer);
-  }, [search]);
+  // Dropdown lookups for drawer & chip labels
+  const [lookups, setLookups] = useState({
+    sources: [],
+    courseTypes: [],
+    courses: [],
+    departments: [],
+    users: [],
+    boards: [],
+    grades: [],
+    statuses: [],
+  });
 
-  const [filterStatus, setFilterStatus] = useState('');
-  const [filterCounselor, setFilterCounselor] = useState('All Counselors');
-  const [filterCourse, setFilterCourse] = useState('All Courses');
-  const [filterLeadStatus, setFilterLeadStatus] = useState('');
-  const [filterLeadStatusName, setFilterLeadStatusName] = useState('');
-  const [selectedCard, setSelectedCard] = useState(null);
+  // Table selection state
   const [selectedIds, setSelectedIds] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
   const [autoSelectCount, setAutoSelectCount] = useState('');
@@ -178,9 +80,6 @@ const Leads = () => {
       setSelectedIds([]);
     }
   };
-
-  const [activeFilters, setActiveFilters] = useState(() => parseFiltersFromUrlAndState(searchParams, location.state));
-  const requestIdRef = useRef(0);
 
   const handleSelectAll = (checked) => {
     setSelectAll(checked);
@@ -206,7 +105,7 @@ const Leads = () => {
   const [leadToDelete, setLeadToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // API State
+  // Table pagination & sorting
   const [leadsData, setLeadsData] = useState([]);
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
@@ -215,122 +114,107 @@ const Leads = () => {
   const [loading, setLoading] = useState(false);
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortDirection, setSortDirection] = useState('desc');
-  const [coursesData, setCoursesData] = useState([]);
-  const [leadStatusesData, setLeadStatusesData] = useState([]);
 
-  // Single authoritative filter model for cards, table, and Excel export
-  const filterRequest = useMemo(() => {
-    const req = {};
+  const requestIdRef = useRef(0);
 
-    activeFilters.forEach(filter => {
-      switch (filter.type) {
-        case 'unallotted':
-          req.allotted = false;
-          break;
-        case 'allotted':
-          req.allotted = true;
-          break;
-        case 'availed':
-          req.availed = true;
-          break;
-        case 'multiSource':
-          req.multiSource = true;
-          break;
-        case 'leadStatus':
-          if (!req.statusIds) req.statusIds = [];
-          if (!req.statusIds.includes(filter.value)) {
-            req.statusIds.push(filter.value);
-          }
-          break;
-        case 'board':
-          if (!req.boardIds) req.boardIds = [];
-          if (!req.boardIds.includes(filter.value)) {
-            req.boardIds.push(filter.value);
-          }
-          break;
-        case 'grade':
-          if (!req.gradeIds) req.gradeIds = [];
-          if (!req.gradeIds.includes(filter.value)) {
-            req.gradeIds.push(filter.value);
-          }
-          break;
-        case 'courseType':
-          if (!req.courseTypeIds) req.courseTypeIds = [];
-          if (!req.courseTypeIds.includes(filter.value)) {
-            req.courseTypeIds.push(filter.value);
-          }
-          break;
-        case 'leadSource':
-          if (!req.leadSourceIds) req.leadSourceIds = [];
-          if (!req.leadSourceIds.includes(filter.value)) {
-            req.leadSourceIds.push(filter.value);
-          }
-          break;
-        case 'assignedUser':
-        case 'user':
-          if (!req.assignedUserIds) req.assignedUserIds = [];
-          if (!req.assignedUserIds.includes(filter.value)) {
-            req.assignedUserIds.push(filter.value);
-          }
-          break;
-        case 'course':
-          if (!req.courseIds) req.courseIds = [];
-          if (!req.courseIds.includes(filter.value)) {
-            req.courseIds.push(filter.value);
-          }
-          break;
-        default:
-          break;
+  // Load dropdown lookup datasets on mount
+  useEffect(() => {
+    let isCancelled = false;
+    const fetchDropdowns = async () => {
+      try {
+        const [
+          sourcesRes,
+          courseTypesRes,
+          coursesRes,
+          deptRes,
+          usersRes,
+          boardsRes,
+          gradesRes,
+          statusesRes,
+        ] = await Promise.allSettled([
+          getLeadSourcesDropdown(),
+          getCourseTypesDropdown(),
+          getCoursesDropdown(),
+          getDepartmentsDropdown(),
+          getUsersDropdown(),
+          getBoardsDropdown(),
+          getGradesDropdown(),
+          getLeadStatusesDropdown(),
+        ]);
+
+        if (!isCancelled) {
+          setLookups({
+            sources: sourcesRes.status === 'fulfilled' && sourcesRes.value?.data ? (Array.isArray(sourcesRes.value.data) ? sourcesRes.value.data : []) : [],
+            courseTypes: courseTypesRes.status === 'fulfilled' && courseTypesRes.value?.data ? (Array.isArray(courseTypesRes.value.data) ? courseTypesRes.value.data : []) : [],
+            courses: coursesRes.status === 'fulfilled' && coursesRes.value?.data ? (Array.isArray(coursesRes.value.data) ? coursesRes.value.data : []) : [],
+            departments: deptRes.status === 'fulfilled' && deptRes.value?.data ? (Array.isArray(deptRes.value.data) ? deptRes.value.data : []) : [],
+            users: usersRes.status === 'fulfilled' && usersRes.value?.data ? (Array.isArray(usersRes.value.data) ? usersRes.value.data : []) : [],
+            boards: boardsRes.status === 'fulfilled' && boardsRes.value?.data ? (Array.isArray(boardsRes.value.data) ? boardsRes.value.data : []) : [],
+            grades: gradesRes.status === 'fulfilled' && gradesRes.value?.data ? (Array.isArray(gradesRes.value.data) ? gradesRes.value.data : []) : [],
+            statuses: statusesRes.status === 'fulfilled' && statusesRes.value?.data ? (Array.isArray(statusesRes.value.data) ? statusesRes.value.data : []) : [],
+          });
+        }
+      } catch (err) {
+        console.error('Failed to load filter dropdown lookups', err);
       }
-    });
+    };
 
-    if (selectedCard?.type === 'leadStatus' && selectedCard?.value) {
-      if (!req.statusIds) req.statusIds = [];
-      if (!req.statusIds.includes(selectedCard.value)) {
-        req.statusIds.push(selectedCard.value);
-      }
-    }
+    fetchDropdowns();
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
-    if (filterLeadStatus) {
-      if (!req.leadStatusHistoryIds) req.leadStatusHistoryIds = [];
-      if (!req.leadStatusHistoryIds.includes(filterLeadStatus)) {
-        req.leadStatusHistoryIds.push(filterLeadStatus);
-      }
-    }
+  // Debounced search sync
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setFilters(prev => {
+        const trimmed = search.trim();
+        if ((prev.search || '') === trimmed) return prev;
+        const next = { ...prev, search: trimmed };
+        const params = syncFiltersToSearchParams(next);
+        setSearchParams(params, { replace: true });
+        return next;
+      });
+      setPage(0);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [search]);
 
-    if (debouncedSearch && debouncedSearch.trim()) {
-      req.search = debouncedSearch.trim();
+  // Sync state from URL search params (or router state)
+  useEffect(() => {
+    const parsed = parseFiltersFromSearchParams(searchParams, location.state);
+    setFilters(parsed);
+    if (parsed.search !== undefined && parsed.search !== search) {
+      setSearch(parsed.search || '');
+      setDebouncedSearch(parsed.search || '');
     }
+  }, [location.search, location.state]);
 
-    // Provide singular aliases for backward compatibility with endpoints that check singular fields
-    if (req.statusIds?.length === 1) {
-      req.statusId = req.statusIds[0];
-    }
-    if (req.boardIds?.length === 1) {
-      req.boardId = req.boardIds[0];
-    }
-    if (req.gradeIds?.length === 1) {
-      req.gradeId = req.gradeIds[0];
-    }
-    if (req.courseTypeIds?.length === 1) {
-      req.courseTypeId = req.courseTypeIds[0];
-    }
-    if (req.leadSourceIds?.length === 1) {
-      req.leadSourceId = req.leadSourceIds[0];
-      req.sourceId = req.leadSourceIds[0];
-    }
-    if (req.leadStatusHistoryIds?.length === 1) {
-      req.leadStatusHistoryId = req.leadStatusHistoryIds[0];
-    }
-    if (req.assignedUserIds?.length === 1) {
-      req.assignedUserId = req.assignedUserIds[0];
-    }
-    if (req.courseIds?.length === 1) {
-      req.courseId = req.courseIds[0];
-    }
+  // Single authoritative filter request object for cards, table, and export
+  const filterRequest = useMemo(() => buildLeadQueryParams(filters), [filters]);
+  const filterRequestKey = useMemo(() => JSON.stringify(filterRequest), [filterRequest]);
+  const activeFilterCount = useMemo(() => countActiveFilters(filters), [filters]);
+  const filterChips = useMemo(() => buildFilterChips(filters, lookups), [filters, lookups]);
 
-    return req;
-  }, [activeFilters, selectedCard, filterLeadStatus, debouncedSearch]);
+  // Active criteria representation for card highlight state
+  const activeCardFilters = useMemo(() => {
+    const list = [];
+    if (filters.allotted === false) list.push({ type: 'unallotted', value: true });
+    if (filters.allotted === true) list.push({ type: 'allotted', value: true });
+    if (filters.availed === true) list.push({ type: 'availed', value: true });
+    if (filters.multiSource === true) list.push({ type: 'multiSource', value: true });
+    (filters.statusIds || []).forEach(id => list.push({ type: 'leadStatus', value: id }));
+    (filters.leadStatusHistoryIds || []).forEach(id => list.push({ type: 'leadStatusHistory', value: id }));
+    (filters.leadSourceIds || []).forEach(id => list.push({ type: 'leadSource', value: id }));
+    (filters.courseTypeIds || []).forEach(id => list.push({ type: 'courseType', value: id }));
+    (filters.courseIds || []).forEach(id => list.push({ type: 'course', value: id }));
+    (filters.boardIds || []).forEach(id => list.push({ type: 'board', value: id }));
+    (filters.gradeIds || []).forEach(id => list.push({ type: 'grade', value: id }));
+    (filters.assignedUserIds || []).forEach(id => list.push({ type: 'assignedUser', value: id }));
+    return list;
+  }, [filters]);
 
   const openDeleteModal = (lead) => {
     setLeadToDelete(lead);
@@ -363,60 +247,95 @@ const Leads = () => {
   };
 
   const handleCardClick = (cardInfo) => {
-    setActiveFilters(prevFilters => {
-      const existingFilterIndex = prevFilters.findIndex(
-        f => f.type === cardInfo.type && f.value === cardInfo.value
-      );
-      
-      let nextFilters;
-      if (existingFilterIndex !== -1) {
-        nextFilters = prevFilters.filter((_, index) => index !== existingFilterIndex);
-      } else {
-        let filtered = prevFilters;
-        if (cardInfo.type === 'allotted') {
-          filtered = filtered.filter(f => f.type !== 'unallotted');
-        } else if (cardInfo.type === 'unallotted') {
-          filtered = filtered.filter(f => f.type !== 'allotted');
-        }
-        nextFilters = filtered.filter(f => f.type !== cardInfo.type).concat(cardInfo);
+    setFilters(prev => {
+      const next = { ...prev };
+      if (cardInfo.type === 'allotted') {
+        next.allotted = prev.allotted === true ? null : true;
+      } else if (cardInfo.type === 'unallotted') {
+        next.allotted = prev.allotted === false ? null : false;
+      } else if (cardInfo.type === 'availed') {
+        next.availed = prev.availed === true ? null : true;
+      } else if (cardInfo.type === 'multiSource') {
+        next.multiSource = prev.multiSource === true ? null : true;
+      } else if (cardInfo.type === 'leadStatus' && cardInfo.value) {
+        const current = next.statusIds || [];
+        next.statusIds = current.includes(cardInfo.value)
+          ? current.filter(id => id !== cardInfo.value)
+          : [...current, cardInfo.value];
+      } else if (cardInfo.type === 'leadStatusHistory' && cardInfo.value) {
+        const current = next.leadStatusHistoryIds || [];
+        next.leadStatusHistoryIds = current.includes(cardInfo.value)
+          ? current.filter(id => id !== cardInfo.value)
+          : [...current, cardInfo.value];
+      } else if (cardInfo.type === 'leadSource' && cardInfo.value) {
+        const current = next.leadSourceIds || [];
+        next.leadSourceIds = current.includes(cardInfo.value)
+          ? current.filter(id => id !== cardInfo.value)
+          : [...current, cardInfo.value];
+      } else if (cardInfo.type === 'courseType' && cardInfo.value) {
+        const current = next.courseTypeIds || [];
+        next.courseTypeIds = current.includes(cardInfo.value)
+          ? current.filter(id => id !== cardInfo.value)
+          : [...current, cardInfo.value];
+      } else if (cardInfo.type === 'course' && cardInfo.value) {
+        const current = next.courseIds || [];
+        next.courseIds = current.includes(cardInfo.value)
+          ? current.filter(id => id !== cardInfo.value)
+          : [...current, cardInfo.value];
+      } else if (cardInfo.type === 'board' && cardInfo.value) {
+        const current = next.boardIds || [];
+        next.boardIds = current.includes(cardInfo.value)
+          ? current.filter(id => id !== cardInfo.value)
+          : [...current, cardInfo.value];
+      } else if (cardInfo.type === 'grade' && cardInfo.value) {
+        const current = next.gradeIds || [];
+        next.gradeIds = current.includes(cardInfo.value)
+          ? current.filter(id => id !== cardInfo.value)
+          : [...current, cardInfo.value];
+      } else if (cardInfo.type === 'assignedUser' && cardInfo.value) {
+        const current = next.assignedUserIds || [];
+        next.assignedUserIds = current.includes(cardInfo.value)
+          ? current.filter(id => id !== cardInfo.value)
+          : [...current, cardInfo.value];
       }
 
-      // Sync URL search params
-      const params = new URLSearchParams(searchParams);
-      if (existingFilterIndex !== -1) {
-        if (cardInfo.type === 'multiSource') params.delete('multiSource');
-        else if (cardInfo.type === 'unallotted' || cardInfo.type === 'allotted') {
-          params.delete('allotted');
-          params.delete('unallotted');
-        } else if (cardInfo.type === 'availed') {
-          params.delete('availed');
-        }
-      } else {
-        if (cardInfo.type === 'multiSource') params.set('multiSource', 'true');
-        else if (cardInfo.type === 'unallotted') {
-          params.delete('allotted');
-          params.set('unallotted', 'true');
-        } else if (cardInfo.type === 'allotted') {
-          params.delete('unallotted');
-          params.set('allotted', 'true');
-        } else if (cardInfo.type === 'availed') {
-          params.set('availed', 'true');
-        }
-      }
+      const params = syncFiltersToSearchParams(next);
       setSearchParams(params, { replace: true });
+      return next;
+    });
 
-      return nextFilters;
-    });
-    
-    setSelectedCard(prevSelectedCard => {
-      if (prevSelectedCard?.type === cardInfo.type && prevSelectedCard?.value === cardInfo.value) {
-        return null;
-      } else {
-        return cardInfo;
-      }
-    });
-    
     setPage(0);
+  };
+
+  const handleApplyDrawerFilters = (newFilters) => {
+    setFilters(newFilters);
+    setSearch(newFilters.search || '');
+    setDebouncedSearch(newFilters.search || '');
+    setPage(0);
+    const params = syncFiltersToSearchParams(newFilters);
+    setSearchParams(params, { replace: true });
+  };
+
+  const handleRemoveFilterChip = (chip) => {
+    setFilters(prev => {
+      const next = removeFilterFromState(prev, chip.key, chip.value);
+      if (chip.key === 'search') {
+        setSearch('');
+        setDebouncedSearch('');
+      }
+      const params = syncFiltersToSearchParams(next);
+      setSearchParams(params, { replace: true });
+      return next;
+    });
+    setPage(0);
+  };
+
+  const handleClearAllFilters = () => {
+    setFilters({ ...DEFAULT_LEAD_FILTERS });
+    setSearch('');
+    setDebouncedSearch('');
+    setPage(0);
+    setSearchParams({}, { replace: true });
   };
 
   const fetchLeads = async () => {
@@ -458,111 +377,9 @@ const Leads = () => {
     }
   };
 
-  const fetchLeadStatuses = async () => {
-    try {
-      const res = await getLeadStatusesDropdown();
-      if (res?.success) {
-        const leadStatuses = res.data;
-        setLeadStatusesData(leadStatuses);
-      }
-    } catch (error) {
-      console.error("Failed to fetch lead statuses", error);
-    }
-  };
-
-  const filterRequestKey = useMemo(() => JSON.stringify(filterRequest), [filterRequest]);
-
   useEffect(() => {
     fetchLeads();
   }, [page, size, sortBy, sortDirection, leadRefreshTrigger, filterRequestKey]);
-
-  useEffect(() => {
-    fetchLeadStatuses();
-  }, []);
-
-  // Sync activeFilters on URL search params change
-  useEffect(() => {
-    const filters = parseFiltersFromUrlAndState(searchParams, location.state);
-    setActiveFilters(filters);
-  }, [location.search]);
-
-  // Sync activeFilters and URL params from location.state navigation
-  useEffect(() => {
-    if (location.state?.activeFilters && Array.isArray(location.state.activeFilters) && location.state.activeFilters.length > 0) {
-      setActiveFilters(location.state.activeFilters);
-      const params = new URLSearchParams(location.search);
-      location.state.activeFilters.forEach(f => {
-        if (f.type === 'courseType') params.set('courseTypeId', f.value);
-        if (f.type === 'leadSource') params.set('leadSourceId', f.value);
-        if (f.type === 'board') params.set('boardId', f.value);
-        if (f.type === 'grade') params.set('gradeId', f.value);
-        if (f.type === 'course') params.set('courseId', f.value);
-        if (f.type === 'unallotted') params.set('allotted', 'false');
-        if (f.type === 'allotted') params.set('allotted', 'true');
-        if (f.type === 'availed') params.set('availed', 'true');
-        if (f.type === 'multiSource') params.set('multiSource', 'true');
-        if (f.type === 'assignedUser' || f.type === 'user') params.set('assignedUserId', f.value);
-        if (f.type === 'leadStatus') params.set('statusId', f.value);
-      });
-      setSearchParams(params, { replace: true });
-    }
-  }, [location.state]);
-
-  const handleRemoveFilterAtIndex = (indexToRemove) => {
-    const filterToRemove = activeFilters[indexToRemove];
-    const newFilters = activeFilters.filter((_, i) => i !== indexToRemove);
-    setActiveFilters(newFilters);
-    setSelectedCard(null);
-    setPage(0);
-
-    if (filterToRemove) {
-      const params = new URLSearchParams(searchParams);
-      if (filterToRemove.type === 'courseType') {
-        params.delete('courseTypeId');
-        params.delete('courseTypeName');
-      } else if (filterToRemove.type === 'leadSource') {
-        params.delete('leadSourceId');
-        params.delete('sourceId');
-        params.delete('sourceName');
-      } else if (filterToRemove.type === 'board') {
-        params.delete('boardId');
-        params.delete('boardName');
-      } else if (filterToRemove.type === 'grade') {
-        params.delete('gradeId');
-        params.delete('gradeName');
-      } else if (filterToRemove.type === 'course') {
-        params.delete('courseId');
-        params.delete('courseIds');
-        params.delete('courseName');
-      } else if (filterToRemove.type === 'unallotted' || filterToRemove.type === 'allotted') {
-        params.delete('allotted');
-        params.delete('unallotted');
-      } else if (filterToRemove.type === 'availed') {
-        params.delete('availed');
-      } else if (filterToRemove.type === 'multiSource') {
-        params.delete('multiSource');
-      } else if (filterToRemove.type === 'assignedUser' || filterToRemove.type === 'user') {
-        params.delete('assignedUserId');
-        params.delete('userId');
-        params.delete('userName');
-      } else if (filterToRemove.type === 'leadStatus') {
-        params.delete('statusId');
-        params.delete('statusName');
-      }
-      setSearchParams(params, { replace: true });
-    }
-  };
-
-  const handleClearAllFilters = () => {
-    setActiveFilters([]);
-    setSelectedCard(null);
-    setSearch('');
-    setDebouncedSearch('');
-    setFilterLeadStatus('');
-    setFilterLeadStatusName('');
-    setPage(0);
-    setSearchParams({}, { replace: true });
-  };
 
   // Remark system commented out
   // const [isRemarkModalOpen, setIsRemarkModalOpen] = useState(false);
@@ -767,23 +584,23 @@ const Leads = () => {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '20px' }}>
         <UnallottedCard 
           onCardClick={handleCardClick}
-          activeFilters={activeFilters}
+          activeFilters={activeCardFilters}
           filterRequest={filterRequest}
         />
        
         <AllottedCard 
           onCardClick={handleCardClick}
-          activeFilters={activeFilters}
+          activeFilters={activeCardFilters}
           filterRequest={filterRequest}
         />
         <AvailedCard 
           onCardClick={handleCardClick}
-          activeFilters={activeFilters}
+          activeFilters={activeCardFilters}
           filterRequest={filterRequest}
         />
         <MultiSourceCard 
           onCardClick={handleCardClick}
-          activeFilters={activeFilters}
+          activeFilters={activeCardFilters}
           filterRequest={filterRequest}
         />
       </div>
@@ -791,26 +608,26 @@ const Leads = () => {
       {/* ── Category / Course Type breakdown ── */}
       <CategorywiseCard
         onCardClick={handleCardClick}
-        activeFilters={activeFilters}
+        activeFilters={activeCardFilters}
         filterRequest={filterRequest}
       />
 
       {/* ── Stat Cards: Status breakdown ── */}
       <LeadCards
         onCardClick={handleCardClick}
-        activeFilters={activeFilters}
+        activeFilters={activeCardFilters}
         filterRequest={filterRequest}
       />
 
       {/* ── Stat Cards: Source breakdown ── */}
       <LeadSource
         onCardClick={handleCardClick}
-        activeFilters={activeFilters}
+        activeFilters={activeCardFilters}
         filterRequest={filterRequest}
       />
 
       {/* ── Filter Bar ── */}
-      <div className="flex gap-2 flex-wrap mb-4">
+      <div className="flex gap-2 flex-wrap mb-4 items-center">
         <input
           type="text"
           className="form-control max-w-[240px]"
@@ -818,36 +635,59 @@ const Leads = () => {
           value={search}
           onChange={(e) => { 
             setSearch(e.target.value); 
-            setPage(0);
           }}
         />
-        {/* <select
-          className="form-control max-w-[200px]"
-          value={filterLeadStatus}
-          onChange={(e) => { 
-            const selectedStatus = leadStatusesData.find(s => s.id === e.target.value);
-            setFilterLeadStatus(e.target.value); 
-            setFilterLeadStatusName(selectedStatus?.name || '');
-            setPage(0); 
-          }}
-        >
-          <option value="">Lead Status*</option>
-          {leadStatusesData.map((status) => (
-            <option key={status.id} value={status.id}>
-              {status.name}
-            </option>
-          ))}
-        </select> */}
 
-        {/* Active card filter badges */}
-        {activeFilters.map((filter, index) => (
+        {/* Filter Drawer Trigger Button */}
+        <button
+          type="button"
+          className="btn btn-outline btn-sm flex items-center gap-1.5"
+          onClick={() => setIsFilterDrawerOpen(true)}
+          style={{
+            borderColor: activeFilterCount > 0 ? '#9333EA' : '#CBD5E1',
+            color: activeFilterCount > 0 ? '#9333EA' : '#334155',
+            background: activeFilterCount > 0 ? '#FAF5FF' : '#FFFFFF',
+            fontWeight: '600',
+          }}
+          title="Open Filter Drawer"
+        >
+          <svg
+            width="13"
+            height="13"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+          </svg>
+          <span>Filters</span>
+          {activeFilterCount > 0 && (
+            <span
+              style={{
+                background: '#9333EA',
+                color: '#FFFFFF',
+                fontSize: '11px',
+                fontWeight: '700',
+                padding: '1px 6px',
+                borderRadius: '10px',
+                marginLeft: '4px',
+              }}
+            >
+              {activeFilterCount}
+            </span>
+          )}
+        </button>
+
+        {/* Active filter badges / chips */}
+        {filterChips.map((chip, idx) => (
           <div 
-            key={`${filter.type}-${filter.value}-${index}`}
+            key={`${chip.key}-${chip.value}-${idx}`}
             className="flex items-center gap-1.5 px-3 py-1 bg-indigo-50 border border-indigo-200 rounded-md text-sm text-indigo-700 font-medium"
           >
-            <span>{filter.label}</span>
+            <span>{chip.label}</span>
             <button
-              onClick={() => handleRemoveFilterAtIndex(index)}
+              onClick={() => handleRemoveFilterChip(chip)}
               className="ml-1 text-indigo-400 hover:text-indigo-700 bg-transparent border-none cursor-pointer leading-none"
               title="Clear filter"
             >
@@ -855,31 +695,15 @@ const Leads = () => {
             </button>
           </div>
         ))}
-        {/* Lead Status filter badge */}
-        {filterLeadStatus && (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-indigo-50 border border-indigo-200 rounded-md text-sm text-indigo-700 font-medium">
-            <span>Lead Status: {filterLeadStatusName}</span>
-            <button
-              onClick={() => { 
-                setFilterLeadStatus(''); 
-                setFilterLeadStatusName(''); 
-                setPage(0); 
-              }}
-              className="ml-1 text-indigo-400 hover:text-indigo-700 bg-transparent border-none cursor-pointer leading-none"
-              title="Clear filter"
-            >
-              ✕
-            </button>
-          </div>
-        )}
+
         {/* Clear all filters button */}
-        {(activeFilters.length > 0 || filterLeadStatus || search) && (
+        {(filterChips.length > 0 || search) && (
           <button
             onClick={handleClearAllFilters}
-            className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 rounded border border-gray-300 cursor-pointer"
+            className="px-2.5 py-1 text-xs font-semibold bg-red-50 hover:bg-red-100 text-red-600 rounded border border-red-200 cursor-pointer transition-colors"
             title="Clear all filters"
           >
-            Clear All
+            Clear All ({activeFilterCount})
           </button>
         )}
         {/* Allot Lead */}
@@ -1335,6 +1159,15 @@ const Leads = () => {
         isOpen={isPreviewModalOpen}
         onClose={() => setIsPreviewModalOpen(false)}
         showToast={showToast}
+      />
+
+      {/* ── Lead Filter Drawer ── */}
+      <LeadFilterDrawer
+        isOpen={isFilterDrawerOpen}
+        onClose={() => setIsFilterDrawerOpen(false)}
+        appliedFilters={filters}
+        onApply={handleApplyDrawerFilters}
+        lookups={lookups}
       />
     </div>
   );

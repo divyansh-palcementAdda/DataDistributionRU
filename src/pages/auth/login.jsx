@@ -160,7 +160,7 @@ const Login = () => {
         </div>
 
         {/* Remember me + Forgot */}
-        <div className="flex items-center justify-between">
+        {/* <div className="flex items-center justify-between">
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" className="accent-blue-600" />
             <span className="text-xs text-gray-600">Remember me</span>
@@ -171,7 +171,7 @@ const Login = () => {
           >
             Forgot password?
           </Link>
-        </div>
+        </div> */}
 
         {/* Error */}
         {error && (
@@ -200,12 +200,12 @@ const Login = () => {
         </button>
       </form>
 
-      <p className="text-center text-xs text-gray-500 mt-5">
+      {/* <p className="text-center text-xs text-gray-500 mt-5">
         Don&apos;t have an account?{" "}
         <Link to="/signup" className="text-blue-600 font-medium hover:underline">
           Create account
         </Link>
-      </p>
+      </p> */}
     </>
   );
 };

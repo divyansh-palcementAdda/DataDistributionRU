@@ -37,7 +37,8 @@ export const getLeadById = async (id) => {
 };
 export const getLeadAssignmentHistory = async (id) => {
     try {
-        const response = await axiosInstance.get(`${ApiRoutes.Lead.assignmentHistory}/${id}/assignment-history`);
+        const url = ApiRoutes.Lead.assignmentHistory.replace("{id}", id);
+        const response = await axiosInstance.get(url);
         return response;
     } catch (error) {
         throw error;

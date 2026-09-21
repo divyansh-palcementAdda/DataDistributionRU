@@ -27,6 +27,7 @@ const ApiRoutes = {
         retryCmsVerification: '/api/leads/{id}/retry-cms-verification',
         statusHistory: '/api/leads/{id}/status-history',
         avail: '/api/leads/{id}/avail',
+        assignmentHistory:'/api/leads/{id}/assignment-history',
     },
     Lead_Source: {
         create: '/api/lead-sources',

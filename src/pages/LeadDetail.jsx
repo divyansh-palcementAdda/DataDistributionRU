@@ -1714,7 +1714,7 @@ const LeadDetail = () => {
                   ) : (
                     <span className={`flex-1 truncate text-sm ${selectedCourseObj ? 'text-gray-800 font-medium' : 'text-gray-400'}`}>
                       {selectedCourseObj
-                        ? `${selectedCourseObj.courseName || selectedCourseObj.name} (${selectedCourseObj.courseCode || 'CODE'})`
+                        ? `${selectedCourseObj.name || selectedCourseObj.courseName} (${selectedCourseObj.code || selectedCourseObj.courseCode || 'CODE'})`
                         : 'Select a course...'}
                     </span>
                   )}
@@ -1768,8 +1768,8 @@ const LeadDetail = () => {
                           }}
                           className={`px-3.5 py-2.5 cursor-pointer hover:bg-blue-50 transition-colors border-b border-gray-50 last:border-0 ${selectedCourse === course.id ? 'bg-blue-50' : ''}`}
                         >
-                          <div className="text-sm font-medium text-gray-800">{course.courseName}</div>
-                          <div className="text-[10px] text-gray-400 mt-0.5">{course.courseCode} · {course.duration} {course.durationUnit}</div>
+                          <div className="text-sm font-medium text-gray-800">{course.name || course.courseName}</div>
+                          <div className="text-[10px] text-gray-400 mt-0.5">{course.code || course.courseCode} · {course.duration} {course.durationUnit}</div>
                         </div>
                       ))
                     )}
@@ -1784,8 +1784,8 @@ const LeadDetail = () => {
                 <div className="bg-gradient-to-br from-blue-50/70 to-indigo-50/70 border border-blue-100 rounded-xl p-4">
                   <div className="flex items-start justify-between mb-2">
                     <div>
-                      <h4 className="text-sm font-bold text-gray-900">{selectedCourseObj.courseName || selectedCourseObj.name}</h4>
-                      <p className="text-xs text-gray-500">{selectedCourseObj.courseCode}</p>
+                      <h4 className="text-sm font-bold text-gray-900">{selectedCourseObj.name || selectedCourseObj.courseName}</h4>
+                      <p className="text-xs text-gray-500">{selectedCourseObj.code || selectedCourseObj.courseCode}</p>
                     </div>
                     {selectedCourseObj.duration && (
                       <span className="text-[10px] font-bold text-blue-700 bg-white border border-blue-200 px-2 py-0.5 rounded-full shadow-2xs">

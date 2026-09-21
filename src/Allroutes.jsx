@@ -4,6 +4,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import AuthLayout from "./layouts/authlayout/AuthLayout";
 import MainLayout from "./layouts/mainLayout/MainLayout";
 import ProtectedRoute from "./ProtectedRoute";
+import AuthRoute from "./AuthRoute";
 
 // Auth Pages
 import Login from "./pages/auth/login";
@@ -58,8 +59,14 @@ import QRCodePage from "./component/reusable/qrCode";
 const Allroutes = () => {
   return (
     <Routes>
-      {/* Auth routes — wrapped in AuthLayout */}
-      <Route element={<AuthLayout />}>
+      {/* Auth routes — wrapped in AuthLayout and AuthRoute */}
+      <Route
+        element={
+          <AuthRoute>
+            <AuthLayout />
+          </AuthRoute>
+        }
+      >
         <Route path="/" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />

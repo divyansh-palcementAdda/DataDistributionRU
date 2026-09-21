@@ -10,7 +10,7 @@ const UnallottedIcon = () => (
   </svg>
 );
 
-const UnallottedCard = ({ data, onCardClick, activeFilters = [], filterRequest = {}, courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId, statusId }) => {
+const UnallottedCard = ({ data, onCardClick, activeFilters = [], filterRequest = {}, courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId, statusId, courseId }) => {
   const [unallottedData, setUnallottedData] = useState(null);
   const [loading, setLoading] = useState(false);
   const { hasPermission } = usePermissions();
@@ -36,6 +36,7 @@ const UnallottedCard = ({ data, onCardClick, activeFilters = [], filterRequest =
         if (assignedUserIds) params.assignedUserIds = assignedUserIds;
         if (departmentId) params.departmentId = departmentId;
         if (statusId) params.statusId = statusId;
+        if (courseId) params.courseId = courseId;
         
         // Merge with filterRequest if provided
         const finalParams = { ...params, ...filterRequest };
@@ -62,7 +63,7 @@ const UnallottedCard = ({ data, onCardClick, activeFilters = [], filterRequest =
       isCancelled = true;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, filterRequestKey, courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId, statusId]);
+  }, [data, filterRequestKey, courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId, statusId, courseId]);
 
   const count = unallottedData?.count ?? 0;
   const type = unallottedData?.type ?? 'Unallotted';

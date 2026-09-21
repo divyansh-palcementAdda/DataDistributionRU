@@ -101,8 +101,54 @@ const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, cu
         key: 'source',
         header: 'Source',
         render: (value, row) => {
-            if (typeof row.source === 'object' && row.source !== null) return row.source?.name || 'N/A';
-            return row.source || 'N/A';
+            // Check if leadSources array exists and has items
+            if (Array.isArray(row.leadSources) && row.leadSources.length > 0) {
+                const sourcesToShow = row.leadSources.slice(0, 2);
+                const remainingCount = row.leadSources.length - 2;
+                
+                return (
+                    <div className="flex items-center gap-1">
+                        {sourcesToShow.map((source, index) => {
+                            // Generate a consistent color based on source name or code
+                            const colors = [
+                                'bg-blue-100 text-blue-800 border-blue-200',
+                                'bg-green-100 text-green-800 border-green-200',
+                                'bg-purple-100 text-purple-800 border-purple-200',
+                                'bg-orange-100 text-orange-800 border-orange-200',
+                                'bg-pink-100 text-pink-800 border-pink-200',
+                                'bg-teal-100 text-teal-800 border-teal-200',
+                                'bg-indigo-100 text-indigo-800 border-indigo-200',
+                                'bg-red-100 text-red-800 border-red-200',
+                            ];
+                            const colorIndex = index % colors.length;
+                            const sourceName = source?.name || source?.code || 'N/A';
+                            
+                            return (
+                                <span
+                                    key={source?.id || index}
+                                    className={`text-[10px] font-medium px-1.5 py-0.5 rounded border ${colors[colorIndex]}`}
+                                >
+                                    {sourceName}
+                                </span>
+                            );
+                        })}
+                        {remainingCount > 0 && (
+                            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 border border-gray-200">
+                                +{remainingCount}
+                            </span>
+                        )}
+                    </div>
+                );
+            }
+            // Fallback to sourceDetails if leadSources is empty
+            if (row.sourceDetails) {
+                return (
+                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-gray-100 text-gray-800 border border-gray-200">
+                        {row.sourceDetails}
+                    </span>
+                );
+            }
+            return 'N/A';
         },
     },
     {
@@ -1334,7 +1380,9 @@ const CounselorDetails = () => {
                     'Phone Number': lead.phoneNumber || 'N/A',
                     'Email': lead.email || 'N/A',
                     'Course': (() => { const c = lead.interestedCourses?.[0]; return (c && typeof c === 'object') ? (c.courseName || c.name || 'N/A') : lead.course?.courseName || 'N/A'; })(),
-                    'Source': lead.sourceDetails || (Array.isArray(lead.leadSources) && lead.leadSources[0]?.name) || (typeof lead.source === 'object' ? lead.source?.name : lead.source) || 'N/A',
+                    'Source': Array.isArray(lead.leadSources) && lead.leadSources.length > 0 
+                        ? lead.leadSources.map(s => s?.name || s?.code || 'N/A').join(', ') 
+                        : lead.sourceDetails || 'N/A',
                     'Status': typeof lead.currentStatus === 'object' ? lead.currentStatus?.name || lead.currentStatus?.code || 'N/A' : lead.currentStatus || 'N/A',
                     'Counselor': typeof lead.assignedTo === 'object' ? `${lead.assignedTo.firstName || ''} ${lead.assignedTo.lastName || ''}`.trim() || 'Not Allotted' : lead.assignedTo || 'Not Allotted',
                     'Follow-up Date': lead.nextFollowUpDate ? new Date(lead.nextFollowUpDate).toLocaleDateString() : 'None',

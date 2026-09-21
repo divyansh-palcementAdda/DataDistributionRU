@@ -171,7 +171,7 @@ const ProgramDetails = () => {
   const isActive = program.status === 'ACTIVE' || program.status === true;
 
   return (
-    <div className="block p-4 sm:p-6 max-w-7xl mx-auto" id="page-program-details">
+    <div className="block p-4 sm:p-6  mx-auto" id="page-program-details">
       {/* Top navigation */}
       <div className="flex items-center gap-3 mb-6">
         <button

@@ -1511,7 +1511,7 @@ const CounselorDetails = () => {
 
             {/* ── States ── */}
             {loading ? (
-                <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm max-w-5xl">
+                <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
                     <div className="flex items-center justify-center py-12 gap-3 text-gray-500">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
                             style={{ animation: 'spin 1s linear infinite' }}>
@@ -1522,14 +1522,14 @@ const CounselorDetails = () => {
                     </div>
                 </div>
             ) : error ? (
-                <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm max-w-5xl">
+                <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
                     <div className="flex items-center justify-center py-12 text-red-500">{error}</div>
                 </div>
             ) : (
                 <>
                     {/* ── Details Card ── */}
                     {details && (
-                        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm max-w-5xl">
+                        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
                             {/* ── Avatar + Name Header ── */}
                             <div className="flex flex-col sm:flex-row items-start gap-5 mb-8 pb-6 border-b border-gray-100">
                                 <div

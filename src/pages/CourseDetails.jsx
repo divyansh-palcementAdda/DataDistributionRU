@@ -1588,7 +1588,7 @@ const CourseDetails = () => {
             </div>
 
             {/* Main Card */}
-            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm max-w-5xl mb-8">
+            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-8">
                 {/* Header Section */}
                 <div className="flex flex-col sm:flex-row items-start gap-5 mb-8 pb-6 border-b border-gray-100">
                     <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold shadow-md flex-shrink-0">

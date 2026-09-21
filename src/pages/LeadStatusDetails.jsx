@@ -620,7 +620,7 @@ const LeadStatusDetails = () => {
             </div>
 
             {/* ── Detail Card (TOP) ── */}
-            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm  mb-8">
+            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-8">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row items-start gap-5 mb-8 pb-6 border-b border-gray-100">
                     <div

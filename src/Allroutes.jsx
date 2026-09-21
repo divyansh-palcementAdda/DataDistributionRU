@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 // Layouts
 import AuthLayout from "./layouts/authlayout/AuthLayout";
 import MainLayout from "./layouts/mainLayout/MainLayout";
+import ProtectedRoute from "./ProtectedRoute";
 
 // Auth Pages
 import Login from "./pages/auth/login";
@@ -66,8 +67,14 @@ const Allroutes = () => {
         <Route path="/reset-password" element={<ResetPassword />} />
       </Route>
 
-      {/* Main app routes — wrapped in MainLayout */}
-      <Route element={<MainLayout />}>
+      {/* Main app routes — wrapped in MainLayout and ProtectedRoute */}
+      <Route
+        element={
+          <ProtectedRoute>
+            <MainLayout />
+          </ProtectedRoute>
+        }
+      >
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/head-dashboard" element={<HeadDashboard />} />
         <Route path="/callers-dashboard" element={<CallersDashboard />} />

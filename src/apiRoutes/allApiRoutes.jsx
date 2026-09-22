@@ -240,7 +240,9 @@ const ApiRoutes = {
         userAnalytics: '/api/data-segregation/user-analytics',
         leadStatusAnalytics: '/api/data-segregation/lead-status-analytics',
         courseWise: '/api/data-segregation/course-wise',
-        courseUsers: '/api/data-segregation/courses/{courseId}/users'
+        courseUsers: '/api/data-segregation/courses/{courseId}/users',
+        userAllocationSummary: '/api/data-segregation/user-allocation-summary',
+        userAllocationUsers: '/api/data-segregation/user-allocation-users'
     }
 }
 

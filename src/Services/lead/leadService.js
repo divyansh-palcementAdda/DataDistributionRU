@@ -10,9 +10,26 @@ export const createLead = async (data) => {
     }
 };
 
-export const getAllLeads = async (params) => {
+export const getAllLeads = async (params = {}) => {
     try {
-        const response = await axiosInstance.get(ApiRoutes.Lead.getAllLeads, { params });
+        const sanitizedParams = { ...params };
+
+        // Exclusively map course filters to interestedCourseIds so backend filters by interestedCourses instead of registered course
+        const courses = [
+            ...(Array.isArray(sanitizedParams.interestedCourseIds) ? sanitizedParams.interestedCourseIds : []),
+            ...(sanitizedParams.interestedCourseId ? [sanitizedParams.interestedCourseId] : []),
+            ...(Array.isArray(sanitizedParams.courseIds) ? sanitizedParams.courseIds : []),
+            ...(sanitizedParams.courseId ? [sanitizedParams.courseId] : []),
+        ].filter(Boolean);
+
+        if (courses.length > 0) {
+            sanitizedParams.interestedCourseIds = Array.from(new Set(courses));
+            delete sanitizedParams.courseId;
+            delete sanitizedParams.courseIds;
+            delete sanitizedParams.interestedCourseId;
+        }
+
+        const response = await axiosInstance.get(ApiRoutes.Lead.getAllLeads, { params: sanitizedParams });
         return response;
     } catch (error) {
         throw error;

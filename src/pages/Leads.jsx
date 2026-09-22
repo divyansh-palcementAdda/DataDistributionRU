@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { FiEye, FiEdit, FiTrash2 } from 'react-icons/fi';
+import { FiEye, FiEdit, FiTrash2, FiSearch, FiFilter, FiUserPlus, FiX, FiCheckSquare } from 'react-icons/fi';
 import { statusConfig } from '../mockData';
 import { getAllLeads, deleteLead, getLeadById, availLead } from '../Services/lead/leadService';
 import {
@@ -27,6 +27,15 @@ import { usePermissions } from '../PermissionContext';
 import { canViewLeadField } from '../config/leadFieldPermissions';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import ReusableTable from '../component/reusable/table';
+import {
+  renderLeadInfoCell,
+  renderCourseCell,
+  renderSourceCell,
+  renderStatusCell,
+  renderCounselorCell,
+  renderFollowUpCell,
+  renderLeadDateCell,
+} from '../component/reusable/leadTableHelpers';
 // import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import DeleteModal from "../component/reusable/deleteModel"
 import AssignLeadModal from '../component/reusable/Leads/AssignLeadModal';
@@ -518,7 +527,7 @@ const Leads = () => {
           type="checkbox"
           checked={selectAll}
           onChange={(e) => handleSelectAll(e.target.checked)}
-          className="cursor-pointer"
+          className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-600 align-middle"
         />
       ) : null,
       sortable: false,
@@ -534,7 +543,7 @@ const Leads = () => {
             type="checkbox"
             checked={selectedIds.includes(idToUse)}
             onChange={(e) => handleSelectRow(idToUse, e.target.checked)}
-            className="cursor-pointer"
+            className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
           />
         );
       },
@@ -543,19 +552,48 @@ const Leads = () => {
     // S.No
     cols.push({
       key: 'sno',
-      header: 'S.No',
+      header: (
+        <span className="inline-flex items-center gap-1 font-bold text-white" style={{ color: '#ffffff' }}>
+          <span className="text-indigo-200 font-bold">#</span>
+          <span>S.No</span>
+        </span>
+      ),
       sortable: false,
       render: (value, row, index) => {
         const serialNumber = (page * size) + index + 1;
-        return <span className="font-semibold text-gray-700">{typeof serialNumber === 'number' ? serialNumber : 'N/A'}</span>;
+        return <span className="font-semibold text-slate-500 text-xs font-mono">{typeof serialNumber === 'number' ? serialNumber : 'N/A'}</span>;
       },
     });
 
-    // Lead Code
-    if (canViewLeadField(hasPermission, 'leadCode')) {
+    // Lead Info (Full Name + Lead ID uniquely below name)
+    if (canViewLeadField(hasPermission, 'fullName')) {
+      cols.push({
+        key: 'fullName',
+        header: (
+          <span className="inline-flex items-center gap-1.5 font-bold text-white" style={{ color: '#ffffff' }}>
+            <span className="w-2 h-2 rounded-full bg-cyan-300 shadow-[0_0_6px_rgba(103,232,249,0.8)]"></span>
+            <span>Lead Info</span>
+          </span>
+        ),
+        render: (value, row) =>
+          renderLeadInfoCell(
+            row,
+            (r) => {
+              const leadId = r?.id ?? r?.leadId;
+              if (leadId) navTo(`lead-detail/${leadId}`);
+            },
+            showToast
+          ),
+      });
+    } else if (canViewLeadField(hasPermission, 'leadCode')) {
       cols.push({
         key: 'leadCode',
-        header: 'Lead Code',
+        header: (
+          <span className="inline-flex items-center gap-1.5 font-bold text-white" style={{ color: '#ffffff' }}>
+            <span className="w-2 h-2 rounded-full bg-cyan-300 shadow-[0_0_6px_rgba(103,232,249,0.8)]"></span>
+            <span>Lead Code</span>
+          </span>
+        ),
         render: (value, row) => {
           const leadCodeValue = value || row.leadCode;
           let displayValue = 'N/A';
@@ -564,118 +602,64 @@ const Leads = () => {
           } else if (typeof leadCodeValue === 'string') {
             displayValue = leadCodeValue;
           }
-          return <span className="font-semibold text-blue-600">{displayValue}</span>;
+          return <span className="font-semibold text-indigo-600 font-mono text-xs">{displayValue}</span>;
         },
       });
     }
 
-    // Lead Info (Full Name)
-    if (canViewLeadField(hasPermission, 'fullName')) {
-      cols.push({
-        key: 'lead',
-        header: 'Lead Info',
-        render: (value, row) => (
-          <div>
-            <div className="font-semibold text-gray-800">
-              {typeof row.fullName === 'object' ? row.fullName?.name || row.fullName?.firstName || 'N/A' : row.fullName || 'N/A'}
-            </div>
-          </div>
-        ),
-      });
-    }
-
-    // Course (Interested Courses / Course)
+    // Course (Interested Courses / Multiple Course Support)
     if (canViewLeadField(hasPermission, 'course') || canViewLeadField(hasPermission, 'interestedCourses')) {
       cols.push({
         key: 'interestedCourses',
-        header: 'Course',
-        render: (value, row) => {
-          let displayValue = 'N/A';
-          if (Array.isArray(row.interestedCourses) && row.interestedCourses.length > 0) {
-            const firstCourse = row.interestedCourses[0];
-            displayValue = (typeof firstCourse === 'object' && firstCourse !== null)
-              ? (firstCourse.courseName || firstCourse.name || 'N/A')
-              : (firstCourse || 'N/A');
-          } else if (row.course && typeof row.course === 'object') {
-            displayValue = row.course.courseName || row.course.name || 'N/A';
-          } else if (row.registeredCourse && typeof row.registeredCourse === 'object') {
-            displayValue = row.registeredCourse.courseName || row.registeredCourse.name || 'N/A';
-          }
-          return displayValue;
-        },
+        header: (
+          <span className="inline-flex items-center gap-1.5 font-bold text-white" style={{ color: '#ffffff' }}>
+            <span className="w-2 h-2 rounded-full bg-blue-300 shadow-[0_0_6px_rgba(147,197,253,0.8)]"></span>
+            <span>Course</span>
+          </span>
+        ),
+        render: (value, row) => renderCourseCell(row),
       });
     }
 
-    // Source
+    // Source (Primary + Multi-Source Badge)
     if (canViewLeadField(hasPermission, 'leadSources')) {
       cols.push({
         key: 'source',
-        header: 'Source',
-        render: (value, row) => {
-          const sources = Array.isArray(row.leadSources) && row.leadSources.length > 0
-            ? row.leadSources.map(s => (typeof s === 'object' ? s.name || s.code : s)).filter(Boolean)
-            : (row.sourceDetails ? [row.sourceDetails] : (row.source ? [(typeof row.source === 'object' ? row.source?.name : row.source)] : []));
-
-          if (sources.length === 0) return 'N/A';
-
-          const primarySource = sources[0];
-          const hasMultiple = row.isMultiSource || sources.length > 1;
-
-          if (!hasMultiple || sources.length <= 1) {
-            return <span>{primarySource}</span>;
-          }
-
-          const extraCount = sources.length - 1;
-          const allSourcesTooltip = sources.join(', ');
-
-          return (
-            <div className="flex items-center gap-1.5 flex-wrap" title={allSourcesTooltip}>
-              <span>{primarySource}</span>
-              <span
-                className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold bg-purple-100 text-purple-800 cursor-pointer"
-                title={allSourcesTooltip}
-              >
-                +{extraCount}
-              </span>
-            </div>
-          );
-        },
+        header: (
+          <span className="inline-flex items-center gap-1.5 font-bold text-white" style={{ color: '#ffffff' }}>
+            <span className="w-2 h-2 rounded-full bg-purple-300 shadow-[0_0_6px_rgba(216,180,254,0.8)]"></span>
+            <span>Source</span>
+          </span>
+        ),
+        render: (value, row) => renderSourceCell(row),
       });
     }
 
-    // Status
+    // Status (Vibrant Semantic Color Badges)
     if (canViewLeadField(hasPermission, 'currentStatus')) {
       cols.push({
         key: 'currentStatus',
-        header: 'Status',
-        render: (value, row) => {
-          const statusValue = value || row.currentStatus;
-          let displayValue = 'N/A';
-          if (typeof statusValue === 'object' && statusValue !== null) {
-            displayValue = statusValue?.name || statusValue?.code || 'N/A';
-          } else if (typeof statusValue === 'string') {
-            displayValue = statusValue;
-          }
-          return (
-            <span className="badge bg-slate-200 text-slate-800 px-2 py-1 rounded text-xs font-medium">
-              {displayValue}
-            </span>
-          );
-        },
+        header: (
+          <span className="inline-flex items-center gap-1.5 font-bold text-white" style={{ color: '#ffffff' }}>
+            <span className="w-2 h-2 rounded-full bg-emerald-300 shadow-[0_0_6px_rgba(110,231,183,0.8)]"></span>
+            <span>Status</span>
+          </span>
+        ),
+        render: (value, row) => renderStatusCell(value, row),
       });
     }
 
-    // Counselor (Assigned To)
+    // Counselor (Highlighted with Initials Avatar & Unallotted Badge)
     if (canViewLeadField(hasPermission, 'assignedTo')) {
       cols.push({
         key: 'assignedTo',
-        header: 'Counselor',
-        render: (value, row) => {
-          if (typeof row.assignedTo === 'object' && row.assignedTo !== null) {
-            return `${row.assignedTo.firstName || ''} ${row.assignedTo.lastName || ''}`.trim() || 'Not Allotted';
-          }
-          return row.assignedTo || 'Not Allotted';
-        },
+        header: (
+          <span className="inline-flex items-center gap-1.5 font-bold text-white" style={{ color: '#ffffff' }}>
+            <span className="w-2 h-2 rounded-full bg-amber-300 shadow-[0_0_6px_rgba(252,211,77,0.8)]"></span>
+            <span>Counselor</span>
+          </span>
+        ),
+        render: (value, row) => renderCounselorCell(row),
       });
     }
 
@@ -683,35 +667,27 @@ const Leads = () => {
     if (canViewLeadField(hasPermission, 'nextFollowUpDate')) {
       cols.push({
         key: 'nextFollowUpDate',
-        header: 'Follow-up',
-        render: (value, row) => {
-          const followUpDate = row.nextFollowUpDate;
-          if (followUpDate) {
-            try {
-              return new Date(followUpDate).toLocaleDateString();
-            } catch (e) {
-              return 'Invalid Date';
-            }
-          }
-          return 'None';
-        },
+        header: (
+          <span className="inline-flex items-center gap-1.5 font-bold text-white" style={{ color: '#ffffff' }}>
+            <span className="w-2 h-2 rounded-full bg-sky-300 shadow-[0_0_6px_rgba(125,211,252,0.8)]"></span>
+            <span>Follow-up</span>
+          </span>
+        ),
+        render: (value, row) => renderFollowUpCell(row),
       });
     }
 
-    // Created By (Audit Info)
-    if (canViewLeadField(hasPermission, 'auditInfo')) {
-      cols.push({
-        key: 'createdBy',
-        header: 'Created By',
-        render: (value, row) => {
-          const createdByValue = value || row.createdBy;
-          if (typeof createdByValue === 'object' && createdByValue !== null) {
-            return `${createdByValue.firstName || ''} ${createdByValue.lastName || ''}`.trim() || 'N/A';
-          }
-          return createdByValue || 'N/A';
-        },
-      });
-    }
+    // Lead Date (Created Date & Availed Status - 100% Non-PII)
+    cols.push({
+      key: 'createdAt',
+      header: (
+        <span className="inline-flex items-center gap-1.5 font-bold text-white" style={{ color: '#ffffff' }}>
+          <span className="w-2 h-2 rounded-full bg-pink-300 shadow-[0_0_6px_rgba(244,114,182,0.8)]"></span>
+          <span>Lead Date</span>
+        </span>
+      ),
+      render: (value, row) => renderLeadDateCell(row),
+    });
 
     return cols;
   }, [hasPermission, selectAll, selectedIds, page, size]);
@@ -836,149 +812,135 @@ const Leads = () => {
         filterRequest={filterRequest}
       />
 
-      {/* ── Filter Bar ── */}
-      <div className="flex gap-2 flex-wrap mb-4 items-center">
-        <input
-          type="text"
-          className="form-control max-w-[240px]"
-          placeholder="Search leads…"
-          value={search}
-          onChange={(e) => { 
-            setSearch(e.target.value); 
-          }}
-        />
+      {/* ── Action & Filter Control Bar ── */}
+      <div className="bg-white border border-slate-200/90 rounded-xl shadow-xs p-3 mb-3.5 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+        {/* Left: Search & Filter Trigger */}
+        <div className="flex items-center gap-2 flex-wrap flex-1">
+          {/* Search Input with Icon & Clear button */}
+          <div className="relative min-w-[220px] max-w-sm flex-1 sm:flex-initial">
+            <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={15} />
+            <input
+              type="text"
+              className="w-full pl-9 pr-8 py-2 text-xs md:text-sm bg-slate-50/80 border border-slate-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all placeholder:text-slate-400 font-medium text-slate-800"
+              placeholder="Search leads by name, code..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 rounded-full hover:bg-slate-200/60 transition-colors"
+                title="Clear search"
+              >
+                <FiX size={13} />
+              </button>
+            )}
+          </div>
 
-        {/* Filter Drawer Trigger Button */}
-        <button
-          type="button"
-          className="btn btn-outline btn-sm flex items-center gap-1.5"
-          onClick={() => setIsFilterDrawerOpen(true)}
-          style={{
-            borderColor: activeFilterCount > 0 ? '#9333EA' : '#CBD5E1',
-            color: activeFilterCount > 0 ? '#9333EA' : '#334155',
-            background: activeFilterCount > 0 ? '#FAF5FF' : '#FFFFFF',
-            fontWeight: '600',
-          }}
-          title="Open Filter Drawer"
-        >
-          <svg
-            width="13"
-            height="13"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
+          {/* Filter Drawer Trigger Button */}
+          <button
+            type="button"
+            className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs md:text-sm font-semibold rounded-lg border transition-all cursor-pointer shadow-2xs ${
+              activeFilterCount > 0
+                ? 'bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100/80'
+                : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300'
+            }`}
+            onClick={() => setIsFilterDrawerOpen(true)}
+            title="Open Advanced Filters"
           >
-            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-          </svg>
-          <span>Filters</span>
-          {activeFilterCount > 0 && (
-            <span
-              style={{
-                background: '#9333EA',
-                color: '#FFFFFF',
-                fontSize: '11px',
-                fontWeight: '700',
-                padding: '1px 6px',
-                borderRadius: '10px',
-                marginLeft: '4px',
+            <FiFilter className={activeFilterCount > 0 ? 'text-purple-600' : 'text-slate-500'} size={14} />
+            <span>Filters</span>
+            {activeFilterCount > 0 && (
+              <span className="inline-flex items-center justify-center bg-purple-600 text-white text-[11px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px]">
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+
+          {/* Clear all active filters button */}
+          {(filterChips.length > 0 || search) && (
+            <button
+              onClick={handleClearAllFilters}
+              className="inline-flex items-center gap-1 px-2.5 py-2 text-xs font-semibold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100/80 border border-rose-200 rounded-lg transition-colors cursor-pointer"
+              title="Reset all filters"
+            >
+              <FiX size={13} />
+              <span>Reset</span>
+            </button>
+          )}
+        </div>
+
+        {/* Right: Quick Lead Selection & Allotment Actions */}
+        {hasPermission('LEAD_ASSIGN') && (
+          <div className="flex items-center gap-2.5 flex-wrap justify-end border-t md:border-t-0 pt-2 md:pt-0 border-slate-100">
+            {/* Quick Auto-select input group */}
+            <div className="flex items-center bg-slate-50/90 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-600">
+              <span className="font-semibold text-slate-500 mr-2 select-none">Quick Select:</span>
+              <input
+                type="number"
+                min="1"
+                max={leadsData.length}
+                value={autoSelectCount}
+                onChange={handleAutoSelectCount}
+                onWheel={(e) => e.target.blur()}
+                placeholder="Qty"
+                className="w-12 bg-white border border-slate-200 rounded px-1.5 py-0.5 text-xs text-center font-bold text-indigo-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                title="Number of leads to auto-select from top"
+              />
+            </div>
+
+            {/* Selected Count Badge */}
+            {selectedIds.length > 0 && (
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 border border-emerald-200/80 rounded-lg text-xs font-bold text-emerald-700 animate-fadeIn">
+                <FiCheckSquare size={13} className="text-emerald-600" />
+                <span>{selectedIds.length} Selected</span>
+              </div>
+            )}
+
+            {/* Allot Lead Button */}
+            <button
+              className="inline-flex items-center gap-2 px-4 py-2 text-xs md:text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-600 hover:from-indigo-700 hover:to-purple-700 active:scale-[0.98] rounded-lg shadow-xs hover:shadow transition-all cursor-pointer border-none"
+              onClick={() => {
+                if (selectedIds.length > 0) {
+                  openAllotModal(selectedIds);
+                } else {
+                  showToast('Please select leads to allot', 'warning');
+                }
               }}
             >
-              {activeFilterCount}
-            </span>
-          )}
-        </button>
-
-        {/* Active filter badges / chips */}
-        {filterChips.map((chip, idx) => (
-          <div 
-            key={`${chip.key}-${chip.value}-${idx}`}
-            className="flex items-center gap-1.5 px-3 py-1 bg-indigo-50 border border-indigo-200 rounded-md text-sm text-indigo-700 font-medium"
-          >
-            <span>{chip.label}</span>
-            <button
-              onClick={() => handleRemoveFilterChip(chip)}
-              className="ml-1 text-indigo-400 hover:text-indigo-700 bg-transparent border-none cursor-pointer leading-none"
-              title="Clear filter"
-            >
-              ✕
+              <FiUserPlus size={15} />
+              <span>Allot Leads</span>
             </button>
           </div>
-        ))}
-
-        {/* Clear all filters button */}
-        {(filterChips.length > 0 || search) && (
-          <button
-            onClick={handleClearAllFilters}
-            className="px-2.5 py-1 text-xs font-semibold bg-red-50 hover:bg-red-100 text-red-600 rounded border border-red-200 cursor-pointer transition-colors"
-            title="Clear all filters"
-          >
-            Clear All ({activeFilterCount})
-          </button>
         )}
-        {/* Allot Lead */}
-        {hasPermission('LEAD_ASSIGN') && (
-          <input
-            type="number"
-            min="1"
-            max={leadsData.length}
-            value={autoSelectCount}
-            onChange={handleAutoSelectCount}
-            onWheel={(e) => e.target.blur()}
-            placeholder="Count"
-            className="form-control"
-            style={{ width: '80px' }}
-          />
-        )}
-        {hasPermission('LEAD_ASSIGN') && (
-          <button
-            className="btn btn-secondary btn-sm flex items-center gap-1.5"
-            onClick={() => {
-              if (selectedIds.length > 0) {
-                openAllotModal(selectedIds);
-              } else {
-                showToast('Please select leads to allot', 'warning');
-              }
-            }}
-          >
-            <svg
-              width="13"
-              height="13"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-              <circle cx="9" cy="7" r="4" />
-              <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
-            </svg>
-            Allot Lead
-          </button>
-        )}
-        {/* <button
-          className="btn btn-ghost btn-sm flex items-center gap-1.5"
-        >
-          <svg
-            width="13"
-            height="13"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <line x1="4" y1="6" x2="20" y2="6" />
-            <line x1="8" y1="12" x2="16" y2="12" />
-            <line x1="11" y1="18" x2="13" y2="18" />
-          </svg>
-          Filters
-        </button> */}
       </div>
 
-      {/* ── Table Card ── */}
-      <div className="card">
-        <div className="table-wrap">
-          <ReusableTable
+      {/* Active filter chips row */}
+      {filterChips.length > 0 && (
+        <div className="flex items-center gap-2 flex-wrap mb-3 px-1">
+          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Filtered by:</span>
+          {filterChips.map((chip, idx) => (
+            <div 
+              key={`${chip.key}-${chip.value}-${idx}`}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-indigo-50/90 border border-indigo-200/80 rounded-full text-xs text-indigo-800 font-medium shadow-2xs"
+            >
+              <span>{chip.label}</span>
+              <button
+                onClick={() => handleRemoveFilterChip(chip)}
+                className="text-indigo-400 hover:text-indigo-700 bg-transparent border-none cursor-pointer flex items-center p-0.5 rounded-full hover:bg-indigo-200/50 transition-colors"
+                title="Remove this filter"
+              >
+                <FiX size={11} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── Table Container ── */}
+      <div className="w-full">
+        <ReusableTable
             columns={tableColumns}
             data={leadsData}
             isServerSide={true}
@@ -1003,19 +965,11 @@ const Leads = () => {
               };
 
               return (
-                <div className="flex justify-center items-center gap-3">
-                  {/* Remark button commented out */}
-                  {/* <button
-                    className="text-blue-500 hover:text-blue-700 transition bg-transparent border-none cursor-pointer"
-                    title="Remark"
-                    onClick={() => openRemarkModal(safeRow)}
-                  >
-                    <FiMessageSquare size={18} />
-                  </button> */}
+                <div className="flex justify-center items-center gap-1.5">
                   {(hasPermission('LEAD_READ') || hasPermission('LEAD_VIEW')) && (
                     <button
-                      className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer"
-                      title="View"
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors bg-transparent border-none cursor-pointer"
+                      title="View Lead"
                       onClick={async () => {
                         const leadId = safeRow?.id ?? safeRow?.leadId;
                         try {
@@ -1032,7 +986,6 @@ const Leads = () => {
                             (leadDetails?.isAvailed === false || leadDetails?.isAvailed === null) &&
                             (leadDetails?.assignedTo === null || leadDetails?.assignedTo?.id === currentUserId);
 
-
                           if (shouldCallAvail) {
                             await availLead(leadId);
                             showToast('Lead marked as availed successfully');
@@ -1045,13 +998,13 @@ const Leads = () => {
                         navTo(`lead-detail/${leadId}`);
                       }}
                     >
-                      <FiEye size={18} />
+                      <FiEye size={17} />
                     </button>
                   )}
                   {hasPermission('LEAD_UPDATE') && (
                     <button
-                      className="text-gray-500 hover:text-gray-700 transition bg-transparent border-none cursor-pointer"
-                      title="Edit"
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition-colors bg-transparent border-none cursor-pointer"
+                      title="Edit Lead"
                       onClick={async () => {
                         const leadId = safeRow?.id ?? safeRow?.leadId;
                         try {
@@ -1126,18 +1079,18 @@ const Leads = () => {
                         }
                       }}
                     >
-                      <FiEdit size={18} />
+                      <FiEdit size={17} />
                     </button>
                   )}
                   {hasPermission('LEAD_DELETE') && (
                     <button
-                      className="text-red-500 hover:text-red-700 transition bg-transparent border-none cursor-pointer"
-                      title="Delete"
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors bg-transparent border-none cursor-pointer"
+                      title="Delete Lead"
                       onClick={() => {
                         openDeleteModal(safeRow);
                       }}
                     >
-                      <FiTrash2 size={18} />
+                      <FiTrash2 size={17} />
                     </button>
                   )}
                 </div>
@@ -1145,8 +1098,6 @@ const Leads = () => {
             }}
             emptyMessage={loading ? "Loading..." : "No leads match your filters."}
           />
-        </div>
-
       </div>
 
 

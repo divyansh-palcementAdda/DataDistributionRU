@@ -46,9 +46,19 @@ import AllottedCard from '../component/reusable/DashBoards/allottedCard';
 import AvailedCard from '../component/reusable/DashBoards/availedCard';
 import UnallottedCard from '../component/reusable/DashBoards/UnallottedCard';
 import LeadCards from '../component/reusable/DashBoards/leadCards';
+import UserAllocationSummaryCards from '../component/reusable/segregation/UserAllocationSummaryCards';
 import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import AssignLeadModal from '../component/reusable/Leads/AssignLeadModal';
 import { FiEye, FiMessageSquare, FiUserPlus } from 'react-icons/fi';
+import {
+    renderLeadInfoCell,
+    renderCourseCell,
+    renderSourceCell,
+    renderStatusCell,
+    renderCounselorCell,
+    renderFollowUpCell,
+    renderLeadDateCell,
+} from '../component/reusable/leadTableHelpers';
 import * as XLSX from 'xlsx';
 
 // ─── Upload / Edit Image Modal ─────────────────────────────────────────────────
@@ -747,7 +757,7 @@ const CommunicationTab = ({ courseId, templates, images }) => {
 };
 
 // ─── Lead table columns ───────────────────────────────────────────────────────
-const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, currentData, hasPermission) => [
+const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, currentData, hasPermission, onLeadClick, showToast) => [
     {
         key: 'checkbox',
         header: hasPermission('LEAD_ASSIGN') ? (
@@ -755,7 +765,7 @@ const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, cu
                 type="checkbox"
                 checked={currentData.length > 0 && currentData.every(r => selectedRows.has(r.id ?? r.leadId))}
                 onChange={(e) => onToggleAll(e.target.checked, currentData)}
-                style={{ width: '15px', height: '15px', cursor: 'pointer', accentColor: '#4f46e5' }}
+                className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
                 title="Select All"
             />
         ) : null,
@@ -769,7 +779,7 @@ const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, cu
                     checked={selectedRows.has(rowId)}
                     onChange={() => onToggleRow(rowId)}
                     onClick={(e) => e.stopPropagation()}
-                    style={{ width: '15px', height: '15px', cursor: 'pointer', accentColor: '#4f46e5' }}
+                    className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
                 />
             );
         },
@@ -779,138 +789,43 @@ const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, cu
         header: 'S.No',
         sortable: false,
         render: (value, row, index) => (
-            <span className="font-semibold text-gray-700">{page * size + index + 1}</span>
+            <span className="font-semibold text-slate-500 text-xs font-mono">{page * size + index + 1}</span>
         ),
     },
     {
-        key: 'leadCode',
-        header: 'Lead Code',
-        render: (value, row) => {
-            const v = value || row.leadCode;
-            const display = typeof v === 'object' ? (v?.code || v?.name || 'N/A') : (v || 'N/A');
-            return <span className="font-semibold text-blue-600">{display}</span>;
-        },
-    },
-    {
-        key: 'lead',
+        key: 'fullName',
         header: 'Lead Info',
-        render: (value, row) => (
-            <div className="font-semibold text-gray-800">
-                {typeof row.fullName === 'object'
-                    ? row.fullName?.name || row.fullName?.firstName || 'N/A'
-                    : row.fullName || 'N/A'}
-            </div>
-        ),
+        render: (value, row) => renderLeadInfoCell(row, onLeadClick, showToast),
     },
     {
         key: 'interestedCourses',
         header: 'Course',
-        render: (value, row) => {
-            // Priority: interestedCourses[0] > registered course
-            if (Array.isArray(row.interestedCourses) && row.interestedCourses.length > 0) {
-                const c = row.interestedCourses[0];
-                return (typeof c === 'object' && c !== null) ? (c.courseName || c.name || 'N/A') : (c || 'N/A');
-            }
-            if (row.course && typeof row.course === 'object') return row.course.courseName || row.course.name || 'N/A';
-            return 'N/A';
-        },
+        render: (value, row) => renderCourseCell(row),
     },
     {
         key: 'source',
         header: 'Source',
-        render: (value, row) => {
-            // Check if leadSources array exists and has items
-            if (Array.isArray(row.leadSources) && row.leadSources.length > 0) {
-                const sourcesToShow = row.leadSources.slice(0, 2);
-                const remainingCount = row.leadSources.length - 2;
-                
-                return (
-                    <div className="flex items-center gap-1">
-                        {sourcesToShow.map((source, index) => {
-                            // Generate a consistent color based on source name or code
-                            const colors = [
-                                'bg-blue-100 text-blue-800 border-blue-200',
-                                'bg-green-100 text-green-800 border-green-200',
-                                'bg-purple-100 text-purple-800 border-purple-200',
-                                'bg-orange-100 text-orange-800 border-orange-200',
-                                'bg-pink-100 text-pink-800 border-pink-200',
-                                'bg-teal-100 text-teal-800 border-teal-200',
-                                'bg-indigo-100 text-indigo-800 border-indigo-200',
-                                'bg-red-100 text-red-800 border-red-200',
-                            ];
-                            const colorIndex = index % colors.length;
-                            const sourceName = source?.name || source?.code || 'N/A';
-                            
-                            return (
-                                <span
-                                    key={source?.id || index}
-                                    className={`text-[10px] font-medium px-1.5 py-0.5 rounded border ${colors[colorIndex]}`}
-                                >
-                                    {sourceName}
-                                </span>
-                            );
-                        })}
-                        {remainingCount > 0 && (
-                            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 border border-gray-200">
-                                +{remainingCount}
-                            </span>
-                        )}
-                    </div>
-                );
-            }
-            // Fallback to sourceDetails if leadSources is empty
-            if (row.sourceDetails) {
-                return (
-                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-gray-100 text-gray-800 border border-gray-200">
-                        {row.sourceDetails}
-                    </span>
-                );
-            }
-            return 'N/A';
-        },
+        render: (value, row) => renderSourceCell(row),
     },
     {
         key: 'currentStatus',
         header: 'Status',
-        render: (value, row) => {
-            const v = value || row.currentStatus;
-            const display = typeof v === 'object' ? (v?.name || v?.code || 'N/A') : (v || 'N/A');
-            return (
-                <span className="badge bg-slate-200 text-slate-800 px-2 py-1 rounded text-xs font-medium">
-                    {display}
-                </span>
-            );
-        },
+        render: (value, row) => renderStatusCell(value, row),
     },
     {
         key: 'assignedTo',
         header: 'Counselor',
-        render: (value, row) => {
-            if (typeof row.assignedTo === 'object' && row.assignedTo !== null)
-                return `${row.assignedTo.firstName || ''} ${row.assignedTo.lastName || ''}`.trim() || 'Not Allotted';
-            return row.assignedTo || 'Not Allotted';
-        },
+        render: (value, row) => renderCounselorCell(row),
     },
     {
         key: 'nextFollowUpDate',
         header: 'Follow-up',
-        render: (value, row) => {
-            if (row.nextFollowUpDate) {
-                try { return new Date(row.nextFollowUpDate).toLocaleDateString(); }
-                catch { return 'Invalid Date'; }
-            }
-            return 'None';
-        },
+        render: (value, row) => renderFollowUpCell(row),
     },
     {
-        key: 'createdBy',
-        header: 'Created By',
-        render: (value, row) => {
-            const v = value || row.createdBy;
-            if (typeof v === 'object' && v !== null)
-                return `${v.firstName || ''} ${v.lastName || ''}`.trim() || 'N/A';
-            return v || 'N/A';
-        },
+        key: 'createdAt',
+        header: 'Lead Date',
+        render: (value, row) => renderLeadDateCell(row),
     },
 ];
 
@@ -919,7 +834,7 @@ const fetchLeadsForCard = async (activeFilters, courseId, page, size, sortBy, so
     if (!courseId) return { content: [], totalElements: 0, totalPages: 0 };
 
     const params = {
-        courseId,         // always filter by this course
+        interestedCourseIds: [courseId], // filter by interested courses instead of registered course
         page,
         size,
         sortBy: sortBy || 'createdAt',
@@ -1711,6 +1626,16 @@ const CourseDetails = () => {
                         courseId={id}
                     />
                 </div>
+
+                {/* User Allocation & Workload Analytics Cards */}
+                <UserAllocationSummaryCards
+                    courseId={id}
+                    filterRequest={filterRequest}
+                    activeFilters={activeFilters}
+                    scopeTitle={details?.courseName || 'Course'}
+                    onCardClick={handleCardClick}
+                />
+
                 <LeadCards
                     onCardClick={handleCardClick}
                     activeFilters={activeFilters}

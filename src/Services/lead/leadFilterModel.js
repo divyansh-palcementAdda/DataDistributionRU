@@ -58,16 +58,14 @@ export const buildLeadQueryParams = (filters = {}) => {
     }
   }
 
-  // Courses (Interested / General)
-  if (Array.isArray(filters.courseIds) && filters.courseIds.length > 0) {
-    params.courseIds = filters.courseIds;
-    if (filters.courseIds.length === 1) {
-      params.courseId = filters.courseIds[0];
-    }
-  }
-
-  if (Array.isArray(filters.interestedCourseIds) && filters.interestedCourseIds.length > 0) {
-    params.interestedCourseIds = filters.interestedCourseIds;
+  // Courses (Exclusively Interested Courses - send interestedCourseIds instead of courseIds/courseId)
+  const effectiveCourseIds = [
+    ...(Array.isArray(filters.interestedCourseIds) ? filters.interestedCourseIds : []),
+    ...(Array.isArray(filters.courseIds) ? filters.courseIds : []),
+  ];
+  const uniqueCourseIds = Array.from(new Set(effectiveCourseIds.filter(Boolean)));
+  if (uniqueCourseIds.length > 0) {
+    params.interestedCourseIds = uniqueCourseIds;
   }
 
   if (filters.registeredCourseId) {
@@ -203,11 +201,11 @@ export const parseFiltersFromSearchParams = (searchParams, state = null) => {
     if (courseTypes.length > 0) filters.courseTypeIds = courseTypes;
 
     // Courses
-    const courses = parseArrayParam(searchParams, 'courseIds', 'courseId');
-    if (courses.length > 0) filters.courseIds = courses;
-
-    const interested = parseArrayParam(searchParams, 'interestedCourseIds');
-    if (interested.length > 0) filters.interestedCourseIds = interested;
+    const courses = parseArrayParam(searchParams, 'interestedCourseIds', 'interestedCourseId', 'courseIds', 'courseId');
+    if (courses.length > 0) {
+      filters.courseIds = courses;
+      filters.interestedCourseIds = courses;
+    }
 
     const regCourse = searchParams.get('registeredCourseId');
     if (regCourse) filters.registeredCourseId = regCourse;
@@ -340,16 +338,13 @@ export const syncFiltersToSearchParams = (filters) => {
     }
   }
 
-  if (Array.isArray(filters.courseIds) && filters.courseIds.length > 0) {
-    if (filters.courseIds.length === 1) {
-      params.set('courseId', filters.courseIds[0]);
-    } else {
-      filters.courseIds.forEach(id => params.append('courseIds', id));
-    }
-  }
+  const allCourseIds = Array.from(new Set([
+    ...(Array.isArray(filters.interestedCourseIds) ? filters.interestedCourseIds : []),
+    ...(Array.isArray(filters.courseIds) ? filters.courseIds : []),
+  ].filter(Boolean)));
 
-  if (Array.isArray(filters.interestedCourseIds) && filters.interestedCourseIds.length > 0) {
-    filters.interestedCourseIds.forEach(id => params.append('interestedCourseIds', id));
+  if (allCourseIds.length > 0) {
+    allCourseIds.forEach(id => params.append('interestedCourseIds', id));
   }
 
   if (filters.registeredCourseId) {
@@ -442,8 +437,11 @@ export const countActiveFilters = (filters) => {
   if (filters.search && filters.search.trim()) count++;
   if (filters.leadSourceIds?.length) count += filters.leadSourceIds.length;
   if (filters.courseTypeIds?.length) count += filters.courseTypeIds.length;
-  if (filters.courseIds?.length) count += filters.courseIds.length;
-  if (filters.interestedCourseIds?.length) count += filters.interestedCourseIds.length;
+  const uniqueCourses = new Set([
+    ...(filters.courseIds || []),
+    ...(filters.interestedCourseIds || []),
+  ].filter(Boolean));
+  if (uniqueCourses.size) count += uniqueCourses.size;
   if (filters.registeredCourseId) count++;
   if (filters.departmentIds?.length) count += filters.departmentIds.length;
   if (filters.assignedUserIds?.length) count += filters.assignedUserIds.length;
@@ -510,21 +508,17 @@ export const buildFilterChips = (filters, lookups = {}) => {
     });
   });
 
-  // Courses
-  (filters.courseIds || []).forEach(id => {
+  // Courses (Interested)
+  const allCourseIdsForChips = Array.from(new Set([
+    ...(filters.courseIds || []),
+    ...(filters.interestedCourseIds || []),
+  ].filter(Boolean)));
+
+  allCourseIdsForChips.forEach(id => {
     chips.push({
       key: 'courseIds',
       value: id,
       label: `Course: ${findName(courses, id, 'courseName')}`,
-    });
-  });
-
-  // Interested Courses
-  (filters.interestedCourseIds || []).forEach(id => {
-    chips.push({
-      key: 'interestedCourseIds',
-      value: id,
-      label: `Interested Course: ${findName(courses, id, 'courseName')}`,
     });
   });
 
@@ -688,9 +682,8 @@ export const removeFilterFromState = (filters, chipKey, chipValue) => {
       next.leadSourceIds = (next.leadSourceIds || []).filter(id => id !== chipValue);
       break;
     case 'courseIds':
-      next.courseIds = (next.courseIds || []).filter(id => id !== chipValue);
-      break;
     case 'interestedCourseIds':
+      next.courseIds = (next.courseIds || []).filter(id => id !== chipValue);
       next.interestedCourseIds = (next.interestedCourseIds || []).filter(id => id !== chipValue);
       break;
     case 'registeredCourseId':

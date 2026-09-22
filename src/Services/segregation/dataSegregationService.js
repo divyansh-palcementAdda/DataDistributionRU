@@ -92,3 +92,30 @@ export const getCourseUserWiseSegregation = async (courseId, params = {}) => {
     }
 };
 
+/**
+ * Fetch user allocation summary (Total Users with Allotted Data and Users Currently Working)
+ * @param {Object} params - Active lead and entity filters
+ */
+export const getUserAllocationSummary = async (params = {}) => {
+    try {
+        const response = await axiosInstance.get(ApiRoutes.DataSegregation.userAllocationSummary, { params });
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
+/**
+ * Fetch detailed list of users with allotted data and currently working status matching filters
+ * @param {Object} params - Active filters + { currentlyWorking, search, page, size, sortBy, sortDirection }
+ */
+export const getUserAllocationUsers = async (params = {}) => {
+    try {
+        const response = await axiosInstance.get(ApiRoutes.DataSegregation.userAllocationUsers, { params });
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+
+

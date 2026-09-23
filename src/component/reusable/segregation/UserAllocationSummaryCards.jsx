@@ -48,7 +48,6 @@ const UserAllocationSummaryCards = ({
     let isCancelled = false;
 
     const fetchSummary = async () => {
-      // If user lacks both permissions, don't make API call
       if (!canViewAllottedUsers && !canViewWorkingUsers) {
         return;
       }
@@ -95,9 +94,6 @@ const UserAllocationSummaryCards = ({
   const notWorkingUsers = Math.max(0, totalUsers - workingUsers);
 
   const handleCardClick = (workingOnly) => {
-    if (onCardClick) {
-      onCardClick({ type: workingOnly ? 'working_users' : 'allotted_users', value: workingOnly });
-    }
     if (tableOpen && tableWorkingOnly === workingOnly) {
       // Toggle off if clicking the already active card
       setTableOpen(false);
@@ -105,36 +101,6 @@ const UserAllocationSummaryCards = ({
       setTableWorkingOnly(workingOnly);
       setTableOpen(true);
     }
-  };
-
-  const cardBaseStyle = {
-    background: '#ffffff',
-    borderRadius: '12px',
-    padding: '16px 20px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-    border: '1px solid #e5e7eb',
-    transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-    cursor: 'pointer',
-    height: '100px',
-    position: 'relative',
-    overflow: 'hidden',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    minWidth: '260px',
-    flex: '1 1 260px',
-  };
-
-  const handleMouseEnter = (e, hoverColor) => {
-    e.currentTarget.style.transform = 'translateY(-3px)';
-    e.currentTarget.style.boxShadow = `0 10px 24px ${hoverColor || 'rgba(0,0,0,0.12)'}`;
-    e.currentTarget.style.borderColor = hoverColor ? '#93c5fd' : '#cbd5e1';
-  };
-
-  const handleMouseLeave = (e, activeBorderColor) => {
-    e.currentTarget.style.transform = 'translateY(0)';
-    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
-    e.currentTarget.style.borderColor = activeBorderColor || '#e5e7eb';
   };
 
   const isCard1Active = tableOpen && !tableWorkingOnly;
@@ -146,81 +112,70 @@ const UserAllocationSummaryCards = ({
         {/* CARD 1: Total Users With Allotted Data */}
         {canViewAllottedUsers && (
           loading ? (
-            <div style={{ ...cardBaseStyle, cursor: 'default' }}>
-              <div className="flex items-center gap-3 w-full animate-pulse">
-                <div className="w-11 h-11 bg-gray-200 rounded-xl shrink-0" />
+            <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-xs h-[100px] flex items-center justify-between min-w-[260px] flex-1">
+              <div className="flex items-center gap-3.5 w-full animate-pulse">
+                <div className="w-11 h-11 bg-slate-200 rounded-xl shrink-0" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-3 bg-gray-200 rounded-sm w-3/4" />
-                  <div className="h-6 bg-gray-200 rounded-sm w-1/3" />
+                  <div className="h-3 bg-slate-200 rounded-sm w-3/4" />
+                  <div className="h-6 bg-slate-200 rounded-sm w-1/3" />
                 </div>
               </div>
             </div>
           ) : (
             <div
-              style={{
-                ...cardBaseStyle,
-                borderColor: isCard1Active ? '#2563EB' : '#e5e7eb',
-                borderWidth: isCard1Active ? '2px' : '1px',
-                boxShadow: isCard1Active ? '0 4px 16px rgba(37, 99, 235, 0.16)' : '0 2px 8px rgba(0,0,0,0.08)',
-                background: isCard1Active ? '#F8FAFC' : '#ffffff',
-              }}
               onClick={() => handleCardClick(false)}
-              onMouseEnter={(e) => handleMouseEnter(e, 'rgba(59, 130, 246, 0.18)')}
-              onMouseLeave={(e) => handleMouseLeave(e, isCard1Active ? '#2563EB' : '#e5e7eb')}
-              className="group"
+              className={`group relative flex items-center justify-between rounded-xl p-4 h-[100px] min-w-[260px] flex-1 cursor-pointer overflow-hidden transition-all duration-300 ${
+                isCard1Active
+                  ? 'bg-slate-50/70 border-2 border-indigo-600 shadow-md shadow-indigo-100'
+                  : 'bg-white border border-slate-200 shadow-xs hover:border-slate-300 hover:shadow-md hover:-translate-y-0.5'
+              }`}
               title="Click to view all users with allotted data table below"
             >
               <div className="flex items-center gap-3.5 flex-1 min-w-0">
-                <div style={{
-                  width: '44px',
-                  height: '44px',
-                  borderRadius: '12px',
-                  background: isCard1Active ? '#2563EB' : '#EFF6FF',
-                  color: isCard1Active ? '#ffffff' : '#2563EB',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  transition: 'all 0.2s ease'
-                }} className="group-hover:scale-105 group-hover:bg-blue-600 group-hover:text-white">
+                <div
+                  className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 ${
+                    isCard1Active
+                      ? 'bg-gradient-to-tr from-indigo-600 to-blue-600 text-white shadow-xs'
+                      : 'bg-indigo-50 text-indigo-600 group-hover:scale-105 group-hover:bg-indigo-600 group-hover:text-white'
+                  }`}
+                >
                   <UsersAllottedIcon />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span style={{
-                      fontSize: '13px',
-                      fontWeight: '600',
-                      color: isCard1Active ? '#1d4ed8' : '#1e293b',
-                      lineHeight: '1.3',
-                    }}>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span
+                      className={`text-[13px] font-semibold leading-tight transition-colors ${
+                        isCard1Active ? 'text-indigo-900' : 'text-slate-800'
+                      }`}
+                    >
                       Total Users With Allotted Data
                     </span>
                     {isCard1Active && (
-                      <span className="text-[9px] font-bold text-blue-600 bg-blue-100/70 px-1.5 py-0.5 rounded border border-blue-200 uppercase tracking-wide">
-                        Active Table
+                      <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200/80 shadow-2xs tracking-wide uppercase">
+                        Viewing
                       </span>
                     )}
                   </div>
-                  <div className="text-[11px] text-gray-400 font-medium mt-0.5 flex items-center gap-1">
-                    <span>Unique Counselors / Users</span>
+                  <div className="text-[11px] text-slate-400 font-medium mt-1">
+                    Unique Counselors / Users
                   </div>
                 </div>
               </div>
 
-              <div style={{
-                fontSize: '28px',
-                fontWeight: '800',
-                color: isCard1Active ? '#2563EB' : '#1e293b',
-                flexShrink: 0,
-                marginLeft: '12px',
-              }} className="group-hover:text-blue-600 transition-colors">
+              <div
+                className={`text-[28px] font-bold shrink-0 ml-3 transition-colors ${
+                  isCard1Active ? 'text-indigo-600' : 'text-slate-800 group-hover:text-indigo-600'
+                }`}
+              >
                 {totalUsers.toLocaleString()}
               </div>
 
-              {/* Accent subtle bottom border */}
-              <div className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-600 transition-opacity ${
-                isCard1Active ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-              }`} />
+              {/* Accent bottom border line */}
+              <div
+                className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-purple-600 transition-opacity duration-200 ${
+                  isCard1Active ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                }`}
+              />
             </div>
           )
         )}
@@ -228,65 +183,54 @@ const UserAllocationSummaryCards = ({
         {/* CARD 2: Users Currently Working */}
         {canViewWorkingUsers && (
           loading ? (
-            <div style={{ ...cardBaseStyle, cursor: 'default' }}>
-              <div className="flex items-center gap-3 w-full animate-pulse">
-                <div className="w-11 h-11 bg-gray-200 rounded-xl shrink-0" />
+            <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-xs h-[100px] flex items-center justify-between min-w-[260px] flex-1">
+              <div className="flex items-center gap-3.5 w-full animate-pulse">
+                <div className="w-11 h-11 bg-slate-200 rounded-xl shrink-0" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-3 bg-gray-200 rounded-sm w-3/4" />
-                  <div className="h-6 bg-gray-200 rounded-sm w-1/3" />
+                  <div className="h-3 bg-slate-200 rounded-sm w-3/4" />
+                  <div className="h-6 bg-slate-200 rounded-sm w-1/3" />
                 </div>
               </div>
             </div>
           ) : (
             <div
-              style={{
-                ...cardBaseStyle,
-                borderColor: isCard2Active ? '#059669' : '#e5e7eb',
-                borderWidth: isCard2Active ? '2px' : '1px',
-                boxShadow: isCard2Active ? '0 4px 16px rgba(5, 150, 105, 0.16)' : '0 2px 8px rgba(0,0,0,0.08)',
-                background: isCard2Active ? '#F0FDF4' : '#ffffff',
-              }}
               onClick={() => handleCardClick(true)}
-              onMouseEnter={(e) => handleMouseEnter(e, 'rgba(16, 185, 129, 0.18)')}
-              onMouseLeave={(e) => handleMouseLeave(e, isCard2Active ? '#059669' : '#e5e7eb')}
-              className="group"
+              className={`group relative flex items-center justify-between rounded-xl p-4 h-[100px] min-w-[260px] flex-1 cursor-pointer overflow-hidden transition-all duration-300 ${
+                isCard2Active
+                  ? 'bg-emerald-50/50 border-2 border-emerald-600 shadow-md shadow-emerald-100'
+                  : 'bg-white border border-slate-200 shadow-xs hover:border-slate-300 hover:shadow-md hover:-translate-y-0.5'
+              }`}
               title="Click to view users currently working table below"
             >
               <div className="flex items-center gap-3.5 flex-1 min-w-0">
-                <div style={{
-                  width: '44px',
-                  height: '44px',
-                  borderRadius: '12px',
-                  background: isCard2Active ? '#059669' : '#ECFDF5',
-                  color: isCard2Active ? '#ffffff' : '#059669',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                  transition: 'all 0.2s ease'
-                }} className="group-hover:scale-105 group-hover:bg-emerald-600 group-hover:text-white">
+                <div
+                  className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-all duration-200 ${
+                    isCard2Active
+                      ? 'bg-gradient-to-tr from-emerald-600 to-teal-600 text-white shadow-xs'
+                      : 'bg-emerald-50 text-emerald-600 group-hover:scale-105 group-hover:bg-emerald-600 group-hover:text-white'
+                  }`}
+                >
                   <UsersWorkingIcon />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span style={{
-                      fontSize: '13px',
-                      fontWeight: '600',
-                      color: isCard2Active ? '#047857' : '#1e293b',
-                      lineHeight: '1.3',
-                    }}>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span
+                      className={`text-[13px] font-semibold leading-tight transition-colors ${
+                        isCard2Active ? 'text-emerald-900' : 'text-slate-800'
+                      }`}
+                    >
                       Users Currently Working
                     </span>
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                     {isCard2Active && (
-                      <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100/70 px-1.5 py-0.5 rounded border border-emerald-200 uppercase tracking-wide">
-                        Active Table
+                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-full border border-emerald-200/80 shadow-2xs tracking-wide uppercase">
+                        Viewing
                       </span>
                     )}
                   </div>
-                  <div className="text-[11px] text-gray-400 font-medium mt-0.5">
+                  <div className="text-[11px] text-slate-400 font-medium mt-1">
                     {totalUsers > 0 ? (
-                      <span className="text-gray-500">
+                      <span className="text-slate-500">
                         {notWorkingUsers} {notWorkingUsers === 1 ? 'user' : 'users'} offline / inactive
                       </span>
                     ) : (
@@ -296,20 +240,20 @@ const UserAllocationSummaryCards = ({
                 </div>
               </div>
 
-              <div style={{
-                fontSize: '28px',
-                fontWeight: '800',
-                color: '#059669',
-                flexShrink: 0,
-                marginLeft: '12px',
-              }} className="group-hover:scale-105 transition-transform">
+              <div
+                className={`text-[28px] font-bold shrink-0 ml-3 transition-colors ${
+                  isCard2Active ? 'text-emerald-700' : 'text-emerald-600 group-hover:text-emerald-700'
+                }`}
+              >
                 {workingUsers.toLocaleString()}
               </div>
 
-              {/* Accent subtle bottom border */}
-              <div className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-600 transition-opacity ${
-                isCard2Active ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-              }`} />
+              {/* Accent bottom border line */}
+              <div
+                className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 to-teal-600 transition-opacity duration-200 ${
+                  isCard2Active ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                }`}
+              />
             </div>
           )
         )}

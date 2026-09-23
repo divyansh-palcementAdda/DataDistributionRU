@@ -3,16 +3,20 @@ import { getFollowupStatusCounts } from '../../../Services/cards/cardService';
 
 const FollowUpCards = ({ onCardClick, activeFilters = [] }) => {
   const [followUpData, setFollowUpData] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchFollowUpStatusData = async () => {
       try {
+        setLoading(true);
         console.log('FollowUpCards fetching data');
         const response = await getFollowupStatusCounts();
         console.log('FollowUpCards response:', response);
         setFollowUpData(response.data?.data || []);
       } catch (error) {
         console.error('Error fetching follow-up status counts:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -85,15 +89,25 @@ const FollowUpCards = ({ onCardClick, activeFilters = [] }) => {
 
   return (
     <div style={{ marginBottom: '24px' }}>
-      <h2 style={{ 
-        fontSize: '20px', 
-        fontWeight: '700', 
-        color: '#1e293b', 
-        marginBottom: '16px' 
+      <h2 style={{
+        fontSize: '20px',
+        fontWeight: '700',
+        color: '#1e293b',
+        marginBottom: '16px'
       }}>
         Follow-up Status
       </h2>
-      <div className="followup-cards-responsive-grid" style={gridStyle}>
+      {loading ? (
+        <div style={{
+          background: '#ffffff', borderRadius: '12px', padding: '40px 20px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)', border: '1px solid #e5e7eb',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
+        }}>
+          <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-indigo-500" />
+          <span style={{ fontSize: '14px', color: '#64748b' }}>Loading...</span>
+        </div>
+      ) : (
+        <div className="followup-cards-responsive-grid" style={gridStyle}>
         {followUpData.map((item) => {
           const cardStyle = getCardStyle(item.statusCode);
           return (
@@ -196,6 +210,7 @@ const FollowUpCards = ({ onCardClick, activeFilters = [] }) => {
           );
         })}
       </div>
+      )}
       <style>{`
         @media (max-width: 1200px) {
           .followup-cards-responsive-grid {

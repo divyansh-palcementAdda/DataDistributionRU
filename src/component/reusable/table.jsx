@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { FiEye, FiEdit, FiTrash2 } from "react-icons/fi";
 
 const ReusableTable = ({
@@ -26,6 +26,10 @@ const ReusableTable = ({
 }) => {
     const [clientPage, setClientPage] = useState(1);
     const [clientRows, setClientRows] = useState(10);
+    const [isDragging, setIsDragging] = useState(false);
+    const [startX, setStartX] = useState(0);
+    const [scrollLeft, setScrollLeft] = useState(0);
+    const tableContainerRef = useRef(null);
 
     const currentPage = isServerSide ? serverCurrentPage : clientPage;
     const rowsPerPage = isServerSide ? serverRowsPerPage : clientRows;
@@ -87,10 +91,39 @@ const ReusableTable = ({
         );
     };
 
+    const handleMouseDown = (e) => {
+        setIsDragging(true);
+        setStartX(e.pageX - tableContainerRef.current.offsetLeft);
+        setScrollLeft(tableContainerRef.current.scrollLeft);
+    };
+
+    const handleMouseMove = (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+        const x = e.pageX - tableContainerRef.current.offsetLeft;
+        const walk = (x - startX) * 2;
+        tableContainerRef.current.scrollLeft = scrollLeft - walk;
+    };
+
+    const handleMouseUp = () => {
+        setIsDragging(false);
+    };
+
+    const handleMouseLeave = () => {
+        setIsDragging(false);
+    };
+
     return (
         <div className="w-full overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-xs">
             {/* Desktop Table */}
-            <div style={{ overflowX: 'auto' }}>
+            <div 
+                ref={tableContainerRef}
+                style={{ overflowX: 'auto', cursor: isDragging ? 'grabbing' : 'grab' }}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseLeave}
+            >
                 <table className="w-full min-w-max border-collapse">
                     <thead>
                         <tr className={headerClassName}>

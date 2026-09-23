@@ -23,6 +23,7 @@ const COLORS = [
 const GradWiseCard = ({ data, onCardClick, activeFilters = [], courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId }) => {
   // API returns an array: [{id, name, code, count, percentage}, ...]
   const [gradeData, setGradeData] = useState([]);
+  const [loading, setLoading] = useState(false);
   const { hasPermission } = usePermissions();
 
   useEffect(() => {
@@ -34,6 +35,7 @@ const GradWiseCard = ({ data, onCardClick, activeFilters = [], courseTypeId, lea
 
     const fetchGradeData = async () => {
       try {
+        setLoading(true);
         const params = {};
         if (courseTypeId) params.courseTypeId = courseTypeId;
         if (leadSourceId) params.leadSourceId = leadSourceId;
@@ -41,13 +43,15 @@ const GradWiseCard = ({ data, onCardClick, activeFilters = [], courseTypeId, lea
         if (gradeId) params.gradeId = gradeId;
         if (assignedUserIds) params.assignedUserIds = assignedUserIds;
         if (departmentId) params.departmentId = departmentId;
-        
+
         const response = await getGradeBreakdown(params);
         const payload = response?.data?.data ?? response?.data ?? response ?? [];
         // Normalise: always store as an array
         setGradeData(Array.isArray(payload) ? payload : Object.values(payload));
       } catch (error) {
         console.error('Error fetching grade breakdown:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -86,7 +90,16 @@ const GradWiseCard = ({ data, onCardClick, activeFilters = [], courseTypeId, lea
         Grade Wise
       </h2>
 
-      {visibleItems.length === 0 ? (
+      {loading ? (
+        <div style={{
+          background: '#ffffff', borderRadius: '12px', padding: '40px 20px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)', border: '1px solid #e5e7eb',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
+        }}>
+          <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-indigo-500" />
+          <span style={{ fontSize: '14px', color: '#64748b' }}>Loading...</span>
+        </div>
+      ) : visibleItems.length === 0 ? (
         <div style={{
           background: '#ffffff', borderRadius: '12px', padding: '40px 20px',
           boxShadow: '0 2px 8px rgba(0,0,0,0.08)', border: '1px solid #e5e7eb',

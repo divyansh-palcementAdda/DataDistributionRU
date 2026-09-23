@@ -130,9 +130,10 @@ const TodayFollowUpsCard = ({ data, onCardClick, activeFilters = [], filterReque
         <div style={{
           background: '#ffffff', borderRadius: '12px', padding: '40px 20px',
           boxShadow: '0 2px 8px rgba(0,0,0,0.08)', border: '1px solid #e5e7eb',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
         }}>
-          <div style={{ fontSize: '16px', fontWeight: '600', color: '#94a3b8' }}>Loading...</div>
+          <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-indigo-500" />
+          <span style={{ fontSize: '14px', color: '#64748b' }}>Loading...</span>
         </div>
       ) : (
         <div

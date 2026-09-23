@@ -21,6 +21,7 @@ import AllottedCard from '../component/reusable/DashBoards/allottedCard';
 import UserAllocationSummaryCards from '../component/reusable/segregation/UserAllocationSummaryCards';
 import ReusableTable from '../component/reusable/table';
 import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
+import AssignLeadModal from '../component/reusable/Leads/AssignLeadModal';
 import * as XLSX from 'xlsx';
 import {
     renderLeadInfoCell,

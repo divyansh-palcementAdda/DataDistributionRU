@@ -5,6 +5,7 @@ import { usePermissions } from '../../../PermissionContext';
 const CategorywiseCard = ({ data, onCardClick, activeFilters = [], filterRequest = {}, courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId }) => {
   // API returns an array: [{id, name, code, count, percentage}, ...]
   const [courseTypesData, setCourseTypesData] = useState([]);
+  const [loading, setLoading] = useState(false);
   const { hasPermission } = usePermissions();
 
   const filterRequestKey = JSON.stringify(filterRequest);
@@ -19,6 +20,7 @@ const CategorywiseCard = ({ data, onCardClick, activeFilters = [], filterRequest
     let isCancelled = false;
     const fetchCourseTypes = async () => {
       try {
+        setLoading(true);
         const baseParams = {};
         if (courseTypeId) baseParams.courseTypeId = courseTypeId;
         if (leadSourceId) baseParams.leadSourceId = leadSourceId;
@@ -38,6 +40,10 @@ const CategorywiseCard = ({ data, onCardClick, activeFilters = [], filterRequest
       } catch (error) {
         if (!isCancelled) {
           console.error('Error fetching course types:', error);
+        }
+      } finally {
+        if (!isCancelled) {
+          setLoading(false);
         }
       }
     };
@@ -96,7 +102,16 @@ const CategorywiseCard = ({ data, onCardClick, activeFilters = [], filterRequest
       }}>
         Category Wise data
       </h2>
-      {courseTypesData.length === 0 ? (
+      {loading ? (
+        <div style={{
+          background: '#ffffff', borderRadius: '12px', padding: '40px 20px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)', border: '1px solid #e5e7eb',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
+        }}>
+          <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-indigo-500" />
+          <span style={{ fontSize: '14px', color: '#64748b' }}>Loading...</span>
+        </div>
+      ) : courseTypesData.length === 0 ? (
         <div style={{
           textAlign: 'center',
           padding: '40px',

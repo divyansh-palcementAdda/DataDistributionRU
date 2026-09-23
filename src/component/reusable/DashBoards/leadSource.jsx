@@ -24,6 +24,7 @@ const COLORS = [
 const LeadSource = ({ data, onCardClick, activeFilters = [], filterRequest = {}, courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId }) => {
   // API returns an array: [{id, name, code, count, percentage}, ...]
   const [sourceData, setSourceData] = useState([]);
+  const [loading, setLoading] = useState(false);
   const { hasPermission } = usePermissions();
 
   // Stable JSON key for filterRequest so useEffect only re-runs on actual changes
@@ -39,6 +40,7 @@ const LeadSource = ({ data, onCardClick, activeFilters = [], filterRequest = {},
     let isCancelled = false;
     const fetchSourceData = async () => {
       try {
+        setLoading(true);
         // Start with individual scalar props (backward-compat for non-Leads usages)
         const baseParams = {};
         if (courseTypeId) baseParams.courseTypeId = courseTypeId;
@@ -61,6 +63,10 @@ const LeadSource = ({ data, onCardClick, activeFilters = [], filterRequest = {},
       } catch (error) {
         if (!isCancelled) {
           console.error('Error fetching lead source breakdown:', error);
+        }
+      } finally {
+        if (!isCancelled) {
+          setLoading(false);
         }
       }
     };
@@ -96,7 +102,16 @@ const LeadSource = ({ data, onCardClick, activeFilters = [], filterRequest = {},
         Data Source
       </h2>
 
-      {items.length === 0 ? (
+      {loading ? (
+        <div style={{
+          background: '#ffffff', borderRadius: '12px', padding: '40px 20px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)', border: '1px solid #e5e7eb',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
+        }}>
+          <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-indigo-500" />
+          <span style={{ fontSize: '14px', color: '#64748b' }}>Loading...</span>
+        </div>
+      ) : items.length === 0 ? (
         <div style={{
           background: '#ffffff', borderRadius: '12px', padding: '40px 20px',
           boxShadow: '0 2px 8px rgba(0,0,0,0.08)', border: '1px solid #e5e7eb',

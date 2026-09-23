@@ -4,6 +4,7 @@ import { usePermissions } from '../../../PermissionContext';
 
 const LeadCards = ({ onCardClick, activeFilters = [], filterRequest = {}, courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId }) => {
   const [leadData, setLeadData] = useState([]);
+  const [loading, setLoading] = useState(false);
   const { hasPermission } = usePermissions();
 
   // Stable JSON key for filterRequest so useEffect only re-runs on actual changes
@@ -13,6 +14,7 @@ const LeadCards = ({ onCardClick, activeFilters = [], filterRequest = {}, course
     let isCancelled = false;
     const fetchLeadStatusData = async () => {
       try {
+        setLoading(true);
         // Start with individual scalar props (backward-compat for non-Leads usages)
         const baseParams = {};
         if (courseTypeId) baseParams.courseTypeId = courseTypeId;
@@ -33,6 +35,10 @@ const LeadCards = ({ onCardClick, activeFilters = [], filterRequest = {}, course
       } catch (error) {
         if (!isCancelled) {
           console.error('Error fetching lead status breakdown:', error);
+        }
+      } finally {
+        if (!isCancelled) {
+          setLoading(false);
         }
       }
     };
@@ -208,7 +214,17 @@ const LeadCards = ({ onCardClick, activeFilters = [], filterRequest = {}, course
       }}>
         Lead Status
       </h2>
-      <div className="lead-cards-responsive-grid" style={gridStyle}>
+      {loading ? (
+        <div style={{
+          background: '#ffffff', borderRadius: '12px', padding: '40px 20px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)', border: '1px solid #e5e7eb',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
+        }}>
+          <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-indigo-500" />
+          <span style={{ fontSize: '14px', color: '#64748b' }}>Loading...</span>
+        </div>
+      ) : (
+        <div className="lead-cards-responsive-grid" style={gridStyle}>
         {leadData.map((item) => {
           const cardStyle = getCardStyle(item.code);
           return (
@@ -317,6 +333,7 @@ const LeadCards = ({ onCardClick, activeFilters = [], filterRequest = {}, course
           );
         })}
       </div>
+      )}
       <style>{`
         /* Lead Cards Container Responsive */
         @media (max-width: 1400px) {

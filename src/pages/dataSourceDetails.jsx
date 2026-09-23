@@ -18,6 +18,8 @@ import GradWiseCard from '../component/reusable/DashBoards/gradWiseCard';
 import UnallottedCard from '../component/reusable/DashBoards/UnallottedCard';
 import AvailedCard from '../component/reusable/DashBoards/availedCard';
 import AllottedCard from '../component/reusable/DashBoards/allottedCard';
+import UserAllocationSummaryCards from '../component/reusable/segregation/UserAllocationSummaryCards';
+import UserAllocationListModal from '../component/reusable/segregation/UserAllocationListModal';
 import ReusableTable from '../component/reusable/table';
 import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import AssignLeadModal from '../component/reusable/Leads/AssignLeadModal';
@@ -291,6 +293,10 @@ const DataSourceDetails = () => {
     // row selection & assign modal
     const [selectedRows, setSelectedRows]           = useState(new Set());
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+
+    // user allocation list modal
+    const [isUserAllocationModalOpen, setIsUserAllocationModalOpen] = useState(false);
+    const [userAllocationInitialWorkingOnly, setUserAllocationInitialWorkingOnly] = useState(false);
 
     useEffect(() => {
         if (id) {
@@ -754,6 +760,27 @@ const DataSourceDetails = () => {
                     />
                 </div>
 
+                {/* User Allocation & Workload Analytics Cards */}
+                <UserAllocationSummaryCards
+                    leadSourceId={id}
+                    filterRequest={filterRequest}
+                    activeFilters={activeFilters}
+                    scopeTitle={details?.name || 'Data Source'}
+                    onCardClick={handleCardClick}
+                />
+                
+                <div className="flex justify-end mb-6">
+                    <button
+                        onClick={() => {
+                            setUserAllocationInitialWorkingOnly(false);
+                            setIsUserAllocationModalOpen(true);
+                        }}
+                        className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition-all shadow-sm hover:shadow"
+                    >
+                        View User Allocation
+                    </button>
+                </div>
+
                 <LeadCards
                     onCardClick={handleCardClick}
                     activeFilters={activeFilters}
@@ -945,6 +972,17 @@ const DataSourceDetails = () => {
                 }),
             }}
             showToast={(msg, type) => console.log(`[${type}]`, msg)}
+        />
+
+        {/* ── User Allocation List Modal ── */}
+        <UserAllocationListModal
+            isOpen={isUserAllocationModalOpen}
+            onClose={() => setIsUserAllocationModalOpen(false)}
+            initialWorkingOnly={userAllocationInitialWorkingOnly}
+            filterRequest={filterRequest}
+            activeFilters={activeFilters}
+            scopeTitle={details?.name || 'Data Source'}
+            leadSourceId={id}
         />
         </>
     );

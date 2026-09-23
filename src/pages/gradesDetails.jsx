@@ -18,6 +18,8 @@ import BoardWiseCard from '../component/reusable/DashBoards/BoardWiseCard';
 import UnallottedCard from '../component/reusable/DashBoards/UnallottedCard';
 import AvailedCard from '../component/reusable/DashBoards/availedCard';
 import AllottedCard from '../component/reusable/DashBoards/allottedCard';
+import UserAllocationSummaryCards from '../component/reusable/segregation/UserAllocationSummaryCards';
+import UserAllocationListModal from '../component/reusable/segregation/UserAllocationListModal';
 import ReusableTable from '../component/reusable/table';
 import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import AssignLeadModal from '../component/reusable/Leads/AssignLeadModal';
@@ -294,6 +296,10 @@ const GradesDetails = () => {
     // row selection & assign modal
     const [selectedRows, setSelectedRows]           = useState(new Set());
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+
+    // user allocation list modal
+    const [isUserAllocationModalOpen, setIsUserAllocationModalOpen] = useState(false);
+    const [userAllocationInitialWorkingOnly, setUserAllocationInitialWorkingOnly] = useState(false);
 
     // ── fetch grade details ──
     useEffect(() => {
@@ -694,6 +700,15 @@ const GradesDetails = () => {
                             gradeId={id}
                         />
                     </div>
+
+                    {/* User Allocation & Workload Analytics Cards */}
+                    <UserAllocationSummaryCards
+                        gradeId={id}
+                        filterRequest={filterRequest}
+                        activeFilters={activeFilters}
+                        scopeTitle={details?.gradeName || 'Grade'}
+                        onCardClick={handleCardClick}
+                    />
 
                     <LeadCards
                         onCardClick={handleCardClick}

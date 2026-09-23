@@ -21,6 +21,10 @@ const UsersWorkingIcon = () => (
 const UserAllocationSummaryCards = ({
   courseId,
   courseTypeId,
+  leadSourceId,
+  boardId,
+  gradeId,
+  leadStatusId,
   filterRequest = {},
   activeFilters = [],
   scopeTitle = '',
@@ -60,6 +64,10 @@ const UserAllocationSummaryCards = ({
           params.interestedCourseIds = [courseId];
         }
         if (courseTypeId) params.courseTypeId = courseTypeId;
+        if (leadSourceId) params.leadSourceId = leadSourceId;
+        if (boardId) params.boardId = boardId;
+        if (gradeId) params.gradeId = gradeId;
+        if (leadStatusId) params.leadStatusId = leadStatusId;
 
         const response = await getUserAllocationSummary(params);
         if (!isCancelled) {
@@ -83,7 +91,7 @@ const UserAllocationSummaryCards = ({
     return () => {
       isCancelled = true;
     };
-  }, [courseId, courseTypeId, filterKey, canViewAllottedUsers, canViewWorkingUsers]);
+  }, [courseId, courseTypeId, leadSourceId, boardId, gradeId, leadStatusId, filterKey, canViewAllottedUsers, canViewWorkingUsers]);
 
   if (!canViewAllottedUsers && !canViewWorkingUsers) {
     return null;
@@ -264,6 +272,10 @@ const UserAllocationSummaryCards = ({
         <UserAllocationTable
           courseId={courseId}
           courseTypeId={courseTypeId}
+          leadSourceId={leadSourceId}
+          boardId={boardId}
+          gradeId={gradeId}
+          leadStatusId={leadStatusId}
           filterRequest={filterRequest}
           activeFilters={activeFilters}
           scopeTitle={scopeTitle}

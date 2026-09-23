@@ -12,7 +12,11 @@ const UserAllocationListModal = ({
   activeFilters = [],
   scopeTitle = '',
   courseId,
-  courseTypeId
+  courseTypeId,
+  leadSourceId,
+  boardId,
+  gradeId,
+  leadStatusId
 }) => {
   const navigate = useNavigate();
   const [workingFilter, setWorkingFilter] = useState(initialWorkingOnly);
@@ -56,6 +60,10 @@ const UserAllocationListModal = ({
 
       if (courseId) params.courseId = courseId;
       if (courseTypeId) params.courseTypeId = courseTypeId;
+      if (leadSourceId) params.leadSourceId = leadSourceId;
+      if (boardId) params.boardId = boardId;
+      if (gradeId) params.gradeId = gradeId;
+      if (leadStatusId) params.leadStatusId = leadStatusId;
       if (searchTerm.trim()) params.search = searchTerm.trim();
       if (workingFilter) params.currentlyWorking = true;
 
@@ -75,7 +83,7 @@ const UserAllocationListModal = ({
     } finally {
       setLoading(false);
     }
-  }, [isOpen, filterKey, courseId, courseTypeId, workingFilter, searchTerm, page, size, sortBy, sortDirection]);
+  }, [isOpen, filterKey, courseId, courseTypeId, leadSourceId, boardId, gradeId, leadStatusId, workingFilter, searchTerm, page, size, sortBy, sortDirection]);
 
   useEffect(() => {
     fetchUsers();
@@ -134,6 +142,10 @@ const UserAllocationListModal = ({
     const params = new URLSearchParams();
     if (courseId) params.append('courseId', courseId);
     if (courseTypeId) params.append('courseTypeId', courseTypeId);
+    if (leadSourceId) params.append('leadSourceId', leadSourceId);
+    if (boardId) params.append('boardId', boardId);
+    if (gradeId) params.append('gradeId', gradeId);
+    if (leadStatusId) params.append('statusId', leadStatusId);
     if (userId) params.append('assignedToId', userId);
 
     if (filterRequest) {

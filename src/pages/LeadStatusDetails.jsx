@@ -19,6 +19,8 @@ import GradWiseCard from '../component/reusable/DashBoards/gradWiseCard';
 import AllottedCard from '../component/reusable/DashBoards/allottedCard';
 import AvailedCard from '../component/reusable/DashBoards/availedCard';
 import UnallottedCard from '../component/reusable/DashBoards/UnallottedCard';
+import UserAllocationSummaryCards from '../component/reusable/segregation/UserAllocationSummaryCards';
+import UserAllocationListModal from '../component/reusable/segregation/UserAllocationListModal';
 import ReusableTable from '../component/reusable/table';
 import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import AssignLeadModal from '../component/reusable/Leads/AssignLeadModal';
@@ -329,6 +331,10 @@ const LeadStatusDetails = () => {
     const [selectedRows, setSelectedRows]           = useState(new Set());
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
 
+    // user allocation list modal
+    const [isUserAllocationModalOpen, setIsUserAllocationModalOpen] = useState(false);
+    const [userAllocationInitialWorkingOnly, setUserAllocationInitialWorkingOnly] = useState(false);
+
     // ── fetch lead status details ──
     useEffect(() => {
         if (!id) return;
@@ -429,7 +435,7 @@ const LeadStatusDetails = () => {
 
     // ── update filterRequest when activeFilters change for cards ──
     useEffect(() => {
-        const newFilterRequest = { statusId: id };
+        const newFilterRequest = { statusId: id, leadStatusIds: [id] };
         activeFilters.forEach(filter => {
             switch (filter.type) {
                 case 'unallotted':
@@ -451,7 +457,7 @@ const LeadStatusDetails = () => {
     // ── initialize filterRequest with statusId ──
     useEffect(() => {
         if (id) {
-            setFilterRequest({ statusId: id });
+            setFilterRequest({ statusId: id, leadStatusIds: [id] });
         }
     }, [id]);
 
@@ -719,6 +725,16 @@ const LeadStatusDetails = () => {
                         statusId={id}
                     />
                 </div>
+
+                {/* User Allocation & Workload Analytics Cards */}
+                <UserAllocationSummaryCards
+                    leadStatusId={id}
+                    filterRequest={filterRequest}
+                    activeFilters={activeFilters}
+                    scopeTitle={details?.name || 'Lead Status'}
+                    onCardClick={handleCardClick}
+                />
+
                 <LeadSource
                     data={dashData.leadSource}
                     onCardClick={handleCardClick}
@@ -892,6 +908,27 @@ const LeadStatusDetails = () => {
                 }, {}),
             }}
             showToast={(msg, type) => console.log(`[${type}]`, msg)}
+        />
+
+        {/* ── User Allocation List Modal ── */}
+        <UserAllocationListModal
+            isOpen={isUserAllocationModalOpen}
+            onClose={() => setIsUserAllocationModalOpen(false)}
+            initialWorkingOnly={userAllocationInitialWorkingOnly}
+            filters={{
+                leadStatusIds: id ? [id] : [],
+                ...activeFilters.reduce((acc, filter) => {
+                    if (filter.type === 'leadSource')  acc.leadSourceIds  = [...(acc.leadSourceIds || []), filter.value];
+                    if (filter.type === 'courseType')  acc.courseTypeIds  = [...(acc.courseTypeIds || []), filter.value];
+                    if (filter.type === 'board')       acc.boardIds       = [...(acc.boardIds || []), filter.value];
+                    if (filter.type === 'grade')       acc.gradeIds       = [...(acc.gradeIds || []), filter.value];
+                    if (filter.type === 'allotted')    acc.isAllotted     = true;
+                    if (filter.type === 'availed')      acc.isAvailed       = true;
+                    if (filter.type === 'unallotted')   acc.isUnallotted    = true;
+                    return acc;
+                }, {}),
+            }}
+            scopeTitle={details?.name || 'Lead Status'}
         />
         </>
     );

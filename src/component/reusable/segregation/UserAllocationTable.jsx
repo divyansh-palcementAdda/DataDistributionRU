@@ -11,6 +11,10 @@ import { useNavigate } from 'react-router-dom';
  * Props:
  * - courseId: UUID (optional)
  * - courseTypeId: UUID (optional)
+ * - leadSourceId: UUID (optional)
+ * - boardId: UUID (optional)
+ * - gradeId: UUID (optional)
+ * - leadStatusId: UUID (optional)
  * - filterRequest: Object (optional filters like source, status, date)
  * - activeFilters: Array (optional chip display)
  * - scopeTitle: String (e.g., 'BBA', 'Management')
@@ -26,6 +30,10 @@ import { useNavigate } from 'react-router-dom';
 const UserAllocationTable = ({
   courseId,
   courseTypeId,
+  leadSourceId,
+  boardId,
+  gradeId,
+  leadStatusId,
   filterRequest = {},
   activeFilters = [],
   scopeTitle = '',
@@ -100,6 +108,10 @@ const UserAllocationTable = ({
         params.interestedCourseIds = [courseId];
       }
       if (courseTypeId) params.courseTypeId = courseTypeId;
+      if (leadSourceId) params.leadSourceId = leadSourceId;
+      if (boardId) params.boardId = boardId;
+      if (gradeId) params.gradeId = gradeId;
+      if (leadStatusId) params.leadStatusId = leadStatusId;
       if (searchTerm.trim()) params.search = searchTerm.trim();
       if (activeWorkingFilter) params.currentlyWorking = true;
 
@@ -119,7 +131,7 @@ const UserAllocationTable = ({
     } finally {
       setLoading(false);
     }
-  }, [isOpen, filterKey, courseId, courseTypeId, activeWorkingFilter, searchTerm, page, size, sortBy, sortDirection]);
+  }, [isOpen, filterKey, courseId, courseTypeId, leadSourceId, boardId, gradeId, leadStatusId, activeWorkingFilter, searchTerm, page, size, sortBy, sortDirection]);
 
   useEffect(() => {
     fetchUsers();
@@ -165,6 +177,10 @@ const UserAllocationTable = ({
         exportParams.interestedCourseIds = [courseId];
       }
       if (courseTypeId) exportParams.courseTypeId = courseTypeId;
+      if (leadSourceId) exportParams.leadSourceId = leadSourceId;
+      if (boardId) exportParams.boardId = boardId;
+      if (gradeId) exportParams.gradeId = gradeId;
+      if (leadStatusId) exportParams.leadStatusId = leadStatusId;
       if (searchTerm.trim()) exportParams.search = searchTerm.trim();
       if (activeWorkingFilter) exportParams.currentlyWorking = true;
 
@@ -210,6 +226,18 @@ const UserAllocationTable = ({
     if (courseId) {
       queryFilters.courseIds = [courseId];
       queryFilters.interestedCourseIds = [courseId];
+    }
+    if (courseTypeId) {
+      queryFilters.courseTypeIds = [courseTypeId];
+    }
+    if (leadSourceId) {
+      queryFilters.leadSourceIds = [leadSourceId];
+    }
+    if (boardId) {
+      queryFilters.boardIds = [boardId];
+    }
+    if (gradeId) {
+      queryFilters.gradeIds = [gradeId];
     }
     navigate('/leads', { state: { ...queryFilters } });
   };

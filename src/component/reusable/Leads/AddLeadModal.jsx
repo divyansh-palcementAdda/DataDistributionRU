@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import CustomInput from '../CustomInput';
 import CustomButton from '../CustomButton';
 import { useAppContext } from '../../../AppContext';
@@ -26,9 +26,32 @@ const AddLeadModal = () => {
 
   const isEditMode = Boolean(editLeadData);
 
+  const isLeadRegisteredAndVerified = useMemo(() => {
+    if (!editLeadData) return false;
+    const status = (editLeadData.registrationStatus || editLeadData.registration_status || '')?.toUpperCase();
+    return Boolean(
+      status === 'COMPLETED_MATCHED' ||
+      status === 'MANUALLY_APPROVED' ||
+      status === 'VERIFIED' ||
+      status === 'REGISTERED_VERIFIED' ||
+      status === 'APPROVED' ||
+      editLeadData.isRegistrationVerified ||
+      editLeadData.registrationVerified
+    );
+  }, [editLeadData]);
+
   const isFieldVisible = (fieldKey) => {
+    // Registered Course field rules:
+    // - Remove completely from Add Lead modal (!isEditMode)
+    // - While editing, only show if lead is registered and verified AND has edit permission
+    if (fieldKey === 'course') {
+      if (!isEditMode) return false;
+      return canEditLeadField(hasPermission, 'course') && isLeadRegisteredAndVerified;
+    }
+
     if (!isEditMode) return true;
-    return canViewLeadField(hasPermission, fieldKey);
+    // In edit mode: hide fields if user lacks edit permission (do not show read-only fields)
+    return canEditLeadField(hasPermission, fieldKey);
   };
 
   const isFieldDisabled = (fieldKey, defaultDisabled = false) => {
@@ -1185,7 +1208,7 @@ const AddLeadModal = () => {
             {isFieldVisible('course') && (
               <div>
                 <label className="form-label flex items-center justify-between">
-                  <span>Course</span>
+                  <span>Registered Course</span>
                   {isEditMode && !canEditLeadField(hasPermission, 'course') && (
                     <span className="text-[10px] text-gray-400 font-normal">🔒 Read-only</span>
                   )}
@@ -1198,9 +1221,11 @@ const AddLeadModal = () => {
                       setDropdownStates(prev => ({ ...prev, course: !prev.course }));
                     }}
                   >
-                    {formData.courseId 
-                      ? courses.find(c => String(c.id) === String(formData.courseId))?.name || 'Select Course'
-                      : 'Select Course'
+                    {(formData.registeredCourseId || formData.courseId)
+                      ? (courses.find(c => String(c.id) === String(formData.registeredCourseId || formData.courseId))?.name ||
+                         courses.find(c => String(c.id) === String(formData.registeredCourseId || formData.courseId))?.courseName ||
+                         'Select Registered Course')
+                      : 'Select Registered Course'
                     }
                     <span className="custom-dropdown-arrow">▼</span>
                   </div>
@@ -1209,7 +1234,7 @@ const AddLeadModal = () => {
                       <div className="custom-dropdown-search">
                         <input
                           type="text"
-                          placeholder="Search courses..."
+                          placeholder="Search registered courses..."
                           value={searchTerms.course}
                           onChange={(e) => setSearchTerms(prev => ({ ...prev, course: e.target.value }))}
                           className="custom-search-input"
@@ -1218,41 +1243,47 @@ const AddLeadModal = () => {
                       <div className="custom-dropdown-options">
                         {courses
                           .filter(course => 
-                            course.name?.toLowerCase().includes(searchTerms.course.toLowerCase())
+                            (course.name || course.courseName || '')
+                              .toLowerCase()
+                              .includes(searchTerms.course.toLowerCase())
                           )
                           .map((course) => (
                           <div 
                             key={course.id} 
-                            className={`custom-dropdown-option ${String(formData.courseId) === String(course.id) ? 'selected' : ''}`}
+                            className={`custom-dropdown-option ${String(formData.registeredCourseId || formData.courseId) === String(course.id) ? 'selected' : ''}`}
                           >
                             <input
                               type="checkbox"
                               id={`custom-course-${course.id}`}
                               value={course.id}
-                              checked={String(formData.courseId) === String(course.id)}
+                              checked={String(formData.registeredCourseId || formData.courseId) === String(course.id)}
                               onChange={(e) => {
                                 if (e.target.checked) {
                                   setFormData((prev) => ({
                                     ...prev,
                                     courseId: String(course.id),
+                                    registeredCourseId: String(course.id),
                                   }));
                                 } else {
                                   setFormData((prev) => ({
                                     ...prev,
                                     courseId: '',
+                                    registeredCourseId: '',
                                   }));
                                 }
                               }}
                             />
                             <label htmlFor={`custom-course-${course.id}`} className="custom-option-label">
-                              {course.name}
+                              {course.name || course.courseName}
                             </label>
                           </div>
                         ))}
                         {courses.filter(course => 
-                          course.courseName?.toLowerCase().includes(searchTerms.course.toLowerCase())
+                          (course.name || course.courseName || '')
+                            .toLowerCase()
+                            .includes(searchTerms.course.toLowerCase())
                         ).length === 0 && (
-                          <div className="custom-no-options">No courses found</div>
+                          <div className="custom-no-options">No registered courses found</div>
                         )}
                       </div>
                     </div>

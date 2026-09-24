@@ -1034,6 +1034,16 @@ const Leads = () => {
                             registeredCourseId: String(
                               full.registeredCourse?.id ?? full.registeredCourseId ?? ''
                             ),
+                            registrationStatus: full.registrationStatus || '',
+                            isRegistrationVerified: Boolean(
+                              full.registrationStatus === 'COMPLETED_MATCHED' ||
+                              full.registrationStatus === 'MANUALLY_APPROVED' ||
+                              full.registrationStatus === 'VERIFIED' ||
+                              full.registrationStatus === 'REGISTERED_VERIFIED' ||
+                              full.registrationStatus === 'APPROVED' ||
+                              full.isRegistrationVerified ||
+                              full.registrationVerified
+                            ),
                             // board
                             boardId: String(
                               full.board?.id ?? full.boardId ?? ''

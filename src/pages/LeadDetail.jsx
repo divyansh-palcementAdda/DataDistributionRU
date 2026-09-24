@@ -393,6 +393,17 @@ const LeadDetail = () => {
   const hasPendingFollowup = followUps.some(f => f.status === 'PENDING' && !f.completed);
   const followUpStatus = leadDetails?.currentStatus?.followUpStatus || false;
 
+  // Lead Registration Verification Status
+  const isRegistrationVerified = Boolean(
+    leadDetails?.registrationStatus === 'COMPLETED_MATCHED' ||
+    leadDetails?.registrationStatus === 'MANUALLY_APPROVED' ||
+    leadDetails?.registrationStatus === 'VERIFIED' ||
+    leadDetails?.registrationStatus === 'REGISTERED_VERIFIED' ||
+    leadDetails?.registrationStatus === 'APPROVED' ||
+    leadDetails?.isRegistrationVerified ||
+    leadDetails?.registrationVerified
+  );
+
   // Multi-Source Business Logic (as defined by backend Lead entity and leadSources collection)
   const isMultiSource = useMemo(() => {
     if (!leadDetails) return false;
@@ -499,6 +510,8 @@ const LeadDetail = () => {
       interestedCourseIds: leadDetails.interestedCourses?.map((c) => c.id) || [],
       courseId: leadDetails.course?.id || '',
       registeredCourseId: leadDetails.registeredCourse?.id || '',
+      registrationStatus: leadDetails.registrationStatus || '',
+      isRegistrationVerified,
       programId: leadDetails.program?.id || '',
       boardId: leadDetails.board?.id || '',
       gradeId: leadDetails.grade?.id || '',
@@ -940,8 +953,8 @@ const LeadDetail = () => {
                       )
                     )}
 
-                    {/* UNMAPPED WARNING BADGE (if incomplete mapping exists) */}
-                    {missingMappingFields.length > 0 && (
+                    {/* UNMAPPED WARNING BADGE (if incomplete mapping exists - Admin only) */}
+                    {isAdmin && missingMappingFields.length > 0 && (
                       <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-300 shadow-xs">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                           <circle cx="12" cy="12" r="10" />
@@ -1060,8 +1073,8 @@ const LeadDetail = () => {
             </div>
           )}
 
-          {/* SECTION B: Data Mapping Required Alert (Slim, Elegant) */}
-          {missingMappingFields.length > 0 && (
+          {/* SECTION B: Data Mapping Required Alert (Slim, Elegant - Admin only) */}
+          {isAdmin && missingMappingFields.length > 0 && (
             <div className="px-4 py-2.5 rounded-xl border border-amber-200 bg-amber-50/60 flex flex-wrap items-center justify-between gap-3 text-xs">
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className="w-6 h-6 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center flex-shrink-0">
@@ -1294,11 +1307,11 @@ const LeadDetail = () => {
                   </div>
                 )}
 
-                {canViewLeadField(hasPermission, 'course') && leadDetails.registeredCourse && (
+                {canViewLeadField(hasPermission, 'course') && isRegistrationVerified && (leadDetails.registeredCourse || leadDetails.course) && (
                   <div>
                     <div className="text-[11px] font-medium text-gray-400">Registered Course</div>
                     <div className="text-sm font-bold text-emerald-700 mt-1">
-                      {leadDetails.registeredCourse.courseName}
+                      {leadDetails.registeredCourse?.courseName || leadDetails.course?.courseName || 'Not specified'}
                     </div>
                   </div>
                 )}

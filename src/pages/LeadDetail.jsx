@@ -25,6 +25,8 @@ import {
   retryCmsStudentVerification,
   getLeadAssignmentHistory
 } from '../Services/lead/leadService';
+import { getLeadCallerGuidance } from '../Services/infoPanel/infoPanelService';
+import CallerInfoPanel from '../component/reusable/callerGuidance/CallerInfoPanel';
 import { getCoursesDropdown } from '../Services/drop-down/dropDownService';
 import { completeFollowup, cancelFollowup, markFollowupNotConnected } from '../Services/followUp/followService';
 
@@ -57,6 +59,9 @@ const LeadDetail = () => {
   const [coursesLoading, setCoursesLoading] = useState(false);
   const [communicationConfig, setCommunicationConfig] = useState(null);
   const [configLoading, setConfigLoading] = useState(false);
+  const [callerGuidance, setCallerGuidance] = useState(null);
+  const [callerGuidanceLoading, setCallerGuidanceLoading] = useState(false);
+  const [callerGuidanceError, setCallerGuidanceError] = useState(null);
 
   // Manual Registration Approval state
   const [isManualApproveModalOpen, setIsManualApproveModalOpen] = useState(false);
@@ -193,26 +198,71 @@ const LeadDetail = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Fetch Info Panel config when course selection changes
+  // Consolidate interested courses for quick tabs
+  const leadInterestedCourses = useMemo(() => {
+    if (!leadDetails) return [];
+    const list = [];
+    const seen = new Set();
+
+    if (leadDetails.course && leadDetails.course.id) {
+      list.push(leadDetails.course);
+      seen.add(String(leadDetails.course.id));
+    }
+    if (leadDetails.registeredCourse && leadDetails.registeredCourse.id && !seen.has(String(leadDetails.registeredCourse.id))) {
+      list.push(leadDetails.registeredCourse);
+      seen.add(String(leadDetails.registeredCourse.id));
+    }
+    if (Array.isArray(leadDetails.interestedCourses)) {
+      leadDetails.interestedCourses.forEach(c => {
+        if (c && c.id && !seen.has(String(c.id))) {
+          list.push(c);
+          seen.add(String(c.id));
+        }
+      });
+    }
+    return list;
+  }, [leadDetails]);
+
+  // Fetch Info Panel config and Caller Guidance when course selection changes
   useEffect(() => {
     const fetchInfoPanel = async () => {
       if (selectedCourse && id) {
         setConfigLoading(true);
+        setCallerGuidanceLoading(true);
+        setCallerGuidanceError(null);
         try {
-          const res = await getLeadInfoPanel(id, selectedCourse);
-          if (res?.data?.success) {
-            setCommunicationConfig(res.data.data);
+          // Parallel fetch for communication config and caller guidance
+          const [infoRes, guidanceRes] = await Promise.allSettled([
+            getLeadInfoPanel(id, selectedCourse),
+            getLeadCallerGuidance(id, selectedCourse)
+          ]);
+
+          if (infoRes.status === 'fulfilled' && infoRes.value?.data?.success) {
+            setCommunicationConfig(infoRes.value.data.data);
           } else {
             setCommunicationConfig(null);
           }
+
+          if (guidanceRes.status === 'fulfilled' && guidanceRes.value?.data?.guidance) {
+            setCallerGuidance(guidanceRes.value.data.guidance);
+          } else if (infoRes.status === 'fulfilled' && infoRes.value?.data?.data?.guidancePanel) {
+            // Backward-compatible fallback from infoPanel API
+            setCallerGuidance(infoRes.value.data.data.guidancePanel);
+          } else {
+            setCallerGuidance(null);
+          }
         } catch (err) {
-          console.error("Failed to fetch info panel", err);
+          console.error("Failed to fetch info panel or caller guidance", err);
           setCommunicationConfig(null);
+          setCallerGuidance(null);
+          setCallerGuidanceError(err?.message || 'Could not load guidance');
         } finally {
           setConfigLoading(false);
+          setCallerGuidanceLoading(false);
         }
       } else {
         setCommunicationConfig(null);
+        setCallerGuidance(null);
       }
     };
     fetchInfoPanel();
@@ -1791,40 +1841,47 @@ const LeadDetail = () => {
               </div>
             </div>
 
-            {/* Selected Course Summary */}
-            {selectedCourse && selectedCourseObj && (
-              <div className="mt-4">
-                <div className="bg-gradient-to-br from-blue-50/70 to-indigo-50/70 border border-blue-100 rounded-xl p-4">
-                  <div className="flex items-start justify-between mb-2">
+            {/* Selected Course Summary & Guidance Panel */}
+            {selectedCourse && (
+              <div className="mt-4 space-y-3">
+                {selectedCourseObj && (
+                  <div className="bg-gradient-to-br from-blue-50/70 to-indigo-50/70 border border-blue-100 rounded-xl p-3.5 flex items-center justify-between">
                     <div>
                       <h4 className="text-sm font-bold text-gray-900">{selectedCourseObj.name || selectedCourseObj.courseName}</h4>
                       <p className="text-xs text-gray-500">{selectedCourseObj.code || selectedCourseObj.courseCode}</p>
                     </div>
-                    {selectedCourseObj.duration && (
-                      <span className="text-[10px] font-bold text-blue-700 bg-white border border-blue-200 px-2 py-0.5 rounded-full shadow-2xs">
-                        {selectedCourseObj.duration} {selectedCourseObj.durationUnit}
-                      </span>
+                    {communicationConfig?.brochureUrl && (
+                      <a
+                        href={communicationConfig.brochureUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[11px] text-blue-700 bg-white border border-blue-200 px-2.5 py-1 rounded-lg font-semibold hover:bg-blue-50 transition-colors shadow-2xs"
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                          <polyline points="14 2 14 8 20 8" />
+                        </svg>
+                        Brochure
+                      </a>
                     )}
                   </div>
+                )}
 
-                  {communicationConfig && (
-                    <div className="mt-3 pt-3 border-t border-blue-100/80 space-y-2 text-xs">
-                      {communicationConfig.brochureUrl && (
-                        <a
-                          href={communicationConfig.brochureUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1.5 text-blue-600 hover:text-blue-700 font-semibold underline"
-                        >
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                            <polyline points="14 2 14 8 20 8" />
-                          </svg>
-                          Download Brochure
-                        </a>
-                      )}
-                    </div>
-                  )}
+                {/* Structured Caller Guidance & Competitor Comparison */}
+                <div className="border border-gray-200 rounded-xl overflow-hidden shadow-2xs">
+                  <CallerInfoPanel
+                    guidance={callerGuidance}
+                    availableCourses={leadInterestedCourses}
+                    selectedCourseId={selectedCourse}
+                    onSelectCourse={(courseId) => {
+                      setSelectedCourse(courseId);
+                      const match = (courses || []).find(c => String(c.id) === String(courseId)) ||
+                                    (leadInterestedCourses || []).find(c => String(c.id) === String(courseId));
+                      if (match) setSelectedCourseObj(match);
+                    }}
+                    loading={callerGuidanceLoading}
+                    error={callerGuidanceError}
+                  />
                 </div>
               </div>
             )}

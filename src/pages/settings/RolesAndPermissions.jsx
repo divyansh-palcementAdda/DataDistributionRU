@@ -36,6 +36,7 @@ const ENTITY_LABELS = {
   EMAIL: 'Email & Notification Services',
   AUTH: 'Authentication & Session Access',
   SYSTEM: 'System Operations',
+  INFO_PANEL: 'Caller Info Panel & Guidance',
 };
 
 const formatEntityName = (entity) => {
@@ -45,6 +46,7 @@ const formatEntityName = (entity) => {
 
 const GROUP_CONFIG = {
   LEAD_FIELD: { label: 'Lead Fields', icon: '🎯' },
+  INFO_PANEL_FIELD: { label: 'Info Panel Fields', icon: '📋' },
   GENERAL_SYSTEM: { label: 'System Permissions', icon: '⚙️' },
   SYSTEM_CONFIG: { label: 'System Configuration', icon: '🔧' },
 };
@@ -246,7 +248,7 @@ const RolesAndPermissions = () => {
       });
     }
 
-    const preferredOrder = ['LEAD_FIELD', 'GENERAL_SYSTEM', 'SYSTEM_CONFIG'];
+    const preferredOrder = ['LEAD_FIELD', 'INFO_PANEL_FIELD', 'GENERAL_SYSTEM', 'SYSTEM_CONFIG'];
     const ordered = [];
 
     preferredOrder.forEach(g => {
@@ -270,6 +272,7 @@ const RolesAndPermissions = () => {
 
     return ordered.length > 0 ? ordered : [
       { id: 'LEAD_FIELD', label: 'Lead Fields', icon: '🎯' },
+      { id: 'INFO_PANEL_FIELD', label: 'Info Panel Fields', icon: '📋' },
       { id: 'GENERAL_SYSTEM', label: 'System Permissions', icon: '⚙️' },
       { id: 'SYSTEM_CONFIG', label: 'System Configuration', icon: '🔧' }
     ];
@@ -287,7 +290,11 @@ const RolesAndPermissions = () => {
     const counts = {};
     const selectedSet = new Set(selectedPermissionIds || []);
     (permissions || []).forEach(p => {
-      const g = p.permissionGroup || (p.name?.startsWith('LEAD_FIELD_') ? 'LEAD_FIELD' : 'GENERAL_SYSTEM');
+      const g = p.permissionGroup || (
+        p.name?.startsWith('LEAD_FIELD_') ? 'LEAD_FIELD' :
+        p.name?.startsWith('INFO_PANEL_FIELD_') ? 'INFO_PANEL_FIELD' :
+        'GENERAL_SYSTEM'
+      );
       if (!counts[g]) counts[g] = { total: 0, selected: 0 };
       counts[g].total += 1;
       const pid = p?.id ?? p?._id ?? p?.permissionId;
@@ -298,21 +305,28 @@ const RolesAndPermissions = () => {
     return counts;
   }, [permissions, selectedPermissionIds]);
 
-  // Lead field grouping derived purely from backend metadata
-  const leadFieldsByGroup = useMemo(() => {
-    const leadFieldPerms = (permissions || []).filter(
-      p => p.permissionGroup === 'LEAD_FIELD' || (p.name && p.name.startsWith('LEAD_FIELD_'))
+  const isFieldTab = activePermissionTab === 'LEAD_FIELD' || activePermissionTab === 'INFO_PANEL_FIELD';
+
+  // Field grouping derived purely from backend metadata (works for LEAD_FIELD and INFO_PANEL_FIELD)
+  const activeTabFieldsByGroup = useMemo(() => {
+    if (!isFieldTab) return {};
+
+    const targetGroup = activePermissionTab;
+    const prefix = targetGroup === 'LEAD_FIELD' ? 'LEAD_FIELD_' : 'INFO_PANEL_FIELD_';
+
+    const fieldPerms = (permissions || []).filter(
+      p => p.permissionGroup === targetGroup || (p.name && p.name.startsWith(prefix))
     );
 
     const fieldsByKey = {};
-    leadFieldPerms.forEach(p => {
-      const key = p.fieldKey || (p.name ? p.name.replace(/^LEAD_FIELD_/, '').replace(/_(READ|WRITE)$/, '').toLowerCase() : 'unknown');
+    fieldPerms.forEach(p => {
+      const key = p.fieldKey || (p.name ? p.name.replace(new RegExp(`^${prefix}`), '').replace(/_(READ|WRITE)$/, '').toLowerCase() : 'unknown');
       if (!fieldsByKey[key]) {
         fieldsByKey[key] = {
           fieldKey: key,
           fieldLabel: p.fieldLabel || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()),
-          fieldGroup: p.fieldGroup || 'Personal & Contact Information',
-          displayOrder: p.displayOrder || 999,
+          fieldGroup: p.fieldGroup || (targetGroup === 'INFO_PANEL_FIELD' ? 'Course Information' : 'Personal & Contact Information'),
+          displayOrder: p.displayOrder != null ? p.displayOrder : 999,
           viewPermission: null,
           editPermission: null,
         };
@@ -353,7 +367,7 @@ const RolesAndPermissions = () => {
       });
 
     return grouped;
-  }, [permissions, permissionSearchQuery]);
+  }, [permissions, permissionSearchQuery, activePermissionTab, isFieldTab]);
 
   // General & System Configuration permissions grouped dynamically by backend entity
   const permissionsByEntity = useMemo(() => {
@@ -363,7 +377,7 @@ const RolesAndPermissions = () => {
         return p.permissionGroup === currentGroup;
       }
       if (currentGroup === 'GENERAL_SYSTEM') {
-        return !p.name?.startsWith('LEAD_FIELD_');
+        return !p.name?.startsWith('LEAD_FIELD_') && !p.name?.startsWith('INFO_PANEL_FIELD_');
       }
       return false;
     });
@@ -392,7 +406,7 @@ const RolesAndPermissions = () => {
   }, [permissions, activePermissionTab, permissionSearchQuery]);
 
   // Permission toggles with smart paired access rules (Edit implies View)
-  const handleToggleLeadFieldPermission = (permId, complementaryPermId, isEditToggle) => {
+  const handleToggleFieldPermission = (permId, complementaryPermId, isEditToggle) => {
     if (!hasPermission('PERMISSION_UPDATE')) {
       showToast('You do not have permission to modify permissions', 'error');
       return;
@@ -431,47 +445,52 @@ const RolesAndPermissions = () => {
     });
   };
 
-  // Lead field global actions
-  const handleSelectAllLeadFieldViews = () => {
+  // Field global batch actions
+  const handleSelectAllFieldViews = () => {
     if (!hasPermission('PERMISSION_UPDATE')) {
       showToast('You do not have permission to modify permissions', 'error');
       return;
     }
+    const targetGroup = activePermissionTab;
+    const prefix = targetGroup === 'LEAD_FIELD' ? 'LEAD_FIELD_' : 'INFO_PANEL_FIELD_';
     const viewIds = (permissions || [])
-      .filter(p => (p.permissionGroup === 'LEAD_FIELD' || p.name?.startsWith('LEAD_FIELD_')) && (p.permissionType === 'VIEW' || p.name?.endsWith('_READ')))
+      .filter(p => (p.permissionGroup === targetGroup || p.name?.startsWith(prefix)) && (p.permissionType === 'VIEW' || p.name?.endsWith('_READ')))
       .map(p => p.id ?? p._id ?? p.permissionId)
       .filter(Boolean);
     setSelectedPermissionIds(prev => Array.from(new Set([...prev, ...viewIds])));
   };
 
-  const handleSelectAllLeadFieldEdits = () => {
+  const handleSelectAllFieldEdits = () => {
     if (!hasPermission('PERMISSION_UPDATE')) {
       showToast('You do not have permission to modify permissions', 'error');
       return;
     }
-    // Granting all edits also grants all views
-    const allLeadFieldIds = (permissions || [])
-      .filter(p => p.permissionGroup === 'LEAD_FIELD' || p.name?.startsWith('LEAD_FIELD_'))
+    const targetGroup = activePermissionTab;
+    const prefix = targetGroup === 'LEAD_FIELD' ? 'LEAD_FIELD_' : 'INFO_PANEL_FIELD_';
+    const allFieldIds = (permissions || [])
+      .filter(p => p.permissionGroup === targetGroup || p.name?.startsWith(prefix))
       .map(p => p.id ?? p._id ?? p.permissionId)
       .filter(Boolean);
-    setSelectedPermissionIds(prev => Array.from(new Set([...prev, ...allLeadFieldIds])));
+    setSelectedPermissionIds(prev => Array.from(new Set([...prev, ...allFieldIds])));
   };
 
-  const handleClearAllLeadFields = () => {
+  const handleClearAllFields = () => {
     if (!hasPermission('PERMISSION_UPDATE')) {
       showToast('You do not have permission to modify permissions', 'error');
       return;
     }
-    const leadFieldIds = new Set(
+    const targetGroup = activePermissionTab;
+    const prefix = targetGroup === 'LEAD_FIELD' ? 'LEAD_FIELD_' : 'INFO_PANEL_FIELD_';
+    const fieldIds = new Set(
       (permissions || [])
-        .filter(p => p.permissionGroup === 'LEAD_FIELD' || p.name?.startsWith('LEAD_FIELD_'))
+        .filter(p => p.permissionGroup === targetGroup || p.name?.startsWith(prefix))
         .map(p => p.id ?? p._id ?? p.permissionId)
         .filter(Boolean)
     );
-    setSelectedPermissionIds(prev => prev.filter(id => !leadFieldIds.has(id)));
+    setSelectedPermissionIds(prev => prev.filter(id => !fieldIds.has(id)));
   };
 
-  const handleCategoryLeadFieldToggle = (categoryFields, type, enable) => {
+  const handleCategoryFieldToggle = (categoryFields, type, enable) => {
     if (!hasPermission('PERMISSION_UPDATE')) {
       showToast('You do not have permission to modify permissions', 'error');
       return;
@@ -1038,32 +1057,32 @@ const RolesAndPermissions = () => {
                     )}
                   </div>
 
-                  {/* Lead field global batch shortcuts */}
-                  {activePermissionTab === 'LEAD_FIELD' && (
+                  {/* Field global batch shortcuts */}
+                  {isFieldTab && (
                     <div className="flex items-center bg-gray-50 border border-gray-200 rounded-lg p-0.5 text-xs">
                       <button
                         type="button"
-                        onClick={handleSelectAllLeadFieldViews}
+                        onClick={handleSelectAllFieldViews}
                         className="px-2 py-1 rounded text-[11px] font-medium text-emerald-700 hover:bg-white transition-colors"
-                        title="Grant View access to all lead fields"
+                        title="Grant View access to all fields"
                       >
                         All View
                       </button>
                       <span className="text-gray-200">|</span>
                       <button
                         type="button"
-                        onClick={handleSelectAllLeadFieldEdits}
+                        onClick={handleSelectAllFieldEdits}
                         className="px-2 py-1 rounded text-[11px] font-medium text-blue-700 hover:bg-white transition-colors"
-                        title="Grant Edit access to all lead fields"
+                        title="Grant Edit access to all fields"
                       >
                         All Edit
                       </button>
                       <span className="text-gray-200">|</span>
                       <button
                         type="button"
-                        onClick={handleClearAllLeadFields}
+                        onClick={handleClearAllFields}
                         className="px-2 py-1 rounded text-[11px] font-medium text-gray-500 hover:bg-white hover:text-red-600 transition-colors"
-                        title="Revoke all lead field access"
+                        title="Revoke all field access"
                       >
                         Reset
                       </button>
@@ -1078,13 +1097,13 @@ const RolesAndPermissions = () => {
                   <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mb-2"></div>
                   Loading permissions for {selectedRoleForPermissions.name}...
                 </div>
-              ) : activePermissionTab === 'LEAD_FIELD' ? (
+              ) : isFieldTab ? (
                 /* ==============================================================
-                   TAB: LEAD FIELD PERMISSIONS (Grouped by Backend fieldGroup)
+                   TAB: FIELD PERMISSIONS (LEAD_FIELD or INFO_PANEL_FIELD - Grouped by Backend fieldGroup)
                    ============================================================== */
                 <div className="p-6 overflow-y-auto flex-1 space-y-6">
-                  {Object.keys(leadFieldsByGroup).length > 0 ? (
-                    Object.entries(leadFieldsByGroup).map(([groupName, fields]) => (
+                  {Object.keys(activeTabFieldsByGroup).length > 0 ? (
+                    Object.entries(activeTabFieldsByGroup).map(([groupName, fields]) => (
                       <div key={groupName} className="border border-gray-200/90 rounded-xl overflow-hidden shadow-2xs bg-white">
                         {/* Category Header with Clean Inline Actions */}
                         <div className="px-4 py-2.5 bg-slate-50/70 border-b border-gray-100 flex items-center justify-between gap-3">
@@ -1099,7 +1118,7 @@ const RolesAndPermissions = () => {
                               type="button"
                               onClick={(e) => {
                                 e.preventDefault();
-                                handleCategoryLeadFieldToggle(fields, 'view', true);
+                                handleCategoryFieldToggle(fields, 'view', true);
                               }}
                               className="font-medium text-emerald-700 hover:text-emerald-800 hover:underline px-1 py-0.5 rounded transition-colors"
                             >
@@ -1110,7 +1129,7 @@ const RolesAndPermissions = () => {
                               type="button"
                               onClick={(e) => {
                                 e.preventDefault();
-                                handleCategoryLeadFieldToggle(fields, 'edit', true);
+                                handleCategoryFieldToggle(fields, 'edit', true);
                               }}
                               className="font-medium text-blue-700 hover:text-blue-800 hover:underline px-1 py-0.5 rounded transition-colors"
                             >
@@ -1121,7 +1140,7 @@ const RolesAndPermissions = () => {
                               type="button"
                               onClick={(e) => {
                                 e.preventDefault();
-                                handleCategoryLeadFieldToggle(fields, 'both', false);
+                                handleCategoryFieldToggle(fields, 'both', false);
                               }}
                               className="font-medium text-gray-500 hover:text-red-600 hover:underline px-1 py-0.5 rounded transition-colors"
                             >
@@ -1165,7 +1184,7 @@ const RolesAndPermissions = () => {
                                         onClick={(e) => {
                                           e.preventDefault();
                                           e.stopPropagation();
-                                          handleToggleLeadFieldPermission(readPermId, writePermId, false);
+                                          handleToggleFieldPermission(readPermId, writePermId, false);
                                         }}
                                         disabled={!hasPermission('PERMISSION_UPDATE')}
                                         className={`w-8 h-4 rounded-full transition-colors relative inline-flex items-center cursor-pointer focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed ${
@@ -1194,7 +1213,7 @@ const RolesAndPermissions = () => {
                                         onClick={(e) => {
                                           e.preventDefault();
                                           e.stopPropagation();
-                                          handleToggleLeadFieldPermission(writePermId, readPermId, true);
+                                          handleToggleFieldPermission(writePermId, readPermId, true);
                                         }}
                                         disabled={!hasPermission('PERMISSION_UPDATE')}
                                         className={`w-8 h-4 rounded-full transition-colors relative inline-flex items-center cursor-pointer focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed ${
@@ -1238,7 +1257,7 @@ const RolesAndPermissions = () => {
                     ))
                   ) : (
                     <div className="text-center text-xs text-gray-400 py-16">
-                      No lead fields found matching &quot;{permissionSearchQuery}&quot;
+                      No fields found matching &quot;{permissionSearchQuery}&quot;
                     </div>
                   )}
                 </div>

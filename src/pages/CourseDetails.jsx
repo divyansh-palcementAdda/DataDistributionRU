@@ -38,6 +38,7 @@ import CustomButton from '../component/reusable/CustomButton';
 import CustomInput from '../component/reusable/CustomInput';
 import ReusableTable from '../component/reusable/table';
 import DeleteModal from '../component/reusable/deleteModel';
+import AdminInfoPanelEditor from '../component/reusable/callerGuidance/AdminInfoPanelEditor';
 import LeadSource from '../component/reusable/DashBoards/leadSource';
 import CategorywiseCard from '../component/reusable/DashBoards/categorywiseCard';
 import BoardWiseCard from '../component/reusable/DashBoards/BoardWiseCard';
@@ -995,6 +996,7 @@ const CourseDetails = () => {
         { key: 'template',      label: 'Template Management' },
         { key: 'usp',           label: 'USP Management' },
         { key: 'communication', label: 'Communication Management' },
+        { key: 'guidance',      label: 'Caller Guidance & Info Panel' },
     ];
 
     // ─── Image table columns ────────────────────────────────────────────────
@@ -1881,6 +1883,17 @@ const CourseDetails = () => {
                             courseId={id}
                             templates={templates}
                             images={images}
+                        />
+                    );
+                }
+
+                // ── Caller Guidance & Info Panel Management ───────────────────
+                if (activeTab === 'guidance') {
+                    return (
+                        <AdminInfoPanelEditor
+                            courseId={id}
+                            courseDetails={details}
+                            showToast={showToast}
                         />
                     );
                 }

@@ -248,6 +248,26 @@ const ApiRoutes = {
         courseUsers: '/api/data-segregation/courses/{courseId}/users',
         userAllocationSummary: '/api/data-segregation/user-allocation-summary',
         userAllocationUsers: '/api/data-segregation/user-allocation-users'
+    },
+
+    LeadAnalytics: {
+        courseStatus: '/api/leads/analytics/course-status',
+        userStatus: '/api/leads/analytics/user-status',
+        courseUserStatus: '/api/leads/analytics/course-user-status'
+    },
+
+    InfoPanel: {
+        getByCourse: '/api/info-panels/course/{courseId}',
+        getByLead: '/api/info-panels/lead/{leadId}',
+        getById: '/api/info-panels/{id}',
+        permissions: '/api/info-panels/permissions',
+        create: '/api/info-panels',
+        update: '/api/info-panels/{id}',
+        delete: '/api/info-panels/{id}',
+        addCompetitor: '/api/info-panels/{id}/competitors',
+        updateCompetitor: '/api/info-panels/{id}/competitors/{competitorId}',
+        deleteCompetitor: '/api/info-panels/{id}/competitors/{competitorId}',
+        reorderCompetitors: '/api/info-panels/{id}/competitors/reorder',
     }
 }
 

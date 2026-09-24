@@ -84,8 +84,22 @@ const Leads = () => {
     setAutoSelectCount(val);
     const count = parseInt(val, 10);
     if (!isNaN(count) && count > 0) {
-      const topIds = leadsData.slice(0, count).map(lead => lead.id || lead.leadId);
-      setSelectedIds(topIds);
+      if (count <= leadsData.length) {
+        // Data already loaded — select immediately and sync Show Entries
+        const topIds = leadsData.slice(0, count).map(lead => {
+          const rowId = typeof lead.id === 'object' ? lead.id?.id : lead.id;
+          const rowLeadId = typeof lead.leadId === 'object' ? lead.leadId?.id : lead.leadId;
+          return rowId || rowLeadId;
+        });
+        setSelectedIds(topIds);
+        setSize(count);
+        setPage(0);
+      } else {
+        // Need more data — resize page, store pending count, fetch will apply selection
+        pendingAutoSelectRef.current = count;
+        setPage(0);
+        setSize(count);
+      }
     } else {
       setSelectedIds([]);
     }
@@ -126,6 +140,7 @@ const Leads = () => {
   const [sortDirection, setSortDirection] = useState('desc');
 
   const requestIdRef = useRef(0);
+  const pendingAutoSelectRef = useRef(null); // stores count to auto-select after a size-change fetch
 
   // Load dropdown lookup datasets on mount
   useEffect(() => {
@@ -365,9 +380,22 @@ const Leads = () => {
       }
       if (res?.data?.success) {
         const pageData = res.data.data;
-        setLeadsData(pageData?.content || []);
+        const content = pageData?.content || [];
+        setLeadsData(content);
         setTotalElements(pageData?.totalElements || 0);
         setTotalPages(pageData?.totalPages || 0);
+
+        // Apply pending auto-select if set (triggered by Quick Select resize)
+        if (pendingAutoSelectRef.current !== null) {
+          const pending = pendingAutoSelectRef.current;
+          pendingAutoSelectRef.current = null;
+          const topIds = content.slice(0, pending).map(lead => {
+            const rowId = typeof lead.id === 'object' ? lead.id?.id : lead.id;
+            const rowLeadId = typeof lead.leadId === 'object' ? lead.leadId?.id : lead.leadId;
+            return rowId || rowLeadId;
+          });
+          setSelectedIds(topIds);
+        }
       } else {
         setLeadsData([]);
         setTotalElements(0);

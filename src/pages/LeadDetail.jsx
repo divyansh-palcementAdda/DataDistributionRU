@@ -1844,7 +1844,7 @@ const LeadDetail = () => {
       <CallModal
         isOpen={isCallModalOpen}
         onClose={() => setIsCallModalOpen(false)}
-        lead={leadDetails}
+        studentData={leadDetails}
         phoneNumber={leadDetails.phoneNumber}
         onComplete={() => loadLeadData(false)}
       />

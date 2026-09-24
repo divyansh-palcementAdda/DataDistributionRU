@@ -591,14 +591,14 @@ const LeadDetail = () => {
       });
 
       if (response?.data?.success) {
-        showToast('Student verified with CMS & registered successfully!');
+        toast.success('Student verified with CMS & registered successfully!');
       } else {
-        showToast(response?.data?.message || 'Failed to change lead status');
+        toast.error(response?.data?.message || 'Failed to change lead status');
       }
     } catch (error) {
       console.error('Failed to register lead with CMS check', error);
       const errMsg = error?.response?.data?.message || error?.message || 'CMS verification failed. Lead not registered.';
-      showToast(errMsg);
+      toast.error(errMsg);
     } finally {
       await loadLeadData(false);
     }
@@ -1033,13 +1033,11 @@ const LeadDetail = () => {
 
           {/* Registration Verification Alert (Slim, Elegant) */}
           {(leadDetails.registrationStatus === 'CHECK_REJECTED' || leadDetails.registrationStatus === 'CHECK_PENDING') && (
-            <div className={`px-4 py-2.5 rounded-xl border flex flex-wrap items-center justify-between gap-3 text-xs ${
-              leadDetails.registrationStatus === 'CHECK_REJECTED' ? 'bg-red-50/60 border-red-200 text-red-800' : 'bg-amber-50/60 border-amber-200 text-amber-800'
-            }`}>
+            <div className={`px-4 py-2.5 rounded-xl border flex flex-wrap items-center justify-between gap-3 text-xs ${leadDetails.registrationStatus === 'CHECK_REJECTED' ? 'bg-red-50/60 border-red-200 text-red-800' : 'bg-amber-50/60 border-amber-200 text-amber-800'
+              }`}>
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${
-                  leadDetails.registrationStatus === 'CHECK_REJECTED' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
-                }`}>
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${leadDetails.registrationStatus === 'CHECK_REJECTED' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
+                  }`}>
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
                   </svg>
@@ -1113,132 +1111,132 @@ const LeadDetail = () => {
             canViewLeadField(hasPermission, 'preferredLocation') ||
             canViewLeadField(hasPermission, 'auditInfo') ||
             canViewLeadField(hasPermission, 'nextFollowUpDate')) && (
-            <div className="bg-white border border-gray-200/80 rounded-xl p-5 shadow-2xs">
-              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 pb-2.5 border-b border-gray-100 flex items-center gap-2">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="text-blue-600">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
-                Contact & Location Details
-              </h3>
+              <div className="bg-white border border-gray-200/80 rounded-xl p-5 shadow-2xs">
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 pb-2.5 border-b border-gray-100 flex items-center gap-2">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="text-blue-600">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                  Contact & Location Details
+                </h3>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-y-4 gap-x-6 text-xs">
-                {canViewLeadField(hasPermission, 'phoneNumber') && (
-                  <div>
-                    <div className="text-[11px] font-medium text-gray-400">Phone Number</div>
-                    <div className="text-sm font-bold text-gray-900 mt-1 flex items-center gap-1.5 font-mono">
-                      {leadDetails.phoneNumber || <span className="text-gray-400 font-normal italic">Not specified</span>}
-                      {leadDetails.phoneNumber && (
-                        <button
-                          onClick={() => copyToClipboard(leadDetails.phoneNumber, 'Phone number')}
-                          className="text-gray-400 hover:text-blue-600 p-0.5 transition-colors"
-                          title="Copy"
-                        >
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                          </svg>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {canViewLeadField(hasPermission, 'alternatePhoneNumber') && (
-                  <div>
-                    <div className="text-[11px] font-medium text-gray-400">Alternate Phone</div>
-                    <div className="text-sm font-bold text-gray-900 mt-1 flex items-center gap-1.5 font-mono">
-                      {leadDetails.alternatePhoneNumber || <span className="text-gray-400 font-normal italic">-</span>}
-                      {leadDetails.alternatePhoneNumber && (
-                        <button
-                          onClick={() => copyToClipboard(leadDetails.alternatePhoneNumber, 'Alternate phone')}
-                          className="text-gray-400 hover:text-blue-600 p-0.5 transition-colors"
-                          title="Copy"
-                        >
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                          </svg>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {canViewLeadField(hasPermission, 'email') && (
-                  <div className="sm:col-span-2 md:col-span-2">
-                    <div className="text-[11px] font-medium text-gray-400">Email Address</div>
-                    <div className="text-sm font-bold text-gray-900 mt-1 flex items-center gap-1.5 truncate">
-                      {leadDetails.email ? (
-                        <>
-                          <a href={`mailto:${leadDetails.email}`} className="text-blue-600 hover:underline truncate">
-                            {leadDetails.email}
-                          </a>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-y-4 gap-x-6 text-xs">
+                  {canViewLeadField(hasPermission, 'phoneNumber') && (
+                    <div>
+                      <div className="text-[11px] font-medium text-gray-400">Phone Number</div>
+                      <div className="text-sm font-bold text-gray-900 mt-1 flex items-center gap-1.5 font-mono">
+                        {leadDetails.phoneNumber || <span className="text-gray-400 font-normal italic">Not specified</span>}
+                        {leadDetails.phoneNumber && (
                           <button
-                            onClick={() => copyToClipboard(leadDetails.email, 'Email address')}
-                            className="text-gray-400 hover:text-blue-600 p-0.5 flex-shrink-0 transition-colors"
+                            onClick={() => copyToClipboard(leadDetails.phoneNumber, 'Phone number')}
+                            className="text-gray-400 hover:text-blue-600 p-0.5 transition-colors"
                             title="Copy"
                           >
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                               <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                             </svg>
                           </button>
-                        </>
-                      ) : (
-                        <span className="text-gray-400 font-normal italic">Not specified</span>
-                      )}
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {canViewLeadField(hasPermission, 'city') && (
-                  <div>
-                    <div className="text-[11px] font-medium text-gray-400">City</div>
-                    <div className="text-sm font-semibold text-gray-900 mt-1">{leadDetails.city || '-'}</div>
-                  </div>
-                )}
-
-                {canViewLeadField(hasPermission, 'state') && (
-                  <div>
-                    <div className="text-[11px] font-medium text-gray-400">State</div>
-                    <div className="text-sm font-semibold text-gray-900 mt-1">{leadDetails.state || '-'}</div>
-                  </div>
-                )}
-
-                {canViewLeadField(hasPermission, 'country') && (
-                  <div>
-                    <div className="text-[11px] font-medium text-gray-400">Country</div>
-                    <div className="text-sm font-semibold text-gray-900 mt-1">{leadDetails.country || 'India'}</div>
-                  </div>
-                )}
-
-                {canViewLeadField(hasPermission, 'preferredLocation') && (
-                  <div>
-                    <div className="text-[11px] font-medium text-gray-400">Preferred Location</div>
-                    <div className="text-sm font-semibold text-gray-900 mt-1">
-                      {[leadDetails.preferredStudyCity, leadDetails.preferredStudyState].filter(Boolean).join(', ') || <span className="text-gray-400 font-normal italic">Not specified</span>}
+                  {canViewLeadField(hasPermission, 'alternatePhoneNumber') && (
+                    <div>
+                      <div className="text-[11px] font-medium text-gray-400">Alternate Phone</div>
+                      <div className="text-sm font-bold text-gray-900 mt-1 flex items-center gap-1.5 font-mono">
+                        {leadDetails.alternatePhoneNumber || <span className="text-gray-400 font-normal italic">-</span>}
+                        {leadDetails.alternatePhoneNumber && (
+                          <button
+                            onClick={() => copyToClipboard(leadDetails.alternatePhoneNumber, 'Alternate phone')}
+                            className="text-gray-400 hover:text-blue-600 p-0.5 transition-colors"
+                            title="Copy"
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                            </svg>
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {canViewLeadField(hasPermission, 'auditInfo') && (
-                  <div>
-                    <div className="text-[11px] font-medium text-gray-400">Last Connected</div>
-                    <div className="text-sm font-semibold text-gray-900 mt-1">
-                      {leadDetails.lastConnected ? formatDateTime(leadDetails.lastConnected) : '-'}
+                  {canViewLeadField(hasPermission, 'email') && (
+                    <div className="sm:col-span-2 md:col-span-2">
+                      <div className="text-[11px] font-medium text-gray-400">Email Address</div>
+                      <div className="text-sm font-bold text-gray-900 mt-1 flex items-center gap-1.5 truncate">
+                        {leadDetails.email ? (
+                          <>
+                            <a href={`mailto:${leadDetails.email}`} className="text-blue-600 hover:underline truncate">
+                              {leadDetails.email}
+                            </a>
+                            <button
+                              onClick={() => copyToClipboard(leadDetails.email, 'Email address')}
+                              className="text-gray-400 hover:text-blue-600 p-0.5 flex-shrink-0 transition-colors"
+                              title="Copy"
+                            >
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                              </svg>
+                            </button>
+                          </>
+                        ) : (
+                          <span className="text-gray-400 font-normal italic">Not specified</span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {canViewLeadField(hasPermission, 'nextFollowUpDate') && (
-                  <div>
-                    <div className="text-[11px] font-medium text-gray-400">Next Follow-up</div>
-                    <div className="text-sm font-semibold text-gray-900 mt-1">
-                      {leadDetails.nextFollowUpDate ? formatDate(leadDetails.nextFollowUpDate) : '-'}
+                  {canViewLeadField(hasPermission, 'city') && (
+                    <div>
+                      <div className="text-[11px] font-medium text-gray-400">City</div>
+                      <div className="text-sm font-semibold text-gray-900 mt-1">{leadDetails.city || '-'}</div>
                     </div>
-                  </div>
-                )}
+                  )}
+
+                  {canViewLeadField(hasPermission, 'state') && (
+                    <div>
+                      <div className="text-[11px] font-medium text-gray-400">State</div>
+                      <div className="text-sm font-semibold text-gray-900 mt-1">{leadDetails.state || '-'}</div>
+                    </div>
+                  )}
+
+                  {canViewLeadField(hasPermission, 'country') && (
+                    <div>
+                      <div className="text-[11px] font-medium text-gray-400">Country</div>
+                      <div className="text-sm font-semibold text-gray-900 mt-1">{leadDetails.country || 'India'}</div>
+                    </div>
+                  )}
+
+                  {canViewLeadField(hasPermission, 'preferredLocation') && (
+                    <div>
+                      <div className="text-[11px] font-medium text-gray-400">Preferred Location</div>
+                      <div className="text-sm font-semibold text-gray-900 mt-1">
+                        {[leadDetails.preferredStudyCity, leadDetails.preferredStudyState].filter(Boolean).join(', ') || <span className="text-gray-400 font-normal italic">Not specified</span>}
+                      </div>
+                    </div>
+                  )}
+
+                  {canViewLeadField(hasPermission, 'auditInfo') && (
+                    <div>
+                      <div className="text-[11px] font-medium text-gray-400">Last Connected</div>
+                      <div className="text-sm font-semibold text-gray-900 mt-1">
+                        {leadDetails.lastConnected ? formatDateTime(leadDetails.lastConnected) : '-'}
+                      </div>
+                    </div>
+                  )}
+
+                  {canViewLeadField(hasPermission, 'nextFollowUpDate') && (
+                    <div>
+                      <div className="text-[11px] font-medium text-gray-400">Next Follow-up</div>
+                      <div className="text-sm font-semibold text-gray-900 mt-1">
+                        {leadDetails.nextFollowUpDate ? formatDate(leadDetails.nextFollowUpDate) : '-'}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
           {/* SECTION D: Academic & Course Information Card */}
           {/* SECTION D: Academic & Course Information Card */}
@@ -1248,104 +1246,104 @@ const LeadDetail = () => {
             canViewLeadField(hasPermission, 'interestedCourses') ||
             canViewLeadField(hasPermission, 'board') ||
             canViewLeadField(hasPermission, 'grade')) && (
-            <div className="bg-white border border-gray-200/80 rounded-xl p-5 shadow-2xs">
-              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 pb-2.5 border-b border-gray-100 flex items-center gap-2">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="text-indigo-600">
-                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-                </svg>
-                Academic & Course Information
-              </h3>
+              <div className="bg-white border border-gray-200/80 rounded-xl p-5 shadow-2xs">
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 pb-2.5 border-b border-gray-100 flex items-center gap-2">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="text-indigo-600">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                  </svg>
+                  Academic & Course Information
+                </h3>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-y-4 gap-x-6 text-xs">
-                {canViewLeadField(hasPermission, 'program') && (
-                  <div>
-                    <div className="text-[11px] font-medium text-gray-400">Program / School</div>
-                    <div className="text-sm font-semibold text-gray-900 mt-1">
-                      {leadDetails.program?.name || <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">UNMAPPED</span>}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-y-4 gap-x-6 text-xs">
+                  {canViewLeadField(hasPermission, 'program') && (
+                    <div>
+                      <div className="text-[11px] font-medium text-gray-400">Program / School</div>
+                      <div className="text-sm font-semibold text-gray-900 mt-1">
+                        {leadDetails.program?.name || <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">UNMAPPED</span>}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {canViewLeadField(hasPermission, 'courseType') && (
-                  <div>
-                    <div className="text-[11px] font-medium text-gray-400">Course Type</div>
-                    <div className="text-sm font-semibold text-gray-900 mt-1">
-                      {leadDetails.interestedCourseTypes?.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {leadDetails.interestedCourseTypes.map((ct) => (
-                            <span key={ct.id} className="text-xs bg-purple-50 text-purple-700 font-semibold px-2 py-0.5 rounded border border-purple-100">
-                              {ct.name}
-                            </span>
-                          ))}
-                        </div>
-                      ) : leadDetails.course?.courseType?.name ? (
-                        leadDetails.course.courseType.name
-                      ) : (
-                        <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">UNMAPPED</span>
-                      )}
+                  {canViewLeadField(hasPermission, 'courseType') && (
+                    <div>
+                      <div className="text-[11px] font-medium text-gray-400">Course Type</div>
+                      <div className="text-sm font-semibold text-gray-900 mt-1">
+                        {leadDetails.interestedCourseTypes?.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {leadDetails.interestedCourseTypes.map((ct) => (
+                              <span key={ct.id} className="text-xs bg-purple-50 text-purple-700 font-semibold px-2 py-0.5 rounded border border-purple-100">
+                                {ct.name}
+                              </span>
+                            ))}
+                          </div>
+                        ) : leadDetails.course?.courseType?.name ? (
+                          leadDetails.course.courseType.name
+                        ) : (
+                          <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">UNMAPPED</span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {(canViewLeadField(hasPermission, 'course') || canViewLeadField(hasPermission, 'interestedCourses')) && (
-                  <div>
-                    <div className="text-[11px] font-medium text-gray-400">Interested Course</div>
-                    <div className="text-sm font-semibold text-gray-900 mt-1">
-                      {leadDetails.interestedCourses?.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {leadDetails.interestedCourses.map((c) => (
-                            <span key={c.id} className="text-xs bg-blue-50 text-blue-700 font-semibold px-2 py-0.5 rounded border border-blue-100">
-                              {c.courseName || c.name}
-                            </span>
-                          ))}
-                        </div>
-                      ) : leadDetails.course?.courseName ? (
-                        <span className="text-blue-600 font-bold">{leadDetails.course.courseName}</span>
-                      ) : (
-                        <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">UNMAPPED</span>
-                      )}
+                  {(canViewLeadField(hasPermission, 'course') || canViewLeadField(hasPermission, 'interestedCourses')) && (
+                    <div>
+                      <div className="text-[11px] font-medium text-gray-400">Interested Course</div>
+                      <div className="text-sm font-semibold text-gray-900 mt-1">
+                        {leadDetails.interestedCourses?.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {leadDetails.interestedCourses.map((c) => (
+                              <span key={c.id} className="text-xs bg-blue-50 text-blue-700 font-semibold px-2 py-0.5 rounded border border-blue-100">
+                                {c.courseName || c.name}
+                              </span>
+                            ))}
+                          </div>
+                        ) : leadDetails.course?.courseName ? (
+                          <span className="text-blue-600 font-bold">{leadDetails.course.courseName}</span>
+                        ) : (
+                          <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">UNMAPPED</span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {canViewLeadField(hasPermission, 'course') && isRegistrationVerified && (leadDetails.registeredCourse || leadDetails.course) && (
-                  <div>
-                    <div className="text-[11px] font-medium text-gray-400">Registered Course</div>
-                    <div className="text-sm font-bold text-emerald-700 mt-1">
-                      {leadDetails.registeredCourse?.courseName || leadDetails.course?.courseName || 'Not specified'}
+                  {canViewLeadField(hasPermission, 'course') && isRegistrationVerified && (leadDetails.registeredCourse || leadDetails.course) && (
+                    <div>
+                      <div className="text-[11px] font-medium text-gray-400">Registered Course</div>
+                      <div className="text-sm font-bold text-emerald-700 mt-1">
+                        {leadDetails.registeredCourse?.courseName || leadDetails.course?.courseName || 'Not specified'}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {(canViewLeadField(hasPermission, 'board') || canViewLeadField(hasPermission, 'grade')) && (
-                  <div>
-                    <div className="text-[11px] font-medium text-gray-400">Specialization</div>
-                    <div className="text-sm font-semibold text-gray-900 mt-1">
-                      {leadDetails.board?.name || leadDetails.grade?.name || 'Not specified'}
+                  {(canViewLeadField(hasPermission, 'board') || canViewLeadField(hasPermission, 'grade')) && (
+                    <div>
+                      <div className="text-[11px] font-medium text-gray-400">Specialization</div>
+                      <div className="text-sm font-semibold text-gray-900 mt-1">
+                        {leadDetails.board?.name || leadDetails.grade?.name || 'Not specified'}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {canViewLeadField(hasPermission, 'grade') && (
-                  <div>
-                    <div className="text-[11px] font-medium text-gray-400">Grade</div>
-                    <div className="text-sm font-semibold text-gray-900 mt-1">
-                      {leadDetails.grade?.name || <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">UNMAPPED</span>}
+                  {canViewLeadField(hasPermission, 'grade') && (
+                    <div>
+                      <div className="text-[11px] font-medium text-gray-400">Grade</div>
+                      <div className="text-sm font-semibold text-gray-900 mt-1">
+                        {leadDetails.grade?.name || <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">UNMAPPED</span>}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {canViewLeadField(hasPermission, 'board') && (
-                  <div>
-                    <div className="text-[11px] font-medium text-gray-400">Board</div>
-                    <div className="text-sm font-semibold text-gray-900 mt-1">
-                      {leadDetails.board?.name || <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">UNMAPPED</span>}
+                  {canViewLeadField(hasPermission, 'board') && (
+                    <div>
+                      <div className="text-[11px] font-medium text-gray-400">Board</div>
+                      <div className="text-sm font-semibold text-gray-900 mt-1">
+                        {leadDetails.board?.name || <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">UNMAPPED</span>}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
           {/* SECTION E: Lead Source & Acquisition Card */}
           {(canViewLeadField(hasPermission, 'leadSources') || canViewLeadField(hasPermission, 'sourceDetails')) && (
@@ -1407,91 +1405,91 @@ const LeadDetail = () => {
             canViewLeadField(hasPermission, 'department') ||
             canViewLeadField(hasPermission, 'auditInfo') ||
             canViewLeadField(hasPermission, 'isAvailed')) && (
-            <div className="bg-white border border-gray-200/80 rounded-xl p-5 shadow-2xs">
-              <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 pb-2.5 border-b border-gray-100 flex items-center gap-2">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="text-emerald-600">
-                  <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M9 14l2 2 4-4" />
-                </svg>
-                Allotment & Availed Information
-              </h3>
+              <div className="bg-white border border-gray-200/80 rounded-xl p-5 shadow-2xs">
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 pb-2.5 border-b border-gray-100 flex items-center gap-2">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="text-emerald-600">
+                    <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M9 14l2 2 4-4" />
+                  </svg>
+                  Allotment & Availed Information
+                </h3>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs">
-                {/* Allotment Column */}
-                {(canViewLeadField(hasPermission, 'assignedTo') ||
-                  canViewLeadField(hasPermission, 'department') ||
-                  canViewLeadField(hasPermission, 'auditInfo')) && (
-                  <div>
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Allotment Details</span>
-                      {canViewLeadField(hasPermission, 'assignedTo') && (
-                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${isAllotted ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
-                          {isAllotted ? 'ALLOTTED' : 'UNALLOTTED'}
-                        </span>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      {canViewLeadField(hasPermission, 'assignedTo') && (
-                        <div className="flex items-baseline justify-between border-b border-gray-50 pb-1.5">
-                          <span className="text-gray-400 font-medium">Assigned Counselor:</span>
-                          <span className="font-bold text-gray-900">{assignedToName}</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs">
+                  {/* Allotment Column */}
+                  {(canViewLeadField(hasPermission, 'assignedTo') ||
+                    canViewLeadField(hasPermission, 'department') ||
+                    canViewLeadField(hasPermission, 'auditInfo')) && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Allotment Details</span>
+                          {canViewLeadField(hasPermission, 'assignedTo') && (
+                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${isAllotted ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'bg-amber-50 text-amber-700 border border-amber-200'}`}>
+                              {isAllotted ? 'ALLOTTED' : 'UNALLOTTED'}
+                            </span>
+                          )}
                         </div>
-                      )}
-                      {canViewLeadField(hasPermission, 'department') && (
-                        <div className="flex items-baseline justify-between border-b border-gray-50 pb-1.5">
-                          <span className="text-gray-400 font-medium">Department:</span>
-                          <span className="font-semibold text-gray-800">{leadDetails.department?.name || 'UNMAPPED'}</span>
+                        <div className="space-y-2">
+                          {canViewLeadField(hasPermission, 'assignedTo') && (
+                            <div className="flex items-baseline justify-between border-b border-gray-50 pb-1.5">
+                              <span className="text-gray-400 font-medium">Assigned Counselor:</span>
+                              <span className="font-bold text-gray-900">{assignedToName}</span>
+                            </div>
+                          )}
+                          {canViewLeadField(hasPermission, 'department') && (
+                            <div className="flex items-baseline justify-between border-b border-gray-50 pb-1.5">
+                              <span className="text-gray-400 font-medium">Department:</span>
+                              <span className="font-semibold text-gray-800">{leadDetails.department?.name || 'UNMAPPED'}</span>
+                            </div>
+                          )}
+                          {canViewLeadField(hasPermission, 'auditInfo') && (
+                            <div className="flex items-baseline justify-between border-b border-gray-50 pb-1.5">
+                              <span className="text-gray-400 font-medium">Created By:</span>
+                              <span className="text-gray-700">{createdByName} ({formatDate(leadDetails.createdAt)})</span>
+                            </div>
+                          )}
+                          {canViewLeadField(hasPermission, 'auditInfo') && leadDetails.updatedAt && (
+                            <div className="flex items-baseline justify-between">
+                              <span className="text-gray-400 font-medium">Last Modified:</span>
+                              <span className="text-gray-700">{formatDateTime(leadDetails.updatedAt)}</span>
+                            </div>
+                          )}
                         </div>
-                      )}
-                      {canViewLeadField(hasPermission, 'auditInfo') && (
-                        <div className="flex items-baseline justify-between border-b border-gray-50 pb-1.5">
-                          <span className="text-gray-400 font-medium">Created By:</span>
-                          <span className="text-gray-700">{createdByName} ({formatDate(leadDetails.createdAt)})</span>
-                        </div>
-                      )}
-                      {canViewLeadField(hasPermission, 'auditInfo') && leadDetails.updatedAt && (
-                        <div className="flex items-baseline justify-between">
-                          <span className="text-gray-400 font-medium">Last Modified:</span>
-                          <span className="text-gray-700">{formatDateTime(leadDetails.updatedAt)}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Availed Column */}
-                {canViewLeadField(hasPermission, 'isAvailed') && (
-                  <div className="sm:border-l sm:border-gray-100 sm:pl-6">
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Availed Details</span>
-                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${isAvailed ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-gray-100 text-gray-600 border border-gray-200'}`}>
-                        {isAvailed ? 'AVAILED' : 'UNAVAILED'}
-                      </span>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex items-baseline justify-between border-b border-gray-50 pb-1.5">
-                        <span className="text-gray-400 font-medium">Availed Since:</span>
-                        <span className="font-bold text-gray-900">{leadDetails.availedAt ? formatDateTime(leadDetails.availedAt) : 'Not Availed'}</span>
                       </div>
-                      <div className="flex items-baseline justify-between border-b border-gray-50 pb-1.5">
-                        <span className="text-gray-400 font-medium">Availed By:</span>
-                        <span className="font-semibold text-gray-800">
-                          {leadDetails.availedBy
-                            ? `${leadDetails.availedBy.firstName || ''} ${leadDetails.availedBy.lastName || ''}`.trim() || leadDetails.availedBy.username
-                            : '-'}
+                    )}
+
+                  {/* Availed Column */}
+                  {canViewLeadField(hasPermission, 'isAvailed') && (
+                    <div className="sm:border-l sm:border-gray-100 sm:pl-6">
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Availed Details</span>
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${isAvailed ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-gray-100 text-gray-600 border border-gray-200'}`}>
+                          {isAvailed ? 'AVAILED' : 'UNAVAILED'}
                         </span>
                       </div>
-                      {leadDetails.enrollmentId && (
-                        <div className="flex items-baseline justify-between">
-                          <span className="text-gray-400 font-medium">CMS Enrollment ID:</span>
-                          <span className="font-bold text-indigo-700">{leadDetails.enrollmentId}</span>
+                      <div className="space-y-2">
+                        <div className="flex items-baseline justify-between border-b border-gray-50 pb-1.5">
+                          <span className="text-gray-400 font-medium">Availed Since:</span>
+                          <span className="font-bold text-gray-900">{leadDetails.availedAt ? formatDateTime(leadDetails.availedAt) : 'Not Availed'}</span>
                         </div>
-                      )}
+                        <div className="flex items-baseline justify-between border-b border-gray-50 pb-1.5">
+                          <span className="text-gray-400 font-medium">Availed By:</span>
+                          <span className="font-semibold text-gray-800">
+                            {leadDetails.availedBy
+                              ? `${leadDetails.availedBy.firstName || ''} ${leadDetails.availedBy.lastName || ''}`.trim() || leadDetails.availedBy.username
+                              : '-'}
+                          </span>
+                        </div>
+                        {leadDetails.enrollmentId && (
+                          <div className="flex items-baseline justify-between">
+                            <span className="text-gray-400 font-medium">CMS Enrollment ID:</span>
+                            <span className="font-bold text-indigo-700">{leadDetails.enrollmentId}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
           {/* SECTION G: Status History & Follow-ups */}
           {(canViewLeadField(hasPermission, 'statusHistory') || canViewLeadField(hasPermission, 'nextFollowUpDate')) && (
@@ -1601,11 +1599,10 @@ const LeadDetail = () => {
                     University Visit Planning
                   </h3>
                   <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                      leadDetails.planningToVisitUniversity
+                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${leadDetails.planningToVisitUniversity
                         ? 'bg-green-50 text-green-700 border border-green-200'
                         : 'bg-gray-100 text-gray-600 border border-gray-200'
-                    }`}
+                      }`}
                   >
                     {leadDetails.planningToVisitUniversity ? 'Visit Planned' : 'No Visit'}
                   </span>
@@ -1847,6 +1844,7 @@ const LeadDetail = () => {
         studentData={leadDetails}
         phoneNumber={leadDetails.phoneNumber}
         onComplete={() => loadLeadData(false)}
+        onScheduleOpen={() => setIsScheduleModalOpen(true)}
       />
 
       <WhatsAppModal

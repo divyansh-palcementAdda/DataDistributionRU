@@ -105,7 +105,7 @@ const CallModal = ({ isOpen, onClose, studentData, followups, onScheduleOpen, on
         try {
             await changeLeadStatus(studentData?.id, {
                 newStatusId: studentData?.currentStatus?.id,
-                statusCode: 'BAD_DATA',
+                statusCode: 'BAD',
                 feedback: 'Bad data'
             });
             setShowInterestButtons(false);
@@ -310,11 +310,12 @@ const CallModal = ({ isOpen, onClose, studentData, followups, onScheduleOpen, on
     };
 
     return (
-        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 px-4">
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50  backdrop-blur-xs px-4">
             <div className="w-full max-w-md rounded-xl bg-white shadow-xl">
                 {/* Header */}
                 <div className="flex items-center justify-between border-b p-5">
                     <h2 className="text-xl font-semibold text-gray-900">
+                        Call Details
                         Call Details
                     </h2>
                     <button
@@ -378,7 +379,7 @@ const CallModal = ({ isOpen, onClose, studentData, followups, onScheduleOpen, on
                 </div>
 
                 {/* Footer */}
-                <div className="flex justify-end gap-3 border-t p-5">
+                <div className="flex justify-end gap-2 border-t p-3">
                     {!isFinallyNotConnected && currentStatusCode !== 'FINALLY_NOT_CONNECTED' && (
                         <>
                             {/* Show connection buttons if not in follow-up status */}
@@ -389,10 +390,19 @@ const CallModal = ({ isOpen, onClose, studentData, followups, onScheduleOpen, on
                                     <CustomButton
                                         variant="primary"
                                         onClick={handleMarkAsConnected}
-                                        className="px-4 py-2"
+                                        className="px-3 py-1.5 text-sm"
                                         disabled={isSubmitting}
                                     >
                                         {isSubmitting ? 'Submitting...' : 'Mark as Connected'}
+                                    </CustomButton>
+
+                                    <CustomButton
+                                        variant="secondary"
+                                        onClick={handleBad}
+                                        className="px-3 py-1.5 text-sm bg-gray-600 hover:bg-gray-700 text-white"
+                                        disabled={isSubmitting}
+                                    >
+                                        {isSubmitting ? 'Submitting...' : 'Bad'}
                                     </CustomButton>
                                 </>
                             )}

@@ -64,7 +64,7 @@ const MapCoursesModal = ({
 
   const handleSave = async () => {
     if (selectedCourseIds.length === 0) {
-      toast.warn("At least one course must be selected to map");
+      toast.warning("At least one course must be selected to map");
       return;
     }
     try {

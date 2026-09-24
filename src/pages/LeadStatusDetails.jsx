@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { FiEye, FiMessageSquare, FiUserPlus } from 'react-icons/fi';
 import { useAppContext } from '../AppContext';
 import { usePermissions } from '../PermissionContext';
@@ -299,6 +299,7 @@ const fetchLeadsForCard = async (activeFilters, statusId, page, size, sortBy, so
 const LeadStatusDetails = () => {
     const { navTo, showToast } = useAppContext();
     const { hasPermission } = usePermissions();
+    const navigate = useNavigate();
     const { id } = useParams();
 
     // detail state
@@ -561,7 +562,7 @@ const LeadStatusDetails = () => {
         }
     };
 
-    const goBack = () => navTo('lead-status');
+    const goBack = () => navigate(-1);
 
     // ── loading / error guards ──
     if (loading) {

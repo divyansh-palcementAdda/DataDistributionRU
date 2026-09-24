@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { FiEye, FiMessageSquare, FiUserPlus } from 'react-icons/fi';
 import { useAppContext } from '../AppContext';
 import { usePermissions } from '../PermissionContext';
@@ -263,6 +263,7 @@ const fetchLeadsForCard = async (activeFilters, gradeId, page, size, sortBy, sor
 const GradesDetails = () => {
     const { navTo, showToast } = useAppContext();
     const { hasPermission } = usePermissions();
+    const navigate = useNavigate();
     const { id } = useParams();
 
     // detail state
@@ -496,7 +497,7 @@ const GradesDetails = () => {
         setTablePage(0);
     };
 
-    const goBack = () => navTo('grades');
+    const goBack = () => navigate(-1);
 
     // ── download Excel function ──
     const downloadExcel = async () => {

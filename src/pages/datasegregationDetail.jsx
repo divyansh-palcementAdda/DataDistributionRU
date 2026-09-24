@@ -7,7 +7,7 @@ const DatasegregationDetail = () => {
   const { id } = useParams();
 
   const handleBack = () => {
-    navigate('/data-segregation');
+    navigate(-1);
   };
 
   return (

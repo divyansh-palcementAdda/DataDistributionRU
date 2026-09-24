@@ -1471,7 +1471,7 @@ const CounselorDetails = () => {
                 <div className="flex items-center gap-3">
                     <button
                         className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors border border-transparent hover:border-gray-200"
-                        onClick={() => navigate('/counselors')}
+                        onClick={() => navigate(-1)}
                     >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                             <polyline points="15 18 9 12 15 6" />

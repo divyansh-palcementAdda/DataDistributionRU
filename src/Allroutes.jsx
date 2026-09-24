@@ -55,6 +55,7 @@ import DatasegregationDetail from "./pages/datasegregationDetail";
 // Reusable Components / Standalone Pages
 import StudentForm from "./component/reusable/studentForm";
 import QRCodePage from "./component/reusable/qrCode";
+import RoleBasedDashboardRedirect from "./RoleBasedDashboardRedirect";
 
 const Allroutes = () => {
   return (
@@ -82,7 +83,7 @@ const Allroutes = () => {
           </ProtectedRoute>
         }
       >
-        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/dashboard" element={<RoleBasedDashboardRedirect />} />
         <Route path="/head-dashboard" element={<HeadDashboard />} />
         <Route path="/callers-dashboard" element={<CallersDashboard />} />
         <Route path="/leads" element={<Leads />} />

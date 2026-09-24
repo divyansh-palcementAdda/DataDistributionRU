@@ -706,18 +706,7 @@ const BoardDetails = () => {
                         onCardClick={handleCardClick}
                     />
                     
-                    {/* <div className="flex justify-end mb-6">
-                        <button
-                            onClick={() => {
-                                setUserAllocationInitialWorkingOnly(false);
-                                setIsUserAllocationModalOpen(true);
-                            }}
-                            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-lg transition-all shadow-sm hover:shadow"
-                        >
-                            View User Allocation
-                        </button>
-                    </div> */}
-
+                
                     <LeadCards
                         onCardClick={handleCardClick}
                         activeFilters={activeFilters}

@@ -23,6 +23,7 @@
   --gray-700: #334155;
   --gray-800: #1E293B;
   --gray-900: #0F172A;
+  --color-purple-600: #9333EA;
   --sidebar-w: 240px;
   --header-h: 64px;
   --radius: 12px;
@@ -159,8 +160,8 @@ body.dark .cal-day {
 
 .sidebar-label {
   font-size: 10px;
-  font-weight: 600;
-  color: var(--gray-400);
+  font-weight: 700;
+  color: var(--color-purple-600);
   letter-spacing: .06em;
   text-transform: uppercase;
   padding: 0 8px;

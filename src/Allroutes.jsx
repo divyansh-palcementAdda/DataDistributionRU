@@ -6,6 +6,7 @@ import MainLayout from "./layouts/mainLayout/MainLayout";
 import ProtectedRoute from "./ProtectedRoute";
 import AuthRoute from "./AuthRoute";
 import PermissionRoute from "./PermissionRoute";
+import RoleRoute from "./RoleRoute";
 
 // Auth Pages
 import Login from "./pages/auth/login";
@@ -85,20 +86,67 @@ const Allroutes = () => {
         }
       >
         <Route path="/dashboard" element={<RoleBasedDashboardRedirect />} />
-        <Route path="/head-dashboard" element={<HeadDashboard />} />
-        <Route path="/callers-dashboard" element={<CallersDashboard />} />
-        <Route path="/leads" element={<Leads />} />
-        <Route path="/lead-detail" element={<LeadDetail />} />
-        <Route path="/lead-detail/:id" element={<LeadDetail />} />
-        <Route path="/followups" element={<FollowUps />} />
-        <Route path="/counselors" element={<Counselors />} />
-        <Route path="/counselor-details/:id" element={<CounselorDetails />} />
+        <Route path="/head-dashboard" element={
+          <RoleRoute allowedRoles={["HEAD", "HOD"]}>
+            <HeadDashboard />
+          </RoleRoute>
+        } />
+        <Route path="/callers-dashboard" element={
+          <RoleRoute allowedRoles={["COUNSELOR"]}>
+            <CallersDashboard />
+          </RoleRoute>
+        } />
+
+        <Route path="/leads" element={
+          <PermissionRoute requiredPermission="LEAD_READ">
+            <Leads />
+          </PermissionRoute>
+        } />
+        <Route path="/lead-detail" element={
+          <PermissionRoute requiredPermission="LEAD_READ">
+            <LeadDetail />
+          </PermissionRoute>
+        } />
+        <Route path="/lead-detail/:id" element={
+          <PermissionRoute requiredPermission="LEAD_READ">
+            <LeadDetail />
+          </PermissionRoute>
+        } />
+
+        <Route path="/followups" element={
+          <PermissionRoute requiredPermission="FOLLOWUP_VIEW">
+            <FollowUps />
+          </PermissionRoute>
+        } />
+
+        <Route path="/counselors" element={
+          <PermissionRoute requiredPermission="USER_READ">
+            <Counselors />
+          </PermissionRoute>
+        } />
+        <Route path="/counselor-details/:id" element={
+          <PermissionRoute requiredPermission="USER_READ">
+            <CounselorDetails />
+          </PermissionRoute>
+        } />
+
         <Route path="/reports" element={<Reports />} />
-        <Route path="/courses" element={<Courses />} />
+
+        <Route path="/courses" element={
+          <PermissionRoute requiredPermission="COURSE_VIEW">
+            <Courses />
+          </PermissionRoute>
+        } />
+        <Route path="/course-details/:id" element={
+          <PermissionRoute requiredPermission="COURSE_VIEW">
+            <CourseDetails />
+          </PermissionRoute>
+        } />
+
         <Route path="/settings" element={
           <PermissionRoute anyOfPermissions={[
             "SETTINGS_USER_MANAGEMENT",
-            "SETTINGS_NOTIFICATIONS", 
+            "SETTINGS_NOTIFICATIONS",
             "SETTINGS_PROJECT_CONFIGURATION",
             "SETTINGS_ROLES_AND_PERMISSIONS",
             "EMAIL_LOG_VIEW"
@@ -132,24 +180,99 @@ const Allroutes = () => {
             </PermissionRoute>
           } />
         </Route>
-        <Route path="/lead-source" element={<Leadsourse />} />
-        <Route path="/lead-source-details/:id" element={<DataSourceDetails />} />
-        <Route path="/course-types" element={<CourseType />} />
-        <Route path="/course-types/:id" element={<CourseTypeDetails />} />
-        <Route path="/course-details/:id" element={<CourseDetails />} />
-        <Route path="/lead-status" element={<LeadStatus />} />
-        <Route path="/lead-status-details/:id" element={<LeadStatusDetails />} />
-        <Route path="/grades" element={<Grades />} />
-        <Route path="/grade-details/:id" element={<GradesDetails />} />
-        <Route path="/boards" element={<Boards />} />
-        <Route path="/board-details/:id" element={<BoardDetails />} />
-        <Route path="/department" element={<Department />} />
-        <Route path="/departments" element={<Department />} />
-        <Route path="/department-details/:id" element={<DepartmentDetails />} />
-        <Route path="/data-segregation" element={<Datasegregation />} />
-        <Route path="/data-segregation-details/:id" element={<DatasegregationDetail />} />
-        <Route path="/programs" element={<Programs />} />
-        <Route path="/program-details/:id" element={<ProgramDetails />} />
+
+        <Route path="/lead-source" element={
+          <PermissionRoute requiredPermission="LEADSOURCE_READ">
+            <Leadsourse />
+          </PermissionRoute>
+        } />
+        <Route path="/lead-source-details/:id" element={
+          <PermissionRoute requiredPermission="LEADSOURCE_READ">
+            <DataSourceDetails />
+          </PermissionRoute>
+        } />
+
+        <Route path="/course-types" element={
+          <PermissionRoute requiredPermission="COURSE_TYPE_VIEW">
+            <CourseType />
+          </PermissionRoute>
+        } />
+        <Route path="/course-types/:id" element={
+          <PermissionRoute requiredPermission="COURSE_TYPE_VIEW">
+            <CourseTypeDetails />
+          </PermissionRoute>
+        } />
+
+        <Route path="/lead-status" element={
+          <PermissionRoute requiredPermission="LEAD_STATUS_VIEW">
+            <LeadStatus />
+          </PermissionRoute>
+        } />
+        <Route path="/lead-status-details/:id" element={
+          <PermissionRoute requiredPermission="LEAD_STATUS_VIEW">
+            <LeadStatusDetails />
+          </PermissionRoute>
+        } />
+
+        <Route path="/grades" element={
+          <PermissionRoute requiredPermission="GRADE_VIEW">
+            <Grades />
+          </PermissionRoute>
+        } />
+        <Route path="/grade-details/:id" element={
+          <PermissionRoute requiredPermission="GRADE_VIEW">
+            <GradesDetails />
+          </PermissionRoute>
+        } />
+
+        <Route path="/boards" element={
+          <PermissionRoute requiredPermission="BOARD_VIEW">
+            <Boards />
+          </PermissionRoute>
+        } />
+        <Route path="/board-details/:id" element={
+          <PermissionRoute requiredPermission="BOARD_VIEW">
+            <BoardDetails />
+          </PermissionRoute>
+        } />
+
+        <Route path="/department" element={
+          <PermissionRoute requiredPermission="DEPARTMENT_VIEW">
+            <Department />
+          </PermissionRoute>
+        } />
+        <Route path="/departments" element={
+          <PermissionRoute requiredPermission="DEPARTMENT_VIEW">
+            <Department />
+          </PermissionRoute>
+        } />
+        <Route path="/department-details/:id" element={
+          <PermissionRoute requiredPermission="DEPARTMENT_VIEW">
+            <DepartmentDetails />
+          </PermissionRoute>
+        } />
+
+        <Route path="/data-segregation" element={
+          <PermissionRoute requiredPermission="DATA_SEGREGATION_VIEW">
+            <Datasegregation />
+          </PermissionRoute>
+        } />
+        <Route path="/data-segregation-details/:id" element={
+          <PermissionRoute requiredPermission="DATA_SEGREGATION_VIEW">
+            <DatasegregationDetail />
+          </PermissionRoute>
+        } />
+
+        <Route path="/programs" element={
+          <PermissionRoute requiredPermission="PROGRAM_VIEW">
+            <Programs />
+          </PermissionRoute>
+        } />
+        <Route path="/program-details/:id" element={
+          <PermissionRoute requiredPermission="PROGRAM_VIEW">
+            <ProgramDetails />
+          </PermissionRoute>
+        } />
       </Route>
 
       {/* Standalone Route for Student Form from QR */}

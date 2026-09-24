@@ -313,10 +313,12 @@ const ReusableTable = ({
                             onChange={handleRowsPerPageChange}
                             className="mx-2 border border-slate-300 rounded-md px-2 py-1 text-xs font-semibold text-slate-700 bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 shadow-2xs cursor-pointer"
                         >
-                            <option value={5}>5</option>
-                            <option value={10}>10</option>
-                            <option value={20}>20</option>
-                            <option value={50}>50</option>
+                            {[5, 10, 20, 50, ...(![5, 10, 20, 50].includes(rowsPerPage) ? [rowsPerPage] : [])]
+                                .sort((a, b) => a - b)
+                                .map(opt => (
+                                    <option key={opt} value={opt}>{opt}</option>
+                                ))
+                            }
                         </select>
                         <span>entries</span>
                     </div>

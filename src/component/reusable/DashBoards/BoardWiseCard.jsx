@@ -80,7 +80,7 @@ const BoardWiseCard = ({ data, onCardClick, activeFilters = [], courseTypeId, le
   return (
     <div style={{ marginBottom: '24px' }}>
       <h2 className="boardwise-title" style={{ fontSize: '20px', fontWeight: '700', color: '#1e293b', marginBottom: '16px' }}>
-        Board Wise
+        Specialization Wise
       </h2>
 
       {loading ? (

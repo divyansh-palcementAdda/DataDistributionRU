@@ -5,6 +5,7 @@ import AuthLayout from "./layouts/authlayout/AuthLayout";
 import MainLayout from "./layouts/mainLayout/MainLayout";
 import ProtectedRoute from "./ProtectedRoute";
 import AuthRoute from "./AuthRoute";
+import PermissionRoute from "./PermissionRoute";
 
 // Auth Pages
 import Login from "./pages/auth/login";
@@ -94,12 +95,42 @@ const Allroutes = () => {
         <Route path="/counselor-details/:id" element={<CounselorDetails />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/courses" element={<Courses />} />
-        <Route path="/settings" element={<Settings />}>
-          <Route path="user-management" element={<UserManagement />} />
-          <Route path="notifications" element={<Notifications />} />
-          <Route path="crm-config" element={<CRMConfig />} />
-          <Route path="roles-permissions" element={<RolesAndPermissions />} />
-          <Route path="email-settings" element={<EmailSettings />} />
+        <Route path="/settings" element={
+          <PermissionRoute anyOfPermissions={[
+            "SETTINGS_USER_MANAGEMENT",
+            "SETTINGS_NOTIFICATIONS", 
+            "SETTINGS_PROJECT_CONFIGURATION",
+            "SETTINGS_ROLES_AND_PERMISSIONS",
+            "EMAIL_LOG_VIEW"
+          ]}>
+            <Settings />
+          </PermissionRoute>
+        }>
+          <Route path="user-management" element={
+            <PermissionRoute requiredPermission="SETTINGS_USER_MANAGEMENT">
+              <UserManagement />
+            </PermissionRoute>
+          } />
+          <Route path="notifications" element={
+            <PermissionRoute requiredPermission="SETTINGS_NOTIFICATIONS">
+              <Notifications />
+            </PermissionRoute>
+          } />
+          <Route path="crm-config" element={
+            <PermissionRoute requiredPermission="SETTINGS_PROJECT_CONFIGURATION">
+              <CRMConfig />
+            </PermissionRoute>
+          } />
+          <Route path="roles-permissions" element={
+            <PermissionRoute requiredPermission="SETTINGS_ROLES_AND_PERMISSIONS">
+              <RolesAndPermissions />
+            </PermissionRoute>
+          } />
+          <Route path="email-settings" element={
+            <PermissionRoute requiredPermission="EMAIL_LOG_VIEW">
+              <EmailSettings />
+            </PermissionRoute>
+          } />
         </Route>
         <Route path="/lead-source" element={<Leadsourse />} />
         <Route path="/lead-source-details/:id" element={<DataSourceDetails />} />

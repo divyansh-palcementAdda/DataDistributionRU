@@ -5,6 +5,7 @@ const PermissionContext = createContext(null);
 
 export const PermissionProvider = ({ children }) => {
   const [permissions, setPermissions] = useState([]);
+  const [permissionsLoading, setPermissionsLoading] = useState(true);
 
   // Fetch permissions on page load
   useEffect(() => {
@@ -41,6 +42,8 @@ export const PermissionProvider = ({ children }) => {
         }
       } catch (err) {
         console.error("Failed to fetch permissions on page load:", err);
+      } finally {
+        setPermissionsLoading(false);
       }
     };
 
@@ -119,6 +122,7 @@ export const PermissionProvider = ({ children }) => {
 
   const value = {
     permissions,
+    permissionsLoading,
     setPermissionsData,
     clearPermissions,
     refreshPermissions,

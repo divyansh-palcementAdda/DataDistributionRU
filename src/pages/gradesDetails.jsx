@@ -23,6 +23,7 @@ import UserAllocationListModal from '../component/reusable/segregation/UserAlloc
 import ReusableTable from '../component/reusable/table';
 import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import AssignLeadModal from '../component/reusable/Leads/AssignLeadModal';
+import CourseUserStatusAnalyticsSection from '../component/reusable/analytics/CourseUserStatusAnalyticsSection';
 import * as XLSX from 'xlsx';
 
 // ─── Lead table columns ───────────────────────────────────────────────────────
@@ -736,6 +737,13 @@ const GradesDetails = () => {
                     />
                 </div>
             )}
+
+            {/* ── Course-wise & User-wise Lead Status Analytics Section ── */}
+            <CourseUserStatusAnalyticsSection
+                contextType="grade"
+                contextId={id}
+                activeFilters={activeFilters}
+            />
 
             {/* ── Filtered Lead Table ── */}
             {!loading && !error && (

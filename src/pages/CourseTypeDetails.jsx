@@ -23,6 +23,7 @@ import UserAllocationListModal from '../component/reusable/segregation/UserAlloc
 import ReusableTable from '../component/reusable/table';
 import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import AssignLeadModal from '../component/reusable/Leads/AssignLeadModal';
+import CourseUserStatusAnalyticsSection from '../component/reusable/analytics/CourseUserStatusAnalyticsSection';
 import * as XLSX from 'xlsx';
 import {
     renderLeadInfoCell,
@@ -674,6 +675,13 @@ const CourseTypeDetails = () => {
                     activeFilters={activeFilters}
                 />
             </div>
+
+            {/* ── Course-wise & User-wise Lead Status Analytics Section ── */}
+            <CourseUserStatusAnalyticsSection
+                contextType="category"
+                contextId={id}
+                activeFilters={activeFilters}
+            />
 
             {/* ── Filtered Lead Table ── */}
             {activeFilters.length >= 0 && (

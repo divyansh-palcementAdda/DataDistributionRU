@@ -25,6 +25,7 @@ import ReusableTable from '../component/reusable/table';
 import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import AssignLeadModal from '../component/reusable/Leads/AssignLeadModal';
 import ReassignModal from '../component/reusable/Leads/ReassignModal';
+import CourseUserStatusAnalyticsSection from '../component/reusable/analytics/CourseUserStatusAnalyticsSection';
 import * as XLSX from 'xlsx';
 import { getCourseLeadMatrix, getProgramLeadMatrix } from '../Services/user/userLeadMatrixService';
 
@@ -1721,31 +1722,12 @@ const CounselorDetails = () => {
                         />
                     </div>
 
-                    {/* ── Course-wise Lead Status Matrix ── */}
-                    {hasPermission('USER_COURSE_MATRIX_VIEW') && (
-                        <LeadMatrixSection
-                            title="Course-wise Lead Status Matrix"
-                            subtitle="Dynamic breakdown of active leads across courses and lead statuses for this user"
-                            itemLabel="Course"
-                            matrix={courseMatrix}
-                            loading={courseMatrixLoading}
-                            accentColor="indigo"
-                            onExport={() => handleExportMatrix(courseMatrix, 'Course')}
-                        />
-                    )}
-
-                    {/* ── Program-wise Lead Status Matrix ── */}
-                    {hasPermission('USER_PROGRAM_MATRIX_VIEW') && (
-                        <LeadMatrixSection
-                            title="Program-wise Lead Status Matrix"
-                            subtitle="Dynamic breakdown of active leads across programs and lead statuses for this user"
-                            itemLabel="Program"
-                            matrix={programMatrix}
-                            loading={programMatrixLoading}
-                            accentColor="purple"
-                            onExport={() => handleExportMatrix(programMatrix, 'Program')}
-                        />
-                    )}
+                    {/* ── Course-wise & User-wise Lead Status Analytics Section ── */}
+                    <CourseUserStatusAnalyticsSection
+                        contextType="counselor"
+                        contextId={id}
+                        activeFilters={activeFilters}
+                    />
 
                     {/* ── Filtered Lead Table ── */}
                     <div className="mt-6">

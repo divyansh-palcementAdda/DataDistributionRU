@@ -29,6 +29,11 @@ const ApiRoutes = {
         avail: '/api/leads/{id}/avail',
         assignmentHistory:'/api/leads/{id}/assignment-history',
     },
+    LeadAnalytics: {
+        courseStatus: '/api/leads/analytics/course-status',
+        userStatus: '/api/leads/analytics/user-status',
+        courseUserStatus: '/api/leads/analytics/course-user-status',
+    },
     Lead_Source: {
         create: '/api/lead-sources',
         getAll: '/api/lead-sources',

@@ -23,6 +23,7 @@ import UserAllocationListModal from '../component/reusable/segregation/UserAlloc
 import ReusableTable from '../component/reusable/table';
 import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import AssignLeadModal from '../component/reusable/Leads/AssignLeadModal';
+import CourseUserStatusAnalyticsSection from '../component/reusable/analytics/CourseUserStatusAnalyticsSection';
 import * as XLSX from 'xlsx';
 
 // ─── Lead table columns ───────────────────────────────────────────────────────
@@ -806,6 +807,14 @@ const DataSourceDetails = () => {
                     leadSourceId={id}
                 />
             </div>
+
+            {/* ── Course-wise & User-wise Lead Status Analytics Section ── */}
+            <CourseUserStatusAnalyticsSection
+                contextType="source"
+                contextId={id}
+                activeFilters={activeFilters}
+            />
+
             {true && (
                 <div className="mt-6">
                     {/* Table Header */}

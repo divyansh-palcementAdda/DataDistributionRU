@@ -655,7 +655,7 @@ const DepartmentDetails = () => {
             <div className="p-6">
                 <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl flex justify-between items-center shadow-sm">
                     <span>{error}</span>
-                    <button onClick={() => navigate('/department')} className="text-sm font-semibold underline hover:text-red-800">
+                    <button onClick={() => navigate(-1)} className="text-sm font-semibold underline hover:text-red-800">
                         Go Back
                     </button>
                 </div>
@@ -668,7 +668,7 @@ const DepartmentDetails = () => {
             <div className="p-6">
                 <div className="bg-gray-50 border border-gray-200 text-gray-600 px-4 py-3 rounded-xl flex justify-between items-center shadow-sm">
                     <span>Department not found</span>
-                    <button onClick={() => navigate('/department')} className="text-sm font-semibold underline hover:text-gray-800">
+                    <button onClick={() => navigate(-1)} className="text-sm font-semibold underline hover:text-gray-800">
                         Go Back
                     </button>
                 </div>
@@ -684,7 +684,7 @@ const DepartmentDetails = () => {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <button
-                        onClick={() => navigate('/department')}
+                        onClick={() => navigate(-1)}
                         style={{ padding: '8px', borderRadius: '8px', border: '1px solid #E2E8F0', backgroundColor: '#FFFFFF', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }}
                         onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F1F5F9'}
                         onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#FFFFFF'}

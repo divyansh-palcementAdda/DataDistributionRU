@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { FiEye, FiMessageSquare, FiUserPlus } from 'react-icons/fi';
 import { useAppContext } from '../AppContext';
 import { usePermissions } from '../PermissionContext';
@@ -263,6 +263,7 @@ const fetchLeadsForCard = async (activeFilters, boardId, page, size, sortBy, sor
 const BoardDetails = () => {
     const { navTo, showToast } = useAppContext();
     const { hasPermission } = usePermissions();
+    const navigate = useNavigate();
     const { id } = useParams();
 
     // detail state
@@ -491,7 +492,7 @@ const BoardDetails = () => {
         setTablePage(0);
     };
 
-    const goBack = () => navTo('boards');
+    const goBack = () => navigate(-1);
 
     // ── download Excel function ──
     const downloadExcel = async () => {
@@ -705,7 +706,7 @@ const BoardDetails = () => {
                         onCardClick={handleCardClick}
                     />
                     
-                    <div className="flex justify-end mb-6">
+                    {/* <div className="flex justify-end mb-6">
                         <button
                             onClick={() => {
                                 setUserAllocationInitialWorkingOnly(false);
@@ -715,7 +716,7 @@ const BoardDetails = () => {
                         >
                             View User Allocation
                         </button>
-                    </div>
+                    </div> */}
 
                     <LeadCards
                         onCardClick={handleCardClick}

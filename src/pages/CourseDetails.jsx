@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAppContext } from '../AppContext';
 import { usePermissions } from '../PermissionContext';
@@ -934,6 +934,7 @@ const fetchLeadsForCard = async (activeFilters, courseId, page, size, sortBy, so
 const CourseDetails = () => {
     const { navTo, showToast } = useAppContext();
     const { hasPermission } = usePermissions();
+    const navigate = useNavigate();
     const [details, setDetails] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -1451,7 +1452,7 @@ const CourseDetails = () => {
     };
 
     const goBack = () => {
-        navTo('courses');
+        navigate(-1);
     };
 
     return (

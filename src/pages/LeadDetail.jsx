@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
 import { usePermissions } from '../PermissionContext';
 import { canViewLeadField } from '../config/leadFieldPermissions';
@@ -30,6 +30,7 @@ import { completeFollowup, cancelFollowup, markFollowupNotConnected } from '../S
 
 const LeadDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { navTo, showToast, openAddLeadModal, leadRefreshTrigger } = useAppContext();
   const { hasPermission } = usePermissions();
 
@@ -752,7 +753,7 @@ const LeadDetail = () => {
         </div>
         <h3 className="text-lg font-bold text-gray-900 mb-2">Lead Not Found</h3>
         <p className="text-sm text-gray-500 mb-6">The requested lead could not be found or you do not have permission to view it.</p>
-        <CustomButton variant="primary" onClick={() => navTo('leads')}>
+        <CustomButton variant="primary" onClick={() => navigate(-1)}>
           Back to Leads
         </CustomButton>
       </div>
@@ -766,7 +767,7 @@ const LeadDetail = () => {
         <div className="flex items-center gap-3">
           <button
             className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-600 hover:text-gray-900"
-            onClick={() => navTo('leads')}
+            onClick={() => navigate(-1)}
             title="Back to Leads"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">

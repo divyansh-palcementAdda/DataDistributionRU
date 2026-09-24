@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { FiEye, FiMessageSquare, FiUserPlus } from 'react-icons/fi';
 import { useAppContext } from '../AppContext';
 import { usePermissions } from '../PermissionContext';
@@ -262,6 +262,7 @@ const fetchLeadsForCard = async (activeFilters, leadSourceId, page, size, sortBy
 const DataSourceDetails = () => {
     const { navTo, showToast } = useAppContext();
     const { hasPermission } = usePermissions();
+    const navigate = useNavigate();
     const [details, setDetails] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -490,7 +491,7 @@ const DataSourceDetails = () => {
     };
 
     const goBack = () => {
-        navTo('lead-source');
+        navigate(-1);
     };
 
     // ── download Excel function ──
@@ -769,7 +770,7 @@ const DataSourceDetails = () => {
                     onCardClick={handleCardClick}
                 />
                 
-                <div className="flex justify-end mb-6">
+                {/* <div className="flex justify-end mb-6">
                     <button
                         onClick={() => {
                             setUserAllocationInitialWorkingOnly(false);
@@ -779,7 +780,7 @@ const DataSourceDetails = () => {
                     >
                         View User Allocation
                     </button>
-                </div>
+                </div> */}
 
                 <LeadCards
                     onCardClick={handleCardClick}

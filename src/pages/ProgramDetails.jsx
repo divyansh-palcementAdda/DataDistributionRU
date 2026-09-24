@@ -160,7 +160,7 @@ const ProgramDetails = () => {
       <div className="p-6 text-center">
         <h2 className="text-xl font-bold text-gray-800">Program Not Found</h2>
         <p className="text-sm text-gray-500 mt-2">The requested program could not be found.</p>
-        <CustomButton variant="secondary" onClick={() => navigate('/programs')} className="mt-4">
+        <CustomButton variant="secondary" onClick={() => navigate(-1)} className="mt-4">
           Back to Programs
         </CustomButton>
       </div>
@@ -175,7 +175,7 @@ const ProgramDetails = () => {
       {/* Top navigation */}
       <div className="flex items-center gap-3 mb-6">
         <button
-          onClick={() => navigate('/programs')}
+          onClick={() => navigate(-1)}
           className="p-2 rounded-xl bg-white border border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-50 shadow-sm transition-all"
         >
           <FiArrowLeft className="w-4 h-4" />

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { FiEye, FiMessageSquare, FiUserPlus } from 'react-icons/fi';
 import { useAppContext } from '../AppContext';
 import { usePermissions } from '../PermissionContext';
@@ -200,6 +200,7 @@ const fetchDashboardData = async (courseTypeId) => {
 // ─── Main Component ──────────────────────────────────────────────────────────
 const CourseTypeDetails = () => {
     const { id } = useParams();
+    const navigate = useNavigate();
     const { navTo, showToast } = useAppContext();
     const { hasPermission } = usePermissions();
 
@@ -409,7 +410,7 @@ const CourseTypeDetails = () => {
         setTablePage(0);
     };
 
-    const goBack = () => navTo('/course-types');
+    const goBack = () => navigate(-1);
 
     // ── download Excel function ──
     const downloadExcel = async () => {
@@ -637,7 +638,7 @@ const CourseTypeDetails = () => {
                     onCardClick={handleCardClick}
                 />
                 
-                <div className="flex justify-end mb-6">
+                {/* <div className="flex justify-end mb-6">
                     <button
                         onClick={() => {
                             setUserAllocationInitialWorkingOnly(false);
@@ -647,7 +648,7 @@ const CourseTypeDetails = () => {
                     >
                         View User Allocation
                     </button>
-                </div>
+                </div> */}
 
                 <LeadCards
                     onCardClick={handleCardClick}

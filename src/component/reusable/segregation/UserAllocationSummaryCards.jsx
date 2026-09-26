@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { getUserAllocationSummary } from '../../../Services/segregation/dataSegregationService';
 import { usePermissions } from '../../../PermissionContext';
-import UserAllocationTable from './UserAllocationTable';
+
 
 const UsersAllottedIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -28,13 +28,13 @@ const UserAllocationSummaryCards = ({
   filterRequest = {},
   activeFilters = [],
   scopeTitle = '',
-  onCardClick
+  onCardClick,
+  activeWorkingOnly = false,
+  onWorkingOnlyChange
 }) => {
   const { hasPermission } = usePermissions();
   const [summaryData, setSummaryData] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [tableOpen, setTableOpen] = useState(false);
-  const [tableWorkingOnly, setTableWorkingOnly] = useState(false);
 
   // Permission checks
   const canViewAllottedUsers = hasPermission('DATA_SEGREGATION_USER_ALLOCATION_VIEW')
@@ -102,17 +102,20 @@ const UserAllocationSummaryCards = ({
   const notWorkingUsers = Math.max(0, totalUsers - workingUsers);
 
   const handleCardClick = (workingOnly) => {
-    if (tableOpen && tableWorkingOnly === workingOnly) {
-      // Toggle off if clicking the already active card
-      setTableOpen(false);
-    } else {
-      setTableWorkingOnly(workingOnly);
-      setTableOpen(true);
+    if (onWorkingOnlyChange) {
+      onWorkingOnlyChange(workingOnly);
+    }
+    if (onCardClick) {
+      onCardClick({ type: 'userAllocation', workingOnly });
+    }
+    const tableEl = document.getElementById('user-allocation-table-section');
+    if (tableEl) {
+      tableEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
-  const isCard1Active = tableOpen && !tableWorkingOnly;
-  const isCard2Active = tableOpen && tableWorkingOnly;
+  const isCard1Active = !activeWorkingOnly;
+  const isCard2Active = activeWorkingOnly;
 
   return (
     <>
@@ -267,26 +270,7 @@ const UserAllocationSummaryCards = ({
         )}
       </div>
 
-      {/* ── Inline User Allocation & Workload Table ── */}
-      {tableOpen && (
-        <UserAllocationTable
-          courseId={courseId}
-          courseTypeId={courseTypeId}
-          leadSourceId={leadSourceId}
-          boardId={boardId}
-          gradeId={gradeId}
-          leadStatusId={leadStatusId}
-          filterRequest={filterRequest}
-          activeFilters={activeFilters}
-          scopeTitle={scopeTitle}
-          workingOnly={tableWorkingOnly}
-          initialWorkingOnly={tableWorkingOnly}
-          collapsible={true}
-          isOpen={tableOpen}
-          onClose={() => setTableOpen(false)}
-          onTabChange={(isWorking) => setTableWorkingOnly(isWorking)}
-        />
-      )}
+
     </>
   );
 };

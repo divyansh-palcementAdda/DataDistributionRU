@@ -19,6 +19,7 @@ import UnallottedCard from '../component/reusable/DashBoards/UnallottedCard';
 import AvailedCard from '../component/reusable/DashBoards/availedCard';
 import AllottedCard from '../component/reusable/DashBoards/allottedCard';
 import UserAllocationSummaryCards from '../component/reusable/segregation/UserAllocationSummaryCards';
+import UserAllocationTable from '../component/reusable/segregation/UserAllocationTable';
 import UserAllocationListModal from '../component/reusable/segregation/UserAllocationListModal';
 import ReusableTable from '../component/reusable/table';
 import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
@@ -302,6 +303,7 @@ const GradesDetails = () => {
     // user allocation list modal
     const [isUserAllocationModalOpen, setIsUserAllocationModalOpen] = useState(false);
     const [userAllocationInitialWorkingOnly, setUserAllocationInitialWorkingOnly] = useState(false);
+    const [userAllocationWorkingOnly, setUserAllocationWorkingOnly] = useState(false);
 
     // ── fetch grade details ──
     useEffect(() => {
@@ -628,8 +630,8 @@ const GradesDetails = () => {
                                 <h2 className="text-2xl font-extrabold text-gray-900 mb-2">{details?.gradeName || 'N/A'}</h2>
                                 <div className="flex flex-wrap gap-2 items-center">
                                     <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border uppercase tracking-wide ${details?.status === 'ACTIVE'
-                                            ? 'bg-green-50 text-green-700 border-green-200'
-                                            : 'bg-red-50 text-red-700 border-red-200'
+                                        ? 'bg-green-50 text-green-700 border-green-200'
+                                        : 'bg-red-50 text-red-700 border-red-200'
                                         }`}>
                                         {details?.status || 'UNKNOWN'}
                                     </span>
@@ -708,6 +710,8 @@ const GradesDetails = () => {
                             filterRequest={filterRequest}
                             activeFilters={activeFilters}
                             scopeTitle={details?.gradeName || 'Grade'}
+                            activeWorkingOnly={userAllocationWorkingOnly}
+                            onWorkingOnlyChange={(val) => setUserAllocationWorkingOnly(val)}
                             onCardClick={handleCardClick}
                         />
 
@@ -857,6 +861,18 @@ const GradesDetails = () => {
                         )}
                     </div>
                 )}
+
+                {/* ── User Allocation & Workload Table (Always Open Below All Lead Table) ── */}
+                <div id="user-allocation-table-section" className="mt-8">
+                    <UserAllocationTable
+                        gradeId={id}
+                        filterRequest={filterRequest}
+                        activeFilters={activeFilters}
+                        scopeTitle={details?.gradeName || 'Grade'}
+                        workingOnly={userAllocationWorkingOnly}
+                        onTabChange={(val) => setUserAllocationWorkingOnly(val)}
+                    />
+                </div>
 
                 {/* ── Hint when no card selected — removed (default all-leads table always visible) ── */}
             </div>

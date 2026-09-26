@@ -19,6 +19,7 @@ import UnallottedCard from '../component/reusable/DashBoards/UnallottedCard';
 import AvailedCard from '../component/reusable/DashBoards/availedCard';
 import AllottedCard from '../component/reusable/DashBoards/allottedCard';
 import UserAllocationSummaryCards from '../component/reusable/segregation/UserAllocationSummaryCards';
+import UserAllocationTable from '../component/reusable/segregation/UserAllocationTable';
 import UserAllocationListModal from '../component/reusable/segregation/UserAllocationListModal';
 import ReusableTable from '../component/reusable/table';
 import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
@@ -299,6 +300,7 @@ const DataSourceDetails = () => {
     // user allocation list modal
     const [isUserAllocationModalOpen, setIsUserAllocationModalOpen] = useState(false);
     const [userAllocationInitialWorkingOnly, setUserAllocationInitialWorkingOnly] = useState(false);
+    const [userAllocationWorkingOnly, setUserAllocationWorkingOnly] = useState(false);
 
     useEffect(() => {
         if (id) {
@@ -768,6 +770,8 @@ const DataSourceDetails = () => {
                         filterRequest={filterRequest}
                         activeFilters={activeFilters}
                         scopeTitle={details?.name || 'Data Source'}
+                        activeWorkingOnly={userAllocationWorkingOnly}
+                        onWorkingOnlyChange={(val) => setUserAllocationWorkingOnly(val)}
                         onCardClick={handleCardClick}
                     />
 
@@ -931,6 +935,18 @@ const DataSourceDetails = () => {
                         )}
                     </div>
                 )}
+
+                {/* ── User Allocation & Workload Table (Always Open Below All Lead Table) ── */}
+                <div id="user-allocation-table-section" className="mt-8">
+                    <UserAllocationTable
+                        leadSourceId={id}
+                        filterRequest={filterRequest}
+                        activeFilters={activeFilters}
+                        scopeTitle={details?.name || 'Data Source'}
+                        workingOnly={userAllocationWorkingOnly}
+                        onTabChange={(val) => setUserAllocationWorkingOnly(val)}
+                    />
+                </div>
 
                 {/* ── Hint when no card selected — removed (default all-leads table always visible) ── */}
             </div>

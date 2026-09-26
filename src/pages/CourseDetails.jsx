@@ -48,6 +48,7 @@ import AvailedCard from '../component/reusable/DashBoards/availedCard';
 import UnallottedCard from '../component/reusable/DashBoards/UnallottedCard';
 import LeadCards from '../component/reusable/DashBoards/leadCards';
 import UserAllocationSummaryCards from '../component/reusable/segregation/UserAllocationSummaryCards';
+import UserAllocationTable from '../component/reusable/segregation/UserAllocationTable';
 import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import AssignLeadModal from '../component/reusable/Leads/AssignLeadModal';
 import { FiEye, FiMessageSquare, FiUserPlus } from 'react-icons/fi';
@@ -523,8 +524,8 @@ const UspModal = ({ isOpen, onClose, onSuccess, courseId, editData = null }) => 
 // ─── Communication Management Tab ────────────────────────────────────────────
 const COMM_CHANNELS = [
     { key: 'infoPanel', label: 'Info Panel' },
-    { key: 'email',     label: 'Email' },
-    { key: 'whatsapp',  label: 'WhatsApp' },
+    { key: 'email', label: 'Email' },
+    { key: 'whatsapp', label: 'WhatsApp' },
 ];
 
 // Small helper: select box for templates / images
@@ -549,17 +550,17 @@ const SelectField = ({ label, value, onChange, options, placeholder = 'None', va
 const CommunicationTab = ({ courseId, templates, images }) => {
     const BASE_URL = (import.meta.env.VITE_BASE_URL || '').replace(/^"+|"+$/g, '').replace(/\/$/, '');
 
-    const [config, setConfig]       = useState(null);
-    const [loading, setLoading]     = useState(false);
-    const [saving, setSaving]       = useState(false);
-    const [error, setError]         = useState('');
-    const [success, setSuccess]     = useState('');
+    const [config, setConfig] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
 
     // Local selections: { infoPanel: { templateId, imageId }, email: {...}, whatsapp: {...} }
     const [selections, setSelections] = useState({
         infoPanel: { templateId: null, imageId: null },
-        email:     { templateId: null, imageId: null },
-        whatsapp:  { templateId: null, imageId: null },
+        email: { templateId: null, imageId: null },
+        whatsapp: { templateId: null, imageId: null },
     });
 
     // Fetch existing config
@@ -574,15 +575,15 @@ const CommunicationTab = ({ courseId, templates, images }) => {
                 setSelections({
                     infoPanel: {
                         templateId: data.infoPanelTemplateId ?? data.infoPanelTemplate?.id ?? null,
-                        imageId:    data.infoPanelImageId    ?? data.infoPanelImage?.id    ?? null,
+                        imageId: data.infoPanelImageId ?? data.infoPanelImage?.id ?? null,
                     },
                     email: {
                         templateId: data.emailTemplateId ?? data.emailTemplate?.id ?? null,
-                        imageId:    data.emailImageId    ?? data.emailImage?.id    ?? null,
+                        imageId: data.emailImageId ?? data.emailImage?.id ?? null,
                     },
                     whatsapp: {
                         templateId: data.whatsappTemplateId ?? data.whatsappTemplate?.id ?? null,
-                        imageId:    data.whatsappImageId    ?? data.whatsappImage?.id    ?? null,
+                        imageId: data.whatsappImageId ?? data.whatsappImage?.id ?? null,
                     },
                 });
             }
@@ -609,11 +610,11 @@ const CommunicationTab = ({ courseId, templates, images }) => {
                 ...(config?.id ? { id: config.id } : {}),
                 courseId,
                 infoPanelTemplateId: selections.infoPanel.templateId || null,
-                infoPanelImageId:    selections.infoPanel.imageId    || null,
-                emailTemplateId:     selections.email.templateId     || null,
-                emailImageId:        selections.email.imageId        || null,
-                whatsappTemplateId:  selections.whatsapp.templateId  || null,
-                whatsappImageId:     selections.whatsapp.imageId     || null,
+                infoPanelImageId: selections.infoPanel.imageId || null,
+                emailTemplateId: selections.email.templateId || null,
+                emailImageId: selections.email.imageId || null,
+                whatsappTemplateId: selections.whatsapp.templateId || null,
+                whatsappImageId: selections.whatsapp.imageId || null,
             };
             const res = await updateCommunicationConfig(courseId, payload);
             if (res?.success === false) {
@@ -633,7 +634,7 @@ const CommunicationTab = ({ courseId, templates, images }) => {
 
     // Helpers to resolve the currently-selected template / image object for preview
     const getTemplate = (id) => templates.find((t) => t.id === id);
-    const getImage    = (id) => {
+    const getImage = (id) => {
         const img = images.find((i) => i.id === id);
         if (!img) return null;
         const url = img.imageUrl || '';
@@ -663,7 +664,7 @@ const CommunicationTab = ({ courseId, templates, images }) => {
                 </CustomButton>
             </div>
 
-            {error   && <p className="text-xs text-red-500 mb-3">{error}</p>}
+            {error && <p className="text-xs text-red-500 mb-3">{error}</p>}
             {success && <p className="text-xs text-green-600 mb-3">{success}</p>}
 
             {/* Channel cards */}
@@ -671,16 +672,16 @@ const CommunicationTab = ({ courseId, templates, images }) => {
                 {COMM_CHANNELS.map(({ key, label }) => {
                     const sel = selections[key];
                     const selectedTemplate = getTemplate(sel.templateId);
-                    const selectedImage    = getImage(sel.imageId);
+                    const selectedImage = getImage(sel.imageId);
 
                     return (
                         <div key={key} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex flex-col gap-4">
                             {/* Channel badge */}
                             <div className="flex items-center gap-2">
                                 <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border uppercase tracking-wide
-                                    ${key === 'email'     ? 'bg-blue-50 text-blue-700 border-blue-200'
-                                    : key === 'whatsapp' ? 'bg-green-50 text-green-700 border-green-200'
-                                    :                      'bg-purple-50 text-purple-700 border-purple-200'}`}>
+                                    ${key === 'email' ? 'bg-blue-50 text-blue-700 border-blue-200'
+                                        : key === 'whatsapp' ? 'bg-green-50 text-green-700 border-green-200'
+                                            : 'bg-purple-50 text-purple-700 border-purple-200'}`}>
                                     {label}
                                 </span>
                             </div>
@@ -845,37 +846,37 @@ const fetchLeadsForCard = async (activeFilters, courseId, page, size, sortBy, so
     // Smart conversion function: array to singular/plural based on length
     const convertFilterRequest = (request) => {
         const converted = { ...request };
-        
+
         // Convert leadStatusIds → statusId or statusIds
         if (converted.leadStatusIds?.length === 1) {
             converted.statusId = converted.leadStatusIds[0];
             delete converted.leadStatusIds;
         }
-        
+
         // Convert boardIds → boardId or boardIds
         if (converted.boardIds?.length === 1) {
             converted.boardId = converted.boardIds[0];
             delete converted.boardIds;
         }
-        
+
         // Convert gradeIds → gradeId or gradeIds
         if (converted.gradeIds?.length === 1) {
             converted.gradeId = converted.gradeIds[0];
             delete converted.gradeIds;
         }
-        
+
         // Convert courseTypeIds → courseTypeId or courseTypeIds
         if (converted.courseTypeIds?.length === 1) {
             converted.courseTypeId = converted.courseTypeIds[0];
             delete converted.courseTypeIds;
         }
-        
+
         // Convert leadSourceIds → leadSourceId or leadSourceIds
         if (converted.leadSourceIds?.length === 1) {
             converted.leadSourceId = converted.leadSourceIds[0];
             delete converted.leadSourceIds;
         }
-        
+
         return converted;
     };
 
@@ -907,10 +908,10 @@ const fetchLeadsForCard = async (activeFilters, courseId, page, size, sortBy, so
                     filterRequest.gradeIds.push(filter.value);
                 }
                 break;
-            case 'allotted':    params.isAllotted   = true; break;
-            case 'availed':      params.isAvailed     = true; break;
-            case 'unallotted':   params.isUnallotted  = true; break;
-            default:             break;
+            case 'allotted': params.isAllotted = true; break;
+            case 'availed': params.isAvailed = true; break;
+            case 'unallotted': params.isUnallotted = true; break;
+            default: break;
         }
     });
 
@@ -921,9 +922,9 @@ const fetchLeadsForCard = async (activeFilters, courseId, page, size, sortBy, so
         const res = await axiosInstance.get(ApiRoutes.Lead.getAllLeads, { params });
         const d = res?.data?.data || res?.data || {};
         return {
-            content:       d.content       ?? (Array.isArray(d) ? d : []),
+            content: d.content ?? (Array.isArray(d) ? d : []),
             totalElements: d.totalElements ?? 0,
-            totalPages:    d.totalPages    ?? 0,
+            totalPages: d.totalPages ?? 0,
         };
     } catch (err) {
         console.error('Failed to fetch lead table data', err);
@@ -948,24 +949,25 @@ const CourseDetails = () => {
     // filter / table state - support multiple active filters
     const [activeFilters, setActiveFilters] = useState([]); // Array of { type, value, label }
     const [filterRequest, setFilterRequest] = useState({});
-    const [tableData, setTableData]                     = useState([]);
-    const [tableLoading, setTableLoading]               = useState(false);
+    const [tableData, setTableData] = useState([]);
+    const [tableLoading, setTableLoading] = useState(false);
 
     // server-side pagination & sorting
-    const [tablePage, setTablePage]                     = useState(0);
-    const [tableSize, setTableSize]                     = useState(10);
-    const [tableTotalElements, setTableTotalElements]   = useState(0);
-    const [tableTotalPages, setTableTotalPages]         = useState(0);
-    const [tableSortBy, setTableSortBy]                 = useState('createdAt');
-    const [tableSortDir, setTableSortDir]               = useState('desc');
+    const [tablePage, setTablePage] = useState(0);
+    const [tableSize, setTableSize] = useState(10);
+    const [tableTotalElements, setTableTotalElements] = useState(0);
+    const [tableTotalPages, setTableTotalPages] = useState(0);
+    const [tableSortBy, setTableSortBy] = useState('createdAt');
+    const [tableSortDir, setTableSortDir] = useState('desc');
 
     // remark modal
-    const [isRemarkModalOpen, setIsRemarkModalOpen]         = useState(false);
+    const [isRemarkModalOpen, setIsRemarkModalOpen] = useState(false);
     const [selectedLeadForRemark, setSelectedLeadForRemark] = useState(null);
 
     // row selection & assign modal
-    const [selectedRows, setSelectedRows]           = useState(new Set());
+    const [selectedRows, setSelectedRows] = useState(new Set());
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+    const [userAllocationWorkingOnly, setUserAllocationWorkingOnly] = useState(false);
 
     // ─── Image Management state ─────────────────────────────────────────────
     const [images, setImages] = useState([]);
@@ -992,11 +994,11 @@ const CourseDetails = () => {
 
     // ─── Tab config ─────────────────────────────────────────────────────────
     const tabs = [
-        { key: 'image',         label: 'Image Management' },
-        { key: 'template',      label: 'Template Management' },
-        { key: 'usp',           label: 'USP Management' },
+        { key: 'image', label: 'Image Management' },
+        { key: 'template', label: 'Template Management' },
+        { key: 'usp', label: 'USP Management' },
         { key: 'communication', label: 'Communication Management' },
-        { key: 'guidance',      label: 'Caller Guidance & Info Panel' },
+        { key: 'guidance', label: 'Caller Guidance & Info Panel' },
     ];
 
     // ─── Image table columns ────────────────────────────────────────────────
@@ -1013,7 +1015,7 @@ const CourseDetails = () => {
             header: 'S.No',
             render: (_val, _row, index) => index + 1,
         },
-        { key: 'displayName',  header: 'Display Name' },
+        { key: 'displayName', header: 'Display Name' },
         {
             key: 'imageUrl',
             header: 'Image',
@@ -1056,8 +1058,8 @@ const CourseDetails = () => {
             render: (val) => (
                 <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase
                     ${val === 'email' ? 'bg-blue-50 text-blue-700 border-blue-200'
-                    : val === 'whatsapp' ? 'bg-green-50 text-green-700 border-green-200'
-                    : 'bg-yellow-50 text-yellow-700 border-yellow-200'}`}>
+                        : val === 'whatsapp' ? 'bg-green-50 text-green-700 border-green-200'
+                            : 'bg-yellow-50 text-yellow-700 border-yellow-200'}`}>
                     {val || '-'}
                 </span>
             ),
@@ -1219,8 +1221,8 @@ const CourseDetails = () => {
                 setDashData({
                     leadSource: toArr(sourceRes),
                     courseType: toArr(courseTypeRes),
-                    board:      toArr(boardRes),
-                    grade:      toArr(gradeRes),
+                    board: toArr(boardRes),
+                    grade: toArr(gradeRes),
                 });
             } catch (err) {
                 console.error('Dashboard data fetch failed', err);
@@ -1247,7 +1249,7 @@ const CourseDetails = () => {
         setActiveFilters(prev => {
             // Check if this filter is already active
             const existingIndex = prev.findIndex(f => f.type === card.type && f.value === card.value);
-            
+
             if (existingIndex !== -1) {
                 // Remove the filter (toggle off)
                 const newFilters = [...prev];
@@ -1335,20 +1337,20 @@ const CourseDetails = () => {
     };
 
     // ── remark modal handlers ──
-    const openRemarkModal  = (lead) => { setSelectedLeadForRemark(lead); setIsRemarkModalOpen(true); };
+    const openRemarkModal = (lead) => { setSelectedLeadForRemark(lead); setIsRemarkModalOpen(true); };
     const closeRemarkModal = () => { setIsRemarkModalOpen(false); setSelectedLeadForRemark(null); };
 
     // ── lead table sort handler ──
     const handleLeadSort = (columnKey, direction) => {
         const fieldMap = {
-            leadCode:         'leadCode',
-            lead:             'fullName',
+            leadCode: 'leadCode',
+            lead: 'fullName',
             interestedCourses: 'interestedCourses',
-            source:           'source.name',
-            currentStatus:    'currentStatus',
-            assignedTo:       'assignedTo',
+            source: 'source.name',
+            currentStatus: 'currentStatus',
+            assignedTo: 'assignedTo',
             nextFollowUpDate: 'nextFollowUpDate',
-            createdBy:        'createdAt',
+            createdBy: 'createdAt',
         };
         setTableSortBy(fieldMap[columnKey] || columnKey);
         setTableSortDir(direction);
@@ -1363,7 +1365,7 @@ const CourseDetails = () => {
                 const rowId = typeof lead.id === 'object' ? lead.id?.id : lead.id;
                 const rowLeadId = typeof lead.leadId === 'object' ? lead.leadId?.id : lead.leadId;
                 const idToUse = rowId || rowLeadId;
-                
+
                 return {
                     'S.No': (tablePage * tableSize) + index + 1,
                     'Lead Code': typeof lead.leadCode === 'object' ? lead.leadCode?.code || lead.leadCode?.name || 'N/A' : lead.leadCode || 'N/A',
@@ -1371,8 +1373,8 @@ const CourseDetails = () => {
                     'Phone Number': lead.phoneNumber || 'N/A',
                     'Email': lead.email || 'N/A',
                     'Course': (() => { const c = lead.interestedCourses?.[0]; return (c && typeof c === 'object') ? (c.courseName || c.name || 'N/A') : lead.course?.courseName || 'N/A'; })(),
-                    'Source': Array.isArray(lead.leadSources) && lead.leadSources.length > 0 
-                        ? lead.leadSources.map(s => s?.name || s?.code || 'N/A').join(', ') 
+                    'Source': Array.isArray(lead.leadSources) && lead.leadSources.length > 0
+                        ? lead.leadSources.map(s => s?.name || s?.code || 'N/A').join(', ')
                         : lead.sourceDetails || 'N/A',
                     'Status': typeof lead.currentStatus === 'object' ? lead.currentStatus?.name || lead.currentStatus?.code || 'N/A' : lead.currentStatus || 'N/A',
                     'Counselor': typeof lead.assignedTo === 'object' ? `${lead.assignedTo.firstName || ''} ${lead.assignedTo.lastName || ''}`.trim() || 'Not Allotted' : lead.assignedTo || 'Not Allotted',
@@ -1388,18 +1390,18 @@ const CourseDetails = () => {
 
             // Create worksheet
             const worksheet = XLSX.utils.json_to_sheet(excelData);
-            
+
             // Create workbook
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, 'Leads');
-            
+
             // Generate filename with timestamp
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
             const filename = `course_leads_${timestamp}.xlsx`;
-            
+
             // Download the file
             XLSX.writeFile(workbook, filename);
-            
+
             showToast('Excel file downloaded successfully');
         } catch (error) {
             console.error('Error downloading Excel:', error);
@@ -1636,6 +1638,8 @@ const CourseDetails = () => {
                     filterRequest={filterRequest}
                     activeFilters={activeFilters}
                     scopeTitle={details?.courseName || 'Course'}
+                    activeWorkingOnly={userAllocationWorkingOnly}
+                    onWorkingOnlyChange={(val) => setUserAllocationWorkingOnly(val)}
                     onCardClick={handleCardClick}
                 />
 
@@ -1665,7 +1669,7 @@ const CourseDetails = () => {
                     onCardClick={handleCardClick}
                     activeFilters={activeFilters}
                 />
-                
+
             </div>
 
             {/* ── Filtered Lead Table ── */}
@@ -1677,7 +1681,7 @@ const CourseDetails = () => {
                         <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
                             {tableTotalElements} records
                         </span>
-                        
+
                         {/* Active Filters Display */}
                         {activeFilters.length > 0 && (
                             <div className="flex items-center gap-2 flex-wrap ml-2">
@@ -1769,7 +1773,7 @@ const CourseDetails = () => {
                             actions={(row) => {
                                 const safeRow = {
                                     ...row,
-                                    id:     typeof row.id     === 'object' ? row.id?.id     : row.id,
+                                    id: typeof row.id === 'object' ? row.id?.id : row.id,
                                     leadId: typeof row.leadId === 'object' ? row.leadId?.id : row.leadId,
                                 };
                                 return (
@@ -1795,6 +1799,18 @@ const CourseDetails = () => {
                         />
                     </div>
                 )}
+
+                {/* ── User Allocation & Workload Table (Always Open Below All Lead Table) ── */}
+                <div id="user-allocation-table-section" className="mt-8">
+                    <UserAllocationTable
+                        courseId={id}
+                        filterRequest={filterRequest}
+                        activeFilters={activeFilters}
+                        scopeTitle={details?.courseName || 'Course'}
+                        workingOnly={userAllocationWorkingOnly}
+                        onTabChange={(val) => setUserAllocationWorkingOnly(val)}
+                    />
+                </div>
             </div>
 
             {/* Tab Table Section */}
@@ -2033,13 +2049,13 @@ const CourseDetails = () => {
                 filters={{
                     courseIds: id ? [id] : [],
                     ...activeFilters.reduce((acc, filter) => {
-                        if (filter.type === 'leadSource')  acc.leadSourceIds  = [...(acc.leadSourceIds || []), filter.value];
-                        if (filter.type === 'courseType')  acc.courseTypeIds  = [...(acc.courseTypeIds || []), filter.value];
-                        if (filter.type === 'board')       acc.boardIds       = [...(acc.boardIds || []), filter.value];
-                        if (filter.type === 'grade')       acc.gradeIds       = [...(acc.gradeIds || []), filter.value];
-                        if (filter.type === 'allotted')    acc.isAllotted     = true;
-                        if (filter.type === 'availed')      acc.isAvailed       = true;
-                        if (filter.type === 'unallotted')   acc.isUnallotted    = true;
+                        if (filter.type === 'leadSource') acc.leadSourceIds = [...(acc.leadSourceIds || []), filter.value];
+                        if (filter.type === 'courseType') acc.courseTypeIds = [...(acc.courseTypeIds || []), filter.value];
+                        if (filter.type === 'board') acc.boardIds = [...(acc.boardIds || []), filter.value];
+                        if (filter.type === 'grade') acc.gradeIds = [...(acc.gradeIds || []), filter.value];
+                        if (filter.type === 'allotted') acc.isAllotted = true;
+                        if (filter.type === 'availed') acc.isAvailed = true;
+                        if (filter.type === 'unallotted') acc.isUnallotted = true;
                         return acc;
                     }, {}),
                 }}

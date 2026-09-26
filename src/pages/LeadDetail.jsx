@@ -1716,7 +1716,7 @@ const LeadDetail = () => {
 
         {/* RIGHT SIDE: Info Panel & Actions */}
         <div className="lg:col-span-1">
-          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-xs w-full sticky top-4">
+          <div id="course-info-panel-section" className="bg-white border border-gray-200 rounded-xl p-5 shadow-xs w-full sticky top-4">
             <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 pb-2.5 border-b border-gray-100 flex items-center gap-2">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="text-blue-600">
                 <circle cx="12" cy="12" r="10" />
@@ -1899,9 +1899,14 @@ const LeadDetail = () => {
         isOpen={isCallModalOpen}
         onClose={() => setIsCallModalOpen(false)}
         studentData={leadDetails}
-        phoneNumber={leadDetails.phoneNumber}
+        phoneNumber={leadDetails?.phoneNumber}
+        followups={followUps}
         onComplete={() => loadLeadData(false)}
         onScheduleOpen={() => setIsScheduleModalOpen(true)}
+        onInfoPanelOpen={() => {
+          const el = document.getElementById('course-info-panel-section');
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }}
       />
 
       <WhatsAppModal

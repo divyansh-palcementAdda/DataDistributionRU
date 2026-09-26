@@ -219,27 +219,81 @@ const UserAllocationTable = ({
     }
   };
 
-  const navigateToUserLeads = (userId) => {
-    const queryFilters = {
-      assignedUserIds: [userId],
+  const navigateToUserLeads = (userId, userName = '') => {
+    const searchParams = new URLSearchParams();
+
+    // 1. User Filter
+    if (userId) {
+      searchParams.append('assignedUserIds', userId);
+    }
+    if (userName) {
+      searchParams.append('userName', userName);
+    }
+
+    // 2. Category / Course Type Filter
+    const effectiveCourseTypeId = courseTypeId || filterRequest?.courseTypeId || (Array.isArray(filterRequest?.courseTypeIds) ? filterRequest.courseTypeIds[0] : null);
+    if (effectiveCourseTypeId) {
+      searchParams.append('courseTypeId', effectiveCourseTypeId);
+    }
+
+    // 3. Interested Course Filter
+    const effectiveCourseId = courseId || filterRequest?.courseId || (Array.isArray(filterRequest?.interestedCourseIds) ? filterRequest.interestedCourseIds[0] : null) || (Array.isArray(filterRequest?.courseIds) ? filterRequest.courseIds[0] : null);
+    if (effectiveCourseId) {
+      searchParams.append('interestedCourseIds', effectiveCourseId);
+    }
+
+    // 4. Lead Source Filter
+    const effectiveLeadSourceId = leadSourceId || filterRequest?.leadSourceId || (Array.isArray(filterRequest?.leadSourceIds) ? filterRequest.leadSourceIds[0] : null);
+    if (effectiveLeadSourceId) {
+      searchParams.append('leadSourceId', effectiveLeadSourceId);
+    }
+
+    // 5. Board Filter
+    const effectiveBoardId = boardId || filterRequest?.boardId || (Array.isArray(filterRequest?.boardIds) ? filterRequest.boardIds[0] : null);
+    if (effectiveBoardId) {
+      searchParams.append('boardId', effectiveBoardId);
+    }
+
+    // 6. Grade Filter
+    const effectiveGradeId = gradeId || filterRequest?.gradeId || (Array.isArray(filterRequest?.gradeIds) ? filterRequest.gradeIds[0] : null);
+    if (effectiveGradeId) {
+      searchParams.append('gradeId', effectiveGradeId);
+    }
+
+    // 7. Lead Status Filter
+    const effectiveLeadStatusId = leadStatusId || filterRequest?.leadStatusId || (Array.isArray(filterRequest?.statusIds) ? filterRequest.statusIds[0] : null);
+    if (effectiveLeadStatusId) {
+      searchParams.append('leadStatusId', effectiveLeadStatusId);
+    }
+
+    // 8. Boolean & Date filters from filterRequest
+    if (filterRequest?.allotted !== undefined) searchParams.append('allotted', String(filterRequest.allotted));
+    if (filterRequest?.unallotted !== undefined) searchParams.append('unallotted', String(filterRequest.unallotted));
+    if (filterRequest?.availed !== undefined) searchParams.append('availed', String(filterRequest.availed));
+    if (filterRequest?.multiSource !== undefined) searchParams.append('multiSource', String(filterRequest.multiSource));
+    if (filterRequest?.startDate) searchParams.append('startDate', filterRequest.startDate);
+    if (filterRequest?.endDate) searchParams.append('endDate', filterRequest.endDate);
+    if (filterRequest?.availedFrom) searchParams.append('availedFrom', filterRequest.availedFrom);
+    if (filterRequest?.availedTo) searchParams.append('availedTo', filterRequest.availedTo);
+
+    const queryString = searchParams.toString();
+    const targetUrl = queryString ? `/leads?${queryString}` : '/leads';
+
+    const statePayload = {
+      assignedUserIds: userId ? [userId] : [],
+      assignedUserName: userName,
+      courseTypeIds: effectiveCourseTypeId ? [effectiveCourseTypeId] : [],
+      interestedCourseIds: effectiveCourseId ? [effectiveCourseId] : [],
+      courseIds: effectiveCourseId ? [effectiveCourseId] : [],
+      leadSourceIds: effectiveLeadSourceId ? [effectiveLeadSourceId] : [],
+      boardIds: effectiveBoardId ? [effectiveBoardId] : [],
+      gradeIds: effectiveGradeId ? [effectiveGradeId] : [],
+      statusIds: effectiveLeadStatusId ? [effectiveLeadStatusId] : [],
+      activeFilters,
+      filterRequest,
     };
-    if (courseId) {
-      queryFilters.courseIds = [courseId];
-      queryFilters.interestedCourseIds = [courseId];
-    }
-    if (courseTypeId) {
-      queryFilters.courseTypeIds = [courseTypeId];
-    }
-    if (leadSourceId) {
-      queryFilters.leadSourceIds = [leadSourceId];
-    }
-    if (boardId) {
-      queryFilters.boardIds = [boardId];
-    }
-    if (gradeId) {
-      queryFilters.gradeIds = [gradeId];
-    }
-    navigate('/leads', { state: { ...queryFilters } });
+
+    navigate(targetUrl, { state: statePayload });
   };
 
   // Resolve display title
@@ -650,7 +704,7 @@ const UserAllocationTable = ({
                     <td className="py-3 px-4 text-right">
                       <button
                         type="button"
-                        onClick={() => navigateToUserLeads(user.userId)}
+                        onClick={() => navigateToUserLeads(user.userId, user.name || user.username)}
                         className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-xs rounded-lg transition-colors border border-indigo-200/60 shadow-2xs cursor-pointer"
                         title="View leads assigned to this counselor"
                       >

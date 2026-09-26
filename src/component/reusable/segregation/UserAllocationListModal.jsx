@@ -137,26 +137,82 @@ const UserAllocationListModal = ({
     }
   };
 
-  const handleNavigateToLeads = (userId) => {
-    // Navigate to leads preserving all filter context plus assignedTo
-    const params = new URLSearchParams();
-    if (courseId) params.append('courseId', courseId);
-    if (courseTypeId) params.append('courseTypeId', courseTypeId);
-    if (leadSourceId) params.append('leadSourceId', leadSourceId);
-    if (boardId) params.append('boardId', boardId);
-    if (gradeId) params.append('gradeId', gradeId);
-    if (leadStatusId) params.append('statusId', leadStatusId);
-    if (userId) params.append('assignedToId', userId);
+  const handleNavigateToLeads = (userId, userName = '') => {
+    const searchParams = new URLSearchParams();
 
-    if (filterRequest) {
-      if (filterRequest.leadSourceId) params.append('leadSourceId', filterRequest.leadSourceId);
-      if (filterRequest.boardId) params.append('boardId', filterRequest.boardId);
-      if (filterRequest.gradeId) params.append('gradeId', filterRequest.gradeId);
-      if (filterRequest.statusId) params.append('statusId', filterRequest.statusId);
+    // 1. User Filter
+    if (userId) {
+      searchParams.append('assignedUserIds', userId);
+    }
+    if (userName) {
+      searchParams.append('userName', userName);
     }
 
+    // 2. Category / Course Type Filter
+    const effectiveCourseTypeId = courseTypeId || filterRequest?.courseTypeId || (Array.isArray(filterRequest?.courseTypeIds) ? filterRequest.courseTypeIds[0] : null);
+    if (effectiveCourseTypeId) {
+      searchParams.append('courseTypeId', effectiveCourseTypeId);
+    }
+
+    // 3. Interested Course Filter
+    const effectiveCourseId = courseId || filterRequest?.courseId || (Array.isArray(filterRequest?.interestedCourseIds) ? filterRequest.interestedCourseIds[0] : null) || (Array.isArray(filterRequest?.courseIds) ? filterRequest.courseIds[0] : null);
+    if (effectiveCourseId) {
+      searchParams.append('interestedCourseIds', effectiveCourseId);
+    }
+
+    // 4. Lead Source Filter
+    const effectiveLeadSourceId = leadSourceId || filterRequest?.leadSourceId || (Array.isArray(filterRequest?.leadSourceIds) ? filterRequest.leadSourceIds[0] : null);
+    if (effectiveLeadSourceId) {
+      searchParams.append('leadSourceId', effectiveLeadSourceId);
+    }
+
+    // 5. Board Filter
+    const effectiveBoardId = boardId || filterRequest?.boardId || (Array.isArray(filterRequest?.boardIds) ? filterRequest.boardIds[0] : null);
+    if (effectiveBoardId) {
+      searchParams.append('boardId', effectiveBoardId);
+    }
+
+    // 6. Grade Filter
+    const effectiveGradeId = gradeId || filterRequest?.gradeId || (Array.isArray(filterRequest?.gradeIds) ? filterRequest.gradeIds[0] : null);
+    if (effectiveGradeId) {
+      searchParams.append('gradeId', effectiveGradeId);
+    }
+
+    // 7. Lead Status Filter
+    const effectiveLeadStatusId = leadStatusId || filterRequest?.leadStatusId || (Array.isArray(filterRequest?.statusIds) ? filterRequest.statusIds[0] : null);
+    if (effectiveLeadStatusId) {
+      searchParams.append('leadStatusId', effectiveLeadStatusId);
+    }
+
+    // 8. Boolean & Date filters from filterRequest
+    if (filterRequest?.allotted !== undefined) searchParams.append('allotted', String(filterRequest.allotted));
+    if (filterRequest?.unallotted !== undefined) searchParams.append('unallotted', String(filterRequest.unallotted));
+    if (filterRequest?.availed !== undefined) searchParams.append('availed', String(filterRequest.availed));
+    if (filterRequest?.multiSource !== undefined) searchParams.append('multiSource', String(filterRequest.multiSource));
+    if (filterRequest?.startDate) searchParams.append('startDate', filterRequest.startDate);
+    if (filterRequest?.endDate) searchParams.append('endDate', filterRequest.endDate);
+    if (filterRequest?.availedFrom) searchParams.append('availedFrom', filterRequest.availedFrom);
+    if (filterRequest?.availedTo) searchParams.append('availedTo', filterRequest.availedTo);
+
+    const queryString = searchParams.toString();
+    const targetUrl = queryString ? `/leads?${queryString}` : '/leads';
+
+    const statePayload = {
+      assignedUserIds: userId ? [userId] : [],
+      assignedUserName: userName,
+      courseTypeIds: effectiveCourseTypeId ? [effectiveCourseTypeId] : [],
+      interestedCourseIds: effectiveCourseId ? [effectiveCourseId] : [],
+      courseIds: effectiveCourseId ? [effectiveCourseId] : [],
+      leadSourceIds: effectiveLeadSourceId ? [effectiveLeadSourceId] : [],
+      boardIds: effectiveBoardId ? [effectiveBoardId] : [],
+      gradeIds: effectiveGradeId ? [effectiveGradeId] : [],
+      statusIds: effectiveLeadStatusId ? [effectiveLeadStatusId] : [],
+      activeFilters,
+      filterRequest,
+    };
+
     onClose();
-    navigate(`/leads?${params.toString()}`);
+    navigate(targetUrl, { state: statePayload });
   };
 
   return (
@@ -455,7 +511,7 @@ const UserAllocationListModal = ({
                         <td className="py-3 px-4 text-center">
                           <button
                             type="button"
-                            onClick={() => handleNavigateToLeads(u.userId)}
+                            onClick={() => handleNavigateToLeads(u.userId, u.name || u.username)}
                             className="px-2 py-1 text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 hover:bg-indigo-50 rounded-md transition-colors cursor-pointer"
                             title="View all leads allotted to this user with active filters"
                           >

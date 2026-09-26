@@ -103,7 +103,7 @@ const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, cu
             if (Array.isArray(row.leadSources) && row.leadSources.length > 0) {
                 const sourcesToShow = row.leadSources.slice(0, 2);
                 const remainingCount = row.leadSources.length - 2;
-                
+
                 return (
                     <div className="flex items-center gap-1">
                         {sourcesToShow.map((source, index) => {
@@ -120,7 +120,7 @@ const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, cu
                             ];
                             const colorIndex = index % colors.length;
                             const sourceName = source?.name || source?.code || 'N/A';
-                            
+
                             return (
                                 <span
                                     key={source?.id || index}
@@ -209,37 +209,37 @@ const fetchLeadsForCard = async (activeFilters, statusId, page, size, sortBy, so
     // Smart conversion function: array to singular/plural based on length
     const convertFilterRequest = (request) => {
         const converted = { ...request };
-        
+
         // Convert leadStatusIds → statusId or statusIds
         if (converted.leadStatusIds?.length === 1) {
             converted.statusId = converted.leadStatusIds[0];
             delete converted.leadStatusIds;
         }
-        
+
         // Convert boardIds → boardId or boardIds
         if (converted.boardIds?.length === 1) {
             converted.boardId = converted.boardIds[0];
             delete converted.boardIds;
         }
-        
+
         // Convert gradeIds → gradeId or gradeIds
         if (converted.gradeIds?.length === 1) {
             converted.gradeId = converted.gradeIds[0];
             delete converted.gradeIds;
         }
-        
+
         // Convert courseTypeIds → courseTypeId or courseTypeIds
         if (converted.courseTypeIds?.length === 1) {
             converted.courseTypeId = converted.courseTypeIds[0];
             delete converted.courseTypeIds;
         }
-        
+
         // Convert leadSourceIds → leadSourceId or leadSourceIds
         if (converted.leadSourceIds?.length === 1) {
             converted.leadSourceId = converted.leadSourceIds[0];
             delete converted.leadSourceIds;
         }
-        
+
         return converted;
     };
 
@@ -271,10 +271,10 @@ const fetchLeadsForCard = async (activeFilters, statusId, page, size, sortBy, so
                     filterRequest.gradeIds.push(filter.value);
                 }
                 break;
-            case 'allotted':    params.isAllotted   = true; break;
-            case 'availed':      params.isAvailed     = true; break;
-            case 'unallotted':   params.isUnallotted  = true; break;
-            default:             break;
+            case 'allotted': params.isAllotted = true; break;
+            case 'availed': params.isAvailed = true; break;
+            case 'unallotted': params.isUnallotted = true; break;
+            default: break;
         }
     });
 
@@ -285,9 +285,9 @@ const fetchLeadsForCard = async (activeFilters, statusId, page, size, sortBy, so
         const res = await axiosInstance.get(ApiRoutes.Lead.getAllLeads, { params });
         const d = res?.data?.data || res?.data || {};
         return {
-            content:       d.content       ?? (Array.isArray(d) ? d : []),
+            content: d.content ?? (Array.isArray(d) ? d : []),
             totalElements: d.totalElements ?? 0,
-            totalPages:    d.totalPages    ?? 0,
+            totalPages: d.totalPages ?? 0,
         };
     } catch (err) {
         console.error('Failed to fetch lead table data', err);
@@ -305,7 +305,7 @@ const LeadStatusDetails = () => {
     // detail state
     const [details, setDetails] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [error, setError]     = useState(null);
+    const [error, setError] = useState(null);
 
     // dashboard card data
     const [dashData, setDashData] = useState({ leadSource: [], courseType: [], board: [], grade: [] });
@@ -313,23 +313,23 @@ const LeadStatusDetails = () => {
     // filter / table state - support multiple active filters
     const [activeFilters, setActiveFilters] = useState([]); // Array of { type, value, label }
     const [filterRequest, setFilterRequest] = useState({});
-    const [tableData, setTableData]                     = useState([]);
-    const [tableLoading, setTableLoading]               = useState(false);
+    const [tableData, setTableData] = useState([]);
+    const [tableLoading, setTableLoading] = useState(false);
 
     // server-side pagination & sorting
-    const [tablePage, setTablePage]                     = useState(0);
-    const [tableSize, setTableSize]                     = useState(10);
-    const [tableTotalElements, setTableTotalElements]   = useState(0);
-    const [tableTotalPages, setTableTotalPages]         = useState(0);
-    const [tableSortBy, setTableSortBy]                 = useState('createdAt');
-    const [tableSortDir, setTableSortDir]               = useState('desc');
+    const [tablePage, setTablePage] = useState(0);
+    const [tableSize, setTableSize] = useState(10);
+    const [tableTotalElements, setTableTotalElements] = useState(0);
+    const [tableTotalPages, setTableTotalPages] = useState(0);
+    const [tableSortBy, setTableSortBy] = useState('createdAt');
+    const [tableSortDir, setTableSortDir] = useState('desc');
 
     // remark modal
-    const [isRemarkModalOpen, setIsRemarkModalOpen]         = useState(false);
+    const [isRemarkModalOpen, setIsRemarkModalOpen] = useState(false);
     const [selectedLeadForRemark, setSelectedLeadForRemark] = useState(null);
 
     // row selection & assign modal
-    const [selectedRows, setSelectedRows]           = useState(new Set());
+    const [selectedRows, setSelectedRows] = useState(new Set());
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
 
     // user allocation list modal
@@ -374,8 +374,8 @@ const LeadStatusDetails = () => {
                 setDashData({
                     leadSource: toArr(sourceRes),
                     courseType: toArr(courseTypeRes),
-                    board:      toArr(boardRes),
-                    grade:      toArr(gradeRes),
+                    board: toArr(boardRes),
+                    grade: toArr(gradeRes),
                 });
             } catch (err) {
                 console.error('Dashboard data fetch failed', err);
@@ -402,7 +402,7 @@ const LeadStatusDetails = () => {
         setActiveFilters(prev => {
             // Check if this filter is already active
             const existingIndex = prev.findIndex(f => f.type === card.type && f.value === card.value);
-            
+
             if (existingIndex !== -1) {
                 // Remove the filter (toggle off)
                 const newFilters = [...prev];
@@ -490,20 +490,20 @@ const LeadStatusDetails = () => {
     };
 
     // ── remark modal handlers ──
-    const openRemarkModal  = (lead) => { setSelectedLeadForRemark(lead); setIsRemarkModalOpen(true); };
+    const openRemarkModal = (lead) => { setSelectedLeadForRemark(lead); setIsRemarkModalOpen(true); };
     const closeRemarkModal = () => { setIsRemarkModalOpen(false); setSelectedLeadForRemark(null); };
 
     // ── lead table sort handler ──
     const handleLeadSort = (columnKey, direction) => {
         const fieldMap = {
-            leadCode:         'leadCode',
-            lead:             'fullName',
+            leadCode: 'leadCode',
+            lead: 'fullName',
             interestedCourses: 'interestedCourses',
-            source:           'source.name',
-            currentStatus:    'currentStatus',
-            assignedTo:       'assignedTo',
+            source: 'source.name',
+            currentStatus: 'currentStatus',
+            assignedTo: 'assignedTo',
             nextFollowUpDate: 'nextFollowUpDate',
-            createdBy:        'createdAt',
+            createdBy: 'createdAt',
         };
         setTableSortBy(fieldMap[columnKey] || columnKey);
         setTableSortDir(direction);
@@ -518,7 +518,7 @@ const LeadStatusDetails = () => {
                 const rowId = typeof lead.id === 'object' ? lead.id?.id : lead.id;
                 const rowLeadId = typeof lead.leadId === 'object' ? lead.leadId?.id : lead.leadId;
                 const idToUse = rowId || rowLeadId;
-                
+
                 return {
                     'S.No': (tablePage * tableSize) + index + 1,
                     'Lead Code': typeof lead.leadCode === 'object' ? lead.leadCode?.code || lead.leadCode?.name || 'N/A' : lead.leadCode || 'N/A',
@@ -526,8 +526,8 @@ const LeadStatusDetails = () => {
                     'Phone Number': lead.phoneNumber || 'N/A',
                     'Email': lead.email || 'N/A',
                     'Course': (() => { const c = lead.interestedCourses?.[0]; return (c && typeof c === 'object') ? (c.courseName || c.name || 'N/A') : lead.course?.courseName || 'N/A'; })(),
-                    'Source': Array.isArray(lead.leadSources) && lead.leadSources.length > 0 
-                        ? lead.leadSources.map(s => s?.name || s?.code || 'N/A').join(', ') 
+                    'Source': Array.isArray(lead.leadSources) && lead.leadSources.length > 0
+                        ? lead.leadSources.map(s => s?.name || s?.code || 'N/A').join(', ')
                         : lead.sourceDetails || 'N/A',
                     'Status': typeof lead.currentStatus === 'object' ? lead.currentStatus?.name || lead.currentStatus?.code || 'N/A' : lead.currentStatus || 'N/A',
                     'Counselor': typeof lead.assignedTo === 'object' ? `${lead.assignedTo.firstName || ''} ${lead.assignedTo.lastName || ''}`.trim() || 'Not Allotted' : lead.assignedTo || 'Not Allotted',
@@ -543,18 +543,18 @@ const LeadStatusDetails = () => {
 
             // Create worksheet
             const worksheet = XLSX.utils.json_to_sheet(excelData);
-            
+
             // Create workbook
             const workbook = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(workbook, worksheet, 'Leads');
-            
+
             // Generate filename with timestamp
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
             const filename = `lead_status_leads_${timestamp}.xlsx`;
-            
+
             // Download the file
             XLSX.writeFile(workbook, filename);
-            
+
             showToast('Excel file downloaded successfully');
         } catch (error) {
             console.error('Error downloading Excel:', error);
@@ -589,235 +589,234 @@ const LeadStatusDetails = () => {
 
     return (
         <>
-        <div className="block p-4 sm:p-6" id="page-lead-status-detail">
+            <div className="block p-4 sm:p-6" id="page-lead-status-detail">
 
-            {/* ── Page Header ── */}
-            <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
-                <div className="flex items-center gap-3">
+                {/* ── Page Header ── */}
+                <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
+                    <div className="flex items-center gap-3">
+                        <button
+                            className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors border border-transparent hover:border-gray-200"
+                            onClick={goBack}
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                <polyline points="15 18 9 12 15 6" />
+                            </svg>
+                        </button>
+                        <div>
+                            <h1 className="text-xl font-bold text-gray-900 leading-tight">Lead Status Details</h1>
+                            <p className="text-sm text-gray-500 mt-1">View comprehensive details for this lead status</p>
+                        </div>
+                    </div>
                     <button
-                        className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors border border-transparent hover:border-gray-200"
-                        onClick={goBack}
+                        onClick={downloadExcel}
+                        disabled={tableData.length === 0}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs rounded-lg shadow-sm hover:shadow transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                            <polyline points="15 18 9 12 15 6" />
+                        <svg
+                            width="12"
+                            height="12"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                        >
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
                         </svg>
+                        Download
                     </button>
-                    <div>
-                        <h1 className="text-xl font-bold text-gray-900 leading-tight">Lead Status Details</h1>
-                        <p className="text-sm text-gray-500 mt-1">View comprehensive details for this lead status</p>
-                    </div>
-                </div>
-                <button
-                    onClick={downloadExcel}
-                    disabled={tableData.length === 0}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs rounded-lg shadow-sm hover:shadow transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    <svg
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                    >
-                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
-                    </svg>
-                    Download
-                </button>
-            </div>
-
-            {/* ── Detail Card (TOP) ── */}
-            <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-8">
-                {/* Header */}
-                <div className="flex flex-col sm:flex-row items-start gap-5 mb-8 pb-6 border-b border-gray-100">
-                    <div
-                        className="w-16 h-16 rounded-xl flex items-center justify-center text-white text-2xl font-bold shadow-md flex-shrink-0"
-                        style={{ backgroundColor: '#3B82F6' }}
-                    >
-                        {details?.name ? details.name.substring(0, 2).toUpperCase() : 'LS'}
-                    </div>
-                    <div className="flex-1">
-                        <h2 className="text-2xl font-extrabold text-gray-900 mb-2">{details?.name || 'N/A'}</h2>
-                        <div className="flex flex-wrap gap-2 items-center">
-                            <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border uppercase tracking-wide ${
-                                details?.status === 'ACTIVE'
-                                    ? 'bg-green-50 text-green-700 border-green-200'
-                                    : 'bg-red-50 text-red-700 border-red-200'
-                            }`}>
-                                {details?.status || 'UNKNOWN'}
-                            </span>
-                            <span className="bg-gray-50 text-gray-500 text-[10px] font-medium px-2.5 py-1 rounded-full border border-gray-200">
-                                ID: {details?.id || 'N/A'}
-                            </span>
-                        </div>
-                    </div>
                 </div>
 
-                {/* Details Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
-                        <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Name</div>
-                        <div className="text-sm font-semibold text-gray-800">{details?.name || 'N/A'}</div>
-                    </div>
-
-                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
-                        <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Code</div>
-                        <div className="text-sm font-semibold text-gray-800">{details?.code || 'N/A'}</div>
-                    </div>
-
-                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
-                        <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Active</div>
-                        <div className="text-sm font-semibold text-gray-800">{details?.active ? 'Yes' : 'No'}</div>
-                    </div>
-
-                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
-                        <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Display Order</div>
-                        <div className="text-sm font-semibold text-gray-800">{details?.displayOrder ?? 'N/A'}</div>
-                    </div>
-
-                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
-                        <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Sentiment Category</div>
-                        <div className="text-sm font-semibold text-gray-800">{details?.sentimentCategory || 'N/A'}</div>
-                    </div>
-
-                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
-                        <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Creation Date</div>
-                        <div className="text-sm font-semibold text-gray-800">
-                            {details?.createdAt ? new Date(details.createdAt).toLocaleString() : 'N/A'}
+                {/* ── Detail Card (TOP) ── */}
+                <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm mb-8">
+                    {/* Header */}
+                    <div className="flex flex-col sm:flex-row items-start gap-5 mb-8 pb-6 border-b border-gray-100">
+                        <div
+                            className="w-16 h-16 rounded-xl flex items-center justify-center text-white text-2xl font-bold shadow-md flex-shrink-0"
+                            style={{ backgroundColor: '#3B82F6' }}
+                        >
+                            {details?.name ? details.name.substring(0, 2).toUpperCase() : 'LS'}
                         </div>
-                    </div>
-
-                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
-                        <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Last Updated</div>
-                        <div className="text-sm font-semibold text-gray-800">
-                            {details?.updatedAt ? new Date(details.updatedAt).toLocaleString() : 'N/A'}
-                        </div>
-                    </div>
-
-                    <div className="md:col-span-2 bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
-                        <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Description</div>
-                        <div className="text-sm font-semibold text-gray-800 leading-relaxed whitespace-pre-wrap">
-                            {details?.description || 'No description available.'}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* ── Dashboard Cards (BOTTOM) ── */}
-            <div className="mb-8">
-                {/* Allocation Cards in single row */}
-                <div className="flex flex-wrap gap-4 mb-6">
-                    <AllottedCard
-                        onCardClick={handleCardClick}
-                        activeFilters={activeFilters}
-                        filterRequest={filterRequest}
-                        statusId={id}
-                    />
-                    <UnallottedCard
-                        onCardClick={handleCardClick}
-                        activeFilters={activeFilters}
-                        filterRequest={filterRequest}
-                        statusId={id}
-                    />
-                    <AvailedCard
-                        onCardClick={handleCardClick}
-                        activeFilters={activeFilters}
-                        filterRequest={filterRequest}
-                        statusId={id}
-                    />
-                </div>
-
-                {/* User Allocation & Workload Analytics Cards */}
-                <UserAllocationSummaryCards
-                    leadStatusId={id}
-                    filterRequest={filterRequest}
-                    activeFilters={activeFilters}
-                    scopeTitle={details?.name || 'Lead Status'}
-                    onCardClick={handleCardClick}
-                />
-
-                <LeadSource
-                    data={dashData.leadSource}
-                    onCardClick={handleCardClick}
-                    activeFilters={activeFilters}
-                />
-                <CategorywiseCard
-                    data={dashData.courseType}
-                    onCardClick={handleCardClick}
-                    activeFilters={activeFilters}
-                />
-                <BoardWiseCard
-                    data={dashData.board}
-                    onCardClick={handleCardClick}
-                    activeFilters={activeFilters}
-                />
-                <GradWiseCard
-                    data={dashData.grade}
-                    onCardClick={handleCardClick}
-                    activeFilters={activeFilters}
-                />
-            </div>
-
-            {/* ── Filtered Lead Table ── */}
-            <div className="mt-6">
-                <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-                    <div className="flex items-center gap-2 flex-wrap">
-                        <div className="w-1 h-5 bg-indigo-500 rounded-full" />
-                        <h3 className="text-base font-bold text-gray-900">{getFilterLabel()}</h3>
-                        <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                            {tableTotalElements} records
-                        </span>
-                        
-                        {/* Active Filters Display */}
-                        {activeFilters.length > 0 && (
-                            <div className="flex items-center gap-2 flex-wrap ml-2">
-                                {activeFilters.map((filter, index) => (
-                                    <div
-                                        key={`${filter.type}-${filter.value}-${index}`}
-                                        className="flex items-center gap-1.5 text-xs bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full border border-indigo-200"
-                                    >
-                                        <span className="font-medium">{filter.label}</span>
-                                        <button
-                                            onClick={() => handleRemoveFilter(filter.type, filter.value)}
-                                            className="hover:text-red-600 transition-colors"
-                                            title="Remove this filter"
-                                        >
-                                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                                                <line x1="18" y1="6" x2="6" y2="18" />
-                                                <line x1="6" y1="6" x2="18" y2="18" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                ))}
-                                {activeFilters.length > 1 && (
-                                    <button
-                                        onClick={handleClearAllFilters}
-                                        className="text-xs text-red-600 hover:text-red-800 hover:bg-red-50 px-2 py-1 rounded-full border border-red-200 transition-all"
-                                    >
-                                        Clear All
-                                    </button>
-                                )}
+                        <div className="flex-1">
+                            <h2 className="text-2xl font-extrabold text-gray-900 mb-2">{details?.name || 'N/A'}</h2>
+                            <div className="flex flex-wrap gap-2 items-center">
+                                <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border uppercase tracking-wide ${details?.status === 'ACTIVE'
+                                        ? 'bg-green-50 text-green-700 border-green-200'
+                                        : 'bg-red-50 text-red-700 border-red-200'
+                                    }`}>
+                                    {details?.status || 'UNKNOWN'}
+                                </span>
+                                <span className="bg-gray-50 text-gray-500 text-[10px] font-medium px-2.5 py-1 rounded-full border border-gray-200">
+                                    ID: {details?.id || 'N/A'}
+                                </span>
                             </div>
-                        )}
+                        </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                        {hasPermission('LEAD_ASSIGN') && (
-                            <button
-                                onClick={() => setIsAssignModalOpen(true)}
-                                disabled={selectedRows.size === 0}
-                                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all shadow-sm"
-                                style={{
-                                    backgroundColor: selectedRows.size === 0 ? 'var(--gray-200, #e5e7eb)' : '#4f46e5',
-                                    color: selectedRows.size === 0 ? 'var(--gray-400, #9ca3af)' : '#fff',
-                                    cursor: selectedRows.size === 0 ? 'not-allowed' : 'pointer',
-                                }}
-                            >
-                                <FiUserPlus size={13} />
-                                Allot Leads{selectedRows.size > 0 ? ` (${selectedRows.size})` : ''}
-                            </button>
-                        )}
+
+                    {/* Details Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                            <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Name</div>
+                            <div className="text-sm font-semibold text-gray-800">{details?.name || 'N/A'}</div>
+                        </div>
+
+                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                            <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Code</div>
+                            <div className="text-sm font-semibold text-gray-800">{details?.code || 'N/A'}</div>
+                        </div>
+
+                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                            <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Active</div>
+                            <div className="text-sm font-semibold text-gray-800">{details?.active ? 'Yes' : 'No'}</div>
+                        </div>
+
+                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                            <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Display Order</div>
+                            <div className="text-sm font-semibold text-gray-800">{details?.displayOrder ?? 'N/A'}</div>
+                        </div>
+
+                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                            <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Sentiment Category</div>
+                            <div className="text-sm font-semibold text-gray-800">{details?.sentimentCategory || 'N/A'}</div>
+                        </div>
+
+                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                            <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Creation Date</div>
+                            <div className="text-sm font-semibold text-gray-800">
+                                {details?.createdAt ? new Date(details.createdAt).toLocaleString() : 'N/A'}
+                            </div>
+                        </div>
+
+                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                            <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Last Updated</div>
+                            <div className="text-sm font-semibold text-gray-800">
+                                {details?.updatedAt ? new Date(details.updatedAt).toLocaleString() : 'N/A'}
+                            </div>
+                        </div>
+
+                        <div className="md:col-span-2 bg-gray-50 p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all">
+                            <div className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-2">Description</div>
+                            <div className="text-sm font-semibold text-gray-800 leading-relaxed whitespace-pre-wrap">
+                                {details?.description || 'No description available.'}
+                            </div>
+                        </div>
                     </div>
                 </div>
+
+                {/* ── Dashboard Cards (BOTTOM) ── */}
+                <div className="mb-8">
+                    {/* Allocation Cards in single row */}
+                    <div className="flex flex-wrap gap-4 mb-6">
+                        <AllottedCard
+                            onCardClick={handleCardClick}
+                            activeFilters={activeFilters}
+                            filterRequest={filterRequest}
+                            statusId={id}
+                        />
+                        <UnallottedCard
+                            onCardClick={handleCardClick}
+                            activeFilters={activeFilters}
+                            filterRequest={filterRequest}
+                            statusId={id}
+                        />
+                        <AvailedCard
+                            onCardClick={handleCardClick}
+                            activeFilters={activeFilters}
+                            filterRequest={filterRequest}
+                            statusId={id}
+                        />
+                    </div>
+
+                    {/* User Allocation & Workload Analytics Cards */}
+                    <UserAllocationSummaryCards
+                        leadStatusId={id}
+                        filterRequest={filterRequest}
+                        activeFilters={activeFilters}
+                        scopeTitle={details?.name || 'Lead Status'}
+                        onCardClick={handleCardClick}
+                    />
+
+                    <LeadSource
+                        data={dashData.leadSource}
+                        onCardClick={handleCardClick}
+                        activeFilters={activeFilters}
+                    />
+                    <CategorywiseCard
+                        data={dashData.courseType}
+                        onCardClick={handleCardClick}
+                        activeFilters={activeFilters}
+                    />
+                    <BoardWiseCard
+                        data={dashData.board}
+                        onCardClick={handleCardClick}
+                        activeFilters={activeFilters}
+                    />
+                    <GradWiseCard
+                        data={dashData.grade}
+                        onCardClick={handleCardClick}
+                        activeFilters={activeFilters}
+                    />
+                </div>
+
+                {/* ── Filtered Lead Table ── */}
+                <div className="mt-6">
+                    <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <div className="w-1 h-5 bg-indigo-500 rounded-full" />
+                            <h3 className="text-base font-bold text-gray-900">{getFilterLabel()}</h3>
+                            <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                                {tableTotalElements} records
+                            </span>
+
+                            {/* Active Filters Display */}
+                            {activeFilters.length > 0 && (
+                                <div className="flex items-center gap-2 flex-wrap ml-2">
+                                    {activeFilters.map((filter, index) => (
+                                        <div
+                                            key={`${filter.type}-${filter.value}-${index}`}
+                                            className="flex items-center gap-1.5 text-xs bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full border border-indigo-200"
+                                        >
+                                            <span className="font-medium">{filter.label}</span>
+                                            <button
+                                                onClick={() => handleRemoveFilter(filter.type, filter.value)}
+                                                className="hover:text-red-600 transition-colors"
+                                                title="Remove this filter"
+                                            >
+                                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                                    <line x1="18" y1="6" x2="6" y2="18" />
+                                                    <line x1="6" y1="6" x2="18" y2="18" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    ))}
+                                    {activeFilters.length > 1 && (
+                                        <button
+                                            onClick={handleClearAllFilters}
+                                            className="text-xs text-red-600 hover:text-red-800 hover:bg-red-50 px-2 py-1 rounded-full border border-red-200 transition-all"
+                                        >
+                                            Clear All
+                                        </button>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                            {hasPermission('LEAD_ASSIGN') && (
+                                <button
+                                    onClick={() => setIsAssignModalOpen(true)}
+                                    disabled={selectedRows.size === 0}
+                                    className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all shadow-sm"
+                                    style={{
+                                        backgroundColor: selectedRows.size === 0 ? 'var(--gray-200, #e5e7eb)' : '#4f46e5',
+                                        color: selectedRows.size === 0 ? 'var(--gray-400, #9ca3af)' : '#fff',
+                                        cursor: selectedRows.size === 0 ? 'not-allowed' : 'pointer',
+                                    }}
+                                >
+                                    <FiUserPlus size={13} />
+                                    Allot Leads{selectedRows.size > 0 ? ` (${selectedRows.size})` : ''}
+                                </button>
+                            )}
+                        </div>
+                    </div>
 
                     {tableLoading ? (
                         <div className="flex justify-center items-center h-40 bg-white rounded-xl border border-gray-200">
@@ -842,7 +841,7 @@ const LeadStatusDetails = () => {
                                 actions={(row) => {
                                     const safeRow = {
                                         ...row,
-                                        id:     typeof row.id     === 'object' ? row.id?.id     : row.id,
+                                        id: typeof row.id === 'object' ? row.id?.id : row.id,
                                         leadId: typeof row.leadId === 'object' ? row.leadId?.id : row.leadId,
                                     };
                                     return (
@@ -870,67 +869,67 @@ const LeadStatusDetails = () => {
                     )}
                 </div>
 
-            {/* ── Hint when no card selected — removed (default all-leads table always visible) ── */}
-        </div>
+                {/* ── Hint when no card selected — removed (default all-leads table always visible) ── */}
+            </div>
 
-        {/* ── Remark Modal ── */}
-        <LeadRemarkModal
-            isOpen={isRemarkModalOpen}
-            onClose={closeRemarkModal}
-            lead={selectedLeadForRemark}
-            followUpId={selectedLeadForRemark?.followUpId || selectedLeadForRemark?.nextFollowUpId || selectedLeadForRemark?.followupId}
-            onSave={() => {
-                closeRemarkModal();
-                setTablePage((p) => p);
-            }}
-        />
+            {/* ── Remark Modal ── */}
+            <LeadRemarkModal
+                isOpen={isRemarkModalOpen}
+                onClose={closeRemarkModal}
+                lead={selectedLeadForRemark}
+                followUpId={selectedLeadForRemark?.followUpId || selectedLeadForRemark?.nextFollowUpId || selectedLeadForRemark?.followupId}
+                onSave={() => {
+                    closeRemarkModal();
+                    setTablePage((p) => p);
+                }}
+            />
 
-        {/* ── Assign / Distribute Modal ── */}
-        <AssignLeadModal
-            isOpen={isAssignModalOpen}
-            onClose={() => setIsAssignModalOpen(false)}
-            selectedLeadIds={Array.from(selectedRows)}
-            onAssign={() => {
-                setSelectedRows(new Set());
-                setIsAssignModalOpen(false);
-                setTablePage((p) => p);
-            }}
-            filters={{
-                leadStatusIds: id ? [id] : [],
-                ...activeFilters.reduce((acc, filter) => {
-                    if (filter.type === 'leadSource')  acc.leadSourceIds  = [...(acc.leadSourceIds || []), filter.value];
-                    if (filter.type === 'courseType')  acc.courseTypeIds  = [...(acc.courseTypeIds || []), filter.value];
-                    if (filter.type === 'board')       acc.boardIds       = [...(acc.boardIds || []), filter.value];
-                    if (filter.type === 'grade')       acc.gradeIds       = [...(acc.gradeIds || []), filter.value];
-                    if (filter.type === 'allotted')    acc.isAllotted     = true;
-                    if (filter.type === 'availed')      acc.isAvailed       = true;
-                    if (filter.type === 'unallotted')   acc.isUnallotted    = true;
-                    return acc;
-                }, {}),
-            }}
-            showToast={(msg, type) => console.log(`[${type}]`, msg)}
-        />
+            {/* ── Assign / Distribute Modal ── */}
+            <AssignLeadModal
+                isOpen={isAssignModalOpen}
+                onClose={() => setIsAssignModalOpen(false)}
+                selectedLeadIds={Array.from(selectedRows)}
+                onAssign={() => {
+                    setSelectedRows(new Set());
+                    setIsAssignModalOpen(false);
+                    setTablePage((p) => p);
+                }}
+                filters={{
+                    leadStatusIds: id ? [id] : [],
+                    ...activeFilters.reduce((acc, filter) => {
+                        if (filter.type === 'leadSource') acc.leadSourceIds = [...(acc.leadSourceIds || []), filter.value];
+                        if (filter.type === 'courseType') acc.courseTypeIds = [...(acc.courseTypeIds || []), filter.value];
+                        if (filter.type === 'board') acc.boardIds = [...(acc.boardIds || []), filter.value];
+                        if (filter.type === 'grade') acc.gradeIds = [...(acc.gradeIds || []), filter.value];
+                        if (filter.type === 'allotted') acc.isAllotted = true;
+                        if (filter.type === 'availed') acc.isAvailed = true;
+                        if (filter.type === 'unallotted') acc.isUnallotted = true;
+                        return acc;
+                    }, {}),
+                }}
+                showToast={(msg, type) => console.log(`[${type}]`, msg)}
+            />
 
-        {/* ── User Allocation List Modal ── */}
-        <UserAllocationListModal
-            isOpen={isUserAllocationModalOpen}
-            onClose={() => setIsUserAllocationModalOpen(false)}
-            initialWorkingOnly={userAllocationInitialWorkingOnly}
-            filters={{
-                leadStatusIds: id ? [id] : [],
-                ...activeFilters.reduce((acc, filter) => {
-                    if (filter.type === 'leadSource')  acc.leadSourceIds  = [...(acc.leadSourceIds || []), filter.value];
-                    if (filter.type === 'courseType')  acc.courseTypeIds  = [...(acc.courseTypeIds || []), filter.value];
-                    if (filter.type === 'board')       acc.boardIds       = [...(acc.boardIds || []), filter.value];
-                    if (filter.type === 'grade')       acc.gradeIds       = [...(acc.gradeIds || []), filter.value];
-                    if (filter.type === 'allotted')    acc.isAllotted     = true;
-                    if (filter.type === 'availed')      acc.isAvailed       = true;
-                    if (filter.type === 'unallotted')   acc.isUnallotted    = true;
-                    return acc;
-                }, {}),
-            }}
-            scopeTitle={details?.name || 'Lead Status'}
-        />
+            {/* ── User Allocation List Modal ── */}
+            <UserAllocationListModal
+                isOpen={isUserAllocationModalOpen}
+                onClose={() => setIsUserAllocationModalOpen(false)}
+                initialWorkingOnly={userAllocationInitialWorkingOnly}
+                filters={{
+                    leadStatusIds: id ? [id] : [],
+                    ...activeFilters.reduce((acc, filter) => {
+                        if (filter.type === 'leadSource') acc.leadSourceIds = [...(acc.leadSourceIds || []), filter.value];
+                        if (filter.type === 'courseType') acc.courseTypeIds = [...(acc.courseTypeIds || []), filter.value];
+                        if (filter.type === 'board') acc.boardIds = [...(acc.boardIds || []), filter.value];
+                        if (filter.type === 'grade') acc.gradeIds = [...(acc.gradeIds || []), filter.value];
+                        if (filter.type === 'allotted') acc.isAllotted = true;
+                        if (filter.type === 'availed') acc.isAvailed = true;
+                        if (filter.type === 'unallotted') acc.isUnallotted = true;
+                        return acc;
+                    }, {}),
+                }}
+                scopeTitle={details?.name || 'Lead Status'}
+            />
         </>
     );
 };

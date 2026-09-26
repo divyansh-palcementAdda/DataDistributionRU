@@ -276,37 +276,78 @@ export const parseFiltersFromSearchParams = (searchParams, state = null) => {
     if (uf) filters.updatedFrom = uf;
     const ut = searchParams.get('updatedTo');
     if (ut) filters.updatedTo = ut;
+
+    const userName = searchParams.get('userName') || searchParams.get('assignedUserName');
+    if (userName) filters.assignedUserName = userName;
   }
 
   // Handle location.state fallback
-  if (state?.activeFilters && Array.isArray(state.activeFilters) && state.activeFilters.length > 0) {
-    state.activeFilters.forEach(f => {
-      if (f.type === 'courseType' && f.value) {
-        if (!filters.courseTypeIds.includes(f.value)) filters.courseTypeIds.push(f.value);
-      } else if (f.type === 'leadSource' && f.value) {
-        if (!filters.leadSourceIds.includes(f.value)) filters.leadSourceIds.push(f.value);
-      } else if (f.type === 'board' && f.value) {
-        if (!filters.boardIds.includes(f.value)) filters.boardIds.push(f.value);
-      } else if (f.type === 'grade' && f.value) {
-        if (!filters.gradeIds.includes(f.value)) filters.gradeIds.push(f.value);
-      } else if (f.type === 'course' && f.value) {
-        if (!filters.courseIds.includes(f.value)) filters.courseIds.push(f.value);
-      } else if (f.type === 'unallotted') {
-        filters.allotted = false;
-      } else if (f.type === 'allotted') {
-        filters.allotted = true;
-      } else if (f.type === 'availed') {
-        filters.availed = true;
-      } else if (f.type === 'multiSource') {
-        filters.multiSource = true;
-      } else if ((f.type === 'assignedUser' || f.type === 'user') && f.value) {
-        if (!filters.assignedUserIds.includes(f.value)) filters.assignedUserIds.push(f.value);
-      } else if (f.type === 'leadStatus' && f.value) {
-        if (!filters.statusIds.includes(f.value)) filters.statusIds.push(f.value);
-      } else if (f.type === 'leadStatusHistory' && f.value) {
-        if (!filters.leadStatusHistoryIds.includes(f.value)) filters.leadStatusHistoryIds.push(f.value);
-      }
-    });
+  if (state && typeof state === 'object') {
+    // 1. Direct state array/id properties
+    const addValues = (targetArr, stateValues) => {
+      const vals = Array.isArray(stateValues) ? stateValues : (stateValues ? [stateValues] : []);
+      vals.forEach(v => {
+        if (v && !targetArr.includes(v)) targetArr.push(v);
+      });
+    };
+
+    if (state.assignedUserIds || state.assignedUserId || state.userId) {
+      addValues(filters.assignedUserIds, state.assignedUserIds || state.assignedUserId || state.userId);
+    }
+    if (state.assignedUserName || state.userName) {
+      filters.assignedUserName = state.assignedUserName || state.userName;
+    }
+    if (state.courseTypeIds || state.courseTypeId) {
+      addValues(filters.courseTypeIds, state.courseTypeIds || state.courseTypeId);
+    }
+    if (state.interestedCourseIds || state.courseIds || state.courseId || state.interestedCourseId) {
+      addValues(filters.courseIds, state.interestedCourseIds || state.courseIds || state.courseId || state.interestedCourseId);
+      addValues(filters.interestedCourseIds, state.interestedCourseIds || state.courseIds || state.courseId || state.interestedCourseId);
+    }
+    if (state.leadSourceIds || state.leadSourceId || state.sourceId) {
+      addValues(filters.leadSourceIds, state.leadSourceIds || state.leadSourceId || state.sourceId);
+    }
+    if (state.boardIds || state.boardId) {
+      addValues(filters.boardIds, state.boardIds || state.boardId);
+    }
+    if (state.gradeIds || state.gradeId) {
+      addValues(filters.gradeIds, state.gradeIds || state.gradeId);
+    }
+    if (state.statusIds || state.statusId || state.leadStatusId) {
+      addValues(filters.statusIds, state.statusIds || state.statusId || state.leadStatusId);
+    }
+
+    // 2. Active filters array fallback
+    if (Array.isArray(state.activeFilters) && state.activeFilters.length > 0) {
+      state.activeFilters.forEach(f => {
+        if (f.type === 'courseType' && f.value) {
+          if (!filters.courseTypeIds.includes(f.value)) filters.courseTypeIds.push(f.value);
+        } else if (f.type === 'leadSource' && f.value) {
+          if (!filters.leadSourceIds.includes(f.value)) filters.leadSourceIds.push(f.value);
+        } else if (f.type === 'board' && f.value) {
+          if (!filters.boardIds.includes(f.value)) filters.boardIds.push(f.value);
+        } else if (f.type === 'grade' && f.value) {
+          if (!filters.gradeIds.includes(f.value)) filters.gradeIds.push(f.value);
+        } else if (f.type === 'course' && f.value) {
+          if (!filters.courseIds.includes(f.value)) filters.courseIds.push(f.value);
+          if (!filters.interestedCourseIds.includes(f.value)) filters.interestedCourseIds.push(f.value);
+        } else if (f.type === 'unallotted') {
+          filters.allotted = false;
+        } else if (f.type === 'allotted') {
+          filters.allotted = true;
+        } else if (f.type === 'availed') {
+          filters.availed = true;
+        } else if (f.type === 'multiSource') {
+          filters.multiSource = true;
+        } else if ((f.type === 'assignedUser' || f.type === 'user') && f.value) {
+          if (!filters.assignedUserIds.includes(f.value)) filters.assignedUserIds.push(f.value);
+        } else if (f.type === 'leadStatus' && f.value) {
+          if (!filters.statusIds.includes(f.value)) filters.statusIds.push(f.value);
+        } else if (f.type === 'leadStatusHistory' && f.value) {
+          if (!filters.leadStatusHistoryIds.includes(f.value)) filters.leadStatusHistoryIds.push(f.value);
+        }
+      });
+    }
   }
 
   return filters;
@@ -542,8 +583,11 @@ export const buildFilterChips = (filters, lookups = {}) => {
 
   // Counselors / Users
   (filters.assignedUserIds || []).forEach(id => {
-    const u = users.find(x => String(x.id) === String(id));
-    const userName = u ? `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.username || id : id;
+    const u = users.find(x => String(x.id || x.userId || x._id) === String(id));
+    const fullNameFromLookup = u
+      ? (u.name || u.fullName || `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.username)
+      : null;
+    const userName = fullNameFromLookup || filters.assignedUserName || id;
     chips.push({
       key: 'assignedUserIds',
       value: id,

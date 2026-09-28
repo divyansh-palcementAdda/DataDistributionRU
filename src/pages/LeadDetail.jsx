@@ -650,7 +650,7 @@ const LeadDetail = () => {
       const errMsg = error?.response?.data?.message || error?.message || 'CMS verification failed. Lead not registered.';
       toast.error(errMsg);
     } finally {
-      await loadLeadData(false);
+      setRefreshing(false);
     }
   };
 
@@ -727,8 +727,6 @@ const LeadDetail = () => {
     } catch (error) {
       console.error('Failed to complete follow-up', error);
       toast.error('Failed to complete follow-up');
-    } finally {
-      await loadLeadData(false);
     }
   };
 
@@ -751,8 +749,6 @@ const LeadDetail = () => {
     } catch (error) {
       console.error('Failed to cancel follow-up', error);
       toast.error('Failed to cancel follow-up');
-    } finally {
-      await loadLeadData(false);
     }
   };
 
@@ -768,15 +764,12 @@ const LeadDetail = () => {
       });
       if (response?.success || response?.data) {
         toast.success('Follow-up marked as Not Connected and Lead status synchronized successfully');
-        setIsCallModalOpen(false);
       } else {
         toast.error(response?.message || 'Failed to mark follow-up as not connected');
       }
     } catch (error) {
       console.error('Failed to mark follow-up as not connected', error);
       toast.error(error?.message || 'Failed to mark follow-up as not connected');
-    } finally {
-      await loadLeadData(false);
     }
   };
 
@@ -1902,6 +1895,15 @@ const LeadDetail = () => {
         phoneNumber={leadDetails?.phoneNumber}
         followups={followUps}
         onComplete={() => loadLeadData(false)}
+        onDataRefresh={() => loadLeadData(false)}
+        onCompleteFollowup={handleCompleteFollowup}
+        onCancelFollowup={handleCancelFollowup}
+        onFollowupNotConnected={handleFollowupNotConnected}
+        onRegisterLead={handleRegisteredClick}
+        isFinallyNotConnected={isFinallyNotConnected}
+        hasPendingFollowup={hasPendingFollowup}
+        hasClickedInfoPanel={false}
+        onResetInfoPanel={null}
         onScheduleOpen={() => setIsScheduleModalOpen(true)}
         onInfoPanelOpen={() => {
           const el = document.getElementById('course-info-panel-section');

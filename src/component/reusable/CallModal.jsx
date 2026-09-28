@@ -8,6 +8,7 @@ const CallModal = ({
     studentData,
     phoneNumber,
     onComplete,
+    onDataRefresh,
     followups,
     onScheduleOpen,
     onInfoPanelOpen,
@@ -112,6 +113,7 @@ const CallModal = ({
             toast.success('Lead marked as Connected');
             if (onResetInfoPanel) onResetInfoPanel();
             if (onComplete) onComplete();
+            if (onDataRefresh) onDataRefresh();
         } catch (error) {
             console.error('Error marking as connected:', error);
             toast.error(error?.response?.data?.message || 'Failed to mark as connected');
@@ -134,6 +136,7 @@ const CallModal = ({
             toast.success('Lead marked as Interested');
             if (onResetInfoPanel) onResetInfoPanel();
             if (onComplete) onComplete();
+            if (onDataRefresh) onDataRefresh();
         } catch (error) {
             console.error('Error changing status to Interested:', error);
             toast.error(error?.response?.data?.message || 'Failed to update status');
@@ -153,8 +156,8 @@ const CallModal = ({
                 feedback: 'Not interested in the course'
             });
             toast.info('Lead marked as Not Interested');
-            handleClose();
             if (onComplete) onComplete();
+            if (onDataRefresh) onDataRefresh();
         } catch (error) {
             console.error('Error changing status to Not Interested:', error);
             toast.error(error?.response?.data?.message || 'Failed to update status');
@@ -174,8 +177,8 @@ const CallModal = ({
                 feedback: 'Bad data / Invalid lead'
             });
             toast.warning('Lead marked as Bad / Invalid Data');
-            handleClose();
             if (onComplete) onComplete();
+            if (onDataRefresh) onDataRefresh();
         } catch (error) {
             console.error('Error changing status to Bad:', error);
             toast.error(error?.response?.data?.message || 'Failed to update status');
@@ -210,8 +213,8 @@ const CallModal = ({
             });
             setOverrideState('not_connected');
             toast.info('Marked as Not Connected (1st Attempt)');
-            handleClose();
             if (onComplete) onComplete();
+            if (onDataRefresh) onDataRefresh();
         } catch (error) {
             console.error('Error marking as not connected:', error);
             toast.error(error?.response?.data?.message || 'Failed to update status');
@@ -232,8 +235,8 @@ const CallModal = ({
             });
             setOverrideState('not_connected');
             toast.info('Marked as Not Connected (2nd Attempt)');
-            handleClose();
             if (onComplete) onComplete();
+            if (onDataRefresh) onDataRefresh();
         } catch (error) {
             console.error('Error marking as not connected - 2:', error);
             toast.error(error?.response?.data?.message || 'Failed to update status');
@@ -254,8 +257,8 @@ const CallModal = ({
             });
             setOverrideState('not_connected');
             toast.info('Marked as Not Connected (3rd Attempt)');
-            handleClose();
             if (onComplete) onComplete();
+            if (onDataRefresh) onDataRefresh();
         } catch (error) {
             console.error('Error marking as not connected - 3:', error);
             toast.error(error?.response?.data?.message || 'Failed to update status');
@@ -276,8 +279,8 @@ const CallModal = ({
             });
             setOverrideState('not_connected');
             toast.warning('Marked as Finally Not Connected');
-            handleClose();
             if (onComplete) onComplete();
+            if (onDataRefresh) onDataRefresh();
         } catch (error) {
             console.error('Error marking as finally not connected:', error);
             toast.error(error?.response?.data?.message || 'Failed to update status');
@@ -295,6 +298,7 @@ const CallModal = ({
                 await onCompleteFollowup();
                 setFollowupActionCompleted('completed');
                 if (onComplete) onComplete();
+                if (onDataRefresh) onDataRefresh();
             } finally {
                 setIsSubmitting(false);
                 setActiveAction(null);
@@ -310,6 +314,7 @@ const CallModal = ({
                 await onCancelFollowup();
                 setFollowupActionCompleted('cancelled');
                 if (onComplete) onComplete();
+                if (onDataRefresh) onDataRefresh();
             } finally {
                 setIsSubmitting(false);
                 setActiveAction(null);
@@ -325,6 +330,7 @@ const CallModal = ({
                 await onFollowupNotConnected();
                 setFollowupActionCompleted('not_connected');
                 if (onComplete) onComplete();
+                if (onDataRefresh) onDataRefresh();
             } finally {
                 setIsSubmitting(false);
                 setActiveAction(null);
@@ -335,8 +341,8 @@ const CallModal = ({
     const handleRegisterLead = async () => {
         if (onRegisterLead) {
             await onRegisterLead();
-            handleClose();
             if (onComplete) onComplete();
+            if (onDataRefresh) onDataRefresh();
         }
     };
 
@@ -349,8 +355,8 @@ const CallModal = ({
                 statusCode: 'NOT_INTERESTED',
                 feedback: 'Followup not interested'
             });
-            handleClose();
             if (onComplete) onComplete();
+            if (onDataRefresh) onDataRefresh();
         } catch (error) {
             console.error('Error changing status to Not Interested:', error);
             toast.error(error?.response?.data?.message || 'Failed to update status');

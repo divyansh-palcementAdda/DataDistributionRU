@@ -191,9 +191,6 @@ const Sidebar = () => {
                   aria-expanded={isSettingsExpanded}
                   onClick={() => {
                     toggleSettingsExpanded();
-                    if (!isSettingsExpanded) {
-                      navTo(filteredSettingsSubmenuItems[0].id);
-                    }
                   }}
                 >
                   <span dangerouslySetInnerHTML={{ __html: settingsItem.icon }} />

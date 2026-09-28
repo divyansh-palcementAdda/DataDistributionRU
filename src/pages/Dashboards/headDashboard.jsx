@@ -260,7 +260,7 @@ const HeadDashboard = () => {
         </div>
         
         {/* Glassy Navigation Buttons */}
-        <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+        {/* <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
           <button
             onClick={() => navigate('/callers-dashboard')}
             style={{
@@ -315,7 +315,7 @@ const HeadDashboard = () => {
           >
             HOD Dashboard
           </button>
-        </div>
+        </div> */}
       </div>
 
       {/* ── Full Width Metrics Card ── */}

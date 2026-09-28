@@ -8,9 +8,11 @@ const BASE_URL = RAW_BASE_URL.replace(/\/+$/, "");
 
 const INACTIVITY_LIMIT = 15 * 60 * 1000; // 15 minutes
 const LAST_ACTIVITY_KEY = "lastActivity";
+const API_TIMEOUT = 15000;
 
 const axiosInstance = axios.create({
   baseURL: BASE_URL || undefined,
+  timeout: API_TIMEOUT,
   headers: {
     "Content-Type": "application/json",
   },

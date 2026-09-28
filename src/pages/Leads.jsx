@@ -56,8 +56,18 @@ const Leads = () => {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
 
+  // Check if assignedUserId is coming from navigation state (for "My Leads")
+  const myLeadsUserId = location.state?.assignedUserId;
+
   // Canonical filter state
-  const [filters, setFilters] = useState(() => parseFiltersFromSearchParams(searchParams, location.state));
+  const [filters, setFilters] = useState(() => {
+    const parsedFilters = parseFiltersFromSearchParams(searchParams, location.state);
+    // If assignedUserId is in location.state, set it in filters
+    if (myLeadsUserId) {
+      parsedFilters.assignedUserIds = [myLeadsUserId];
+    }
+    return parsedFilters;
+  });
   const [search, setSearch] = useState(() => searchParams.get('search') || '');
   const [debouncedSearch, setDebouncedSearch] = useState(() => searchParams.get('search') || '');
   const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
@@ -210,6 +220,15 @@ const Leads = () => {
   // Sync state from URL search params (or router state)
   useEffect(() => {
     const parsed = parseFiltersFromSearchParams(searchParams, location.state);
+    // If assignedUserId is in location.state, set it in filters
+    if (location.state?.assignedUserId !== undefined) {
+      if (location.state.assignedUserId === null) {
+        // Clear the filter to show all leads
+        parsed.assignedUserIds = [];
+      } else {
+        parsed.assignedUserIds = [location.state.assignedUserId];
+      }
+    }
     setFilters(parsed);
     if (parsed.search !== undefined && parsed.search !== search) {
       setSearch(parsed.search || '');
@@ -494,6 +513,13 @@ const Leads = () => {
         sortDirection: sortDirection || undefined,
         ...filterRequest,
       };
+      // Include assignedUserId if it's in filters (for "My Leads")
+      if (filters.assignedUserIds?.length > 0) {
+        params.assignedUserIds = filters.assignedUserIds;
+        if (filters.assignedUserIds.length === 1) {
+          params.assignedUserId = filters.assignedUserIds[0];
+        }
+      }
       const res = await getAllLeads(params);
       const allLeadsData = res?.data?.data?.content || [];
       

@@ -102,6 +102,15 @@ const Allroutes = () => {
             <Leads />
           </PermissionRoute>
         } />
+
+        <Route
+  path="/my-leads"
+  element={
+    <PermissionRoute requiredPermission="LEAD_READ">
+      <Leads />
+    </PermissionRoute>
+  }
+/>
         <Route path="/lead-detail" element={
           <PermissionRoute requiredPermission="LEAD_READ">
             <LeadDetail />
@@ -118,6 +127,15 @@ const Allroutes = () => {
             <FollowUps />
           </PermissionRoute>
         } />
+
+        <Route
+  path="/my-followups"
+  element={
+    <PermissionRoute requiredPermission="FOLLOWUP_VIEW">
+      <FollowUps />
+    </PermissionRoute>
+  }
+/>
 
         <Route path="/counselors" element={
           <PermissionRoute requiredPermission="USER_READ">

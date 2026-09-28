@@ -131,15 +131,15 @@ useEffect(() => {
     setIsSidebarOpen(false);
     // Navigate to the route path. Assumes page names match routes.
     if (page.startsWith('settings/')) {
-      navigate(`/settings/${page.replace('settings/', '')}`);
+      navigate(`/settings/${page.replace('settings/', '')}`, { state: params });
     } else if (page === 'callers-dashboard') {
-      navigate('/callers-dashboard');
+      navigate('/callers-dashboard', { state: params });
     } else if (page === 'head-dashboard') {
-      navigate('/head-dashboard');
+      navigate('/head-dashboard', { state: params });
     } else if (page === 'lead-detail' && params.id) {
-      navigate(`/lead-detail/${params.id}`);
+      navigate(`/lead-detail/${params.id}`, { state: params });
     } else {
-      navigate(`/${page}`);
+      navigate(`/${page}`, { state: params });
     }
   };
 

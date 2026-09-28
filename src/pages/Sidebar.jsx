@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../AppContext';
 import { usePermissions } from '../PermissionContext';
 
@@ -13,6 +13,18 @@ const Sidebar = () => {
   // Get user role to determine which dashboard to show in sidebar
   const userRole = localStorage.getItem('userRole');
 
+  // Get current user ID for "My Leads" and "My Follow-up" filtering
+  const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+  const currentUserId = userInfo?.id || userInfo?.userId;
+
+  // Track actual sidebar item that was clicked for active state
+  const [activeSidebarItem, setActiveSidebarItem] = useState(currentPage);
+
+  // Update active sidebar item when currentPage changes
+  useEffect(() => {
+    setActiveSidebarItem(currentPage);
+  }, [currentPage]);
+
   // Update dashboard navigation based on user role
   const getDashboardId = () => {
     if (userRole === 'COUNSELOR') {
@@ -26,9 +38,14 @@ const Sidebar = () => {
   const dashboardId = getDashboardId();
 
   const navItems = [
+
     { id: dashboardId, label: 'Dashboard', icon: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>' },
     { id: 'leads', label: 'Leads', icon: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>' },
     { id: 'followups', label: 'Follow-up', icon: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01"/></svg>' },
+    ...(userRole === 'HOD' ? [
+      { id: 'my-leads', label: 'My Leads', navigateTo: 'my-leads', icon: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>' },
+      { id: 'my-followups', label: 'My Follow-up', navigateTo: 'my-followups', icon: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01"/></svg>' }
+    ] : []),
     { id: 'course-types', label: 'Category', icon: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="1.8"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>' },
     { id: 'lead-source', label: 'Data Source', icon: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="1.8"><path d="M12 2v20M2 12h20"/></svg>' },
     { id: 'boards', label: 'Specialization', icon: '<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="#06B6D4" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>' },
@@ -66,6 +83,8 @@ const Sidebar = () => {
   const itemPermissions = {
     'leads': 'LEAD_READ',
     'followups': 'FOLLOWUP_VIEW',
+    'my-leads': 'LEAD_READ',
+    'my-followups': 'FOLLOWUP_VIEW',
     'course-types': 'COURSE_TYPE_VIEW',
     'lead-source': 'LEADSOURCE_READ',
     'boards': 'BOARD_VIEW',
@@ -132,8 +151,20 @@ const Sidebar = () => {
           {filteredNavItems.map(item => (
             <div
               key={item.id}
-              className={`nav-item ${currentPage === item.id ? 'active' : ''}`}
-              onClick={() => navTo(item.id)}
+              className={`nav-item ${activeSidebarItem === item.id ? 'active' : ''}`}
+              onClick={() => {
+                const navParams = {};
+                // Send assignedUserId for "My Leads" and "My Follow-up"
+                if (item.id === 'my-leads' || item.id === 'my-followups') {
+                  navParams.assignedUserId = currentUserId;
+                }
+                // Clear assignedUserId for regular "Leads" and "Follow-up" to show all data
+                if (item.id === 'leads' || item.id === 'followups') {
+                  navParams.assignedUserId = null;
+                }
+                setActiveSidebarItem(item.id);
+                navTo(item.navigateTo || item.id, navParams);
+              }}
               dangerouslySetInnerHTML={{ __html: item.icon + item.label + (item.badge ? `<span class="nav-badge">${item.badge}</span>` : '') }}
             >
             </div>

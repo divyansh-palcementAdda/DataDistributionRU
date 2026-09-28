@@ -67,6 +67,7 @@ const FollowUps = () => {
   const [selectedFollowup, setSelectedFollowup] = useState(null);
   const [activeTab, setActiveTab] = useState(location.state?.activeTab || "ALL");
   const [selectedLeadStatusId, setSelectedLeadStatusId] = useState(null);
+  const [assignedUserId, setAssignedUserId] = useState(location.state?.assignedUserId ?? null);
 
   const debounceRef = useRef(null);
 
@@ -75,6 +76,12 @@ const FollowUps = () => {
       setActiveTab(location.state.activeTab);
     }
   }, [location.state?.activeTab]);
+
+  useEffect(() => {
+    if (location.state?.assignedUserId !== undefined) {
+      setAssignedUserId(location.state.assignedUserId === null ? null : location.state.assignedUserId);
+    }
+  }, [location.state?.assignedUserId]);
 
   const handleCardClick = (filter) => {
     if (filter.type === 'leadStatus') {
@@ -186,6 +193,7 @@ const FollowUps = () => {
           sortBy,
           sortDirection: sortDirection.toUpperCase(),
           search,
+          userId: assignedUserId,
         });
       } else {
         res = await getAllFollowups({
@@ -196,6 +204,7 @@ const FollowUps = () => {
           search,
           status: activeTab === "ALL" ? "" : activeTab,
           leadStatusIds: selectedLeadStatusId ? [selectedLeadStatusId] : [],
+          userId: assignedUserId,
         });
       }
 
@@ -259,6 +268,7 @@ const FollowUps = () => {
           sortBy,
           sortDirection: sortDirection.toUpperCase(),
           search,
+          userId: assignedUserId,
         });
       } else {
         res = await getAllFollowups({
@@ -269,6 +279,7 @@ const FollowUps = () => {
           search,
           status: activeTab === "ALL" ? "" : activeTab,
           leadStatusIds: selectedLeadStatusId ? [selectedLeadStatusId] : [],
+          userId: assignedUserId,
         });
       }
 
@@ -299,6 +310,7 @@ const FollowUps = () => {
     search,
     activeTab,
     selectedLeadStatusId,
+    assignedUserId,
     showToast,
   ]);
 

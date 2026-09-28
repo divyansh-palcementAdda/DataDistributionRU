@@ -130,7 +130,16 @@ const Allroutes = () => {
           </PermissionRoute>
         } />
 
-        <Route path="/reports" element={<Reports />} />
+        <Route path="/reports" element={
+          <PermissionRoute anyOfPermissions={[
+            "REPORT_VIEW",
+            "REPORT_SELF_VIEW",
+            "REPORT_DEPARTMENT_VIEW",
+            "DASHBOARD_VIEW"
+          ]}>
+            <Reports />
+          </PermissionRoute>
+        } />
 
         <Route path="/courses" element={
           <PermissionRoute requiredPermission="COURSE_VIEW">

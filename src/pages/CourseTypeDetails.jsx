@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FiEye, FiMessageSquare, FiUserPlus, FiFilter } from 'react-icons/fi';
+import { FiEye, FiMessageSquare, FiUserPlus, FiFilter, FiCheckSquare } from 'react-icons/fi';
 import { useAppContext } from '../AppContext';
 import { usePermissions } from '../PermissionContext';
 import { getCourseTypeById } from '../Services/courseTypes/courseTypeService';
@@ -252,7 +252,7 @@ const CourseTypeDetails = () => {
     // filter request for cards
     const [filterRequest, setFilterRequest] = useState(() => ({
         courseTypeId: id,
-        courseTypeIds: id ? [id] : []
+        courseTypeIds: id ? [id] : [] // Always set to current course type
     }));
 
     // server-side pagination & sorting for lead table
@@ -270,6 +270,8 @@ const CourseTypeDetails = () => {
     // row selection & assign modal
     const [selectedRows, setSelectedRows] = useState(new Set());
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+    const [autoSelectCount, setAutoSelectCount] = useState('');
+    const pendingAutoSelectRef = useRef(null);
 
     // user allocation list modal
     const [isUserAllocationModalOpen, setIsUserAllocationModalOpen] = useState(false);
@@ -278,7 +280,10 @@ const CourseTypeDetails = () => {
 
     // lead filter drawer state
     const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
-    const [appliedFilters, setAppliedFilters] = useState(DEFAULT_LEAD_FILTERS);
+    const [appliedFilters, setAppliedFilters] = useState(() => ({
+        ...DEFAULT_LEAD_FILTERS,
+        courseTypeIds: id ? [id] : [] // Always set to current course type
+    }));
 
     // dropdown lookups for filter drawer
     const [lookups, setLookups] = useState({
@@ -367,6 +372,14 @@ const CourseTypeDetails = () => {
         };
     }, []);
 
+    // ── ensure courseTypeIds is always set to current course type in appliedFilters ──
+    useEffect(() => {
+        setAppliedFilters(prev => ({
+            ...prev,
+            courseTypeIds: id ? [id] : []
+        }));
+    }, [id]);
+
     // ── fetch table data when filters change or pagination/sort changes ──
     useEffect(() => {
         if (!id) return;
@@ -377,6 +390,18 @@ const CourseTypeDetails = () => {
                 setTableTotalElements(totalElements);
                 setTableTotalPages(totalPages);
                 setTableLoading(false);
+
+                // Apply pending auto-select if set (triggered by Quick Select resize)
+                if (pendingAutoSelectRef.current !== null) {
+                    const pending = pendingAutoSelectRef.current;
+                    pendingAutoSelectRef.current = null;
+                    const topIds = content.slice(0, pending).map(lead => {
+                        const rowId = typeof lead.id === 'object' ? lead.id?.id : lead.id;
+                        const rowLeadId = typeof lead.leadId === 'object' ? lead.leadId?.id : lead.leadId;
+                        return rowId || rowLeadId;
+                    });
+                    setSelectedRows(new Set(topIds));
+                }
             });
     }, [activeFilters, id, tablePage, tableSize, tableSortBy, tableSortDir, filterRequest]);
 
@@ -384,10 +409,10 @@ const CourseTypeDetails = () => {
     useEffect(() => {
         const newFilterRequest = {
             courseTypeId: id,
-            courseTypeIds: id ? [id] : []
+            courseTypeIds: id ? [id] : [] // Always set to current course type, override any drawer selection
         };
 
-        // Add drawer-applied filters
+        // Add drawer-applied filters (except courseTypeIds which is forced above)
         if (appliedFilters.search) {
             newFilterRequest.search = appliedFilters.search;
         }
@@ -503,7 +528,9 @@ const CourseTypeDetails = () => {
         });
         // reset pagination and selection when filters change
         setTablePage(0);
+        setTableSize(10); // Reset to default page size
         setSelectedRows(new Set());
+        setAutoSelectCount('');
     };
 
     // ── remove specific filter ──
@@ -569,7 +596,9 @@ const CourseTypeDetails = () => {
         });
 
         setTablePage(0);
+        setTableSize(10); // Reset to default page size
         setSelectedRows(new Set());
+        setAutoSelectCount('');
     };
 
     // ── clear all filters ──
@@ -577,7 +606,9 @@ const CourseTypeDetails = () => {
         setActiveFilters([]);
         setAppliedFilters(DEFAULT_LEAD_FILTERS);
         setTablePage(0);
+        setTableSize(10); // Reset to default page size
         setSelectedRows(new Set());
+        setAutoSelectCount('');
     };
 
     // ── convert drawer filters to activeFilters format ──
@@ -766,10 +797,10 @@ const CourseTypeDetails = () => {
 
     // ── handle drawer filter apply ──
     const handleDrawerApply = (drawerFilters) => {
-        // Set the applied filters from drawer with courseTypeIds
+        // Set the applied filters from drawer with courseTypeIds (always set to current course type)
         const filtersWithCourseType = {
             ...drawerFilters,
-            courseTypeIds: id ? [id] : []
+            courseTypeIds: id ? [id] : [] // Always set to current course type, user cannot change it
         };
         setAppliedFilters(filtersWithCourseType);
 
@@ -779,7 +810,9 @@ const CourseTypeDetails = () => {
         // Replace all activeFilters with drawer filters (drawer takes precedence)
         setActiveFilters(newActiveFilters);
         setTablePage(0);
+        setTableSize(10); // Reset to default page size
         setSelectedRows(new Set());
+        setAutoSelectCount('');
         setIsFilterDrawerOpen(false);
     };
 
@@ -808,6 +841,36 @@ const CourseTypeDetails = () => {
             });
             return next;
         });
+    };
+
+    // ── quick select handler ──
+    const handleAutoSelectCount = (e) => {
+        const val = e.target.value;
+        setAutoSelectCount(val);
+        const count = parseInt(val, 10);
+        if (!isNaN(count) && count > 0) {
+            if (count <= tableData.length) {
+                // Data already loaded — select immediately and sync page size
+                const topIds = tableData.slice(0, count).map(lead => {
+                    const rowId = typeof lead.id === 'object' ? lead.id?.id : lead.id;
+                    const rowLeadId = typeof lead.leadId === 'object' ? lead.leadId?.id : lead.leadId;
+                    return rowId || rowLeadId;
+                });
+                setSelectedRows(new Set(topIds));
+                setTableSize(count);
+                setTablePage(0);
+            } else {
+                // Need more data — resize page, store pending count, fetch will apply selection
+                pendingAutoSelectRef.current = count;
+                setTablePage(0);
+                setTableSize(count);
+            }
+        } else {
+            // Clear selection and reset page size to default
+            setSelectedRows(new Set());
+            setTableSize(10); // Reset to default page size
+            setTablePage(0);
+        }
     };
 
     // ── remark modal handlers ──
@@ -1164,19 +1227,51 @@ const CourseTypeDetails = () => {
                                     Advanced Filters
                                 </button>
                                 {hasPermission('LEAD_ASSIGN') && (
-                                    <button
-                                        onClick={() => setIsAssignModalOpen(true)}
-                                        disabled={selectedRows.size === 0}
-                                        className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all shadow-sm"
-                                        style={{
-                                            backgroundColor: selectedRows.size === 0 ? 'var(--gray-200, #e5e7eb)' : '#4f46e5',
-                                            color: selectedRows.size === 0 ? 'var(--gray-400, #9ca3af)' : '#fff',
-                                            cursor: selectedRows.size === 0 ? 'not-allowed' : 'pointer',
-                                        }}
-                                    >
-                                        <FiUserPlus size={13} />
-                                        Allot Leads{selectedRows.size > 0 ? ` (${selectedRows.size})` : ''}
-                                    </button>
+                                    <>
+                                        {/* Quick Auto-select input group */}
+                                        <div className="flex items-center bg-slate-50/90 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-600">
+                                            <span className="font-semibold text-slate-500 mr-2 select-none">Quick Select:</span>
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                max={tableData.length}
+                                                value={autoSelectCount}
+                                                onChange={handleAutoSelectCount}
+                                                onBlur={() => {
+                                                    if (!autoSelectCount) {
+                                                        setTableSize(10);
+                                                        setTablePage(0);
+                                                    }
+                                                }}
+                                                onWheel={(e) => e.target.blur()}
+                                                placeholder="Qty"
+                                                className="w-12 bg-white border border-slate-200 rounded px-1.5 py-0.5 text-xs text-center font-bold text-indigo-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                                title="Number of leads to auto-select from top"
+                                            />
+                                        </div>
+
+                                        {/* Selected Count Badge */}
+                                        {selectedRows.size > 0 && (
+                                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 border border-emerald-200/80 rounded-lg text-xs font-bold text-emerald-700">
+                                                <FiCheckSquare size={13} className="text-emerald-600" />
+                                                <span>{selectedRows.size} Selected</span>
+                                            </div>
+                                        )}
+
+                                        <button
+                                            onClick={() => setIsAssignModalOpen(true)}
+                                            disabled={selectedRows.size === 0}
+                                            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all shadow-sm"
+                                            style={{
+                                                backgroundColor: selectedRows.size === 0 ? 'var(--gray-200, #e5e7eb)' : '#4f46e5',
+                                                color: selectedRows.size === 0 ? 'var(--gray-400, #9ca3af)' : '#fff',
+                                                cursor: selectedRows.size === 0 ? 'not-allowed' : 'pointer',
+                                            }}
+                                        >
+                                            <FiUserPlus size={13} />
+                                            Allot Leads{selectedRows.size > 0 ? ` (${selectedRows.size})` : ''}
+                                        </button>
+                                    </>
                                 )}
                             </div>
                         </div>
@@ -1190,7 +1285,7 @@ const CourseTypeDetails = () => {
                         ) : (
                             <div className="card">
                                 <ReusableTable
-                                    columns={buildLeadColumns(tablePage, tableSize, openRemarkModal, navTo, selectedRows, handleToggleRow, handleToggleAll, tableData, hasPermission)}
+                                    columns={buildLeadColumns(tablePage, tableSize, openRemarkModal, navTo, selectedRows, handleToggleRow, handleToggleAll, tableData, hasPermission, showToast)}
                                     data={tableData}
                                     isServerSide={true}
                                     totalElements={tableTotalElements}
@@ -1198,7 +1293,13 @@ const CourseTypeDetails = () => {
                                     currentPage={tablePage + 1}
                                     rowsPerPage={tableSize}
                                     onPageChange={(newPage) => setTablePage(newPage - 1)}
-                                    onRowsPerPageChange={(newSize) => { setTableSize(newSize); setTablePage(0); }}
+                                    onRowsPerPageChange={(newSize) => {
+                                        setTableSize(newSize);
+                                        setTablePage(0);
+                                        setAutoSelectCount('');
+                                        // If user manually changes page size and autoSelectCount is empty, keep their selection
+                                        // If autoSelectCount was set, it's already cleared above
+                                    }}
                                     sortBy={tableSortBy}
                                     sortDirection={tableSortDir}
                                     onSort={handleLeadSort}
@@ -1268,6 +1369,7 @@ const CourseTypeDetails = () => {
                 selectedLeadIds={Array.from(selectedRows)}
                 onAssign={() => {
                     setSelectedRows(new Set());
+                    setAutoSelectCount('');
                     setIsAssignModalOpen(false);
                     setTablePage((p) => p);
                 }}
@@ -1315,7 +1417,10 @@ const CourseTypeDetails = () => {
                 onClose={() => setIsFilterDrawerOpen(false)}
                 appliedFilters={appliedFilters}
                 onApply={handleDrawerApply}
-                lookups={lookups}
+                lookups={{
+                    ...lookups,
+                    courseTypes: id && details ? [{ id: id, name: details.name, code: details.code }] : [] // Show only current course type
+                }}
             />
         </>
     );

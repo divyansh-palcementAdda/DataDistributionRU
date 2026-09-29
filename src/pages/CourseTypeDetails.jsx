@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FiEye, FiMessageSquare, FiUserPlus } from 'react-icons/fi';
+import { FiEye, FiMessageSquare, FiUserPlus, FiFilter } from 'react-icons/fi';
 import { useAppContext } from '../AppContext';
 import { usePermissions } from '../PermissionContext';
 import { getCourseTypeById } from '../Services/courseTypes/courseTypeService';
@@ -9,6 +9,17 @@ import {
     getGradeBreakdown,
     getBoardBreakdown,
 } from '../Services/cards/cardService';
+import {
+    getBoardsDropdown,
+    getCourseTypesDropdown,
+    getCoursesDropdown,
+    getDepartmentsDropdown,
+    getGradesDropdown,
+    getLeadSourcesDropdown,
+    getLeadStatusesDropdown,
+    getUsersDropdown,
+} from '../Services/drop-down/dropDownService';
+import { DEFAULT_LEAD_FILTERS } from '../Services/lead/leadFilterModel';
 import axiosInstance from '../axiosInstance/axios';
 import ApiRoutes from '../apiRoutes/allApiRoutes';
 import LeadCards from '../component/reusable/DashBoards/leadCards';
@@ -24,6 +35,7 @@ import UserAllocationListModal from '../component/reusable/segregation/UserAlloc
 import ReusableTable from '../component/reusable/table';
 import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import AssignLeadModal from '../component/reusable/Leads/AssignLeadModal';
+import LeadFilterDrawer from '../component/reusable/Leads/LeadFilterDrawer';
 import CourseUserStatusAnalyticsSection from '../component/reusable/analytics/CourseUserStatusAnalyticsSection';
 import * as XLSX from 'xlsx';
 import {
@@ -155,6 +167,24 @@ const fetchLeadsForCard = async (activeFilters, courseTypeId, page, size, sortBy
             delete converted.leadSourceIds;
         }
 
+        // Convert courseIds → courseId or courseIds
+        if (converted.courseIds?.length === 1) {
+            converted.courseId = converted.courseIds[0];
+            delete converted.courseIds;
+        }
+
+        // Convert departmentIds → departmentId or departmentIds
+        if (converted.departmentIds?.length === 1) {
+            converted.departmentId = converted.departmentIds[0];
+            delete converted.departmentIds;
+        }
+
+        // Convert assignedUserIds → assignedUserId or assignedUserIds
+        if (converted.assignedUserIds?.length === 1) {
+            converted.assignedUserId = converted.assignedUserIds[0];
+            delete converted.assignedUserIds;
+        }
+
         return converted;
     };
 
@@ -220,7 +250,10 @@ const CourseTypeDetails = () => {
     const [tableLoading, setTableLoading] = useState(false);
 
     // filter request for cards
-    const [filterRequest, setFilterRequest] = useState({ courseTypeId: id });
+    const [filterRequest, setFilterRequest] = useState(() => ({
+        courseTypeId: id,
+        courseTypeIds: id ? [id] : []
+    }));
 
     // server-side pagination & sorting for lead table
     const [tablePage, setTablePage] = useState(0);
@@ -242,6 +275,22 @@ const CourseTypeDetails = () => {
     const [isUserAllocationModalOpen, setIsUserAllocationModalOpen] = useState(false);
     const [userAllocationInitialWorkingOnly, setUserAllocationInitialWorkingOnly] = useState(false);
     const [userAllocationWorkingOnly, setUserAllocationWorkingOnly] = useState(false);
+
+    // lead filter drawer state
+    const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
+    const [appliedFilters, setAppliedFilters] = useState(DEFAULT_LEAD_FILTERS);
+
+    // dropdown lookups for filter drawer
+    const [lookups, setLookups] = useState({
+        sources: [],
+        courseTypes: [],
+        courses: [],
+        departments: [],
+        users: [],
+        boards: [],
+        grades: [],
+        statuses: [],
+    });
 
     // ── fetch course-type details ──
     useEffect(() => {
@@ -270,6 +319,54 @@ const CourseTypeDetails = () => {
         fetchDashboardData(id).then(setDashData);
     }, [id]);
 
+    // ── fetch dropdown lookups for filter drawer ──
+    useEffect(() => {
+        let isCancelled = false;
+        const fetchDropdowns = async () => {
+            try {
+                const [
+                    sourcesRes,
+                    courseTypesRes,
+                    coursesRes,
+                    deptRes,
+                    usersRes,
+                    boardsRes,
+                    gradesRes,
+                    statusesRes,
+                ] = await Promise.allSettled([
+                    getLeadSourcesDropdown(),
+                    getCourseTypesDropdown(),
+                    getCoursesDropdown(),
+                    getDepartmentsDropdown(),
+                    getUsersDropdown(),
+                    getBoardsDropdown(),
+                    getGradesDropdown(),
+                    getLeadStatusesDropdown(),
+                ]);
+
+                if (!isCancelled) {
+                    setLookups({
+                        sources: sourcesRes.status === 'fulfilled' && sourcesRes.value?.data ? (Array.isArray(sourcesRes.value.data) ? sourcesRes.value.data : []) : [],
+                        courseTypes: courseTypesRes.status === 'fulfilled' && courseTypesRes.value?.data ? (Array.isArray(courseTypesRes.value.data) ? courseTypesRes.value.data : []) : [],
+                        courses: coursesRes.status === 'fulfilled' && coursesRes.value?.data ? (Array.isArray(coursesRes.value.data) ? coursesRes.value.data : []) : [],
+                        departments: deptRes.status === 'fulfilled' && deptRes.value?.data ? (Array.isArray(deptRes.value.data) ? deptRes.value.data : []) : [],
+                        users: usersRes.status === 'fulfilled' && usersRes.value?.data ? (Array.isArray(usersRes.value.data) ? usersRes.value.data : []) : [],
+                        boards: boardsRes.status === 'fulfilled' && boardsRes.value?.data ? (Array.isArray(boardsRes.value.data) ? boardsRes.value.data : []) : [],
+                        grades: gradesRes.status === 'fulfilled' && gradesRes.value?.data ? (Array.isArray(gradesRes.value.data) ? gradesRes.value.data : []) : [],
+                        statuses: statusesRes.status === 'fulfilled' && statusesRes.value?.data ? (Array.isArray(statusesRes.value.data) ? statusesRes.value.data : []) : [],
+                    });
+                }
+            } catch (err) {
+                console.error('Failed to load filter dropdown lookups', err);
+            }
+        };
+
+        fetchDropdowns();
+        return () => {
+            isCancelled = true;
+        };
+    }, []);
+
     // ── fetch table data when filters change or pagination/sort changes ──
     useEffect(() => {
         if (!id) return;
@@ -285,7 +382,65 @@ const CourseTypeDetails = () => {
 
     // ── update filterRequest when activeFilters change for cards ──
     useEffect(() => {
-        const newFilterRequest = { courseTypeId: id };
+        const newFilterRequest = {
+            courseTypeId: id,
+            courseTypeIds: id ? [id] : []
+        };
+
+        // Add drawer-applied filters
+        if (appliedFilters.search) {
+            newFilterRequest.search = appliedFilters.search;
+        }
+        if (appliedFilters.leadSourceIds && appliedFilters.leadSourceIds.length > 0) {
+            newFilterRequest.leadSourceIds = appliedFilters.leadSourceIds;
+        }
+        if (appliedFilters.statusIds && appliedFilters.statusIds.length > 0) {
+            newFilterRequest.leadStatusIds = appliedFilters.statusIds;
+        }
+        if (appliedFilters.boardIds && appliedFilters.boardIds.length > 0) {
+            newFilterRequest.boardIds = appliedFilters.boardIds;
+        }
+        if (appliedFilters.gradeIds && appliedFilters.gradeIds.length > 0) {
+            newFilterRequest.gradeIds = appliedFilters.gradeIds;
+        }
+        if (appliedFilters.courseIds && appliedFilters.courseIds.length > 0) {
+            newFilterRequest.courseIds = appliedFilters.courseIds;
+        }
+        if (appliedFilters.departmentIds && appliedFilters.departmentIds.length > 0) {
+            newFilterRequest.departmentIds = appliedFilters.departmentIds;
+        }
+        if (appliedFilters.assignedUserIds && appliedFilters.assignedUserIds.length > 0) {
+            newFilterRequest.assignedUserIds = appliedFilters.assignedUserIds;
+        }
+        if (appliedFilters.allotted !== null && appliedFilters.allotted !== undefined) {
+            newFilterRequest.allotted = appliedFilters.allotted;
+        }
+        if (appliedFilters.availed !== null && appliedFilters.availed !== undefined) {
+            newFilterRequest.availed = appliedFilters.availed;
+        }
+        if (appliedFilters.multiSource !== null && appliedFilters.multiSource !== undefined) {
+            newFilterRequest.multiSource = appliedFilters.multiSource;
+        }
+        if (appliedFilters.startDate) {
+            newFilterRequest.startDate = appliedFilters.startDate;
+        }
+        if (appliedFilters.endDate) {
+            newFilterRequest.endDate = appliedFilters.endDate;
+        }
+        if (appliedFilters.updatedFrom) {
+            newFilterRequest.updatedFrom = appliedFilters.updatedFrom;
+        }
+        if (appliedFilters.updatedTo) {
+            newFilterRequest.updatedTo = appliedFilters.updatedTo;
+        }
+        if (appliedFilters.availedFrom) {
+            newFilterRequest.availedFrom = appliedFilters.availedFrom;
+        }
+        if (appliedFilters.availedTo) {
+            newFilterRequest.availedTo = appliedFilters.availedTo;
+        }
+
+        // Add card-based active filters (these can override drawer filters)
         activeFilters.forEach(filter => {
             switch (filter.type) {
                 case 'unallotted':
@@ -326,7 +481,7 @@ const CourseTypeDetails = () => {
             }
         });
         setFilterRequest(newFilterRequest);
-    }, [activeFilters, id]);
+    }, [activeFilters, appliedFilters, id]);
 
     // ── card click handler - toggle filters on/off ──
     const handleCardClick = (card) => {
@@ -354,6 +509,65 @@ const CourseTypeDetails = () => {
     // ── remove specific filter ──
     const handleRemoveFilter = (filterType, filterValue) => {
         setActiveFilters(prev => prev.filter(f => !(f.type === filterType && f.value === filterValue)));
+
+        // Also update appliedFilters to match
+        setAppliedFilters(prev => {
+            const updated = { ...prev };
+            switch (filterType) {
+                case 'leadSource':
+                    updated.leadSourceIds = (updated.leadSourceIds || []).filter(id => id !== filterValue);
+                    break;
+                case 'leadStatus':
+                    updated.statusIds = (updated.statusIds || []).filter(id => id !== filterValue);
+                    break;
+                case 'board':
+                    updated.boardIds = (updated.boardIds || []).filter(id => id !== filterValue);
+                    break;
+                case 'grade':
+                    updated.gradeIds = (updated.gradeIds || []).filter(id => id !== filterValue);
+                    break;
+                case 'course':
+                    updated.courseIds = (updated.courseIds || []).filter(id => id !== filterValue);
+                    break;
+                case 'department':
+                    updated.departmentIds = (updated.departmentIds || []).filter(id => id !== filterValue);
+                    break;
+                case 'assignedUser':
+                    updated.assignedUserIds = (updated.assignedUserIds || []).filter(id => id !== filterValue);
+                    break;
+                case 'allotted':
+                case 'unallotted':
+                    updated.allotted = null;
+                    break;
+                case 'availed':
+                case 'unavailed':
+                    updated.availed = null;
+                    break;
+                case 'multiSource':
+                case 'singleSource':
+                    updated.multiSource = null;
+                    break;
+                case 'search':
+                    updated.search = '';
+                    break;
+                case 'dateRange':
+                    updated.startDate = '';
+                    updated.endDate = '';
+                    break;
+                case 'updatedDateRange':
+                    updated.updatedFrom = '';
+                    updated.updatedTo = '';
+                    break;
+                case 'availedDateRange':
+                    updated.availedFrom = '';
+                    updated.availedTo = '';
+                    break;
+                default:
+                    break;
+            }
+            return updated;
+        });
+
         setTablePage(0);
         setSelectedRows(new Set());
     };
@@ -361,8 +575,212 @@ const CourseTypeDetails = () => {
     // ── clear all filters ──
     const handleClearAllFilters = () => {
         setActiveFilters([]);
+        setAppliedFilters(DEFAULT_LEAD_FILTERS);
         setTablePage(0);
         setSelectedRows(new Set());
+    };
+
+    // ── convert drawer filters to activeFilters format ──
+    const convertDrawerFiltersToActiveFilters = (drawerFilters) => {
+        const newActiveFilters = [];
+
+        // Add search filter if present
+        if (drawerFilters.search) {
+            newActiveFilters.push({
+                type: 'search',
+                value: drawerFilters.search,
+                label: `Search: ${drawerFilters.search}`
+            });
+        }
+
+        // Convert lead source IDs
+        if (drawerFilters.leadSourceIds && drawerFilters.leadSourceIds.length > 0) {
+            drawerFilters.leadSourceIds.forEach(sourceId => {
+                const source = lookups.sources.find(s => s.id === sourceId);
+                if (source) {
+                    newActiveFilters.push({
+                        type: 'leadSource',
+                        value: sourceId,
+                        label: source.name || source.code || `Source ${sourceId}`
+                    });
+                }
+            });
+        }
+
+        // Convert status IDs
+        if (drawerFilters.statusIds && drawerFilters.statusIds.length > 0) {
+            drawerFilters.statusIds.forEach(statusId => {
+                const status = lookups.statuses.find(s => s.id === statusId);
+                if (status) {
+                    newActiveFilters.push({
+                        type: 'leadStatus',
+                        value: statusId,
+                        label: status.name || status.code || `Status ${statusId}`
+                    });
+                }
+            });
+        }
+
+        // Convert board IDs
+        if (drawerFilters.boardIds && drawerFilters.boardIds.length > 0) {
+            drawerFilters.boardIds.forEach(boardId => {
+                const board = lookups.boards.find(b => b.id === boardId);
+                if (board) {
+                    newActiveFilters.push({
+                        type: 'board',
+                        value: boardId,
+                        label: board.name || board.code || `Board ${boardId}`
+                    });
+                }
+            });
+        }
+
+        // Convert grade IDs
+        if (drawerFilters.gradeIds && drawerFilters.gradeIds.length > 0) {
+            drawerFilters.gradeIds.forEach(gradeId => {
+                const grade = lookups.grades.find(g => g.id === gradeId);
+                if (grade) {
+                    newActiveFilters.push({
+                        type: 'grade',
+                        value: gradeId,
+                        label: grade.name || grade.code || `Grade ${gradeId}`
+                    });
+                }
+            });
+        }
+
+        // Convert course IDs
+        if (drawerFilters.courseIds && drawerFilters.courseIds.length > 0) {
+            drawerFilters.courseIds.forEach(courseId => {
+                const course = lookups.courses.find(c => c.id === courseId);
+                if (course) {
+                    newActiveFilters.push({
+                        type: 'course',
+                        value: courseId,
+                        label: course.courseName || course.name || `Course ${courseId}`
+                    });
+                }
+            });
+        }
+
+        // Convert department IDs
+        if (drawerFilters.departmentIds && drawerFilters.departmentIds.length > 0) {
+            drawerFilters.departmentIds.forEach(deptId => {
+                const dept = lookups.departments.find(d => d.id === deptId);
+                if (dept) {
+                    newActiveFilters.push({
+                        type: 'department',
+                        value: deptId,
+                        label: dept.name || dept.code || `Department ${deptId}`
+                    });
+                }
+            });
+        }
+
+        // Convert assigned user IDs
+        if (drawerFilters.assignedUserIds && drawerFilters.assignedUserIds.length > 0) {
+            drawerFilters.assignedUserIds.forEach(userId => {
+                const user = lookups.users.find(u => u.id === userId);
+                if (user) {
+                    newActiveFilters.push({
+                        type: 'assignedUser',
+                        value: userId,
+                        label: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || `User ${userId}`
+                    });
+                }
+            });
+        }
+
+        // Convert allotted status
+        if (drawerFilters.allotted === true) {
+            newActiveFilters.push({
+                type: 'allotted',
+                value: true,
+                label: 'Allotted'
+            });
+        } else if (drawerFilters.allotted === false) {
+            newActiveFilters.push({
+                type: 'unallotted',
+                value: false,
+                label: 'Unallotted'
+            });
+        }
+
+        // Convert availed status
+        if (drawerFilters.availed === true) {
+            newActiveFilters.push({
+                type: 'availed',
+                value: true,
+                label: 'Availed'
+            });
+        } else if (drawerFilters.availed === false) {
+            newActiveFilters.push({
+                type: 'unavailed',
+                value: false,
+                label: 'Unavailed'
+            });
+        }
+
+        // Convert multi-source status
+        if (drawerFilters.multiSource === true) {
+            newActiveFilters.push({
+                type: 'multiSource',
+                value: true,
+                label: 'Multi-Source Only'
+            });
+        } else if (drawerFilters.multiSource === false) {
+            newActiveFilters.push({
+                type: 'singleSource',
+                value: false,
+                label: 'Single Source'
+            });
+        }
+
+        // Convert date ranges
+        if (drawerFilters.startDate || drawerFilters.endDate) {
+            newActiveFilters.push({
+                type: 'dateRange',
+                value: { start: drawerFilters.startDate, end: drawerFilters.endDate },
+                label: `Created: ${drawerFilters.startDate || '...'} to ${drawerFilters.endDate || '...'}`
+            });
+        }
+
+        if (drawerFilters.updatedFrom || drawerFilters.updatedTo) {
+            newActiveFilters.push({
+                type: 'updatedDateRange',
+                value: { start: drawerFilters.updatedFrom, end: drawerFilters.updatedTo },
+                label: `Updated: ${drawerFilters.updatedFrom || '...'} to ${drawerFilters.updatedTo || '...'}`
+            });
+        }
+
+        if (drawerFilters.availedFrom || drawerFilters.availedTo) {
+            newActiveFilters.push({
+                type: 'availedDateRange',
+                value: { start: drawerFilters.availedFrom, end: drawerFilters.availedTo },
+                label: `Availed: ${drawerFilters.availedFrom || '...'} to ${drawerFilters.availedTo || '...'}`
+            });
+        }
+
+        return newActiveFilters;
+    };
+
+    // ── handle drawer filter apply ──
+    const handleDrawerApply = (drawerFilters) => {
+        // Set the applied filters from drawer with courseTypeIds
+        const filtersWithCourseType = {
+            ...drawerFilters,
+            courseTypeIds: id ? [id] : []
+        };
+        setAppliedFilters(filtersWithCourseType);
+
+        // Convert drawer filters to activeFilters format for display
+        const newActiveFilters = convertDrawerFiltersToActiveFilters(drawerFilters);
+
+        // Replace all activeFilters with drawer filters (drawer takes precedence)
+        setActiveFilters(newActiveFilters);
+        setTablePage(0);
+        setSelectedRows(new Set());
+        setIsFilterDrawerOpen(false);
     };
 
     // ── get current filter label for display ──
@@ -733,6 +1151,18 @@ const CourseTypeDetails = () => {
                                 )}
                             </div>
                             <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => setIsFilterDrawerOpen(true)}
+                                    className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all shadow-sm"
+                                    style={{
+                                        backgroundColor: '#9333ea',
+                                        color: '#fff',
+                                        cursor: 'pointer',
+                                    }}
+                                >
+                                    <FiFilter size={13} />
+                                    Advanced Filters
+                                </button>
                                 {hasPermission('LEAD_ASSIGN') && (
                                     <button
                                         onClick={() => setIsAssignModalOpen(true)}
@@ -877,6 +1307,15 @@ const CourseTypeDetails = () => {
                 activeFilters={activeFilters}
                 scopeTitle={details?.name || 'Category'}
                 courseTypeId={id}
+            />
+
+            {/* ── Lead Filter Drawer ── */}
+            <LeadFilterDrawer
+                isOpen={isFilterDrawerOpen}
+                onClose={() => setIsFilterDrawerOpen(false)}
+                appliedFilters={appliedFilters}
+                onApply={handleDrawerApply}
+                lookups={lookups}
             />
         </>
     );

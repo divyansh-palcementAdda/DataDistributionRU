@@ -268,6 +268,13 @@ const ApiRoutes = {
         updateCompetitor: '/api/info-panels/{id}/competitors/{competitorId}',
         deleteCompetitor: '/api/info-panels/{id}/competitors/{competitorId}',
         reorderCompetitors: '/api/info-panels/{id}/competitors/reorder',
+    },
+
+    Reports: {
+        getUserPerformance: '/api/reports/user-performance',
+        exportUserPerformance: '/api/reports/user-performance/export',
+        getSessions: '/api/reports/sessions',
+        getActiveSession: '/api/reports/active-session',
     }
 }
 

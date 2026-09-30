@@ -9,6 +9,7 @@ const CallModal = ({
     phoneNumber,
     onComplete,
     onDataRefresh,
+    onStatusChanged,
     followups,
     onScheduleOpen,
     onInfoPanelOpen,
@@ -111,6 +112,7 @@ const CallModal = ({
             });
             setOverrideState('connected');
             toast.success('Lead marked as Connected');
+            if (onStatusChanged) onStatusChanged();
             if (onResetInfoPanel) onResetInfoPanel();
             if (onComplete) onComplete();
             if (onDataRefresh) onDataRefresh();
@@ -134,6 +136,7 @@ const CallModal = ({
             });
             setOverrideState('interested');
             toast.success('Lead marked as Interested');
+            if (onStatusChanged) onStatusChanged();
             if (onResetInfoPanel) onResetInfoPanel();
             if (onComplete) onComplete();
             if (onDataRefresh) onDataRefresh();
@@ -156,6 +159,7 @@ const CallModal = ({
                 feedback: 'Not interested in the course'
             });
             toast.info('Lead marked as Not Interested');
+            if (onStatusChanged) onStatusChanged();
             if (onComplete) onComplete();
             if (onDataRefresh) onDataRefresh();
         } catch (error) {
@@ -177,6 +181,7 @@ const CallModal = ({
                 feedback: 'Bad data / Invalid lead'
             });
             toast.warning('Lead marked as Bad / Invalid Data');
+            if (onStatusChanged) onStatusChanged();
             if (onComplete) onComplete();
             if (onDataRefresh) onDataRefresh();
         } catch (error) {
@@ -213,6 +218,7 @@ const CallModal = ({
             });
             setOverrideState('not_connected');
             toast.info('Marked as Not Connected (1st Attempt)');
+            if (onStatusChanged) onStatusChanged();
             if (onComplete) onComplete();
             if (onDataRefresh) onDataRefresh();
         } catch (error) {
@@ -235,6 +241,7 @@ const CallModal = ({
             });
             setOverrideState('not_connected');
             toast.info('Marked as Not Connected (2nd Attempt)');
+            if (onStatusChanged) onStatusChanged();
             if (onComplete) onComplete();
             if (onDataRefresh) onDataRefresh();
         } catch (error) {
@@ -257,6 +264,7 @@ const CallModal = ({
             });
             setOverrideState('not_connected');
             toast.info('Marked as Not Connected (3rd Attempt)');
+            if (onStatusChanged) onStatusChanged();
             if (onComplete) onComplete();
             if (onDataRefresh) onDataRefresh();
         } catch (error) {
@@ -279,6 +287,7 @@ const CallModal = ({
             });
             setOverrideState('not_connected');
             toast.warning('Marked as Finally Not Connected');
+            if (onStatusChanged) onStatusChanged();
             if (onComplete) onComplete();
             if (onDataRefresh) onDataRefresh();
         } catch (error) {
@@ -355,6 +364,7 @@ const CallModal = ({
                 statusCode: 'NOT_INTERESTED',
                 feedback: 'Followup not interested'
             });
+            if (onStatusChanged) onStatusChanged();
             if (onComplete) onComplete();
             if (onDataRefresh) onDataRefresh();
         } catch (error) {

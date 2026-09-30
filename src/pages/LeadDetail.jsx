@@ -33,8 +33,19 @@ import { completeFollowup, cancelFollowup, markFollowupNotConnected } from '../S
 const LeadDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { navTo, showToast, openAddLeadModal, leadRefreshTrigger } = useAppContext();
+  const { navTo, showToast, openAddLeadModal, leadRefreshTrigger, setNavGuard, clearNavGuard } = useAppContext();
   const { hasPermission } = usePermissions();
+
+  // Navigation guard: reset whenever a new lead is opened
+  // Check sessionStorage so same lead reopened in same tab skips the restriction
+  const [statusChangedThisVisit, setStatusChangedThisVisit] = useState(() => {
+    try {
+      const changed = JSON.parse(sessionStorage.getItem('statusChangedLeads') || '[]');
+      return changed.includes(String(id));
+    } catch {
+      return false;
+    }
+  });
 
   // Modals state
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
@@ -135,6 +146,15 @@ const LeadDetail = () => {
 
   // Initial fetch on route id change (clearing previous state immediately to avoid ghost/stale data)
   useEffect(() => {
+    // Re-check sessionStorage for the new lead id before resetting
+    let alreadyChanged = false;
+    try {
+      const changed = JSON.parse(sessionStorage.getItem('statusChangedLeads') || '[]');
+      alreadyChanged = changed.includes(String(id));
+    } catch {
+      alreadyChanged = false;
+    }
+    setStatusChangedThisVisit(alreadyChanged);
     setLeadDetails(null);
     setStatusHistory([]);
     setFollowUps([]);
@@ -147,6 +167,84 @@ const LeadDetail = () => {
       loadLeadData(false);
     }
   }, [leadRefreshTrigger, id, loadLeadData]);
+
+  // Navigation guard: block ALL React Router navigations until status has been changed this visit
+  // Mark status as changed: update state + persist in sessionStorage for this tab session
+  const markStatusChanged = useCallback(() => {
+    try {
+      const changed = JSON.parse(sessionStorage.getItem('statusChangedLeads') || '[]');
+      if (!changed.includes(String(id))) {
+        changed.push(String(id));
+        sessionStorage.setItem('statusChangedLeads', JSON.stringify(changed));
+      }
+    } catch {
+      // sessionStorage unavailable — still update state
+    }
+    setStatusChangedThisVisit(true);
+  }, [id]);
+
+  // Keep a ref so callbacks always read the latest value without stale closures.
+  const statusChangedRef = useRef(statusChangedThisVisit);
+  useEffect(() => { statusChangedRef.current = statusChangedThisVisit; }, [statusChangedThisVisit]);
+
+  // Register a nav guard in AppContext so sidebar (and every navTo caller) is blocked.
+  // The guard callback returns true = blocked. Cleared when status changes or on unmount.
+  useEffect(() => {
+    if (statusChangedThisVisit) {
+      clearNavGuard();
+      return;
+    }
+    setNavGuard(() => {
+      toast.warn('Please change the lead status before leaving this page.', {
+        toastId: 'nav-blocked-lead-status',
+      });
+      return true; // block
+    });
+    return () => clearNavGuard();
+  }, [statusChangedThisVisit, setNavGuard, clearNavGuard]);
+
+  // Guarded navigate for direct navigate() calls inside LeadDetail (back button etc.)
+  const guardedNavigate = useCallback((...args) => {
+    if (!statusChangedRef.current) {
+      toast.warn('Please change the lead status before leaving this page.', {
+        toastId: 'nav-blocked-lead-status',
+      });
+      return;
+    }
+    navigate(...args);
+  }, [navigate]);
+
+  // Block browser back button (popstate) until status has been changed this visit
+  useEffect(() => {
+    if (statusChangedThisVisit) return;
+
+    // Push a sentinel entry so the back button hits it first instead of leaving the page
+    window.history.pushState(null, '', window.location.href);
+
+    const handlePopState = () => {
+      // Re-push so repeated back presses keep hitting the guard
+      window.history.pushState(null, '', window.location.href);
+      toast.warn('Please change the lead status before leaving this page.', {
+        toastId: 'nav-blocked-lead-status',
+      });
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [statusChangedThisVisit, id]);
+
+  // Block URL bar navigation / tab close when status not yet changed
+  useEffect(() => {
+    if (statusChangedThisVisit) return;
+
+    const handleBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = ''; // required for Chrome to show the dialog
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [statusChangedThisVisit, id]);
 
   // Auto-select interested course when lead details are loaded
   useEffect(() => {
@@ -590,6 +688,7 @@ const LeadDetail = () => {
               statusCode: formData.leadStatusCode,
               feedback: formData.remarks || ""
             });
+            markStatusChanged();
           } catch (error) {
             console.error('Error changing lead status in background:', error);
           }
@@ -641,6 +740,7 @@ const LeadDetail = () => {
       });
 
       if (response?.data?.success) {
+        markStatusChanged();
         toast.success('Student verified with CMS & registered successfully!');
       } else {
         toast.error(response?.data?.message || 'Failed to change lead status');
@@ -809,7 +909,7 @@ const LeadDetail = () => {
         </div>
         <h3 className="text-lg font-bold text-gray-900 mb-2">Lead Not Found</h3>
         <p className="text-sm text-gray-500 mb-6">The requested lead could not be found or you do not have permission to view it.</p>
-        <CustomButton variant="primary" onClick={() => navigate(-1)}>
+        <CustomButton variant="primary" onClick={() => guardedNavigate(-1)}>
           Back to Leads
         </CustomButton>
       </div>
@@ -823,7 +923,7 @@ const LeadDetail = () => {
         <div className="flex items-center gap-3">
           <button
             className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-600 hover:text-gray-900"
-            onClick={() => navigate(-1)}
+            onClick={() => guardedNavigate(-1)}
             title="Back to Leads"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -1053,7 +1153,7 @@ const LeadDetail = () => {
                     title="Call Lead"
                   >
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
                     </svg>
                     Call
                   </button>
@@ -1896,6 +1996,7 @@ const LeadDetail = () => {
         followups={followUps}
         onComplete={() => loadLeadData(false)}
         onDataRefresh={() => loadLeadData(false)}
+        onStatusChanged={() => markStatusChanged()}
         onCompleteFollowup={handleCompleteFollowup}
         onCancelFollowup={handleCancelFollowup}
         onFollowupNotConnected={handleFollowupNotConnected}

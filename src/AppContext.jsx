@@ -1,4 +1,4 @@
-import { createContext, useContext, useState,useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { usePermissions } from './PermissionContext';
@@ -25,6 +25,18 @@ export const AppProvider = ({ children }) => {
 
   const navigate = useNavigate();
   const { clearPermissions } = usePermissions();
+
+  // Navigation guard: any page can register a callback that returns true to block navigation.
+  // The callback receives no args and should call toast itself if needed.
+  const navGuardRef = useRef(null);
+
+  const setNavGuard = useCallback((guardFn) => {
+    navGuardRef.current = guardFn;
+  }, []);
+
+  const clearNavGuard = useCallback(() => {
+    navGuardRef.current = null;
+  }, []);
 
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
   const toggleDarkMode = () => setIsDarkMode((prev) => !prev);
@@ -127,6 +139,10 @@ useEffect(() => {
   };
 
   const navTo = (page, params = {}) => {
+    // Check navigation guard (e.g. LeadDetail requires status change before leaving)
+    if (navGuardRef.current && navGuardRef.current()) {
+      return; // guard blocked navigation and showed its own toast
+    }
     setCurrentPage(page);
     setIsSidebarOpen(false);
     // Navigate to the route path. Assumes page names match routes.
@@ -186,6 +202,8 @@ useEffect(() => {
         toggleSettingsExpanded,
         leadRefreshTrigger,
         triggerLeadRefresh,
+        setNavGuard,
+        clearNavGuard,
       }}
     >
       {children}

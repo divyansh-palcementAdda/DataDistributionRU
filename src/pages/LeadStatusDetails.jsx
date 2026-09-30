@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FiEye, FiMessageSquare, FiUserPlus } from 'react-icons/fi';
+import { FiEye, FiMessageSquare, FiUserPlus, FiFilter, FiCheckSquare } from 'react-icons/fi';
 import { useAppContext } from '../AppContext';
 import { usePermissions } from '../PermissionContext';
 import { getLeadStatusById } from '../Services/leadStatus/leadStatusService';
@@ -10,6 +10,17 @@ import {
     getBoardBreakdown,
     getCourseTypesBreakdown,
 } from '../Services/cards/cardService';
+import {
+    getBoardsDropdown,
+    getCourseTypesDropdown,
+    getCoursesDropdown,
+    getDepartmentsDropdown,
+    getGradesDropdown,
+    getLeadSourcesDropdown,
+    getLeadStatusesDropdown,
+    getUsersDropdown,
+} from '../Services/drop-down/dropDownService';
+import { DEFAULT_LEAD_FILTERS } from '../Services/lead/leadFilterModel';
 import axiosInstance from '../axiosInstance/axios';
 import ApiRoutes from '../apiRoutes/allApiRoutes';
 import LeadSource from '../component/reusable/DashBoards/leadSource';
@@ -25,10 +36,20 @@ import UserAllocationListModal from '../component/reusable/segregation/UserAlloc
 import ReusableTable from '../component/reusable/table';
 import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import AssignLeadModal from '../component/reusable/Leads/AssignLeadModal';
+import LeadFilterDrawer from '../component/reusable/Leads/LeadFilterDrawer';
+import {
+    renderLeadInfoCell,
+    renderCourseCell,
+    renderSourceCell,
+    renderStatusCell,
+    renderCounselorCell,
+    renderFollowUpCell,
+    renderLeadDateCell,
+} from '../component/reusable/leadTableHelpers';
 import * as XLSX from 'xlsx';
 
 // ─── Lead table columns ───────────────────────────────────────────────────────
-const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, currentData, hasPermission) => [
+const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, currentData, hasPermission, onLeadClick, showToast) => [
     {
         key: 'checkbox',
         header: hasPermission('LEAD_ASSIGN') ? (
@@ -36,7 +57,7 @@ const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, cu
                 type="checkbox"
                 checked={currentData.length > 0 && currentData.every(r => selectedRows.has(r.id ?? r.leadId))}
                 onChange={(e) => onToggleAll(e.target.checked, currentData)}
-                style={{ width: '15px', height: '15px', cursor: 'pointer', accentColor: '#4f46e5' }}
+                className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
                 title="Select All"
             />
         ) : null,
@@ -50,7 +71,7 @@ const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, cu
                     checked={selectedRows.has(rowId)}
                     onChange={() => onToggleRow(rowId)}
                     onClick={(e) => e.stopPropagation()}
-                    style={{ width: '15px', height: '15px', cursor: 'pointer', accentColor: '#4f46e5' }}
+                    className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer accent-indigo-600"
                 />
             );
         },
@@ -60,138 +81,43 @@ const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, cu
         header: 'S.No',
         sortable: false,
         render: (value, row, index) => (
-            <span className="font-semibold text-gray-700">{page * size + index + 1}</span>
+            <span className="font-semibold text-slate-500 text-xs font-mono">{page * size + index + 1}</span>
         ),
     },
     {
-        key: 'leadCode',
-        header: 'Lead Code',
-        render: (value, row) => {
-            const v = value || row.leadCode;
-            const display = typeof v === 'object' ? (v?.code || v?.name || 'N/A') : (v || 'N/A');
-            return <span className="font-semibold text-blue-600">{display}</span>;
-        },
-    },
-    {
-        key: 'lead',
+        key: 'fullName',
         header: 'Lead Info',
-        render: (value, row) => (
-            <div className="font-semibold text-gray-800">
-                {typeof row.fullName === 'object'
-                    ? row.fullName?.name || row.fullName?.firstName || 'N/A'
-                    : row.fullName || 'N/A'}
-            </div>
-        ),
+        render: (value, row) => renderLeadInfoCell(row, onLeadClick, showToast),
     },
     {
         key: 'interestedCourses',
         header: 'Course',
-        render: (value, row) => {
-            // Priority: interestedCourses[0] > registered course
-            if (Array.isArray(row.interestedCourses) && row.interestedCourses.length > 0) {
-                const c = row.interestedCourses[0];
-                return (typeof c === 'object' && c !== null) ? (c.courseName || c.name || 'N/A') : (c || 'N/A');
-            }
-            if (row.course && typeof row.course === 'object') return row.course.courseName || row.course.name || 'N/A';
-            return 'N/A';
-        },
+        render: (value, row) => renderCourseCell(row),
     },
     {
         key: 'source',
         header: 'Source',
-        render: (value, row) => {
-            // Check if leadSources array exists and has items
-            if (Array.isArray(row.leadSources) && row.leadSources.length > 0) {
-                const sourcesToShow = row.leadSources.slice(0, 2);
-                const remainingCount = row.leadSources.length - 2;
-
-                return (
-                    <div className="flex items-center gap-1">
-                        {sourcesToShow.map((source, index) => {
-                            // Generate a consistent color based on source name or code
-                            const colors = [
-                                'bg-blue-100 text-blue-800 border-blue-200',
-                                'bg-green-100 text-green-800 border-green-200',
-                                'bg-purple-100 text-purple-800 border-purple-200',
-                                'bg-orange-100 text-orange-800 border-orange-200',
-                                'bg-pink-100 text-pink-800 border-pink-200',
-                                'bg-teal-100 text-teal-800 border-teal-200',
-                                'bg-indigo-100 text-indigo-800 border-indigo-200',
-                                'bg-red-100 text-red-800 border-red-200',
-                            ];
-                            const colorIndex = index % colors.length;
-                            const sourceName = source?.name || source?.code || 'N/A';
-
-                            return (
-                                <span
-                                    key={source?.id || index}
-                                    className={`text-[10px] font-medium px-1.5 py-0.5 rounded border ${colors[colorIndex]}`}
-                                >
-                                    {sourceName}
-                                </span>
-                            );
-                        })}
-                        {remainingCount > 0 && (
-                            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-gray-100 text-gray-600 border border-gray-200">
-                                +{remainingCount}
-                            </span>
-                        )}
-                    </div>
-                );
-            }
-            // Fallback to sourceDetails if leadSources is empty
-            if (row.sourceDetails) {
-                return (
-                    <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-gray-100 text-gray-800 border border-gray-200">
-                        {row.sourceDetails}
-                    </span>
-                );
-            }
-            return 'N/A';
-        },
+        render: (value, row) => renderSourceCell(row),
     },
     {
         key: 'currentStatus',
         header: 'Status',
-        render: (value, row) => {
-            const v = value || row.currentStatus;
-            const display = typeof v === 'object' ? (v?.name || v?.code || 'N/A') : (v || 'N/A');
-            return (
-                <span className="badge bg-slate-200 text-slate-800 px-2 py-1 rounded text-xs font-medium">
-                    {display}
-                </span>
-            );
-        },
+        render: (value, row) => renderStatusCell(value, row),
     },
     {
         key: 'assignedTo',
         header: 'Counselor',
-        render: (value, row) => {
-            if (typeof row.assignedTo === 'object' && row.assignedTo !== null)
-                return `${row.assignedTo.firstName || ''} ${row.assignedTo.lastName || ''}`.trim() || 'Not Allotted';
-            return row.assignedTo || 'Not Allotted';
-        },
+        render: (value, row) => renderCounselorCell(row),
     },
     {
         key: 'nextFollowUpDate',
         header: 'Follow-up',
-        render: (value, row) => {
-            if (row.nextFollowUpDate) {
-                try { return new Date(row.nextFollowUpDate).toLocaleDateString(); }
-                catch { return 'Invalid Date'; }
-            }
-            return 'None';
-        },
+        render: (value, row) => renderFollowUpCell(row),
     },
     {
-        key: 'createdBy',
-        header: 'Created By',
-        render: (value, row) => {
-            const v = value || row.createdBy;
-            if (typeof v === 'object' && v !== null)
-                return `${v.firstName || ''} ${v.lastName || ''}`.trim() || 'N/A';
-            return v || 'N/A';
-        },
+        key: 'createdAt',
+        header: 'Lead Date',
+        render: (value, row) => renderLeadDateCell(row),
     },
 ];
 
@@ -248,6 +174,12 @@ const fetchLeadsForCard = async (activeFilters, statusId, page, size, sortBy, so
     const filterRequest = {};
     activeFilters.forEach(filter => {
         switch (filter.type) {
+            case 'leadStatus':
+                if (!filterRequest.leadStatusIds) filterRequest.leadStatusIds = [];
+                if (!filterRequest.leadStatusIds.includes(filter.value)) {
+                    filterRequest.leadStatusIds.push(filter.value);
+                }
+                break;
             case 'leadSource':
                 if (!filterRequest.leadSourceIds) filterRequest.leadSourceIds = [];
                 if (!filterRequest.leadSourceIds.includes(filter.value)) {
@@ -332,11 +264,32 @@ const LeadStatusDetails = () => {
     // row selection & assign modal
     const [selectedRows, setSelectedRows] = useState(new Set());
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+    const [userAllocationWorkingOnly, setUserAllocationWorkingOnly] = useState(false);
+    const [autoSelectCount, setAutoSelectCount] = useState('');
+    const pendingAutoSelectRef = useRef(null);
+
+    // lead filter drawer state
+    const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
+    const [appliedFilters, setAppliedFilters] = useState(() => ({
+        ...DEFAULT_LEAD_FILTERS,
+        leadStatusIds: id ? [id] : [] // Always set to current lead status
+    }));
+
+    // dropdown lookups for filter drawer
+    const [lookups, setLookups] = useState({
+        sources: [],
+        courseTypes: [],
+        courses: [],
+        departments: [],
+        users: [],
+        boards: [],
+        grades: [],
+        statuses: [],
+    });
 
     // user allocation list modal
     const [isUserAllocationModalOpen, setIsUserAllocationModalOpen] = useState(false);
     const [userAllocationInitialWorkingOnly, setUserAllocationInitialWorkingOnly] = useState(false);
-    const [userAllocationWorkingOnly, setUserAllocationWorkingOnly] = useState(false);
 
     // ── fetch lead status details ──
     useEffect(() => {
@@ -364,7 +317,7 @@ const LeadStatusDetails = () => {
     useEffect(() => {
         if (!id) return;
         const fetchDashboardData = async () => {
-            const params = { statusId: id };
+            const params = { statusId: appliedFilters.leadStatusIds?.[0] || id };
             try {
                 const [sourceRes, courseTypeRes, boardRes, gradeRes] = await Promise.all([
                     getLeadSourceBreakdown(params).catch(() => null),
@@ -384,20 +337,65 @@ const LeadStatusDetails = () => {
             }
         };
         fetchDashboardData();
-    }, [id]);
+    }, [id, appliedFilters.leadStatusIds]);
 
     // ── fetch leads when filters change or pagination/sort changes ──
     useEffect(() => {
         if (!id) return;
         setTableLoading(true);
-        fetchLeadsForCard(activeFilters, id, tablePage, tableSize, tableSortBy, tableSortDir)
+        fetchLeadsForCard(activeFilters, appliedFilters.leadStatusIds?.[0] || id, tablePage, tableSize, tableSortBy, tableSortDir)
             .then(({ content, totalElements, totalPages }) => {
                 setTableData(content);
                 setTableTotalElements(totalElements);
                 setTableTotalPages(totalPages);
                 setTableLoading(false);
             });
-    }, [activeFilters, id, tablePage, tableSize, tableSortBy, tableSortDir]);
+    }, [activeFilters, appliedFilters.leadStatusIds, id, tablePage, tableSize, tableSortBy, tableSortDir]);
+
+    // ── fetch dropdown lookups for filter drawer ──
+    useEffect(() => {
+        let isCancelled = false;
+        const fetchLookups = async () => {
+            try {
+                const [
+                    sourcesRes,
+                    courseTypesRes,
+                    coursesRes,
+                    deptRes,
+                    usersRes,
+                    boardsRes,
+                    gradesRes,
+                    statusesRes,
+                ] = await Promise.allSettled([
+                    getLeadSourcesDropdown(),
+                    getCourseTypesDropdown(),
+                    getCoursesDropdown(),
+                    getDepartmentsDropdown(),
+                    getUsersDropdown(),
+                    getBoardsDropdown(),
+                    getGradesDropdown(),
+                    getLeadStatusesDropdown(),
+                ]);
+
+                if (!isCancelled) {
+                    setLookups({
+                        sources: sourcesRes.status === 'fulfilled' && sourcesRes.value?.data ? (Array.isArray(sourcesRes.value.data) ? sourcesRes.value.data : []) : [],
+                        courseTypes: courseTypesRes.status === 'fulfilled' && courseTypesRes.value?.data ? (Array.isArray(courseTypesRes.value.data) ? courseTypesRes.value.data : []) : [],
+                        courses: coursesRes.status === 'fulfilled' && coursesRes.value?.data ? (Array.isArray(coursesRes.value.data) ? coursesRes.value.data : []) : [],
+                        departments: deptRes.status === 'fulfilled' && deptRes.value?.data ? (Array.isArray(deptRes.value.data) ? deptRes.value.data : []) : [],
+                        users: usersRes.status === 'fulfilled' && usersRes.value?.data ? (Array.isArray(usersRes.value.data) ? usersRes.value.data : []) : [],
+                        boards: boardsRes.status === 'fulfilled' && boardsRes.value?.data ? (Array.isArray(boardsRes.value.data) ? boardsRes.value.data : []) : [],
+                        grades: gradesRes.status === 'fulfilled' && gradesRes.value?.data ? (Array.isArray(gradesRes.value.data) ? gradesRes.value.data : []) : [],
+                        statuses: statusesRes.status === 'fulfilled' && statusesRes.value?.data ? (Array.isArray(statusesRes.value.data) ? statusesRes.value.data : []) : [],
+                    });
+                }
+            } catch (err) {
+                console.error('Failed to fetch filter drawer lookups', err);
+            }
+        };
+        fetchLookups();
+        return () => { isCancelled = true; };
+    }, []);
 
     // ── card click handler - toggle filters on/off ──
     const handleCardClick = (card) => {
@@ -422,23 +420,116 @@ const LeadStatusDetails = () => {
         setSelectedRows(new Set());
     };
 
-    // ── remove specific filter ──
-    const handleRemoveFilter = (filterType, filterValue) => {
-        setActiveFilters(prev => prev.filter(f => !(f.type === filterType && f.value === filterValue)));
+    // ── clear all filters ──
+    const handleClearAllFilters = () => {
+        setActiveFilters([]);
+        setAppliedFilters(prev => ({
+            ...DEFAULT_LEAD_FILTERS,
+            leadStatusIds: [id] // Always keep current page's status
+        }));
         setTablePage(0);
         setSelectedRows(new Set());
     };
 
-    // ── clear all filters ──
-    const handleClearAllFilters = () => {
-        setActiveFilters([]);
+    // ── drawer apply handler ──
+    const handleDrawerApply = (newFilters) => {
+        setAppliedFilters(newFilters);
+
+        // Convert drawer filters to activeFilters format for card clicks
+        const newActiveFilters = [];
+
+        if (newFilters.leadStatusIds?.length > 0) {
+            newFilters.leadStatusIds.forEach(statusId => {
+                const status = lookups.statuses.find(s => s.id === statusId);
+                if (status) {
+                    newActiveFilters.push({ type: 'leadStatus', value: statusId, label: status.name || status.code });
+                }
+            });
+        }
+
+        if (newFilters.leadSourceIds?.length > 0) {
+            newFilters.leadSourceIds.forEach(sourceId => {
+                const source = lookups.sources.find(s => s.id === sourceId);
+                if (source) {
+                    newActiveFilters.push({ type: 'leadSource', value: sourceId, label: source.name || source.code });
+                }
+            });
+        }
+
+        if (newFilters.courseTypeIds?.length > 0) {
+            newFilters.courseTypeIds.forEach(courseTypeId => {
+                const courseType = lookups.courseTypes.find(c => c.id === courseTypeId);
+                if (courseType) {
+                    newActiveFilters.push({ type: 'courseType', value: courseTypeId, label: courseType.name });
+                }
+            });
+        }
+
+        if (newFilters.boardIds?.length > 0) {
+            newFilters.boardIds.forEach(boardId => {
+                const board = lookups.boards.find(b => b.id === boardId);
+                if (board) {
+                    newActiveFilters.push({ type: 'board', value: boardId, label: board.name });
+                }
+            });
+        }
+
+        if (newFilters.gradeIds?.length > 0) {
+            newFilters.gradeIds.forEach(gradeId => {
+                const grade = lookups.grades.find(g => g.id === gradeId);
+                if (grade) {
+                    newActiveFilters.push({ type: 'grade', value: gradeId, label: grade.name });
+                }
+            });
+        }
+
+        if (newFilters.isAllotted) {
+            newActiveFilters.push({ type: 'allotted', value: true, label: 'Allotted' });
+        }
+
+        if (newFilters.isAvailed) {
+            newActiveFilters.push({ type: 'availed', value: true, label: 'Availed' });
+        }
+
+        if (newFilters.isUnallotted) {
+            newActiveFilters.push({ type: 'unallotted', value: true, label: 'Unallotted' });
+        }
+
+        setActiveFilters(newActiveFilters);
         setTablePage(0);
+        setTableSize(10);
         setSelectedRows(new Set());
+        setAutoSelectCount('');
+        setIsFilterDrawerOpen(false);
+    };
+
+    // ── quick select handler ──
+    const handleAutoSelectCount = (e) => {
+        const val = e.target.value;
+        setAutoSelectCount(val);
+        const count = parseInt(val, 10);
+        if (!isNaN(count) && count > 0) {
+            if (count <= tableData.length) {
+                // Data already loaded — select immediately and sync page size
+                const topIds = tableData.slice(0, count).map(lead => {
+                    const rowId = typeof lead.id === 'object' ? lead.id?.id : lead.id;
+                    const rowLeadId = typeof lead.leadId === 'object' ? lead.leadId?.id : lead.leadId;
+                    return rowId || rowLeadId;
+                });
+                setSelectedRows(new Set(topIds));
+                // Adjust page size to accommodate selection if needed
+                if (count > tableSize) {
+                    setTableSize(count);
+                }
+            }
+        } else {
+            setSelectedRows(new Set());
+        }
     };
 
     // ── update filterRequest when activeFilters change for cards ──
     useEffect(() => {
-        const newFilterRequest = { statusId: id, leadStatusIds: [id] };
+        const newFilterRequest = { statusId: appliedFilters.leadStatusIds?.[0] || id, leadStatusIds: appliedFilters.leadStatusIds || [id] };
         activeFilters.forEach(filter => {
             switch (filter.type) {
                 case 'unallotted':
@@ -455,12 +546,16 @@ const LeadStatusDetails = () => {
             }
         });
         setFilterRequest(newFilterRequest);
-    }, [activeFilters, id]);
+    }, [activeFilters, appliedFilters.leadStatusIds, id]);
 
-    // ── initialize filterRequest with statusId ──
+    // ── initialize filterRequest with leadStatusIds ──
     useEffect(() => {
         if (id) {
             setFilterRequest({ statusId: id, leadStatusIds: [id] });
+            setAppliedFilters(prev => ({
+                ...prev,
+                leadStatusIds: [id]
+            }));
         }
     }, [id]);
 
@@ -469,6 +564,20 @@ const LeadStatusDetails = () => {
         if (activeFilters.length === 0) return 'All Leads';
         if (activeFilters.length === 1) return activeFilters[0].label;
         return `Filtered (${activeFilters.length})`;
+    };
+
+    // ── remove specific filter (support leadStatus) ──
+    const handleRemoveFilter = (filterType, filterValue) => {
+        if (filterType === 'leadStatus') {
+            // For lead status, we need to reset to the current page's status
+            setAppliedFilters(prev => ({
+                ...prev,
+                leadStatusIds: [id]
+            }));
+        }
+        setActiveFilters(prev => prev.filter(f => !(f.type === filterType && f.value === filterValue)));
+        setTablePage(0);
+        setSelectedRows(new Set());
     };
 
     // ── row selection handlers ──
@@ -609,23 +718,6 @@ const LeadStatusDetails = () => {
                             <p className="text-sm text-gray-500 mt-1">View comprehensive details for this lead status</p>
                         </div>
                     </div>
-                    <button
-                        onClick={downloadExcel}
-                        disabled={tableData.length === 0}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs rounded-lg shadow-sm hover:shadow transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <svg
-                            width="12"
-                            height="12"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                        >
-                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
-                        </svg>
-                        Download
-                    </button>
                 </div>
 
                 {/* ── Detail Card (TOP) ── */}
@@ -712,25 +804,25 @@ const LeadStatusDetails = () => {
                             onCardClick={handleCardClick}
                             activeFilters={activeFilters}
                             filterRequest={filterRequest}
-                            statusId={id}
+                            statusId={appliedFilters.leadStatusIds?.[0] || id}
                         />
                         <UnallottedCard
                             onCardClick={handleCardClick}
                             activeFilters={activeFilters}
                             filterRequest={filterRequest}
-                            statusId={id}
+                            statusId={appliedFilters.leadStatusIds?.[0] || id}
                         />
                         <AvailedCard
                             onCardClick={handleCardClick}
                             activeFilters={activeFilters}
                             filterRequest={filterRequest}
-                            statusId={id}
+                            statusId={appliedFilters.leadStatusIds?.[0] || id}
                         />
                     </div>
 
                     {/* User Allocation & Workload Analytics Cards */}
                     <UserAllocationSummaryCards
-                        leadStatusId={id}
+                        leadStatusId={appliedFilters.leadStatusIds?.[0] || id}
                         filterRequest={filterRequest}
                         activeFilters={activeFilters}
                         scopeTitle={details?.name || 'Lead Status'}
@@ -804,20 +896,81 @@ const LeadStatusDetails = () => {
                             )}
                         </div>
                         <div className="flex items-center gap-2">
-                            {hasPermission('LEAD_ASSIGN') && (
-                                <button
-                                    onClick={() => setIsAssignModalOpen(true)}
-                                    disabled={selectedRows.size === 0}
-                                    className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all shadow-sm"
-                                    style={{
-                                        backgroundColor: selectedRows.size === 0 ? 'var(--gray-200, #e5e7eb)' : '#4f46e5',
-                                        color: selectedRows.size === 0 ? 'var(--gray-400, #9ca3af)' : '#fff',
-                                        cursor: selectedRows.size === 0 ? 'not-allowed' : 'pointer',
-                                    }}
+                            <button
+                                onClick={downloadExcel}
+                                disabled={tableData.length === 0}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs rounded-lg shadow-sm hover:shadow transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <svg
+                                    width="12"
+                                    height="12"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
                                 >
-                                    <FiUserPlus size={13} />
-                                    Allot Leads{selectedRows.size > 0 ? ` (${selectedRows.size})` : ''}
-                                </button>
+                                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                                </svg>
+                                Download
+                            </button>
+                            <button
+                                onClick={() => setIsFilterDrawerOpen(true)}
+                                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all shadow-sm"
+                                style={{
+                                    backgroundColor: '#9333ea',
+                                    color: '#fff',
+                                    cursor: 'pointer',
+                                }}
+                            >
+                                <FiFilter size={13} />
+                                Advanced Filters
+                            </button>
+                            {hasPermission('LEAD_ASSIGN') && (
+                                <>
+                                    {/* Quick Auto-select input group */}
+                                    <div className="flex items-center bg-slate-50/90 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-600">
+                                        <span className="font-semibold text-slate-500 mr-2 select-none">Quick Select:</span>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            max={tableData.length}
+                                            value={autoSelectCount}
+                                            onChange={handleAutoSelectCount}
+                                            onBlur={() => {
+                                                if (!autoSelectCount) {
+                                                    setTableSize(10);
+                                                    setTablePage(0);
+                                                }
+                                            }}
+                                            onWheel={(e) => e.target.blur()}
+                                            placeholder="Qty"
+                                            className="w-12 bg-white border border-slate-200 rounded px-1.5 py-0.5 text-xs text-center font-bold text-indigo-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                            title="Number of leads to auto-select from top"
+                                        />
+                                    </div>
+
+                                    {/* Selected Count Badge */}
+                                    {selectedRows.size > 0 && (
+                                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 border border-emerald-200/80 rounded-lg text-xs font-bold text-emerald-700">
+                                            <FiCheckSquare size={13} className="text-emerald-600" />
+                                            <span>{selectedRows.size} Selected</span>
+                                        </div>
+                                    )}
+
+                                    <button
+                                        onClick={() => setIsAssignModalOpen(true)}
+                                        disabled={selectedRows.size === 0}
+                                        className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all shadow-sm"
+                                        style={{
+                                            backgroundColor: selectedRows.size === 0 ? 'var(--gray-200, #e5e7eb)' : '#4f46e5',
+                                            color: selectedRows.size === 0 ? 'var(--gray-400, #9ca3af)' : '#fff',
+                                            cursor: selectedRows.size === 0 ? 'not-allowed' : 'pointer',
+                                        }}
+                                    >
+                                        <FiUserPlus size={13} />
+                                        Allot Leads{selectedRows.size > 0 ? ` (${selectedRows.size})` : ''}
+                                    </button>
+                                </>
                             )}
                         </div>
                     </div>
@@ -830,7 +983,7 @@ const LeadStatusDetails = () => {
                     ) : (
                         <div className="card">
                             <ReusableTable
-                                columns={buildLeadColumns(tablePage, tableSize, selectedRows, handleToggleRow, handleToggleAll, tableData, hasPermission)}
+                                columns={buildLeadColumns(tablePage, tableSize, selectedRows, handleToggleRow, handleToggleAll, tableData, hasPermission, navTo, showToast)}
                                 data={tableData}
                                 isServerSide={true}
                                 totalElements={tableTotalElements}
@@ -876,7 +1029,7 @@ const LeadStatusDetails = () => {
                 {/* ── User Allocation & Workload Table (Always Open Below All Lead Table) ── */}
                 <div id="user-allocation-table-section" className="mt-8">
                     <UserAllocationTable
-                        leadStatusId={id}
+                        leadStatusId={appliedFilters.leadStatusIds?.[0] || id}
                         filterRequest={filterRequest}
                         activeFilters={activeFilters}
                         scopeTitle={details?.name || 'Lead Status'}
@@ -911,7 +1064,7 @@ const LeadStatusDetails = () => {
                     setTablePage((p) => p);
                 }}
                 filters={{
-                    leadStatusIds: id ? [id] : [],
+                    leadStatusIds: appliedFilters.leadStatusIds || (id ? [id] : []),
                     ...activeFilters.reduce((acc, filter) => {
                         if (filter.type === 'leadSource') acc.leadSourceIds = [...(acc.leadSourceIds || []), filter.value];
                         if (filter.type === 'courseType') acc.courseTypeIds = [...(acc.courseTypeIds || []), filter.value];
@@ -932,7 +1085,7 @@ const LeadStatusDetails = () => {
                 onClose={() => setIsUserAllocationModalOpen(false)}
                 initialWorkingOnly={userAllocationInitialWorkingOnly}
                 filters={{
-                    leadStatusIds: id ? [id] : [],
+                    leadStatusIds: appliedFilters.leadStatusIds || (id ? [id] : []),
                     ...activeFilters.reduce((acc, filter) => {
                         if (filter.type === 'leadSource') acc.leadSourceIds = [...(acc.leadSourceIds || []), filter.value];
                         if (filter.type === 'courseType') acc.courseTypeIds = [...(acc.courseTypeIds || []), filter.value];
@@ -945,6 +1098,15 @@ const LeadStatusDetails = () => {
                     }, {}),
                 }}
                 scopeTitle={details?.name || 'Lead Status'}
+            />
+
+            {/* ── Lead Filter Drawer ── */}
+            <LeadFilterDrawer
+                isOpen={isFilterDrawerOpen}
+                onClose={() => setIsFilterDrawerOpen(false)}
+                appliedFilters={appliedFilters}
+                onApply={handleDrawerApply}
+                lookups={lookups}
             />
         </>
     );

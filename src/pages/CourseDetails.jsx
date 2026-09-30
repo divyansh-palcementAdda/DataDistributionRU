@@ -32,6 +32,17 @@ import {
     getBoardBreakdown,
     getCourseTypesBreakdown,
 } from '../Services/cards/cardService';
+import {
+    getBoardsDropdown,
+    getCourseTypesDropdown,
+    getCoursesDropdown,
+    getDepartmentsDropdown,
+    getGradesDropdown,
+    getLeadSourcesDropdown,
+    getLeadStatusesDropdown,
+    getUsersDropdown,
+} from '../Services/drop-down/dropDownService';
+import { DEFAULT_LEAD_FILTERS } from '../Services/lead/leadFilterModel';
 import axiosInstance from '../axiosInstance/axios';
 import ApiRoutes from '../apiRoutes/allApiRoutes';
 import CustomButton from '../component/reusable/CustomButton';
@@ -51,7 +62,8 @@ import UserAllocationSummaryCards from '../component/reusable/segregation/UserAl
 import UserAllocationTable from '../component/reusable/segregation/UserAllocationTable';
 import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import AssignLeadModal from '../component/reusable/Leads/AssignLeadModal';
-import { FiEye, FiMessageSquare, FiUserPlus } from 'react-icons/fi';
+import LeadFilterDrawer from '../component/reusable/Leads/LeadFilterDrawer';
+import { FiEye, FiMessageSquare, FiUserPlus, FiFilter, FiCheckSquare } from 'react-icons/fi';
 import {
     renderLeadInfoCell,
     renderCourseCell,
@@ -968,6 +980,27 @@ const CourseDetails = () => {
     const [selectedRows, setSelectedRows] = useState(new Set());
     const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
     const [userAllocationWorkingOnly, setUserAllocationWorkingOnly] = useState(false);
+    const [autoSelectCount, setAutoSelectCount] = useState('');
+    const pendingAutoSelectRef = useRef(null);
+
+    // lead filter drawer state
+    const [isFilterDrawerOpen, setIsFilterDrawerOpen] = useState(false);
+    const [appliedFilters, setAppliedFilters] = useState(() => ({
+        ...DEFAULT_LEAD_FILTERS,
+        courseIds: id ? [id] : [] // Always set to current course
+    }));
+
+    // dropdown lookups for filter drawer
+    const [lookups, setLookups] = useState({
+        sources: [],
+        courseTypes: [],
+        courses: [],
+        departments: [],
+        users: [],
+        boards: [],
+        grades: [],
+        statuses: [],
+    });
 
     // ─── Image Management state ─────────────────────────────────────────────
     const [images, setImages] = useState([]);
@@ -1244,6 +1277,51 @@ const CourseDetails = () => {
             });
     }, [activeFilters, id, tablePage, tableSize, tableSortBy, tableSortDir]);
 
+    // ── fetch dropdown lookups for filter drawer ──
+    useEffect(() => {
+        let isCancelled = false;
+        const fetchLookups = async () => {
+            try {
+                const [
+                    sourcesRes,
+                    courseTypesRes,
+                    coursesRes,
+                    deptRes,
+                    usersRes,
+                    boardsRes,
+                    gradesRes,
+                    statusesRes,
+                ] = await Promise.allSettled([
+                    getLeadSourcesDropdown(),
+                    getCourseTypesDropdown(),
+                    getCoursesDropdown(),
+                    getDepartmentsDropdown(),
+                    getUsersDropdown(),
+                    getBoardsDropdown(),
+                    getGradesDropdown(),
+                    getLeadStatusesDropdown(),
+                ]);
+
+                if (!isCancelled) {
+                    setLookups({
+                        sources: sourcesRes.status === 'fulfilled' && sourcesRes.value?.data ? (Array.isArray(sourcesRes.value.data) ? sourcesRes.value.data : []) : [],
+                        courseTypes: courseTypesRes.status === 'fulfilled' && courseTypesRes.value?.data ? (Array.isArray(courseTypesRes.value.data) ? courseTypesRes.value.data : []) : [],
+                        courses: coursesRes.status === 'fulfilled' && coursesRes.value?.data ? (Array.isArray(coursesRes.value.data) ? coursesRes.value.data : []) : [],
+                        departments: deptRes.status === 'fulfilled' && deptRes.value?.data ? (Array.isArray(deptRes.value.data) ? deptRes.value.data : []) : [],
+                        users: usersRes.status === 'fulfilled' && usersRes.value?.data ? (Array.isArray(usersRes.value.data) ? usersRes.value.data : []) : [],
+                        boards: boardsRes.status === 'fulfilled' && boardsRes.value?.data ? (Array.isArray(boardsRes.value.data) ? boardsRes.value.data : []) : [],
+                        grades: gradesRes.status === 'fulfilled' && gradesRes.value?.data ? (Array.isArray(gradesRes.value.data) ? gradesRes.value.data : []) : [],
+                        statuses: statusesRes.status === 'fulfilled' && statusesRes.value?.data ? (Array.isArray(statusesRes.value.data) ? statusesRes.value.data : []) : [],
+                    });
+                }
+            } catch (err) {
+                console.error('Failed to fetch filter drawer lookups', err);
+            }
+        };
+        fetchLookups();
+        return () => { isCancelled = true; };
+    }, []);
+
     // ── card click handler - toggle filters on/off ──
     const handleCardClick = (card) => {
         setActiveFilters(prev => {
@@ -1277,8 +1355,105 @@ const CourseDetails = () => {
     // ── clear all filters ──
     const handleClearAllFilters = () => {
         setActiveFilters([]);
+        setAppliedFilters(DEFAULT_LEAD_FILTERS);
         setTablePage(0);
         setSelectedRows(new Set());
+    };
+
+    // ── drawer apply handler ──
+    const handleDrawerApply = (newFilters) => {
+        setAppliedFilters(newFilters);
+
+        // Convert drawer filters to activeFilters format for card clicks
+        const newActiveFilters = [];
+        
+        if (newFilters.leadStatusIds?.length > 0) {
+            newFilters.leadStatusIds.forEach(statusId => {
+                const status = lookups.statuses.find(s => s.id === statusId);
+                if (status) {
+                    newActiveFilters.push({ type: 'leadStatus', value: statusId, label: status.name || status.code });
+                }
+            });
+        }
+        
+        if (newFilters.leadSourceIds?.length > 0) {
+            newFilters.leadSourceIds.forEach(sourceId => {
+                const source = lookups.sources.find(s => s.id === sourceId);
+                if (source) {
+                    newActiveFilters.push({ type: 'leadSource', value: sourceId, label: source.name || source.code });
+                }
+            });
+        }
+        
+        if (newFilters.courseTypeIds?.length > 0) {
+            newFilters.courseTypeIds.forEach(courseTypeId => {
+                const courseType = lookups.courseTypes.find(c => c.id === courseTypeId);
+                if (courseType) {
+                    newActiveFilters.push({ type: 'courseType', value: courseTypeId, label: courseType.name });
+                }
+            });
+        }
+        
+        if (newFilters.boardIds?.length > 0) {
+            newFilters.boardIds.forEach(boardId => {
+                const board = lookups.boards.find(b => b.id === boardId);
+                if (board) {
+                    newActiveFilters.push({ type: 'board', value: boardId, label: board.name });
+                }
+            });
+        }
+        
+        if (newFilters.gradeIds?.length > 0) {
+            newFilters.gradeIds.forEach(gradeId => {
+                const grade = lookups.grades.find(g => g.id === gradeId);
+                if (grade) {
+                    newActiveFilters.push({ type: 'grade', value: gradeId, label: grade.name });
+                }
+            });
+        }
+
+        if (newFilters.isAllotted) {
+            newActiveFilters.push({ type: 'allotted', value: true, label: 'Allotted' });
+        }
+        
+        if (newFilters.isAvailed) {
+            newActiveFilters.push({ type: 'availed', value: true, label: 'Availed' });
+        }
+        
+        if (newFilters.isUnallotted) {
+            newActiveFilters.push({ type: 'unallotted', value: true, label: 'Unallotted' });
+        }
+
+        setActiveFilters(newActiveFilters);
+        setTablePage(0);
+        setTableSize(10);
+        setSelectedRows(new Set());
+        setAutoSelectCount('');
+        setIsFilterDrawerOpen(false);
+    };
+
+    // ── quick select handler ──
+    const handleAutoSelectCount = (e) => {
+        const val = e.target.value;
+        setAutoSelectCount(val);
+        const count = parseInt(val, 10);
+        if (!isNaN(count) && count > 0) {
+            if (count <= tableData.length) {
+                // Data already loaded — select immediately and sync page size
+                const topIds = tableData.slice(0, count).map(lead => {
+                    const rowId = typeof lead.id === 'object' ? lead.id?.id : lead.id;
+                    const rowLeadId = typeof lead.leadId === 'object' ? lead.leadId?.id : lead.leadId;
+                    return rowId || rowLeadId;
+                });
+                setSelectedRows(new Set(topIds));
+                // Adjust page size to accommodate selection if needed
+                if (count > tableSize) {
+                    setTableSize(count);
+                }
+            }
+        } else {
+            setSelectedRows(new Set());
+        }
     };
 
     // ── update filterRequest when activeFilters change for cards ──
@@ -1306,6 +1481,10 @@ const CourseDetails = () => {
     useEffect(() => {
         if (id) {
             setFilterRequest({ courseId: id });
+            setAppliedFilters(prev => ({
+                ...prev,
+                courseIds: [id]
+            }));
         }
     }, [id]);
 
@@ -1732,20 +1911,64 @@ const CourseDetails = () => {
                             </svg>
                             Download
                         </button>
+                        <button
+                            onClick={() => setIsFilterDrawerOpen(true)}
+                            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all shadow-sm"
+                            style={{
+                                backgroundColor: '#9333ea',
+                                color: '#fff',
+                                cursor: 'pointer',
+                            }}
+                        >
+                            <FiFilter size={13} />
+                            Advanced Filters
+                        </button>
                         {hasPermission('LEAD_ASSIGN') && (
-                            <button
-                                onClick={() => setIsAssignModalOpen(true)}
-                                disabled={selectedRows.size === 0}
-                                className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all shadow-sm"
-                                style={{
-                                    backgroundColor: selectedRows.size === 0 ? 'var(--gray-200, #e5e7eb)' : '#4f46e5',
-                                    color: selectedRows.size === 0 ? 'var(--gray-400, #9ca3af)' : '#fff',
-                                    cursor: selectedRows.size === 0 ? 'not-allowed' : 'pointer',
-                                }}
-                            >
-                                <FiUserPlus size={13} />
-                                Allot Leads{selectedRows.size > 0 ? ` (${selectedRows.size})` : ''}
-                            </button>
+                            <>
+                                {/* Quick Auto-select input group */}
+                                <div className="flex items-center bg-slate-50/90 border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-600">
+                                    <span className="font-semibold text-slate-500 mr-2 select-none">Quick Select:</span>
+                                    <input
+                                        type="number"
+                                        min="1"
+                                        max={tableData.length}
+                                        value={autoSelectCount}
+                                        onChange={handleAutoSelectCount}
+                                        onBlur={() => {
+                                            if (!autoSelectCount) {
+                                                setTableSize(10);
+                                                setTablePage(0);
+                                            }
+                                        }}
+                                        onWheel={(e) => e.target.blur()}
+                                        placeholder="Qty"
+                                        className="w-12 bg-white border border-slate-200 rounded px-1.5 py-0.5 text-xs text-center font-bold text-indigo-700 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                        title="Number of leads to auto-select from top"
+                                    />
+                                </div>
+
+                                {/* Selected Count Badge */}
+                                {selectedRows.size > 0 && (
+                                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 border border-emerald-200/80 rounded-lg text-xs font-bold text-emerald-700">
+                                        <FiCheckSquare size={13} className="text-emerald-600" />
+                                        <span>{selectedRows.size} Selected</span>
+                                    </div>
+                                )}
+
+                                <button
+                                    onClick={() => setIsAssignModalOpen(true)}
+                                    disabled={selectedRows.size === 0}
+                                    className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all shadow-sm"
+                                    style={{
+                                        backgroundColor: selectedRows.size === 0 ? 'var(--gray-200, #e5e7eb)' : '#4f46e5',
+                                        color: selectedRows.size === 0 ? 'var(--gray-400, #9ca3af)' : '#fff',
+                                        cursor: selectedRows.size === 0 ? 'not-allowed' : 'pointer',
+                                    }}
+                                >
+                                    <FiUserPlus size={13} />
+                                    Allot Leads{selectedRows.size > 0 ? ` (${selectedRows.size})` : ''}
+                                </button>
+                            </>
                         )}
                     </div>
                 </div>
@@ -2060,6 +2283,19 @@ const CourseDetails = () => {
                     }, {}),
                 }}
                 showToast={(msg, type) => console.log(`[${type}]`, msg)}
+            />
+
+            {/* ── Lead Filter Drawer ── */}
+            <LeadFilterDrawer
+                isOpen={isFilterDrawerOpen}
+                onClose={() => setIsFilterDrawerOpen(false)}
+                appliedFilters={appliedFilters}
+                onApply={handleDrawerApply}
+                lookups={{
+                    ...lookups,
+                    // Show only current course
+                    courses: id && details ? [{ id: id, name: details.courseName, courseName: details.courseName }] : []
+                }}
             />
         </div>
     );

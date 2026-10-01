@@ -36,9 +36,15 @@ const LeadDetail = () => {
   const { navTo, showToast, openAddLeadModal, leadRefreshTrigger, setNavGuard, clearNavGuard } = useAppContext();
   const { hasPermission } = usePermissions();
 
+  // Derive admin role early — guards depend on this
+  const userRole = localStorage.getItem('userRole')?.toUpperCase() || '';
+  const isAdmin = userRole === 'SUPER_ADMIN' || userRole === 'ADMIN';
+
   // Navigation guard: reset whenever a new lead is opened
   // Check sessionStorage so same lead reopened in same tab skips the restriction
+  // Admin/Super Admin bypass the restriction entirely
   const [statusChangedThisVisit, setStatusChangedThisVisit] = useState(() => {
+    if (isAdmin) return true;
     try {
       const changed = JSON.parse(sessionStorage.getItem('statusChangedLeads') || '[]');
       return changed.includes(String(id));
@@ -146,15 +152,20 @@ const LeadDetail = () => {
 
   // Initial fetch on route id change (clearing previous state immediately to avoid ghost/stale data)
   useEffect(() => {
-    // Re-check sessionStorage for the new lead id before resetting
-    let alreadyChanged = false;
-    try {
-      const changed = JSON.parse(sessionStorage.getItem('statusChangedLeads') || '[]');
-      alreadyChanged = changed.includes(String(id));
-    } catch {
-      alreadyChanged = false;
+    // Admin bypasses restriction entirely
+    if (isAdmin) {
+      setStatusChangedThisVisit(true);
+    } else {
+      // Re-check sessionStorage for the new lead id before resetting
+      let alreadyChanged = false;
+      try {
+        const changed = JSON.parse(sessionStorage.getItem('statusChangedLeads') || '[]');
+        alreadyChanged = changed.includes(String(id));
+      } catch {
+        alreadyChanged = false;
+      }
+      setStatusChangedThisVisit(alreadyChanged);
     }
-    setStatusChangedThisVisit(alreadyChanged);
     setLeadDetails(null);
     setStatusHistory([]);
     setFollowUps([]);
@@ -203,6 +214,17 @@ const LeadDetail = () => {
     return () => clearNavGuard();
   }, [statusChangedThisVisit, setNavGuard, clearNavGuard]);
 
+  // Force logout: release ALL guards immediately so logout redirect is not blocked
+  const forceLogoutRef = useRef(false);
+  useEffect(() => {
+    const handleForceLogout = () => {
+      forceLogoutRef.current = true;
+      clearNavGuard();
+    };
+    window.addEventListener('forceLogout', handleForceLogout);
+    return () => window.removeEventListener('forceLogout', handleForceLogout);
+  }, [clearNavGuard]);
+
   // Guarded navigate for direct navigate() calls inside LeadDetail (back button etc.)
   const guardedNavigate = useCallback((...args) => {
     if (!statusChangedRef.current) {
@@ -218,11 +240,10 @@ const LeadDetail = () => {
   useEffect(() => {
     if (statusChangedThisVisit) return;
 
-    // Push a sentinel entry so the back button hits it first instead of leaving the page
     window.history.pushState(null, '', window.location.href);
 
     const handlePopState = () => {
-      // Re-push so repeated back presses keep hitting the guard
+      if (forceLogoutRef.current) return; // allow logout redirect
       window.history.pushState(null, '', window.location.href);
       toast.warn('Please change the lead status before leaving this page.', {
         toastId: 'nav-blocked-lead-status',
@@ -238,8 +259,9 @@ const LeadDetail = () => {
     if (statusChangedThisVisit) return;
 
     const handleBeforeUnload = (e) => {
+      if (forceLogoutRef.current) return; // allow logout redirect
       e.preventDefault();
-      e.returnValue = ''; // required for Chrome to show the dialog
+      e.returnValue = '';
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
@@ -526,9 +548,6 @@ const LeadDetail = () => {
   ];
 
   // Derived Business Flags
-  const userRole = localStorage.getItem('userRole')?.toUpperCase() || '';
-  const isAdmin = userRole === 'SUPER_ADMIN' || userRole === 'ADMIN';
-
   const statusName = leadDetails?.currentStatus?.name || leadDetails?.currentStatus?.code || 'N/A';
   const assignedToName = leadDetails?.assignedTo?.firstName && leadDetails?.assignedTo?.lastName
     ? `${leadDetails.assignedTo.firstName} ${leadDetails.assignedTo.lastName}`
@@ -566,13 +585,6 @@ const LeadDetail = () => {
   // Availed & Allotted logic (user terminology: availed & unAvailed, alloted & unAlloted)
   const isAvailed = Boolean(leadDetails?.isAvailed || leadDetails?.availed);
   const isAllotted = Boolean(leadDetails?.assignedTo);
-
-  // Copy to clipboard helper
-  const copyToClipboard = (text, label) => {
-    if (!text || text === '-' || text === 'Not specified') return;
-    navigator.clipboard.writeText(text);
-    showToast(`${label} copied to clipboard!`);
-  };
 
   // Data Quality / Unmapped Fields Analysis
   const missingMappingFields = useMemo(() => {
@@ -1269,17 +1281,6 @@ const LeadDetail = () => {
                       <div className="text-[11px] font-medium text-gray-400">Phone Number</div>
                       <div className="text-sm font-bold text-gray-900 mt-1 flex items-center gap-1.5 font-mono">
                         {leadDetails.phoneNumber || <span className="text-gray-400 font-normal italic">Not specified</span>}
-                        {leadDetails.phoneNumber && (
-                          <button
-                            onClick={() => copyToClipboard(leadDetails.phoneNumber, 'Phone number')}
-                            className="text-gray-400 hover:text-blue-600 p-0.5 transition-colors"
-                            title="Copy"
-                          >
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                            </svg>
-                          </button>
-                        )}
                       </div>
                     </div>
                   )}
@@ -1289,17 +1290,6 @@ const LeadDetail = () => {
                       <div className="text-[11px] font-medium text-gray-400">Alternate Phone</div>
                       <div className="text-sm font-bold text-gray-900 mt-1 flex items-center gap-1.5 font-mono">
                         {leadDetails.alternatePhoneNumber || <span className="text-gray-400 font-normal italic">-</span>}
-                        {leadDetails.alternatePhoneNumber && (
-                          <button
-                            onClick={() => copyToClipboard(leadDetails.alternatePhoneNumber, 'Alternate phone')}
-                            className="text-gray-400 hover:text-blue-600 p-0.5 transition-colors"
-                            title="Copy"
-                          >
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                            </svg>
-                          </button>
-                        )}
                       </div>
                     </div>
                   )}
@@ -1309,20 +1299,9 @@ const LeadDetail = () => {
                       <div className="text-[11px] font-medium text-gray-400">Email Address</div>
                       <div className="text-sm font-bold text-gray-900 mt-1 flex items-center gap-1.5 truncate">
                         {leadDetails.email ? (
-                          <>
-                            <a href={`mailto:${leadDetails.email}`} className="text-blue-600 hover:underline truncate">
-                              {leadDetails.email}
-                            </a>
-                            <button
-                              onClick={() => copyToClipboard(leadDetails.email, 'Email address')}
-                              className="text-gray-400 hover:text-blue-600 p-0.5 flex-shrink-0 transition-colors"
-                              title="Copy"
-                            >
-                              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                              </svg>
-                            </button>
-                          </>
+                          <a href={`mailto:${leadDetails.email}`} className="text-blue-600 hover:underline truncate">
+                            {leadDetails.email}
+                          </a>
                         ) : (
                           <span className="text-gray-400 font-normal italic">Not specified</span>
                         )}

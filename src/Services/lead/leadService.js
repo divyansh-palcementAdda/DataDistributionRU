@@ -102,9 +102,13 @@ export const completeLeadFollowUp = async (followUpId, remarks = "") => {
             ApiRoutes.Lead.markLead;
 
         const url = route.replace("{followUpId}", followUpId);
-        const response = await axiosInstance.post(url, null, {
-            params: { remarks },
-        });
+
+        // remarks — query param + request body dono mein bhejo (as per API spec)
+        const response = await axiosInstance.post(
+            url,
+            { remarks, feedback: remarks },   // request body: { feedback, remarks }
+            { params: { remarks } }            // query param: ?remarks=...
+        );
 
         return response;
     } catch (error) {

@@ -838,17 +838,23 @@ const DataSegregation = () => {
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs flex items-center gap-3">
-            <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Unallocated Data</p>
-              <h3 className="text-2xl font-bold text-amber-700">{matrixData.unallottedLeads}</h3>
-            </div>
-          </div>
+          {(() => {
+            const userRole = localStorage.getItem('userRole');
+            const canSeeUnallocated = userRole !== 'COUNSELOR' && userRole !== 'HOD' && userRole !== 'HEAD';
+            return canSeeUnallocated ? (
+              <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs flex items-center gap-3">
+                <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Unallocated Data</p>
+                  <h3 className="text-2xl font-bold text-amber-700">{matrixData.unallottedLeads}</h3>
+                </div>
+              </div>
+            ) : null;
+          })()}
 
           <div className="bg-white p-4 rounded-2xl border border-gray-200 shadow-2xs flex items-center gap-3">
             <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">

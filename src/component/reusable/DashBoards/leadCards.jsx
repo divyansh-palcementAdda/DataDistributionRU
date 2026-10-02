@@ -223,6 +223,19 @@ const LeadCards = ({ onCardClick, activeFilters = [], filterRequest = {}, course
           <div className="animate-spin rounded-full h-7 w-7 border-b-2 border-indigo-500" />
           <span style={{ fontSize: '14px', color: '#64748b' }}>Loading...</span>
         </div>
+      ) : leadData.length === 0 ? (
+        <div style={{
+          background: '#ffffff', borderRadius: '12px', padding: '40px 20px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.08)', border: '1px solid #e5e7eb',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '10px',
+        }}>
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" strokeWidth="1.5">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+          <span style={{ fontSize: '14px', color: '#94a3b8', fontWeight: '500' }}>No Data Available</span>
+        </div>
       ) : (
         <div className="lead-cards-responsive-grid" style={gridStyle}>
         {leadData.map((item) => {

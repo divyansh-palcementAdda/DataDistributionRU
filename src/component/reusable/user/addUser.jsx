@@ -71,7 +71,7 @@ const AddUserModal = ({ isOpen, onClose, onSuccess, initialData, defaultRole }) 
                 emailVerified: true
             });
         }
-    }, [initialData, defaultRole]);
+    }, [initialData, defaultRole, isOpen]);
 
     const handleChange = (field, value) => {
         setFormData(prev => ({ ...prev, [field]: value }));

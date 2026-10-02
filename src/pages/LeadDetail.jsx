@@ -236,37 +236,32 @@ const LeadDetail = () => {
     navigate(...args);
   }, [navigate]);
 
-  // Block browser back button (popstate) until status has been changed this visit
+  // Single-registration listeners for popstate and beforeunload.
+  // They read latest state via refs — no re-registration on state change.
   useEffect(() => {
-    if (statusChangedThisVisit) return;
-
-    window.history.pushState(null, '', window.location.href);
-
     const handlePopState = () => {
-      if (forceLogoutRef.current) return; // allow logout redirect
+      if (forceLogoutRef.current || window.__forceLogout) return;
+      if (statusChangedRef.current) return;
       window.history.pushState(null, '', window.location.href);
       toast.warn('Please change the lead status before leaving this page.', {
         toastId: 'nav-blocked-lead-status',
       });
     };
 
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, [statusChangedThisVisit, id]);
-
-  // Block URL bar navigation / tab close when status not yet changed
-  useEffect(() => {
-    if (statusChangedThisVisit) return;
-
     const handleBeforeUnload = (e) => {
-      if (forceLogoutRef.current) return; // allow logout redirect
+      if (forceLogoutRef.current || window.__forceLogout) return;
+      if (statusChangedRef.current) return;
       e.preventDefault();
       e.returnValue = '';
     };
 
+    window.addEventListener('popstate', handlePopState);
     window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [statusChangedThisVisit, id]);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-select interested course when lead details are loaded
   useEffect(() => {
@@ -2012,6 +2007,12 @@ const LeadDetail = () => {
         onClose={() => setIsRemarkModalOpen(false)}
         lead={leadDetails}
         onSave={handleRemarkSave}
+        followUpId={
+          followUps.find(f => f.status === 'PENDING' && !f.completed)?.id ||
+          leadDetails?.nextFollowUp?.id ||
+          leadDetails?.followUp?.id ||
+          leadDetails?.followup?.id
+        }
       />
 
       {/* Admin Manual Registration Approval Modal */}

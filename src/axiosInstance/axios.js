@@ -109,6 +109,7 @@ export const logoutUser = async (reason = "MANUAL_LOGOUT") => {
     isRefreshing = false;
 
     // Notify any active page guards (e.g. LeadDetail strict mode) to release before redirect
+    window.__forceLogout = true;
     window.dispatchEvent(new CustomEvent('forceLogout'));
 
     // Redirect to login

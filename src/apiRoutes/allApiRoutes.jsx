@@ -95,7 +95,11 @@ const ApiRoutes = {
         details: '/api/courses/{id}',
         communicationConfig: '/api/courses/{courseId}/communication-config',
         uploadImage: '/api/courses/{courseId}/images',
-        getImages: '/api/courses/{courseId}/images'
+        getImages: '/api/courses/{courseId}/images',
+        bulkUpload: '/api/courses/bulk-upload',
+        bulkUploadValidate: '/api/courses/bulk-upload/validate',
+        bulkUploadTemplate: '/api/courses/bulk-upload/template',
+        bulkUploadErrorFile: '/api/courses/bulk-upload/{importId}/error-file'
     },
 
     CourseImage: {
@@ -268,6 +272,10 @@ const ApiRoutes = {
         updateCompetitor: '/api/info-panels/{id}/competitors/{competitorId}',
         deleteCompetitor: '/api/info-panels/{id}/competitors/{competitorId}',
         reorderCompetitors: '/api/info-panels/{id}/competitors/reorder',
+        bulkUpload: '/api/course-info-panel/bulk-upload',
+        validateBulkUpload: '/api/course-info-panel/bulk-upload/validate',
+        downloadTemplate: '/api/course-info-panel/bulk-upload/template',
+        downloadErrorFile: '/api/course-info-panel/bulk-upload/{importId}/error-file',
     },
 
     Reports: {

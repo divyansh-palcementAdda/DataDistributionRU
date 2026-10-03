@@ -8,6 +8,8 @@ import { toast } from 'react-toastify';
 import AddCourseModal from '../component/reusable/course/addCourseModel';
 import DeleteModal from '../component/reusable/deleteModel';
 import { usePermissions } from '../PermissionContext';
+import CourseInfoPanelBulkUploadModal from '../component/reusable/callerGuidance/CourseInfoPanelBulkUploadModal';
+import CourseBulkUploadModal from '../component/reusable/course/CourseBulkUploadModal';
 import * as XLSX from 'xlsx';
 
 const Courses = () => {
@@ -21,6 +23,8 @@ const Courses = () => {
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isCourseBulkUploadModalOpen, setIsCourseBulkUploadModalOpen] = useState(false);
+  const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false);
   const [editData, setEditData] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
@@ -227,6 +231,30 @@ const Courses = () => {
             Download
           </button>
 
+          {(hasPermission('COURSE_BULK_UPLOAD') || hasPermission('COURSE_CREATE') || hasPermission('COURSE_UPDATE')) && (
+            <button
+              onClick={() => setIsCourseBulkUploadModalOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm rounded-full shadow-sm hover:shadow transition-all"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+              </svg>
+              Bulk Upload Courses
+            </button>
+          )}
+
+          {(hasPermission('COURSE_INFO_PANEL_BULK_UPLOAD') || hasPermission('INFO_PANEL_CREATE') || hasPermission('INFO_PANEL_MANAGE') || hasPermission('COURSE_CREATE')) && (
+            <button
+              onClick={() => setIsBulkUploadModalOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-full shadow-sm hover:shadow transition-all"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+              </svg>
+              Bulk Upload Info Panel
+            </button>
+          )}
+
           {hasPermission('COURSE_CREATE') && (
             <CustomButton
               variant="primary"
@@ -291,6 +319,24 @@ const Courses = () => {
         title="Delete Course"
         message={`Are you sure you want to delete the course "${itemToDelete?.name}"?`}
         isLoading={isDeleting}
+      />
+
+      <CourseBulkUploadModal
+        isOpen={isCourseBulkUploadModalOpen}
+        onClose={() => setIsCourseBulkUploadModalOpen(false)}
+        onSuccess={() => {
+          toast.success("Courses bulk operation completed");
+          fetchCourses();
+        }}
+      />
+
+      <CourseInfoPanelBulkUploadModal
+        isOpen={isBulkUploadModalOpen}
+        onClose={() => setIsBulkUploadModalOpen(false)}
+        onSuccess={() => {
+          toast.success("Course Info Panel bulk operation completed");
+          fetchCourses();
+        }}
       />
     </div>
   );

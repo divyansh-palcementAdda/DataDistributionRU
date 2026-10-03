@@ -112,3 +112,78 @@ export const getCourseImages = async (courseId, activeOnly = true) => {
         throw error.response?.data || error.message;
     }
 };
+
+export const downloadCourseTemplate = async () => {
+    try {
+        const response = await axiosInstance.get(ApiRoutes.Course.bulkUploadTemplate, {
+            responseType: 'blob'
+        });
+        const blob = new Blob([response.data], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        });
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.setAttribute('download', 'course_bulk_upload_template.xlsx');
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(downloadUrl);
+        return true;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
+export const validateCourseBulkUpload = async (file) => {
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await axiosInstance.post(ApiRoutes.Course.bulkUploadValidate, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
+export const bulkUploadCourses = async (file) => {
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await axiosInstance.post(ApiRoutes.Course.bulkUpload, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
+export const downloadCourseErrorFile = async (importId) => {
+    try {
+        const url = ApiRoutes.Course.bulkUploadErrorFile.replace('{importId}', importId);
+        const response = await axiosInstance.get(url, {
+            responseType: 'blob'
+        });
+        const blob = new Blob([response.data], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        });
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.setAttribute('download', `course_bulk_upload_errors_${importId}.xlsx`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(downloadUrl);
+        return true;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};

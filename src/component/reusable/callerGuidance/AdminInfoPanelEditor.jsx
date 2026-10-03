@@ -7,10 +7,13 @@ import {
   addCompetitor,
   updateCompetitor,
   deleteCompetitor,
-  reorderCompetitors
+  reorderCompetitors,
+  downloadInfoPanelTemplate
 } from '../../../Services/infoPanel/infoPanelService';
 import CustomButton from '../CustomButton';
 import CustomInput from '../CustomInput';
+import { FiDownload, FiUploadCloud } from 'react-icons/fi';
+import CourseInfoPanelBulkUploadModal from './CourseInfoPanelBulkUploadModal';
 
 /**
  * AdminInfoPanelEditor
@@ -23,6 +26,7 @@ const AdminInfoPanelEditor = ({ courseId, courseDetails, showToast }) => {
   const [saving, setSaving] = useState(false);
   const [infoPanel, setInfoPanel] = useState(null);
   const [academicSession, setAcademicSession] = useState('2026-27');
+  const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false);
 
   // Primary Course Guidance Form
   const [form, setForm] = useState({
@@ -319,6 +323,24 @@ const AdminInfoPanelEditor = ({ courseId, courseDetails, showToast }) => {
               <option value="2028-29">2028-29</option>
             </select>
           </div>
+
+          <button
+            type="button"
+            onClick={downloadInfoPanelTemplate}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 hover:border-gray-400 bg-white text-gray-700 font-semibold text-xs rounded-lg shadow-2xs transition-colors"
+          >
+            <FiDownload size={13} />
+            Template
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsBulkUploadModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-semibold text-xs rounded-lg transition-colors"
+          >
+            <FiUploadCloud size={14} />
+            Bulk Upload
+          </button>
 
           <CustomButton
             variant="primary"
@@ -780,6 +802,15 @@ const AdminInfoPanelEditor = ({ courseId, courseDetails, showToast }) => {
           </div>
         </div>
       )}
+
+      <CourseInfoPanelBulkUploadModal
+        isOpen={isBulkUploadModalOpen}
+        onClose={() => setIsBulkUploadModalOpen(false)}
+        onSuccess={() => {
+          showToast?.('Course Info Panel bulk import completed!', 'success');
+          fetchPanel();
+        }}
+      />
     </div>
   );
 };

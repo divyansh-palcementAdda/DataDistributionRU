@@ -116,3 +116,79 @@ export const reorderCompetitors = async (infoPanelId, competitorIds) => {
         throw error.response?.data || error.message;
     }
 };
+
+export const downloadInfoPanelTemplate = async () => {
+    try {
+        const response = await axiosInstance.get(ApiRoutes.InfoPanel.downloadTemplate, {
+            responseType: 'blob'
+        });
+        const blob = new Blob([response.data], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        });
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.setAttribute('download', 'course_info_panel_template.xlsx');
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(downloadUrl);
+        return true;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
+export const validateInfoPanelBulkUpload = async (file) => {
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await axiosInstance.post(ApiRoutes.InfoPanel.validateBulkUpload, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
+export const bulkUploadInfoPanel = async (file) => {
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await axiosInstance.post(ApiRoutes.InfoPanel.bulkUpload, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+
+export const downloadInfoPanelErrorFile = async (importId) => {
+    try {
+        const url = ApiRoutes.InfoPanel.downloadErrorFile.replace('{importId}', importId);
+        const response = await axiosInstance.get(url, {
+            responseType: 'blob'
+        });
+        const blob = new Blob([response.data], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        });
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.setAttribute('download', `course_info_panel_errors_${importId}.xlsx`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(downloadUrl);
+        return true;
+    } catch (error) {
+        throw error.response?.data || error.message;
+    }
+};
+

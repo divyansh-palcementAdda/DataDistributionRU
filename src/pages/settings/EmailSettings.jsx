@@ -616,7 +616,7 @@ const EmailSettings = () => {
 
       {/* Compose Custom Email Modal */}
       {isCustomEmailModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-xl shadow-xl max-w-lg w-full overflow-hidden animate-scaleIn">
             <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50">
               <h4 className="text-sm font-bold text-gray-900">Compose Branded Email Notice</h4>

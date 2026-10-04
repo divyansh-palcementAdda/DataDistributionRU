@@ -191,12 +191,12 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
       if (filters.departmentId)    params.departmentId      = filters.departmentId;
       if (filters.assignedToUserId) params.assignedToUserId = filters.assignedToUserId;
 
-      await axiosInstance.post('/api/leads/bulk-upload', formData, {
+      const response = await axiosInstance.post('/api/leads/bulk-upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         params,
       });
 
-      onSuccess?.();
+      onSuccess?.(response?.data?.message);
       onClose();
     } catch (err) {
       const msg =

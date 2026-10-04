@@ -1194,8 +1194,8 @@ const Leads = () => {
       <BulkUploadModal
         isOpen={isBulkUploadOpen}
         onClose={() => setIsBulkUploadOpen(false)}
-        onSuccess={() => {
-          showToast('Leads uploaded successfully!');
+        onSuccess={(msg) => {
+          showToast(msg || 'Leads uploaded successfully!');
           fetchLeads();
         }}
       />

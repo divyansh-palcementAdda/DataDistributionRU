@@ -123,14 +123,21 @@ const FollowUps = () => {
 
   const handleCompleteSubmit = async (remarks) => {
     if (!selectedFollowup?.id) return;
+    const targetLeadId = selectedFollowup.leadId || selectedFollowup.lead?.id;
 
     try {
       await completeFollowup(selectedFollowup.id, { remarks });
-      showToast("Follow-up marked as completed!", "success");
-      fetchData();
+      showToast("Follow-up marked as completed! Please update the lead status before leaving.", "info");
+      setIsCompleteModalOpen(false);
+      setSelectedFollowup(null);
+
+      if (targetLeadId) {
+        navTo(`lead-detail/${targetLeadId}`);
+      } else {
+        fetchData();
+      }
     } catch (err) {
       showToast(err?.message || "Failed to complete follow-up", "error");
-    } finally {
       setIsCompleteModalOpen(false);
       setSelectedFollowup(null);
     }
@@ -396,24 +403,6 @@ const FollowUps = () => {
             >
               View
             </button>
-          )}
-          {(row.status === "PENDING" || row.status === "UPCOMING") && (
-            <>
-              <button
-                className="px-2 py-1 bg-green-50 text-green-700 hover:bg-green-100 rounded text-xs font-medium transition-colors"
-                onClick={() => handleComplete(row)}
-                title="Complete Follow-up"
-              >
-                Done
-              </button>
-              <button
-                className="px-2 py-1 bg-orange-50 text-orange-700 hover:bg-orange-100 rounded text-xs font-medium transition-colors"
-                onClick={() => handleNotConnected(row)}
-                title="Mark Follow-up as Not Connected"
-              >
-                Not Connected
-              </button>
-            </>
           )}
         </div>
       ),
@@ -697,18 +686,22 @@ const FollowUps = () => {
 
       {/* Complete Followup Modal */}
       {isCompleteModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">Complete Follow-up</h3>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
+          style={{ backgroundColor: 'rgba(15, 23, 42, 0.55)', backdropFilter: 'blur(4px)' }}
+        >
+          <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md border border-slate-100">
+            <h3 className="text-lg font-bold text-slate-900 mb-1">Complete Follow-up</h3>
+            <p className="text-xs text-slate-500 mb-4">Add completion remarks or feedback for this follow-up.</p>
             <textarea
-              className="form-control mb-4"
+              className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent mb-4"
               rows="3"
               placeholder="Add remarks (optional)"
               id="completeRemarks"
             />
             <div className="flex justify-end gap-2">
               <button
-                className="btn btn-secondary btn-sm"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition-colors"
                 onClick={() => {
                   setIsCompleteModalOpen(false);
                   setSelectedFollowup(null);
@@ -717,7 +710,7 @@ const FollowUps = () => {
                 Cancel
               </button>
               <button
-                className="btn btn-primary btn-sm"
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors"
                 onClick={() => {
                   const remarks = document.getElementById('completeRemarks')?.value || '';
                   handleCompleteSubmit(remarks);
@@ -732,18 +725,22 @@ const FollowUps = () => {
 
       {/* Not Connected Modal */}
       {isNotConnectedModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold mb-4">Mark as Not Connected</h3>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-200"
+          style={{ backgroundColor: 'rgba(15, 23, 42, 0.55)', backdropFilter: 'blur(4px)' }}
+        >
+          <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md border border-slate-100">
+            <h3 className="text-lg font-bold text-slate-900 mb-1">Mark as Not Connected</h3>
+            <p className="text-xs text-slate-500 mb-4">Record attempt remarks and update lead status.</p>
             <textarea
-              className="form-control mb-4"
+              className="w-full border border-slate-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent mb-4"
               rows="3"
               placeholder="Add remarks (optional)"
               id="notConnectedRemarks"
             />
             <div className="flex justify-end gap-2">
               <button
-                className="btn btn-secondary btn-sm"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition-colors"
                 onClick={() => {
                   setIsNotConnectedModalOpen(false);
                   setSelectedFollowup(null);
@@ -752,7 +749,7 @@ const FollowUps = () => {
                 Cancel
               </button>
               <button
-                className="btn btn-primary btn-sm"
+                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors"
                 onClick={() => {
                   const remarks = document.getElementById('notConnectedRemarks')?.value || '';
                   handleNotConnectedSubmit(remarks);

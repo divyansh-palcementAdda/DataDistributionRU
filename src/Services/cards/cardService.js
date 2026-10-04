@@ -109,3 +109,26 @@ export const getFollowupStatusCounts = async (params = {}) => {
     }
 };
 
+export const getRegistrationRejectedCount = async (filterRequest = {}) => {
+    try {
+        const response = await axiosInstance.get(ApiRoutes.Dashboard.registrationRejectedCount, { params: filterRequest });
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
+export const getUnmappedCount = async (filterRequest = {}, dimension = null) => {
+    try {
+        const params = { ...filterRequest };
+        if (dimension) {
+            params.dimension = dimension;
+        }
+        const response = await axiosInstance.get(ApiRoutes.Dashboard.unmappedCount, { params });
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
+

@@ -278,6 +278,17 @@ const LeadFilterDrawer = ({
   lookups = {},
 }) => {
   const { hasPermission } = usePermissions();
+  const userRole = (localStorage.getItem('userRole') || '').toUpperCase();
+  let isAdmin = userRole === 'SUPER_ADMIN' || userRole === 'ADMIN';
+  if (!isAdmin) {
+    try {
+      const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+      const roleName = (userInfo?.role?.name || userInfo?.role || '').toUpperCase();
+      isAdmin = roleName === 'SUPER_ADMIN' || roleName === 'ADMIN';
+    } catch (e) {
+      isAdmin = false;
+    }
+  }
   const [draftFilters, setDraftFilters] = useState(() => ({ ...DEFAULT_LEAD_FILTERS, ...appliedFilters }));
 
   useEffect(() => {
@@ -595,6 +606,30 @@ const LeadFilterDrawer = ({
                     { label: 'All', value: null },
                     { label: 'Availed', value: true },
                     { label: 'Unavailed', value: false },
+                  ]}
+                />
+              )}
+
+              <SegmentedControl
+                label="Registration Status"
+                value={draftFilters.registrationStatus}
+                onChange={(val) => setDraftFilters(prev => ({ ...prev, registrationStatus: val }))}
+                options={[
+                  { label: 'All', value: null },
+                  { label: 'Check Rejected', value: 'CHECK_REJECTED' },
+                  { label: 'Check Pending', value: 'CHECK_PENDING' },
+                  { label: 'CMS Verified', value: 'COMPLETED_MATCHED' },
+                ]}
+              />
+
+              {isAdmin && (
+                <SegmentedControl
+                  label="Mapping Completeness"
+                  value={draftFilters.unmapped}
+                  onChange={(val) => setDraftFilters(prev => ({ ...prev, unmapped: val }))}
+                  options={[
+                    { label: 'All Records', value: null },
+                    { label: 'Unmapped Only', value: true },
                   ]}
                 />
               )}

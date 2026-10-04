@@ -139,8 +139,8 @@ const EmailSettings = () => {
       const payload = res?.data || res;
       const content = Array.isArray(payload?.content) ? payload.content : Array.isArray(payload) ? payload : [];
       setLogs(content);
-      setTotalElements(payload?.totalElements || content.length || 0);
-      setTotalPages(payload?.totalPages || 1);
+      setTotalElements(payload?.totalElements ?? payload?.page?.totalElements ?? content.length ?? 0);
+      setTotalPages(payload?.totalPages ?? payload?.page?.totalPages ?? 1);
     } catch (err) {
       console.error('Failed to load email logs:', err);
       showToast('Unable to load email notification logs', 'error');

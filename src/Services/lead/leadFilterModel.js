@@ -28,6 +28,13 @@ export const DEFAULT_LEAD_FILTERS = {
   endDate: '',
   updatedFrom: '',
   updatedTo: '',
+  registrationStatus: null,
+  unmapped: null,
+  withoutCourse: null,
+  withoutCourseType: null,
+  withoutProgram: null,
+  withoutGrade: null,
+  withoutBoard: null,
 };
 
 /**
@@ -160,6 +167,28 @@ export const buildLeadQueryParams = (filters = {}) => {
   if (filters.updatedFrom) params.updatedFrom = filters.updatedFrom;
   if (filters.updatedTo) params.updatedTo = filters.updatedTo;
 
+  if (filters.registrationStatus) {
+    params.registrationStatus = filters.registrationStatus;
+  }
+  if (filters.unmapped === true) {
+    params.unmapped = true;
+  }
+  if (filters.withoutCourse === true) {
+    params.withoutCourse = true;
+  }
+  if (filters.withoutCourseType === true) {
+    params.withoutCourseType = true;
+  }
+  if (filters.withoutProgram === true) {
+    params.withoutProgram = true;
+  }
+  if (filters.withoutGrade === true) {
+    params.withoutGrade = true;
+  }
+  if (filters.withoutBoard === true) {
+    params.withoutBoard = true;
+  }
+
   return params;
 };
 
@@ -279,6 +308,16 @@ export const parseFiltersFromSearchParams = (searchParams, state = null) => {
 
     const userName = searchParams.get('userName') || searchParams.get('assignedUserName');
     if (userName) filters.assignedUserName = userName;
+
+    const regStatus = searchParams.get('registrationStatus');
+    if (regStatus) filters.registrationStatus = regStatus;
+
+    if (searchParams.get('unmapped') === 'true') filters.unmapped = true;
+    if (searchParams.get('withoutCourse') === 'true') filters.withoutCourse = true;
+    if (searchParams.get('withoutCourseType') === 'true') filters.withoutCourseType = true;
+    if (searchParams.get('withoutProgram') === 'true') filters.withoutProgram = true;
+    if (searchParams.get('withoutGrade') === 'true') filters.withoutGrade = true;
+    if (searchParams.get('withoutBoard') === 'true') filters.withoutBoard = true;
   }
 
   // Handle location.state fallback
@@ -316,6 +355,15 @@ export const parseFiltersFromSearchParams = (searchParams, state = null) => {
     if (state.statusIds || state.statusId || state.leadStatusId) {
       addValues(filters.statusIds, state.statusIds || state.statusId || state.leadStatusId);
     }
+    if (state.registrationStatus) {
+      filters.registrationStatus = state.registrationStatus;
+    }
+    if (state.unmapped) filters.unmapped = true;
+    if (state.withoutCourse) filters.withoutCourse = true;
+    if (state.withoutCourseType) filters.withoutCourseType = true;
+    if (state.withoutProgram) filters.withoutProgram = true;
+    if (state.withoutGrade) filters.withoutGrade = true;
+    if (state.withoutBoard) filters.withoutBoard = true;
 
     // 2. Active filters array fallback
     if (Array.isArray(state.activeFilters) && state.activeFilters.length > 0) {
@@ -345,6 +393,20 @@ export const parseFiltersFromSearchParams = (searchParams, state = null) => {
           if (!filters.statusIds.includes(f.value)) filters.statusIds.push(f.value);
         } else if (f.type === 'leadStatusHistory' && f.value) {
           if (!filters.leadStatusHistoryIds.includes(f.value)) filters.leadStatusHistoryIds.push(f.value);
+        } else if (f.type === 'registrationStatus' && f.value) {
+          filters.registrationStatus = f.value;
+        } else if (f.type === 'unmapped') {
+          filters.unmapped = true;
+        } else if (f.type === 'withoutCourse') {
+          filters.withoutCourse = true;
+        } else if (f.type === 'withoutCourseType') {
+          filters.withoutCourseType = true;
+        } else if (f.type === 'withoutProgram') {
+          filters.withoutProgram = true;
+        } else if (f.type === 'withoutGrade') {
+          filters.withoutGrade = true;
+        } else if (f.type === 'withoutBoard') {
+          filters.withoutBoard = true;
         }
       });
     }
@@ -466,6 +528,28 @@ export const syncFiltersToSearchParams = (filters) => {
   if (filters.updatedFrom) params.set('updatedFrom', filters.updatedFrom);
   if (filters.updatedTo) params.set('updatedTo', filters.updatedTo);
 
+  if (filters.registrationStatus) {
+    params.set('registrationStatus', filters.registrationStatus);
+  }
+  if (filters.unmapped === true) {
+    params.set('unmapped', 'true');
+  }
+  if (filters.withoutCourse === true) {
+    params.set('withoutCourse', 'true');
+  }
+  if (filters.withoutCourseType === true) {
+    params.set('withoutCourseType', 'true');
+  }
+  if (filters.withoutProgram === true) {
+    params.set('withoutProgram', 'true');
+  }
+  if (filters.withoutGrade === true) {
+    params.set('withoutGrade', 'true');
+  }
+  if (filters.withoutBoard === true) {
+    params.set('withoutBoard', 'true');
+  }
+
   return params;
 };
 
@@ -497,6 +581,13 @@ export const countActiveFilters = (filters) => {
   if (filters.startDate || filters.endDate) count++;
   if (filters.updatedFrom || filters.updatedTo) count++;
   if (filters.availedFrom || filters.availedTo) count++;
+  if (filters.registrationStatus) count++;
+  if (filters.unmapped) count++;
+  if (filters.withoutCourse) count++;
+  if (filters.withoutCourseType) count++;
+  if (filters.withoutProgram) count++;
+  if (filters.withoutGrade) count++;
+  if (filters.withoutBoard) count++;
   return count;
 };
 
@@ -706,6 +797,59 @@ export const buildFilterChips = (filters, lookups = {}) => {
     });
   }
 
+  // Registration Status
+  if (filters.registrationStatus) {
+    chips.push({
+      key: 'registrationStatus',
+      value: filters.registrationStatus,
+      label: `Reg: ${filters.registrationStatus === 'CHECK_REJECTED' ? 'Check Rejected' : filters.registrationStatus}`,
+    });
+  }
+
+  // Unmapped filters
+  if (filters.unmapped === true) {
+    chips.push({
+      key: 'unmapped',
+      value: true,
+      label: 'Mapping: All Unmapped',
+    });
+  }
+  if (filters.withoutCourse === true) {
+    chips.push({
+      key: 'withoutCourse',
+      value: true,
+      label: 'Course: Unmapped',
+    });
+  }
+  if (filters.withoutCourseType === true) {
+    chips.push({
+      key: 'withoutCourseType',
+      value: true,
+      label: 'Category: Unmapped',
+    });
+  }
+  if (filters.withoutProgram === true) {
+    chips.push({
+      key: 'withoutProgram',
+      value: true,
+      label: 'Specialization: Unmapped',
+    });
+  }
+  if (filters.withoutGrade === true) {
+    chips.push({
+      key: 'withoutGrade',
+      value: true,
+      label: 'Grade: Unmapped',
+    });
+  }
+  if (filters.withoutBoard === true) {
+    chips.push({
+      key: 'withoutBoard',
+      value: true,
+      label: 'Board: Unmapped',
+    });
+  }
+
   return chips;
 };
 
@@ -771,6 +915,27 @@ export const removeFilterFromState = (filters, chipKey, chipValue) => {
     case 'availedDateRange':
       next.availedFrom = '';
       next.availedTo = '';
+      break;
+    case 'registrationStatus':
+      next.registrationStatus = null;
+      break;
+    case 'unmapped':
+      next.unmapped = null;
+      break;
+    case 'withoutCourse':
+      next.withoutCourse = null;
+      break;
+    case 'withoutCourseType':
+      next.withoutCourseType = null;
+      break;
+    case 'withoutProgram':
+      next.withoutProgram = null;
+      break;
+    case 'withoutGrade':
+      next.withoutGrade = null;
+      break;
+    case 'withoutBoard':
+      next.withoutBoard = null;
       break;
     default:
       break;

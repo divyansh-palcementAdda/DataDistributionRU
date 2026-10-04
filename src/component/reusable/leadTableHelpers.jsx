@@ -123,8 +123,49 @@ export const getLeadStatusStyle = (statusName) => {
   };
 };
 
+export const isUserAdmin = () => {
+  const role = (localStorage.getItem('userRole') || '').toUpperCase();
+  if (role === 'SUPER_ADMIN' || role === 'ADMIN') return true;
+  try {
+    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+    const roleName = (userInfo?.role?.name || userInfo?.role || '').toUpperCase();
+    return roleName === 'SUPER_ADMIN' || roleName === 'ADMIN';
+  } catch (e) {
+    return false;
+  }
+};
+
+export const isLeadUnmapped = (row) => {
+  if (!row) return false;
+  if (typeof row.unmapped === 'boolean') return row.unmapped;
+  if (typeof row.isUnmapped === 'boolean') return row.isUnmapped;
+
+  const hasCourse = Boolean(
+    row.course?.courseName ||
+    row.course?.name ||
+    row.registeredCourse?.courseName ||
+    (Array.isArray(row.interestedCourses) && row.interestedCourses.length > 0)
+  );
+  const hasCourseType = Boolean(
+    row.courseType?.name ||
+    row.course?.courseType ||
+    (Array.isArray(row.interestedCourseTypes) && row.interestedCourseTypes.length > 0)
+  );
+  const hasGrade = Boolean(row.grade?.name || row.gradeName || (typeof row.grade === 'string' && row.grade));
+  const hasBoard = Boolean(row.board?.name || row.boardName || (typeof row.board === 'string' && row.board));
+  const hasSource = Boolean(
+    (Array.isArray(row.leadSources) && row.leadSources.length > 0) ||
+    row.sourceDetails ||
+    row.leadSource?.name
+  );
+  const hasProgram = Boolean(row.program?.name || row.programName || (typeof row.program === 'string' && row.program));
+
+  return !hasCourse || !hasGrade || !hasBoard || !hasSource || !hasProgram || !hasCourseType;
+};
+
 /**
- * Renders Lead Info cell with Full Name on top and Lead ID badge cleanly below name.
+ * Renders Lead Info cell with Full Name on top and Lead ID badge cleanly below name,
+ * along with UNMAPPED and Registration Status badges when applicable.
  */
 export const renderLeadInfoCell = (row, onLeadClick, showToast) => {
   const nameValue = typeof row?.fullName === 'object'
@@ -147,6 +188,10 @@ export const renderLeadInfoCell = (row, onLeadClick, showToast) => {
     }
   };
 
+  const isAdmin = isUserAdmin();
+  const unmapped = isAdmin && isLeadUnmapped(row);
+  const regStatus = row?.registrationStatus;
+
   return (
     <div className="flex flex-col items-start gap-1 py-0.5">
       <span
@@ -159,8 +204,8 @@ export const renderLeadInfoCell = (row, onLeadClick, showToast) => {
         {nameValue}
       </span>
 
-      {displayLeadCode && displayLeadCode !== 'N/A' && (
-        <div className="inline-flex items-center">
+      <div className="flex items-center gap-1.5 flex-wrap">
+        {displayLeadCode && displayLeadCode !== 'N/A' && (
           <span
             onClick={handleCopyId}
             className="inline-flex items-center gap-1 font-mono text-[10.5px] font-semibold text-indigo-700 bg-indigo-50/80 hover:bg-indigo-100/90 px-1.5 py-0.5 rounded border border-indigo-100/90 shadow-2xs transition-all cursor-pointer group/leadid"
@@ -172,8 +217,37 @@ export const renderLeadInfoCell = (row, onLeadClick, showToast) => {
             <span>{displayLeadCode}</span>
             <FiCopy className="opacity-0 group-hover/leadid:opacity-100 transition-opacity text-[10px] text-indigo-500 ml-0.5" />
           </span>
-        </div>
-      )}
+        )}
+
+        {unmapped && (
+          <span
+            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-bold bg-rose-50 text-rose-700 border border-rose-300 shadow-2xs"
+            title="Lead has missing or unmapped master data (Admin only)"
+          >
+            <span className="w-1.5 h-1.5 rounded-full border border-rose-600"></span>
+            UNMAPPED
+          </span>
+        )}
+
+        {regStatus && regStatus !== 'NONE' && (
+          <span
+            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9.5px] font-semibold shadow-2xs ${
+              regStatus === 'CHECK_REJECTED'
+                ? 'bg-purple-50 text-purple-700 border border-purple-200'
+                : regStatus === 'CHECK_PENDING'
+                ? 'bg-amber-50 text-amber-700 border border-amber-200'
+                : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+            }`}
+            title={`Registration status: ${regStatus}`}
+          >
+            {regStatus === 'CHECK_REJECTED' && 'Reg: Check Rejected'}
+            {regStatus === 'CHECK_PENDING' && 'Reg: Verification Pending'}
+            {regStatus === 'COMPLETED_MATCHED' && 'Reg: CMS Verified'}
+            {regStatus === 'MANUALLY_APPROVED' && 'Reg: Manually Approved'}
+            {!['CHECK_PENDING', 'CHECK_REJECTED', 'COMPLETED_MATCHED', 'MANUALLY_APPROVED'].includes(regStatus) && `Reg: ${regStatus}`}
+          </span>
+        )}
+      </div>
     </div>
   );
 };

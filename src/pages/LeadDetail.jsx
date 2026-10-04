@@ -12,6 +12,7 @@ import EmailModal from '../component/reusable/EmailModal';
 import LeadRemarkModal from '../component/reusable/Leads/LeadRemarkModal';
 import PlanUniversityVisitModal from '../component/reusable/Leads/PlanUniversityVisitModal';
 import ReusableTable from '../component/reusable/table';
+import CompleteFollowupModal from '../component/reusable/CompleteFollowupModal';
 import {
   createLeadSchedule,
   getLeadById,
@@ -52,6 +53,8 @@ const LeadDetail = () => {
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [isRemarkModalOpen, setIsRemarkModalOpen] = useState(false);
   const [isVisitModalOpen, setIsVisitModalOpen] = useState(false);
+  const [isCompleteFollowupModalOpen, setIsCompleteFollowupModalOpen] = useState(false);
+  const [followupToComplete, setFollowupToComplete] = useState(null);
 
   // Data state
   const [leadDetails, setLeadDetails] = useState(null);
@@ -525,29 +528,18 @@ const LeadDetail = () => {
     {
       key: 'action',
       header: 'Action',
-      render: (_, row) => {
-        const isPending = row.status === 'PENDING' && !row.completed;
-        if (!isPending) return '-';
-        return (
-          <button
-            onClick={() => handleOpenFollowUp(row.id)}
-            className="px-2.5 py-1 text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition shadow-2xs flex items-center gap-1"
-            title="Open Follow-up"
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-              <circle cx="12" cy="12" r="3" />
-            </svg>
-            Open
-          </button>
-        );
-      },
+      render: () => '-',
     },
   ];
 
   // Today's pending follow-up if present
   const todayPendingFollowup = useMemo(() => {
-    return followUps.find(f => (f.status === 'PENDING' || f.status === 'UPCOMING') && !f.completed);
+    return followUps.find(f => f.status === 'PENDING' && !f.completed);
+  }, [followUps]);
+
+  // Upcoming follow-up if present
+  const upcomingFollowup = useMemo(() => {
+    return followUps.find(f => f.status === 'UPCOMING' && !f.completed);
   }, [followUps]);
 
   // Derived Business Flags
@@ -588,6 +580,25 @@ const LeadDetail = () => {
   // Availed & Allotted logic (user terminology: availed & unAvailed, alloted & unAlloted)
   const isAvailed = Boolean(leadDetails?.isAvailed || leadDetails?.availed);
   const isAllotted = Boolean(leadDetails?.assignedTo);
+
+  // Current logged in user info
+  const userInfo = useMemo(() => {
+    try {
+      return JSON.parse(localStorage.getItem('userInfo') || '{}');
+    } catch {
+      return {};
+    }
+  }, []);
+  const currentUserId = userInfo?.id || userInfo?.userId;
+
+  const isAssignedToCurrentUser = useMemo(() => {
+    if (!currentUserId || !leadDetails?.assignedTo) return false;
+    const assignedId = leadDetails.assignedTo.id || leadDetails.assignedTo.userId || leadDetails.assignedTo;
+    return String(assignedId) === String(currentUserId);
+  }, [currentUserId, leadDetails]);
+
+  // Admin can plan visit for all leads; HODs & Counselors can plan visit on their assigned leads only
+  const canPlanVisit = isAdmin || isAssignedToCurrentUser;
 
   // Data Quality / Unmapped Fields Analysis
   const missingMappingFields = useMemo(() => {
@@ -897,27 +908,41 @@ const LeadDetail = () => {
     }
   };
 
-  const handleCompleteFollowup = async () => {
+  const handleCompleteFollowup = () => {
+    const activeFollowup = followUps.find(f => (f.status === 'PENDING' || f.status === 'UPCOMING') && !f.completed);
+    if (!activeFollowup) {
+      toast.error('No pending or upcoming follow-up found to complete');
+      return;
+    }
+    setFollowupToComplete(activeFollowup);
+    setIsCallModalOpen(false);
+    setIsCompleteFollowupModalOpen(true);
+  };
+
+  const handleCompleteUpcomingFollowupModal = async (remarks) => {
+    if (!followupToComplete?.id) return;
     try {
-      const pendingFollowup = followUps.find(f => f.status === 'PENDING' && !f.completed);
-      if (!pendingFollowup) {
-        toast.error('No pending follow-up found to complete');
-        return;
-      }
-      const response = await completeFollowup(pendingFollowup.id, {
-        feedback: 'Follow-up completed',
-        remarks: 'Marked as completed for follow-up'
+      setRefreshing(true);
+      const res = await completeFollowup(followupToComplete.id, {
+        remarks,
+        feedback: remarks,
       });
-      if (response?.success) {
-        toast.info('Follow-up marked as completed. Please update the lead status before leaving this lead.');
+      if (res?.success || res?.status === 'COMPLETED' || res?.data?.status === 'COMPLETED') {
+        toast.info('Follow-up marked as completed. Please update the lead status before leaving this lead.', {
+          toastId: 'followup-completed-toast'
+        });
         setFollowUpJustCompleted(true);
+        setIsCompleteFollowupModalOpen(false);
+        setFollowupToComplete(null);
         await loadLeadData(false);
       } else {
-        toast.error(response?.message || 'Failed to complete follow-up');
+        toast.error(res?.message || 'Failed to complete follow-up');
       }
-    } catch (error) {
-      console.error('Failed to complete follow-up', error);
-      toast.error('Failed to complete follow-up');
+    } catch (err) {
+      console.error('Error completing follow-up:', err);
+      toast.error(err?.response?.data?.message || err?.message || 'Failed to complete follow-up');
+    } finally {
+      setRefreshing(false);
     }
   };
 
@@ -1053,20 +1078,6 @@ const LeadDetail = () => {
 
         {/* Global Action Buttons */}
         <div className="flex flex-wrap items-center gap-2">
-          {todayPendingFollowup && (
-            <CustomButton
-              variant="primary"
-              onClick={() => handleOpenFollowUp(todayPendingFollowup.id)}
-              className="text-xs py-2 px-3.5 flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 shadow-sm"
-              title="Open and handle today's follow-up"
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-              Open Follow-Up
-            </CustomButton>
-          )}
 
           {hasPendingFollowup && !followUpStatus && (
             <CustomButton
@@ -1082,7 +1093,7 @@ const LeadDetail = () => {
             </CustomButton>
           )}
 
-          {hasPendingFollowup && !followUpStatus && (
+          {(hasPendingFollowup || Boolean(upcomingFollowup)) && !followUpStatus && (
             <CustomButton
               variant="primary"
               onClick={handleCompleteFollowup}
@@ -1897,18 +1908,18 @@ const LeadDetail = () => {
                   </h3>
                   <span
                     className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${leadDetails.planningToVisitUniversity
-                        ? 'bg-green-50 text-green-700 border border-green-200'
-                        : 'bg-gray-100 text-gray-600 border border-gray-200'
+                      ? 'bg-green-50 text-green-700 border border-green-200'
+                      : 'bg-gray-100 text-gray-600 border border-gray-200'
                       }`}
                   >
                     {leadDetails.planningToVisitUniversity ? 'Visit Planned' : 'No Visit'}
                   </span>
                 </div>
 
-                {hasPermission('LEAD_UPDATE') && (
+                {canPlanVisit && (
                   <button
                     onClick={() => setIsVisitModalOpen(true)}
-                    className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700 transition-colors self-start sm:self-auto"
+                    className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700 transition-colors self-start sm:self-auto cursor-pointer"
                   >
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
@@ -2121,7 +2132,7 @@ const LeadDetail = () => {
                     onSelectCourse={(courseId) => {
                       setSelectedCourse(courseId);
                       const match = (courses || []).find(c => String(c.id) === String(courseId)) ||
-                                    (leadInterestedCourses || []).find(c => String(c.id) === String(courseId));
+                        (leadInterestedCourses || []).find(c => String(c.id) === String(courseId));
                       if (match) setSelectedCourseObj(match);
                     }}
                     loading={callerGuidanceLoading}
@@ -2304,6 +2315,16 @@ const LeadDetail = () => {
         onClose={() => setIsVisitModalOpen(false)}
         leadDetails={leadDetails}
         onSuccess={() => loadLeadData(false)}
+      />
+
+      {/* Complete Follow-up Modal */}
+      <CompleteFollowupModal
+        isOpen={isCompleteFollowupModalOpen}
+        onClose={() => {
+          setIsCompleteFollowupModalOpen(false);
+          setFollowupToComplete(null);
+        }}
+        onSubmit={handleCompleteUpcomingFollowupModal}
       />
 
       {/* Mandatory Lead Action Enforcement Blocking Modal */}

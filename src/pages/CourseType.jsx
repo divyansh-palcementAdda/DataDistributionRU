@@ -8,6 +8,7 @@ import { getAllCourseType, toggleCourseStatus, deleteCourseType } from '../Servi
 import { toast } from 'react-toastify';
 import AddCourseTypeModel from '../component/reusable/AddCourseTypeModel';
 import DeleteModal from '../component/reusable/deleteModel';
+import UnmappedCard from '../component/reusable/DashBoards/UnmappedCard';
 import { usePermissions } from '../PermissionContext';
 import * as XLSX from 'xlsx';
 

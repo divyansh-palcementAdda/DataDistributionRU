@@ -288,3 +288,14 @@ export const getLeadActionEnforcement = async (id) => {
     }
 };
 
+// Update lead remarks directly — PATCH /api/leads/{id}/remarks
+export const updateLeadRemarks = async (id, remarks = '') => {
+    try {
+        const url = (ApiRoutes.Lead.updateRemarks || '/api/leads/{id}/remarks').replace('{id}', id);
+        const response = await axiosInstance.patch(url, { remarks, remark: remarks });
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+

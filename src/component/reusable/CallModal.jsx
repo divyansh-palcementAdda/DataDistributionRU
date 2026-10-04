@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import { changeLeadStatus } from '../../Services/lead/leadService';
+import { cancelFollowup } from '../../Services/followUp/followService';
 
 const CallModal = ({
     isOpen,
@@ -72,8 +73,14 @@ const CallModal = ({
     // Check if any followup has MISSED status
     const hasMissedFollowup = followups?.some(f => f.status === 'MISSED');
 
+    // Check if any active (pending or upcoming) followup exists
+    const activeFollowup = followups?.find(f => (f.status === 'PENDING' || f.status === 'UPCOMING') && !f.completed);
+    const isUpcomingFollowup = activeFollowup?.status === 'UPCOMING';
+    const isPendingFollowup = activeFollowup?.status === 'PENDING' || hasPendingFollowup;
+    const hasActiveFollowup = Boolean(activeFollowup || hasPendingFollowup);
+
     // Determine visibility conditions
-    const shouldShowConnectionButtons = !followUpStatus || hasMissedFollowup;
+    const shouldShowConnectionButtons = (!followUpStatus || hasMissedFollowup) && !hasActiveFollowup;
 
     const leadPhone = phoneNumber || studentData?.phoneNumber || studentData?.mobile || studentData?.contactNo || '';
     const leadName = studentData?.fullName || studentData?.name || 'Unnamed Lead';
@@ -153,6 +160,16 @@ const CallModal = ({
         setIsSubmitting(true);
         setActiveAction('NOT_INTERESTED');
         try {
+            if (activeFollowup) {
+                try {
+                    await cancelFollowup(activeFollowup.id, {
+                        feedback: 'Lead marked as not interested',
+                        remarks: 'Follow-up cancelled: Lead not interested'
+                    });
+                } catch (e) {
+                    console.warn('Could not cancel follow-up on not interested:', e);
+                }
+            }
             await changeLeadStatus(studentData?.id, {
                 newStatusId: studentData?.currentStatus?.id,
                 statusCode: 'NOT_INTERESTED',
@@ -162,6 +179,7 @@ const CallModal = ({
             if (onStatusChanged) onStatusChanged();
             if (onComplete) onComplete();
             if (onDataRefresh) onDataRefresh();
+            handleClose();
         } catch (error) {
             console.error('Error changing status to Not Interested:', error);
             toast.error(error?.response?.data?.message || 'Failed to update status');
@@ -301,17 +319,8 @@ const CallModal = ({
 
     const handleCompleteFollowup = async () => {
         if (onCompleteFollowup) {
-            setIsSubmitting(true);
-            setActiveAction('COMPLETE_FOLLOWUP');
-            try {
-                await onCompleteFollowup();
-                setFollowupActionCompleted('completed');
-                if (onComplete) onComplete();
-                if (onDataRefresh) onDataRefresh();
-            } finally {
-                setIsSubmitting(false);
-                setActiveAction(null);
-            }
+            handleClose();
+            onCompleteFollowup();
         }
     };
 
@@ -340,6 +349,7 @@ const CallModal = ({
                 setFollowupActionCompleted('not_connected');
                 if (onComplete) onComplete();
                 if (onDataRefresh) onDataRefresh();
+                handleClose();
             } finally {
                 setIsSubmitting(false);
                 setActiveAction(null);
@@ -543,6 +553,124 @@ const CallModal = ({
                     <div className="space-y-3">
                         {!isFinallyNotConnected && currentStatusCode !== 'FINALLY_NOT_CONNECTED' && (
                             <>
+                                {/* ACTIVE (UPCOMING OR PENDING) FOLLOW-UP ACTIONS */}
+                                {hasActiveFollowup && !followupActionCompleted && (
+                                    <div className="space-y-3 p-4 bg-slate-50/90 rounded-xl border border-slate-200/90 shadow-2xs">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                                                    <circle cx="12" cy="12" r="10" />
+                                                    <polyline points="12 6 12 12 16 14" />
+                                                </svg>
+                                                Follow-Up Actions
+                                            </span>
+                                            <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+                                                isUpcomingFollowup
+                                                    ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                                                    : 'bg-amber-100 text-amber-800 border border-amber-200'
+                                            }`}>
+                                                {isUpcomingFollowup ? 'Upcoming Follow-Up' : 'Pending Follow-Up'}
+                                            </span>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                                            {/* Complete Follow-up */}
+                                            <button
+                                                type="button"
+                                                onClick={handleCompleteFollowup}
+                                                disabled={isSubmitting}
+                                                className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl font-semibold text-xs text-white bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] shadow-2xs transition-all disabled:opacity-50 cursor-pointer"
+                                                title="Complete this follow-up"
+                                            >
+                                                {activeAction === 'COMPLETE_FOLLOWUP' ? (
+                                                    <svg className="animate-spin w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                                    </svg>
+                                                ) : (
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                                        <polyline points="20 6 9 17 4 12" />
+                                                    </svg>
+                                                )}
+                                                <span>Complete Follow-up</span>
+                                            </button>
+
+                                            {/* Follow-up Not Connected */}
+                                            <button
+                                                type="button"
+                                                onClick={handleFollowupNotConnected}
+                                                disabled={isSubmitting}
+                                                className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl font-semibold text-xs text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-300 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+                                                title="Mark follow-up as Not Connected"
+                                            >
+                                                {activeAction === 'FOLLOWUP_NOT_CONNECTED' ? (
+                                                    <svg className="animate-spin w-3.5 h-3.5 text-amber-700" fill="none" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                                    </svg>
+                                                ) : (
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                                                        <line x1="1" y1="1" x2="23" y2="23" />
+                                                        <path d="M9 9v.01" />
+                                                        <path d="M17 17v.01" />
+                                                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07" />
+                                                    </svg>
+                                                )}
+                                                <span>Not Connected</span>
+                                            </button>
+
+                                            {/* Not Interested */}
+                                            <button
+                                                type="button"
+                                                onClick={handleNotInterested}
+                                                disabled={isSubmitting}
+                                                className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl font-semibold text-xs text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 active:scale-[0.98] transition-all disabled:opacity-50 cursor-pointer"
+                                                title="Mark lead as Not Interested"
+                                            >
+                                                {activeAction === 'NOT_INTERESTED' ? (
+                                                    <svg className="animate-spin w-3.5 h-3.5 text-rose-600" fill="none" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                                    </svg>
+                                                ) : (
+                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                                                        <path d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3zm7-13h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3" />
+                                                    </svg>
+                                                )}
+                                                <span>Not Interested</span>
+                                            </button>
+                                        </div>
+
+                                        {/* Temporarily hidden for now - will unhide later */}
+                                        {false && (
+                                            <div className="flex items-center justify-between pt-2 border-t border-slate-200/70">
+                                                <button
+                                                    type="button"
+                                                    onClick={handleScheduleFollowUp}
+                                                    disabled={isSubmitting}
+                                                    className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:text-blue-800 transition cursor-pointer"
+                                                >
+                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                                                        <line x1="16" y1="2" x2="16" y2="6" />
+                                                        <line x1="8" y1="2" x2="8" y2="6" />
+                                                        <line x1="3" y1="10" x2="21" y2="10" />
+                                                    </svg>
+                                                    <span>Reschedule Follow-up</span>
+                                                </button>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={handleCancelFollowup}
+                                                    disabled={isSubmitting}
+                                                    className="inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-rose-600 transition cursor-pointer"
+                                                >
+                                                    <span>Cancel Follow-up</span>
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                                 {/* STAGE 1: Call Outcome (Connected / Not Connected / Bad) */}
                                 {shouldShowConnectionButtons && !isConnected && (
                                     <div className="space-y-3">
@@ -764,82 +892,7 @@ const CallModal = ({
                                     </div>
                                 )}
 
-                                {/* PENDING FOLLOW-UP ACTIONS */}
-                                {(hasPendingFollowup || followUpStatus === 'upcoming') && !followupActionCompleted && (
-                                    <div className="space-y-3 pt-2 border-t border-slate-100">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">
-                                                Follow-Up Actions
-                                            </span>
-                                            <span className="text-[11px] text-amber-600 font-medium">
-                                                Follow-up Pending
-                                            </span>
-                                        </div>
 
-                                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                                            <button
-                                                type="button"
-                                                onClick={handleCompleteFollowup}
-                                                disabled={isSubmitting}
-                                                className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl font-semibold text-xs text-white bg-emerald-600 hover:bg-emerald-700 shadow-2xs transition-all disabled:opacity-50 cursor-pointer"
-                                            >
-                                                {activeAction === 'COMPLETE_FOLLOWUP' ? (
-                                                    <svg className="animate-spin w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24">
-                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                                    </svg>
-                                                ) : (
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                                        <polyline points="20 6 9 17 4 12" />
-                                                    </svg>
-                                                )}
-                                                <span>Mark Completed</span>
-                                            </button>
-
-                                            <button
-                                                type="button"
-                                                onClick={handleCancelFollowup}
-                                                disabled={isSubmitting}
-                                                className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl font-semibold text-xs text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-all disabled:opacity-50 cursor-pointer"
-                                            >
-                                                {activeAction === 'CANCEL_FOLLOWUP' ? (
-                                                    <svg className="animate-spin w-3.5 h-3.5 text-rose-600" fill="none" viewBox="0 0 24 24">
-                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                                    </svg>
-                                                ) : (
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                                                        <line x1="18" y1="6" x2="6" y2="18" />
-                                                        <line x1="6" y1="6" x2="18" y2="18" />
-                                                    </svg>
-                                                )}
-                                                <span>Mark Cancelled</span>
-                                            </button>
-
-                                            <button
-                                                type="button"
-                                                onClick={handleFollowupNotConnected}
-                                                disabled={isSubmitting}
-                                                className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl font-semibold text-xs text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition-all disabled:opacity-50 cursor-pointer"
-                                            >
-                                                {activeAction === 'FOLLOWUP_NOT_CONNECTED' ? (
-                                                    <svg className="animate-spin w-3.5 h-3.5 text-amber-700" fill="none" viewBox="0 0 24 24">
-                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                                    </svg>
-                                                ) : (
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                                                        <line x1="1" y1="1" x2="23" y2="23" />
-                                                        <path d="M9 9v.01" />
-                                                        <path d="M17 17v.01" />
-                                                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07" />
-                                                    </svg>
-                                                )}
-                                                <span>Not Connected</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
 
                                 {/* Follow-up Completed / Post Actions */}
                                 {followupActionCompleted === 'cancelled' && (

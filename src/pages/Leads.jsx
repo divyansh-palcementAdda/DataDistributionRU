@@ -45,6 +45,8 @@ import UnallottedCard from '../component/reusable/DashBoards/UnallottedCard';
 import AvailedCard from '../component/reusable/DashBoards/availedCard';
 import AllottedCard from '../component/reusable/DashBoards/allottedCard';
 import MultiSourceCard from '../component/reusable/DashBoards/MultiSourceCard';
+import RegistrationRejectedCard from '../component/reusable/DashBoards/RegistrationRejectedCard';
+import UnmappedCard from '../component/reusable/DashBoards/UnmappedCard';
 import CategorywiseCard from '../component/reusable/DashBoards/categorywiseCard';
 import BulkUploadModal from '../component/reusable/Leads/BulkUploadModal';
 import PreviewDistributionModal from '../component/reusable/Leads/PreviewDistributionModal';
@@ -249,6 +251,12 @@ const Leads = () => {
     if (filters.allotted === true) list.push({ type: 'allotted', value: true });
     if (filters.availed === true) list.push({ type: 'availed', value: true });
     if (filters.multiSource === true) list.push({ type: 'multiSource', value: true });
+    if (filters.registrationStatus === 'CHECK_REJECTED') list.push({ type: 'registrationRejected', value: true });
+    if (filters.unmapped === true) list.push({ type: 'unmapped', value: true });
+    if (filters.withoutCourse === true) list.push({ type: 'withoutCourse', value: true });
+    if (filters.withoutCourseType === true) list.push({ type: 'withoutCourseType', value: true });
+    if (filters.withoutProgram === true) list.push({ type: 'withoutProgram', value: true });
+    if (filters.withoutGrade === true) list.push({ type: 'withoutGrade', value: true });
     (filters.statusIds || []).forEach(id => list.push({ type: 'leadStatus', value: id }));
     (filters.leadStatusHistoryIds || []).forEach(id => list.push({ type: 'leadStatusHistory', value: id }));
     (filters.leadSourceIds || []).forEach(id => list.push({ type: 'leadSource', value: id }));
@@ -301,6 +309,10 @@ const Leads = () => {
         next.availed = prev.availed === true ? null : true;
       } else if (cardInfo.type === 'multiSource') {
         next.multiSource = prev.multiSource === true ? null : true;
+      } else if (cardInfo.type === 'registrationRejected') {
+        next.registrationStatus = prev.registrationStatus === 'CHECK_REJECTED' ? null : 'CHECK_REJECTED';
+      } else if (cardInfo.type === 'unmapped') {
+        next.unmapped = prev.unmapped === true ? null : true;
       } else if (cardInfo.type === 'leadStatus' && cardInfo.value) {
         const current = next.statusIds || [];
         next.statusIds = current.includes(cardInfo.value)
@@ -821,7 +833,7 @@ const Leads = () => {
       </div>
 
       {/* ── New Lead Status Cards ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '20px' }}>
         <UnallottedCard 
           onCardClick={handleCardClick}
           activeFilters={activeCardFilters}
@@ -842,6 +854,17 @@ const Leads = () => {
           onCardClick={handleCardClick}
           activeFilters={activeCardFilters}
           filterRequest={filterRequest}
+        />
+        <RegistrationRejectedCard
+          onCardClick={handleCardClick}
+          activeFilters={activeCardFilters}
+          filterRequest={filterRequest}
+        />
+        <UnmappedCard
+          onCardClick={handleCardClick}
+          activeFilters={activeCardFilters}
+          filterRequest={filterRequest}
+          title="All Unmapped Data"
         />
       </div>
 

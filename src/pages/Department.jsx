@@ -102,8 +102,8 @@ const Department = () => {
             if (dataObj && (dataObj.content || Array.isArray(dataObj))) {
                 const list = dataObj.content || (Array.isArray(dataObj) ? dataObj : []);
                 setDepartments(list);
-                setTotalPages(dataObj.totalPages ?? Math.max(1, Math.ceil(list.length / rowsPerPage)));
-                setTotalElements(dataObj.totalElements ?? list.length);
+                setTotalPages(dataObj.totalPages ?? dataObj.page?.totalPages ?? Math.max(1, Math.ceil(list.length / rowsPerPage)));
+                setTotalElements(dataObj.totalElements ?? dataObj.page?.totalElements ?? list.length);
             } else {
                 setDepartments([]);
                 setTotalPages(0);

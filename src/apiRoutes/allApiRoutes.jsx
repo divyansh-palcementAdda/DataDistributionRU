@@ -29,6 +29,7 @@ const ApiRoutes = {
         avail: '/api/leads/{id}/avail',
         assignmentHistory:'/api/leads/{id}/assignment-history',
         actionEnforcement: '/api/leads/{id}/action-enforcement',
+        updateRemarks: '/api/leads/{id}/remarks',
     },
     FollowUp: {
         getAllFollowUps: '/api/followups',
@@ -205,6 +206,8 @@ const ApiRoutes = {
         availedCount: '/api/dashboard/leads/availed/count',
         allottedCount: '/api/dashboard/leads/allotted/count',
         multiSourceCount: '/api/dashboard/leads/multi-source/count',
+        registrationRejectedCount: '/api/dashboard/leads/registration-rejected/count',
+        unmappedCount: '/api/dashboard/leads/unmapped/count',
         todayFollowUpsCount: '/api/dashboard/followups/today/count',
         followupStatusCounts: '/api/dashboard/followups/status-counts',
     },

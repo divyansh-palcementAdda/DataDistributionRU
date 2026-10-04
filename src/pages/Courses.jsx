@@ -10,6 +10,7 @@ import DeleteModal from '../component/reusable/deleteModel';
 import { usePermissions } from '../PermissionContext';
 import CourseInfoPanelBulkUploadModal from '../component/reusable/callerGuidance/CourseInfoPanelBulkUploadModal';
 import CourseBulkUploadModal from '../component/reusable/course/CourseBulkUploadModal';
+import UnmappedCard from '../component/reusable/DashBoards/UnmappedCard';
 import * as XLSX from 'xlsx';
 
 const Courses = () => {

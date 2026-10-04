@@ -28,7 +28,7 @@ import {
 import { getLeadCallerGuidance } from '../Services/infoPanel/infoPanelService';
 import CallerInfoPanel from '../component/reusable/callerGuidance/CallerInfoPanel';
 import { getCoursesDropdown } from '../Services/drop-down/dropDownService';
-import { completeFollowup, cancelFollowup, markFollowupNotConnected } from '../Services/followUp/followService';
+import { completeFollowup, cancelFollowup, markFollowupNotConnected, openFollowUp } from '../Services/followUp/followService';
 
 const LeadDetail = () => {
   const { id } = useParams();
@@ -40,18 +40,10 @@ const LeadDetail = () => {
   const userRole = localStorage.getItem('userRole')?.toUpperCase() || '';
   const isAdmin = userRole === 'SUPER_ADMIN' || userRole === 'ADMIN';
 
-  // Navigation guard: reset whenever a new lead is opened
-  // Check sessionStorage so same lead reopened in same tab skips the restriction
-  // Admin/Super Admin bypass the restriction entirely
-  const [statusChangedThisVisit, setStatusChangedThisVisit] = useState(() => {
-    if (isAdmin) return true;
-    try {
-      const changed = JSON.parse(sessionStorage.getItem('statusChangedLeads') || '[]');
-      return changed.includes(String(id));
-    } catch {
-      return false;
-    }
-  });
+  // Server-authoritative action enforcement state
+  const [isActionRequiredModalOpen, setIsActionRequiredModalOpen] = useState(false);
+  const [navBlockedTarget, setNavBlockedTarget] = useState(null);
+  const [followUpJustCompleted, setFollowUpJustCompleted] = useState(false);
 
   // Modals state
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
@@ -150,25 +142,15 @@ const LeadDetail = () => {
     }
   }, [id, hasPermission, showToast]);
 
+  const isActionRequired = Boolean(leadDetails?.actionEnforcement?.restricted);
+
   // Initial fetch on route id change (clearing previous state immediately to avoid ghost/stale data)
   useEffect(() => {
-    // Admin bypasses restriction entirely
-    if (isAdmin) {
-      setStatusChangedThisVisit(true);
-    } else {
-      // Re-check sessionStorage for the new lead id before resetting
-      let alreadyChanged = false;
-      try {
-        const changed = JSON.parse(sessionStorage.getItem('statusChangedLeads') || '[]');
-        alreadyChanged = changed.includes(String(id));
-      } catch {
-        alreadyChanged = false;
-      }
-      setStatusChangedThisVisit(alreadyChanged);
-    }
     setLeadDetails(null);
     setStatusHistory([]);
     setFollowUps([]);
+    setIsActionRequiredModalOpen(false);
+    setFollowUpJustCompleted(false);
     loadLeadData(true);
   }, [id, loadLeadData]);
 
@@ -179,40 +161,31 @@ const LeadDetail = () => {
     }
   }, [leadRefreshTrigger, id, loadLeadData]);
 
-  // Navigation guard: block ALL React Router navigations until status has been changed this visit
-  // Mark status as changed: update state + persist in sessionStorage for this tab session
-  const markStatusChanged = useCallback(() => {
-    try {
-      const changed = JSON.parse(sessionStorage.getItem('statusChangedLeads') || '[]');
-      if (!changed.includes(String(id))) {
-        changed.push(String(id));
-        sessionStorage.setItem('statusChangedLeads', JSON.stringify(changed));
-      }
-    } catch {
-      // sessionStorage unavailable — still update state
-    }
-    setStatusChangedThisVisit(true);
-  }, [id]);
-
-  // Keep a ref so callbacks always read the latest value without stale closures.
-  const statusChangedRef = useRef(statusChangedThisVisit);
-  useEffect(() => { statusChangedRef.current = statusChangedThisVisit; }, [statusChangedThisVisit]);
+  const isActionRequiredRef = useRef(isActionRequired);
+  useEffect(() => {
+    isActionRequiredRef.current = isActionRequired;
+  }, [isActionRequired]);
 
   // Register a nav guard in AppContext so sidebar (and every navTo caller) is blocked.
-  // The guard callback returns true = blocked. Cleared when status changes or on unmount.
+  // The guard callback receives (targetPage, targetParams) and returns true to block.
   useEffect(() => {
-    if (statusChangedThisVisit) {
+    if (!isActionRequired) {
       clearNavGuard();
+      setIsActionRequiredModalOpen(false);
       return;
     }
-    setNavGuard(() => {
-      toast.warn('Please change the lead status before leaving this page.', {
-        toastId: 'nav-blocked-lead-status',
-      });
-      return true; // block
+    setNavGuard((targetPage, targetParams) => {
+      const isAnotherLead = Boolean(targetPage?.startsWith?.('lead-detail') || targetPage === 'lead-detail');
+      const msg = isAnotherLead
+        ? 'Complete the required action for the current lead before opening another lead.'
+        : 'Complete the required action for this lead before leaving.';
+      toast.warn(msg, { toastId: 'nav-blocked-lead-status' });
+      setNavBlockedTarget({ page: targetPage, params: targetParams, isAnotherLead });
+      setIsActionRequiredModalOpen(true);
+      return true; // block navigation
     });
     return () => clearNavGuard();
-  }, [statusChangedThisVisit, setNavGuard, clearNavGuard]);
+  }, [isActionRequired, setNavGuard, clearNavGuard]);
 
   // Force logout: release ALL guards immediately so logout redirect is not blocked
   const forceLogoutRef = useRef(false);
@@ -227,30 +200,39 @@ const LeadDetail = () => {
 
   // Guarded navigate for direct navigate() calls inside LeadDetail (back button etc.)
   const guardedNavigate = useCallback((...args) => {
-    if (!statusChangedRef.current) {
-      toast.warn('Please change the lead status before leaving this page.', {
+    if (isActionRequiredRef.current) {
+      toast.warn('Complete the required action for this lead before leaving.', {
         toastId: 'nav-blocked-lead-status',
       });
+      setNavBlockedTarget({ isAnotherLead: false });
+      setIsActionRequiredModalOpen(true);
       return;
     }
     navigate(...args);
   }, [navigate]);
 
+  // Push state when action is required so browser Back button triggers popstate
+  useEffect(() => {
+    if (isActionRequired) {
+      window.history.pushState(null, '', window.location.href);
+    }
+  }, [isActionRequired]);
+
   // Single-registration listeners for popstate and beforeunload.
-  // They read latest state via refs — no re-registration on state change.
   useEffect(() => {
     const handlePopState = () => {
       if (forceLogoutRef.current || window.__forceLogout) return;
-      if (statusChangedRef.current) return;
+      if (!isActionRequiredRef.current) return;
       window.history.pushState(null, '', window.location.href);
-      toast.warn('Please change the lead status before leaving this page.', {
+      toast.warn('Please complete the required action before leaving this page.', {
         toastId: 'nav-blocked-lead-status',
       });
+      setIsActionRequiredModalOpen(true);
     };
 
     const handleBeforeUnload = (e) => {
       if (forceLogoutRef.current || window.__forceLogout) return;
-      if (statusChangedRef.current) return;
+      if (!isActionRequiredRef.current) return;
       e.preventDefault();
       e.returnValue = '';
     };
@@ -540,7 +522,33 @@ const LeadDetail = () => {
       header: 'Remarks',
       render: (value) => value || '-',
     },
+    {
+      key: 'action',
+      header: 'Action',
+      render: (_, row) => {
+        const isPending = row.status === 'PENDING' && !row.completed;
+        if (!isPending) return '-';
+        return (
+          <button
+            onClick={() => handleOpenFollowUp(row.id)}
+            className="px-2.5 py-1 text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition shadow-2xs flex items-center gap-1"
+            title="Open Follow-up"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+            Open
+          </button>
+        );
+      },
+    },
   ];
+
+  // Today's pending follow-up if present
+  const todayPendingFollowup = useMemo(() => {
+    return followUps.find(f => (f.status === 'PENDING' || f.status === 'UPCOMING') && !f.completed);
+  }, [followUps]);
 
   // Derived Business Flags
   const statusName = leadDetails?.currentStatus?.name || leadDetails?.currentStatus?.code || 'N/A';
@@ -737,6 +745,75 @@ const LeadDetail = () => {
   };
 
   // Status & Registration Handlers
+  const handleOpenFollowUp = async (followUpId) => {
+    try {
+      setRefreshing(true);
+      const res = await openFollowUp(followUpId);
+      if (res?.success || res?.status === 'COMPLETED' || res?.data?.status === 'COMPLETED') {
+        toast.info('Follow-up opened and automatically marked as completed. Please update the lead status before leaving this lead.', {
+          toastId: 'followup-auto-completed-toast'
+        });
+        setFollowUpJustCompleted(true);
+        await loadLeadData(false);
+      } else {
+        toast.error(res?.message || 'Could not open follow-up');
+      }
+    } catch (err) {
+      console.error('Error opening follow-up:', err);
+      toast.error(err?.message || 'Failed to open follow-up');
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const handleQuickMarkNotConnected = async (statusCode = 'NOT_CONNECTED_1') => {
+    try {
+      setRefreshing(true);
+      const response = await changeLeadStatus(id, {
+        newStatusId: leadDetails?.currentStatus?.id,
+        statusCode: statusCode,
+        feedback: 'Marked as not connected'
+      });
+      if (response?.data?.success) {
+        toast.success('Lead status updated to Not Connected. Navigation unlocked.');
+        setIsActionRequiredModalOpen(false);
+        setFollowUpJustCompleted(false);
+        await loadLeadData(false);
+      } else {
+        toast.error(response?.data?.message || 'Failed to update lead status');
+      }
+    } catch (error) {
+      console.error('Failed to mark lead as not connected', error);
+      toast.error(error?.response?.data?.message || error?.message || 'Failed to update lead status');
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const handleQuickMarkBad = async () => {
+    try {
+      setRefreshing(true);
+      const response = await changeLeadStatus(id, {
+        newStatusId: leadDetails?.currentStatus?.id,
+        statusCode: 'BAD',
+        feedback: 'Marked as Bad lead'
+      });
+      if (response?.data?.success) {
+        toast.success('Lead marked as Bad. Navigation unlocked.');
+        setIsActionRequiredModalOpen(false);
+        setFollowUpJustCompleted(false);
+        await loadLeadData(false);
+      } else {
+        toast.error(response?.data?.message || 'Failed to update lead status');
+      }
+    } catch (error) {
+      console.error('Failed to mark lead as Bad', error);
+      toast.error(error?.response?.data?.message || error?.message || 'Failed to mark lead as Bad');
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const handleRegisteredClick = async () => {
     try {
       setRefreshing(true);
@@ -747,8 +824,10 @@ const LeadDetail = () => {
       });
 
       if (response?.data?.success) {
-        markStatusChanged();
-        toast.success('Student verified with CMS & registered successfully!');
+        toast.success('Student verified with CMS & registered successfully! Navigation unlocked.');
+        setIsActionRequiredModalOpen(false);
+        setFollowUpJustCompleted(false);
+        await loadLeadData(false);
       } else {
         toast.error(response?.data?.message || 'Failed to change lead status');
       }
@@ -783,8 +862,9 @@ const LeadDetail = () => {
         remarks: manualApproveRemarks ? manualApproveRemarks.trim() : null,
       });
       if (res?.data?.success) {
-        toast.success('Registration manually approved successfully!');
+        toast.success('Registration manually approved successfully! Navigation unlocked.');
         setIsManualApproveModalOpen(false);
+        setFollowUpJustCompleted(false);
         await loadLeadData(false);
       } else {
         toast.error(res?.data?.message || 'Failed to approve registration');
@@ -802,7 +882,9 @@ const LeadDetail = () => {
       setIsRetryingCms(true);
       const res = await retryCmsStudentVerification(id);
       if (res?.data?.success) {
-        toast.success('CMS verification successful & student registered!');
+        toast.success('CMS verification successful & student registered! Navigation unlocked.');
+        setIsActionRequiredModalOpen(false);
+        setFollowUpJustCompleted(false);
       } else {
         toast.error(res?.data?.message || 'CMS verification failed');
       }
@@ -827,7 +909,9 @@ const LeadDetail = () => {
         remarks: 'Marked as completed for follow-up'
       });
       if (response?.success) {
-        toast.success('Follow-up marked as completed successfully');
+        toast.info('Follow-up marked as completed. Please update the lead status before leaving this lead.');
+        setFollowUpJustCompleted(true);
+        await loadLeadData(false);
       } else {
         toast.error(response?.message || 'Failed to complete follow-up');
       }
@@ -850,6 +934,7 @@ const LeadDetail = () => {
       });
       if (response?.success) {
         toast.success('Follow-up marked as cancelled successfully');
+        await loadLeadData(false);
       } else {
         toast.error(response?.message || 'Failed to cancel follow-up');
       }
@@ -870,7 +955,10 @@ const LeadDetail = () => {
         remarks: 'Follow-up call not attended / unanswered by student'
       });
       if (response?.success || response?.data) {
-        toast.success('Follow-up marked as Not Connected and Lead status synchronized successfully');
+        toast.success('Follow-up marked as Not Connected and Lead status synchronized successfully. Navigation unlocked.');
+        setIsActionRequiredModalOpen(false);
+        setFollowUpJustCompleted(false);
+        await loadLeadData(false);
       } else {
         toast.error(response?.message || 'Failed to mark follow-up as not connected');
       }
@@ -965,6 +1053,21 @@ const LeadDetail = () => {
 
         {/* Global Action Buttons */}
         <div className="flex flex-wrap items-center gap-2">
+          {todayPendingFollowup && (
+            <CustomButton
+              variant="primary"
+              onClick={() => handleOpenFollowUp(todayPendingFollowup.id)}
+              className="text-xs py-2 px-3.5 flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 shadow-sm"
+              title="Open and handle today's follow-up"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+              Open Follow-Up
+            </CustomButton>
+          )}
+
           {hasPendingFollowup && !followUpStatus && (
             <CustomButton
               variant="primary"
@@ -1036,6 +1139,83 @@ const LeadDetail = () => {
           )}
         </div>
       </div>
+
+      {/* MANDATORY ACTION REQUIRED ENFORCEMENT BANNER */}
+      {isActionRequired && (
+        <div className="mb-5 rounded-2xl border border-amber-300/80 bg-gradient-to-r from-amber-50/95 via-orange-50/95 to-amber-50/95 p-4 shadow-sm transition-all animate-in fade-in duration-200">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-700 flex-shrink-0 mt-0.5 md:mt-0">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-amber-950 uppercase tracking-wide">
+                    Action Required
+                  </h3>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-200/70 text-amber-800 border border-amber-300">
+                    Navigation Locked
+                  </span>
+                </div>
+                <p className="text-xs text-amber-900 mt-0.5 font-medium">
+                  {followUpJustCompleted
+                    ? "Follow-up completed. Please update the lead status before leaving this lead."
+                    : (leadDetails?.actionEnforcement?.message || "Please update this lead before leaving this page. Choose one of the qualifying actions below:")}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 w-full md:w-auto pt-2 md:pt-0 border-t md:border-t-0 border-amber-200/60">
+              <button
+                onClick={handleRegisteredClick}
+                className="px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-xs transition flex items-center gap-1.5"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                Register
+              </button>
+
+              <button
+                onClick={() => setIsScheduleModalOpen(true)}
+                className="px-3 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-xs transition flex items-center gap-1.5"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" />
+                  <path d="M16 2v4M8 2v4M3 10h18" />
+                </svg>
+                Schedule Follow-up
+              </button>
+
+              <button
+                onClick={() => handleQuickMarkNotConnected('NOT_CONNECTED_1')}
+                className="px-3 py-1.5 text-xs font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-lg shadow-xs transition flex items-center gap-1.5"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="15" y1="9" x2="9" y2="15" />
+                  <line x1="9" y1="9" x2="15" y2="15" />
+                </svg>
+                Mark Not Connected
+              </button>
+
+              <button
+                onClick={handleQuickMarkBad}
+                className="px-3 py-1.5 text-xs font-bold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg shadow-xs transition flex items-center gap-1.5"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+                </svg>
+                Mark Bad
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Grid: Left 2 Cols (Content) | Right 1 Col (Info Panel) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -2125,6 +2305,96 @@ const LeadDetail = () => {
         leadDetails={leadDetails}
         onSuccess={() => loadLeadData(false)}
       />
+
+      {/* Mandatory Lead Action Enforcement Blocking Modal */}
+      {isActionRequiredModalOpen && (
+        <div className="fixed inset-0 z-[1100] overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-amber-200 animate-in zoom-in-95 duration-200">
+            <div className="p-6">
+              <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center mx-auto mb-4 border border-amber-200 shadow-sm">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                </svg>
+              </div>
+
+              <h3 className="text-lg font-bold text-gray-900 text-center">Action Required</h3>
+              <p className="text-xs text-gray-600 text-center mt-1">
+                {navBlockedTarget?.isAnotherLead
+                  ? "Complete the required action for the current lead before opening another lead."
+                  : "Please update this lead before leaving this page."}
+              </p>
+
+              <div className="mt-4 p-3.5 bg-amber-50/70 border border-amber-200 rounded-xl text-xs text-amber-900 space-y-1.5">
+                <p className="font-semibold">You must take one of the allowed actions:</p>
+                <ul className="list-disc list-inside space-y-1 text-gray-700">
+                  <li>Register the lead</li>
+                  <li>Schedule a follow-up</li>
+                  <li>Mark the lead as Not Connected</li>
+                  <li>Mark the lead as Bad</li>
+                </ul>
+                <p className="text-[11px] text-amber-800 pt-1.5 border-t border-amber-200/50">
+                  You can continue working on this lead until one of these actions is completed.
+                </p>
+              </div>
+
+              {/* Quick action shortcuts directly from modal */}
+              <div className="mt-5 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsActionRequiredModalOpen(false);
+                    handleRegisteredClick();
+                  }}
+                  className="w-full py-2 px-3 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition shadow-xs flex items-center justify-center gap-1.5"
+                >
+                  Register Lead
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsActionRequiredModalOpen(false);
+                    setIsScheduleModalOpen(true);
+                  }}
+                  className="w-full py-2 px-3 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition shadow-xs flex items-center justify-center gap-1.5"
+                >
+                  Schedule Follow-up
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsActionRequiredModalOpen(false);
+                    handleQuickMarkNotConnected('NOT_CONNECTED_1');
+                  }}
+                  className="w-full py-2 px-3 text-xs font-semibold text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 rounded-xl transition flex items-center justify-center gap-1.5"
+                >
+                  Mark Not Connected
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsActionRequiredModalOpen(false);
+                    handleQuickMarkBad();
+                  }}
+                  className="w-full py-2 px-3 text-xs font-semibold text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-xl transition flex items-center justify-center gap-1.5"
+                >
+                  Mark as Bad
+                </button>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setIsActionRequiredModalOpen(false)}
+                  className="w-full py-2 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition"
+                >
+                  Continue Working on Lead
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
 import { usePermissions } from '../PermissionContext';
 import ReusableTable from '../component/reusable/table';
-import { getAllFollowups, getTodayFollowups, rescheduleFollowup, completeFollowup, markFollowupNotConnected } from '../Services/followUp/followService';
+import { getAllFollowups, getTodayFollowups, rescheduleFollowup, completeFollowup, markFollowupNotConnected, openFollowUp } from '../Services/followUp/followService';
 import FollowupFormModal from "../component/reusable/FollowupFormModal";
 import FollowUpCards from "../component/reusable/DashBoards/followUpCards";
 import ScheduleModal from "../component/reusable/Leads/scheduleModel";
@@ -156,8 +156,17 @@ const FollowUps = () => {
     }
   };
 
-  const handleViewLead = (row) => {
-    const leadId = row.leadId || row.id;
+  const handleViewLead = async (row) => {
+    const leadId = row.leadId || row.lead?.id || row.id;
+    const followUpId = row.id;
+    if (followUpId && row.leadId && row.status === 'PENDING' && !row.completed) {
+      try {
+        await openFollowUp(followUpId);
+        showToast("Follow-up opened and automatically marked as completed", "info");
+      } catch (err) {
+        console.warn("Follow-up open handled:", err?.message || err);
+      }
+    }
     if (leadId) {
       navTo(`lead-detail/${leadId}`);
     }

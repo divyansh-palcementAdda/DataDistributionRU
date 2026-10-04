@@ -139,9 +139,9 @@ useEffect(() => {
   };
 
   const navTo = (page, params = {}) => {
-    // Check navigation guard (e.g. LeadDetail requires status change before leaving)
-    if (navGuardRef.current && navGuardRef.current()) {
-      return; // guard blocked navigation and showed its own toast
+    // Check navigation guard (e.g. LeadDetail requires action before leaving)
+    if (navGuardRef.current && navGuardRef.current(page, params)) {
+      return; // guard blocked navigation and showed its own toast/modal
     }
     setCurrentPage(page);
     setIsSidebarOpen(false);

@@ -277,3 +277,14 @@ export const retryCmsStudentVerification = async (id) => {
     }
 };
 
+// Get lead mandatory action enforcement state — GET /api/leads/{id}/action-enforcement
+export const getLeadActionEnforcement = async (id) => {
+    try {
+        const url = (ApiRoutes.Lead.actionEnforcement || '/api/leads/{id}/action-enforcement').replace("{id}", id);
+        const response = await axiosInstance.get(url);
+        return response.data;
+    } catch (error) {
+        throw error;
+    }
+};
+

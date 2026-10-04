@@ -185,3 +185,18 @@ export const updateFollowupStatus = async (followUpId, payload) => {
     }
 };
 
+/**
+ * Open follow-up and auto-complete if scheduled for today and handled by assigned counselor.
+ * POST /api/followups/{id}/open (or /api/lead-follow-ups/{id}/open)
+ * @param {string} followUpId
+ */
+export const openFollowUp = async (followUpId) => {
+    try {
+        const route = (ApiRoutes.FollowUp?.open || "/api/followups/{id}/open").replace("{id}", followUpId);
+        const response = await axiosInstance.post(route);
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error;
+    }
+};
+

@@ -107,7 +107,9 @@ const ViewUserModal = ({
                 <div className="rounded-xl border border-gray-200 p-4">
                   <div className="text-xs font-medium text-gray-500">Department</div>
                   <div className="mt-1 text-sm font-semibold text-gray-800">
-                    {currentUser.department || 'N/A'}
+                    {currentUser.departments && currentUser.departments.length > 0
+                      ? currentUser.departments.map(d => d.name).join(', ')
+                      : currentUser.department || 'N/A'}
                   </div>
                 </div>
               </div>

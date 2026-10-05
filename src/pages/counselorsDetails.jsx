@@ -2074,10 +2074,14 @@ const CounselorDetails = () => {
                     </button>
                     <div>
                         <h1 className="text-xl font-bold text-gray-900 leading-tight">
-                            Counselor Details
+                            {details?.roles && (details.roles.includes('SUPER_ADMIN') || details.roles.includes('ADMIN'))
+                                ? 'User Details'
+                                : details?.roles && details.roles.includes('HOD')
+                                    ? 'HOD Details'
+                                    : 'Counselor Details'}
                         </h1>
                         <p className="text-sm text-gray-500 mt-1">
-                            View comprehensive details for this counselor
+                            View comprehensive details, allocation, and activity records for this {details?.roles && (details.roles.includes('SUPER_ADMIN') || details.roles.includes('ADMIN')) ? 'user' : 'counselor'}
                         </p>
                     </div>
                 </div>

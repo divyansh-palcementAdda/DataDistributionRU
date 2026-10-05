@@ -81,7 +81,7 @@ useEffect(() => {
     newPage = 'grades';
   } else if (path.startsWith('/board-details')) {
     newPage = 'boards';
-  } else if (path.startsWith('/counselor-details')) {
+  } else if (path.startsWith('/counselor-details') || path.startsWith('/user-details')) {
     newPage = 'counselors';
   } else if (path.startsWith('/department-details')) {
     newPage = 'department';

@@ -147,6 +147,11 @@ const Allroutes = () => {
             <CounselorDetails />
           </PermissionRoute>
         } />
+        <Route path="/user-details/:id" element={
+          <PermissionRoute requiredPermission="USER_READ">
+            <CounselorDetails />
+          </PermissionRoute>
+        } />
 
         <Route path="/reports" element={
           <PermissionRoute anyOfPermissions={[

@@ -52,6 +52,24 @@ const formatDate = (isoString) => {
     }
 };
 
+const getAvatarColor = (str = '') => {
+    const colors = ['#6366F1', '#0EA5E9', '#10B981', '#F59E0B', '#EC4899', '#8B5CF6', '#3B82F6', '#14B8A6'];
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
+};
+
+const getInitials = (name = '') => {
+    if (!name || typeof name !== 'string') return 'U';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) {
+        return `${parts[0].charAt(0)}${parts[1].charAt(0)}`.toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase();
+};
+
 // ─── Lead table columns ───────────────────────────────────────────────────────
 const buildLeadColumns = (page, size, selectedRows, onToggleRow, onToggleAll, currentData, hasPermission) => {
     const columns = [];
@@ -461,9 +479,12 @@ const DepartmentDetails = () => {
                     getDepartmentHods(id).catch(() => ({ data: [] })),
                     getDepartmentCounsellors(id).catch(() => ({ data: [] })),
                 ]);
-                setUsers(usersRes?.data || []);
-                setHods(hodsRes?.data || []);
-                setCounsellors(counsellorsRes?.data || []);
+                const usersList = usersRes?.data?.data || usersRes?.data || [];
+                const hodsList = hodsRes?.data?.data || hodsRes?.data || [];
+                const counsellorsList = counsellorsRes?.data?.data || counsellorsRes?.data || [];
+                setUsers(Array.isArray(usersList) ? usersList : []);
+                setHods(Array.isArray(hodsList) ? hodsList : []);
+                setCounsellors(Array.isArray(counsellorsList) ? counsellorsList : []);
             } catch (err) {
                 console.error('Staff data fetch failed', err);
             }
@@ -1159,47 +1180,177 @@ const DepartmentDetails = () => {
                                         <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: '700', color: '#64748B', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Name</th>
                                         <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: '700', color: '#64748B', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Email</th>
                                         <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: '700', color: '#64748B', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                                            {activeStaffView === 'hods' ? 'Access Type' : 'Role'}
+                                            {activeStaffView === 'hods' ? 'Access Type / Role' : 'Role'}
                                         </th>
                                         <th style={{ padding: '10px 14px', textAlign: 'left', fontWeight: '700', color: '#64748B', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Status</th>
+                                        <th style={{ padding: '10px 14px', textAlign: 'center', fontWeight: '700', color: '#64748B', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {staffTableData.map((member, idx) => (
-                                        <tr key={member.id || idx} style={{ borderBottom: '1px solid #F1F5F9', transition: 'background 0.15s' }}
-                                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F8FAFC'}
-                                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                                        >
-                                            <td style={{ padding: '12px 14px', color: '#94A3B8', fontWeight: '500' }}>{idx + 1}</td>
-                                            <td style={{ padding: '12px 14px' }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                    <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: activeStaffView === 'hods' ? '#7C3AED' : activeStaffView === 'counsellors' ? '#2563EB' : '#0F172A', color: '#FFF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '700', flexShrink: 0 }}>
-                                                        {member.firstName?.[0] || '?'}
+                                    {staffTableData.map((member, idx) => {
+                                        const memberId = member.id || member.userId;
+                                        const memberName = `${member.firstName || ''} ${member.lastName || ''}`.trim() || member.name || member.username || 'Unknown User';
+                                        const memberInitials = getInitials(memberName);
+                                        const avatarColor = getAvatarColor(memberName);
+
+                                        // Robust Role resolution
+                                        const isHodMember = (member.roles && (Array.isArray(member.roles) ? member.roles.includes('HOD') : member.roles.has?.('HOD'))) 
+                                            || (Array.isArray(hods) && hods.some(h => (h.id || h.userId) === memberId)) 
+                                            || member.role === 'HOD';
+                                        const isCounselorMember = (member.roles && (Array.isArray(member.roles) ? (member.roles.includes('COUNSELOR') || member.roles.includes('Conseller')) : (member.roles.has?.('COUNSELOR') || member.roles.has?.('Conseller')))) 
+                                            || (Array.isArray(counsellors) && counsellors.some(c => (c.id || c.userId) === memberId)) 
+                                            || member.role === 'COUNSELOR';
+
+                                        const rawRole = member.role || (Array.isArray(member.roles) && member.roles.length > 0 ? member.roles[0] : (typeof member.roles === 'string' ? member.roles : member.roleName));
+                                        const resolvedRole = rawRole ? String(rawRole).toUpperCase().replace(/_/g, ' ') : (isHodMember ? 'HOD' : isCounselorMember ? 'COUNSELOR' : (activeStaffView === 'hods' ? 'HOD' : activeStaffView === 'counsellors' ? 'COUNSELOR' : 'COUNSELOR'));
+
+                                        // Role badge styling
+                                        let roleBadgeStyle = { backgroundColor: '#F1F5F9', color: '#475569', border: '1px solid #E2E8F0' };
+                                        if (resolvedRole.includes('SUPER ADMIN')) {
+                                            roleBadgeStyle = { backgroundColor: '#FAF5FF', color: '#7E22CE', border: '1px solid #E9D5FF' };
+                                        } else if (resolvedRole.includes('ADMIN')) {
+                                            roleBadgeStyle = { backgroundColor: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE' };
+                                        } else if (resolvedRole.includes('HOD')) {
+                                            roleBadgeStyle = { backgroundColor: '#FFFBEB', color: '#B45309', border: '1px solid #FDE68A' };
+                                        } else if (resolvedRole.includes('COUNSELOR')) {
+                                            roleBadgeStyle = { backgroundColor: '#ECFDF5', color: '#047857', border: '1px solid #A7F3D0' };
+                                        }
+
+                                        // Resolve Status (default active unless explicitly false)
+                                        const isMemberActive = member.active === true || member.status === 'ACTIVE' || member.status === true || (member.active !== false && !member.deleted);
+
+                                        return (
+                                            <tr 
+                                                key={memberId || idx} 
+                                                style={{ borderBottom: '1px solid #F1F5F9', transition: 'background 0.15s' }}
+                                                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F8FAFC'}
+                                                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                                            >
+                                                <td style={{ padding: '12px 14px', color: '#94A3B8', fontWeight: '500' }}>{idx + 1}</td>
+                                                <td style={{ padding: '12px 14px' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                        <div 
+                                                            onClick={() => memberId && navigate(`/counselor-details/${memberId}`)}
+                                                            style={{ 
+                                                                width: '32px', 
+                                                                height: '32px', 
+                                                                borderRadius: '50%', 
+                                                                backgroundColor: avatarColor, 
+                                                                color: '#FFF', 
+                                                                display: 'flex', 
+                                                                alignItems: 'center', 
+                                                                justifyContent: 'center', 
+                                                                fontSize: '11px', 
+                                                                fontWeight: '700', 
+                                                                flexShrink: 0,
+                                                                cursor: 'pointer' 
+                                                            }}
+                                                            title={`View ${memberName}`}
+                                                        >
+                                                            {memberInitials}
+                                                        </div>
+                                                        <div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => memberId && navigate(`/counselor-details/${memberId}`)}
+                                                                style={{
+                                                                    fontWeight: '600',
+                                                                    color: '#1E293B',
+                                                                    border: 'none',
+                                                                    background: 'transparent',
+                                                                    padding: 0,
+                                                                    cursor: 'pointer',
+                                                                    textAlign: 'left',
+                                                                    display: 'block',
+                                                                    fontSize: '13px'
+                                                                }}
+                                                                onMouseEnter={(e) => e.currentTarget.style.color = '#2563EB'}
+                                                                onMouseLeave={(e) => e.currentTarget.style.color = '#1E293B'}
+                                                            >
+                                                                {memberName}
+                                                            </button>
+                                                            {member.username && (
+                                                                <span style={{ fontSize: '11px', color: '#94A3B8' }}>
+                                                                    @{member.username}
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                     </div>
-                                                    <span style={{ fontWeight: '600', color: '#1E293B' }}>
-                                                        {`${member.firstName || ''} ${member.lastName || ''}`.trim() || 'N/A'}
+                                                </td>
+                                                <td style={{ padding: '12px 14px', color: '#475569' }}>
+                                                    <div>{member.email || '—'}</div>
+                                                    {(member.phone || member.mobileNo) && (
+                                                        <div style={{ fontSize: '11px', color: '#94A3B8', marginTop: '2px' }}>
+                                                            {member.phone || member.mobileNo}
+                                                        </div>
+                                                    )}
+                                                </td>
+                                                <td style={{ padding: '12px 14px' }}>
+                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', alignItems: 'center' }}>
+                                                        <span 
+                                                            style={{ 
+                                                                padding: '2px 8px', 
+                                                                borderRadius: '12px', 
+                                                                fontSize: '10px', 
+                                                                fontWeight: '700', 
+                                                                letterSpacing: '0.02em',
+                                                                textTransform: 'uppercase',
+                                                                ...roleBadgeStyle 
+                                                            }}
+                                                        >
+                                                            {resolvedRole}
+                                                        </span>
+                                                        {activeStaffView === 'hods' && member.hodAccessType && (
+                                                            <span style={{ padding: '2px 6px', borderRadius: '4px', fontSize: '9px', fontWeight: '600', backgroundColor: '#F5F3FF', color: '#7C3AED', border: '1px solid #E9D5FF' }}>
+                                                                {member.hodAccessType}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td style={{ padding: '12px 14px' }}>
+                                                    <span 
+                                                        style={{ 
+                                                            padding: '2px 8px', 
+                                                            borderRadius: '12px', 
+                                                            fontSize: '10px', 
+                                                            fontWeight: '600', 
+                                                            backgroundColor: isMemberActive ? '#DCFCE7' : '#F1F5F9', 
+                                                            color: isMemberActive ? '#15803D' : '#64748B', 
+                                                            border: `1px solid ${isMemberActive ? '#BBF7D0' : '#E2E8F0'}`,
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: '4px'
+                                                        }}
+                                                    >
+                                                        <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: isMemberActive ? '#22C55E' : '#94A3B8' }} />
+                                                        {isMemberActive ? 'Active' : 'Inactive'}
                                                     </span>
-                                                </div>
-                                            </td>
-                                            <td style={{ padding: '12px 14px', color: '#475569' }}>{member.email || '—'}</td>
-                                            <td style={{ padding: '12px 14px' }}>
-                                                {activeStaffView === 'hods' ? (
-                                                    <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: '600', backgroundColor: '#F5F3FF', color: '#6D28D9', border: '1px solid #E9D5FF' }}>
-                                                        {member.hodAccessType || 'FULL_ACCESS'}
-                                                    </span>
-                                                ) : (
-                                                    <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: '600', backgroundColor: '#DBEAFE', color: '#1D4ED8', border: '1px solid #BFDBFE' }}>
-                                                        {(member.roles && member.roles[0]) || member.roleName || '—'}
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td style={{ padding: '12px 14px' }}>
-                                                <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: '600', backgroundColor: member.active ? '#DCFCE7' : '#F1F5F9', color: member.active ? '#15803D' : '#64748B', border: `1px solid ${member.active ? '#BBF7D0' : '#E2E8F0'}` }}>
-                                                    {member.active ? 'Active' : 'Inactive'}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    ))}
+                                                </td>
+                                                <td style={{ padding: '12px 14px', textAlign: 'center' }}>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => memberId && navigate(`/counselor-details/${memberId}`)}
+                                                        style={{
+                                                            padding: '4px 8px',
+                                                            borderRadius: '6px',
+                                                            border: '1px solid #E2E8F0',
+                                                            backgroundColor: '#FFFFFF',
+                                                            color: '#2563EB',
+                                                            fontSize: '11px',
+                                                            fontWeight: '600',
+                                                            cursor: 'pointer',
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: '4px'
+                                                        }}
+                                                        title="View user details"
+                                                    >
+                                                        <FiEye /> View
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>

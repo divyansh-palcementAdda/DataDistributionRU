@@ -8,6 +8,12 @@ import { useAppContext } from '../../../AppContext';
 
 const HOD_ACCESS_TYPES = ['FULL_ACCESS', 'READ_ONLY', 'NO_ACCESS'];
 
+const isPrivilegedRole = (roleName) => {
+    if (!roleName) return false;
+    const name = roleName.toUpperCase().replace(/^ROLE_/, '');
+    return name === 'ADMIN' || name === 'SUPER_ADMIN';
+};
+
 const AddUserModal = ({ isOpen, onClose, onSuccess, initialData, defaultRole }) => {
     const { showToast } = useAppContext();
     const [isLoading, setIsLoading] = useState(false);
@@ -81,15 +87,13 @@ const AddUserModal = ({ isOpen, onClose, onSuccess, initialData, defaultRole }) 
         const fetchRoles = async () => {
             try {
                 const response = await getRolesDropdown();
-                if (response?.data && Array.isArray(response.data)) {
-                    const filtered = response.data.filter(
-                        (role) => !['ADMIN', 'SUPER_ADMIN'].includes(role.name?.toUpperCase())
-                    );
-                    setRoles(filtered);
+                const list = response?.data?.roles || response?.data;
+                if (Array.isArray(list)) {
+                    setRoles(list);
                     // Auto-select first role only if nothing is selected yet
                     setFormData(prev => ({
                         ...prev,
-                        roles: prev.roles.length === 0 && filtered.length > 0 ? [filtered[0].name] : prev.roles
+                        roles: prev.roles.length === 0 && list.length > 0 ? [list[0].name] : prev.roles
                     }));
                 } else {
                     setRoles([]);
@@ -118,7 +122,12 @@ const AddUserModal = ({ isOpen, onClose, onSuccess, initialData, defaultRole }) 
     }, [isOpen]);
 
     const handleRoleChange = (role) => {
-        setFormData(prev => ({ ...prev, roles: [role] }));
+        setFormData(prev => ({
+            ...prev,
+            roles: [role],
+            // Admin and Super Admin users cannot be assigned to departments (system-wide access)
+            departmentIds: isPrivilegedRole(role) ? [] : prev.departmentIds
+        }));
     };
 
     // Department: single select stored as array of one UUID
@@ -137,6 +146,14 @@ const AddUserModal = ({ isOpen, onClose, onSuccess, initialData, defaultRole }) 
             return;
         }
 
+        const selectedRole = formData.roles[0];
+        const isPrivileged = isPrivilegedRole(selectedRole);
+
+        if (!isPrivileged && (!formData.departmentIds || formData.departmentIds.length === 0 || !formData.departmentIds[0])) {
+            showToast('Department is required for HOD and Counselor roles', 'error');
+            return;
+        }
+
         try {
             setIsLoading(true);
 
@@ -147,8 +164,8 @@ const AddUserModal = ({ isOpen, onClose, onSuccess, initialData, defaultRole }) 
                 phone: formData.phone,
                 username: formData.username,
                 profileImage: null,
-                departmentIds: formData.departmentIds,
-                hodAccessType: formData.hodAccessType,
+                departmentIds: isPrivileged ? [] : formData.departmentIds,
+                hodAccessType: selectedRole === 'HOD' ? formData.hodAccessType : null,
                 roles: formData.roles,
                 active: formData.active,
                 locked: formData.locked,
@@ -283,16 +300,24 @@ const AddUserModal = ({ isOpen, onClose, onSuccess, initialData, defaultRole }) 
                         {/* Row 4: Department + Role */}
                         <div className="grid grid-cols-2 gap-4">
                             <div className="flex flex-col gap-1.5">
-                                <label className="text-sm font-semibold text-gray-700 ml-1">Department</label>
+                                <label className="text-sm font-semibold text-gray-700 ml-1">
+                                    Department
+                                    {isPrivilegedRole(formData.roles[0]) && (
+                                        <span className="text-xs text-gray-400 font-normal ml-1">(System-wide)</span>
+                                    )}
+                                </label>
                                 <select
-                                    className="px-4 py-2 border border-gray-300 rounded-lg text-sm bg-white outline-none focus:ring-2 focus:ring-blue-500"
-                                    value={formData.departmentIds[0] || ''}
+                                    className={`px-4 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500 ${isPrivilegedRole(formData.roles[0]) ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-white'}`}
+                                    value={isPrivilegedRole(formData.roles[0]) ? '' : (formData.departmentIds[0] || '')}
                                     onChange={(e) => handleDepartmentChange(e.target.value)}
+                                    disabled={isPrivilegedRole(formData.roles[0])}
                                 >
                                     <option value="">
-                                        {departments.length === 0 ? 'Loading departments...' : 'Select Department'}
+                                        {isPrivilegedRole(formData.roles[0])
+                                            ? 'Not applicable (System-wide access)'
+                                            : departments.length === 0 ? 'Loading departments...' : 'Select Department'}
                                     </option>
-                                    {departments.map((dept) => (
+                                    {!isPrivilegedRole(formData.roles[0]) && departments.map((dept) => (
                                         <option key={dept.id} value={dept.id}>
                                             {dept.name}
                                         </option>

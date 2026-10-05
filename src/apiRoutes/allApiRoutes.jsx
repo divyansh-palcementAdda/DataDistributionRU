@@ -64,6 +64,7 @@ const ApiRoutes = {
         delete: "/api/users/{id}",
         courseMatrix: "/api/users/{userId}/lead-matrix/course",
         programMatrix: "/api/users/{userId}/lead-matrix/program",
+        creationOptions: "/api/users/creation-options",
     },
     Role: {
         getPermissions: '/api/roles',

@@ -32,3 +32,7 @@ export const updateUser = (id, data) => {
 export const deleteUser = (id) => {
     return axiosInstance.delete(ApiRoutes.Users.delete.replace('{id}', id));
 };
+
+export const getUserCreationOptions = () => {
+    return axiosInstance.get(ApiRoutes.Users.creationOptions);
+};

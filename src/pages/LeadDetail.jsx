@@ -714,7 +714,7 @@ const LeadDetail = () => {
               statusCode: formData.leadStatusCode,
               feedback: formData.remarks || ""
             });
-            markStatusChanged();
+            // status changed, full reload already triggered below
           } catch (error) {
             console.error('Error changing lead status in background:', error);
           }
@@ -2161,7 +2161,7 @@ const LeadDetail = () => {
         followups={followUps}
         onComplete={() => loadLeadData(false)}
         onDataRefresh={() => loadLeadData(false)}
-        onStatusChanged={() => markStatusChanged()}
+        onStatusChanged={() => loadLeadData(false)}
         onCompleteFollowup={handleCompleteFollowup}
         onCancelFollowup={handleCancelFollowup}
         onFollowupNotConnected={handleFollowupNotConnected}

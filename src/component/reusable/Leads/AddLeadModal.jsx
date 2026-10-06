@@ -134,6 +134,7 @@ const AddLeadModal = () => {
   const courseDropdownRef = useRef(null);
   const leadSourcesDropdownRef = useRef(null);
   const interestedCoursesDropdownRef = useRef(null);
+  const nextFollowUpDateRef = useRef(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -1595,16 +1596,26 @@ const AddLeadModal = () => {
                         <span className="text-[10px] text-gray-400 font-normal">🔒 Read-only</span>
                       )}
                     </label>
-                    <input
-                      type="date"
-                      name="nextFollowUpDate"
-                      value={formData.nextFollowUpDate}
-                      onChange={handleChange('nextFollowUpDate')}
-                      disabled={isFieldDisabled('nextFollowUpDate')}
-                      className={`w-full px-3.5 py-2 text-sm rounded-[8px] border transition-all outline-none cursor-pointer bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 ${
+                    <div
+                      className={`flex items-center w-full px-3.5 py-2 text-sm rounded-[8px] border transition-all cursor-pointer focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-600 bg-white ${
                         isFieldDisabled('nextFollowUpDate') ? 'opacity-60 pointer-events-none bg-gray-50 border-gray-200' : 'border-gray-300 hover:border-gray-400'
                       }`}
-                    />
+                      onClick={() => {
+                        if (isFieldDisabled('nextFollowUpDate')) return;
+                        nextFollowUpDateRef.current?.focus();
+                        try { nextFollowUpDateRef.current?.showPicker(); } catch (_) {}
+                      }}
+                    >
+                      <input
+                        ref={nextFollowUpDateRef}
+                        type="date"
+                        name="nextFollowUpDate"
+                        value={formData.nextFollowUpDate}
+                        onChange={handleChange('nextFollowUpDate')}
+                        disabled={isFieldDisabled('nextFollowUpDate')}
+                        className="flex-1 bg-transparent outline-none cursor-pointer min-w-0"
+                      />
+                    </div>
                   </div>
                 )}
               </div>
@@ -1672,4 +1683,4 @@ const AddLeadModal = () => {
   );
 };
 
-export default AddLeadModal;
+export default AddLeadModal;

@@ -37,6 +37,8 @@ import Grades from "./pages/Grades";
 import GradesDetails from "./pages/gradesDetails";
 import Boards from "./pages/Boards";
 import BoardDetails from "./pages/boardsDetails";
+import Streams from "./pages/Streams";
+import StreamDetails from "./pages/StreamDetails";
 import CounselorDetails from "./pages/counselorsDetails";
 import Department from "./pages/Department";
 import DepartmentDetails from "./pages/departmentDetails";
@@ -265,6 +267,17 @@ const Allroutes = () => {
         <Route path="/board-details/:id" element={
           <PermissionRoute requiredPermission="BOARD_VIEW">
             <BoardDetails />
+          </PermissionRoute>
+        } />
+
+        <Route path="/streams" element={
+          <PermissionRoute requiredPermission="STREAM_VIEW">
+            <Streams />
+          </PermissionRoute>
+        } />
+        <Route path="/stream-details/:id" element={
+          <PermissionRoute requiredPermission="STREAM_VIEW">
+            <StreamDetails />
           </PermissionRoute>
         } />
 

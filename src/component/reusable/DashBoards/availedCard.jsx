@@ -9,7 +9,7 @@ const AvailedIcon = () => (
   </svg>
 );
 
-const AvailedCard = ({ data, onCardClick, activeFilters = [], filterRequest = {}, courseTypeId, leadSourceId, boardId, gradeId, counselorId, departmentId, statusId, courseId }) => {
+const AvailedCard = ({ data, onCardClick, activeFilters = [], filterRequest = {}, courseTypeId, leadSourceId, boardId, streamId, gradeId, counselorId, departmentId, statusId, courseId }) => {
   const [availedData, setAvailedData] = useState(null);
   const [loading, setLoading] = useState(false);
   const { hasPermission } = usePermissions();
@@ -31,6 +31,7 @@ const AvailedCard = ({ data, onCardClick, activeFilters = [], filterRequest = {}
          if (courseTypeId) params.courseTypeId = courseTypeId;
          if (leadSourceId) params.leadSourceId = leadSourceId;
          if (boardId) params.boardId = boardId;
+         if (streamId) params.streamId = streamId;
          if (gradeId) params.gradeId = gradeId;
          if (counselorId) params.counselorId = counselorId;
          if (departmentId) params.departmentId = departmentId;
@@ -62,7 +63,7 @@ const AvailedCard = ({ data, onCardClick, activeFilters = [], filterRequest = {}
        isCancelled = true;
      };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, filterRequestKey, courseTypeId, leadSourceId, boardId, gradeId, counselorId, departmentId, statusId, courseId]);
+  }, [data, filterRequestKey, courseTypeId, leadSourceId, boardId, streamId, gradeId, counselorId, departmentId, statusId, courseId]);
 
   const count = availedData?.count ?? 0;
   const type = availedData?.type ?? 'Availed';

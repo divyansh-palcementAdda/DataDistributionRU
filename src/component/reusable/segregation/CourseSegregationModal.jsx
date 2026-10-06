@@ -360,6 +360,8 @@ const CourseSegregationModal = ({
                                       sourceName: filterScope?.sourceName,
                                       boardId: filterScope?.boardId,
                                       boardName: filterScope?.boardName,
+                                      streamId: filterScope?.streamId,
+                                      streamName: filterScope?.streamName,
                                       gradeId: filterScope?.gradeId,
                                       gradeName: filterScope?.gradeName
                                     })

@@ -46,6 +46,15 @@ export const getBoardBreakdown = async (params = {}) => {
     }
 };
 
+export const getStreamBreakdown = async (params = {}) => {
+    try {
+        const response = await axiosInstance.get(ApiRoutes.Dashboard.stream, { params });
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
 export const getCourseTypesBreakdown = async (params = {}) => {
     try {
         const response = await axiosInstance.get(ApiRoutes.Dashboard.courseTypes, { params });

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getLeadStatusBreakdown } from '../../../Services/cards/cardService';
 import { usePermissions } from '../../../PermissionContext';
 
-const LeadCards = ({ onCardClick, activeFilters = [], filterRequest = {}, courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId }) => {
+const LeadCards = ({ onCardClick, activeFilters = [], filterRequest = {}, courseTypeId, leadSourceId, boardId, streamId, gradeId, assignedUserIds, departmentId }) => {
   const [leadData, setLeadData] = useState([]);
   const [loading, setLoading] = useState(false);
   const { hasPermission } = usePermissions();
@@ -20,6 +20,7 @@ const LeadCards = ({ onCardClick, activeFilters = [], filterRequest = {}, course
         if (courseTypeId) baseParams.courseTypeId = courseTypeId;
         if (leadSourceId) baseParams.leadSourceId = leadSourceId;
         if (boardId) baseParams.boardId = boardId;
+        if (streamId) baseParams.streamId = streamId;
         if (gradeId) baseParams.gradeId = gradeId;
         if (assignedUserIds) baseParams.assignedUserIds = assignedUserIds;
         if (departmentId) baseParams.departmentId = departmentId;
@@ -48,7 +49,7 @@ const LeadCards = ({ onCardClick, activeFilters = [], filterRequest = {}, course
       isCancelled = true;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterRequestKey, courseTypeId, leadSourceId, boardId, gradeId, assignedUserIds, departmentId]);
+  }, [filterRequestKey, courseTypeId, leadSourceId, boardId, streamId, gradeId, assignedUserIds, departmentId]);
 
   // Section-level permission check: hide entire section if permission is false
   if (!hasPermission('DASHBOARD_CARD_TOTAL_LEADS')) {

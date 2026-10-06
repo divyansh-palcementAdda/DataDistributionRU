@@ -140,6 +140,14 @@ export const LEAD_FIELDS = [
     writePermission: 'LEAD_FIELD_GRADE_WRITE',
     description: 'Academic grade or class level',
   },
+  {
+    key: 'stream',
+    label: 'Stream',
+    category: LEAD_FIELD_CATEGORIES.ACADEMIC,
+    readPermission: 'LEAD_FIELD_STREAM_READ',
+    writePermission: 'LEAD_FIELD_STREAM_WRITE',
+    description: 'Academic stream (e.g. Science, Commerce)',
+  },
 
   // ── Lead Source & Acquisition ──
   {

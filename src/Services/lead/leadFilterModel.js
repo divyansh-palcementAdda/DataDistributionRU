@@ -14,6 +14,7 @@ export const DEFAULT_LEAD_FILTERS = {
   departmentIds: [],
   assignedUserIds: [],
   boardIds: [],
+  streamIds: [],
   gradeIds: [],
   statusIds: [],
   leadStatusHistoryIds: [],
@@ -35,6 +36,7 @@ export const DEFAULT_LEAD_FILTERS = {
   withoutProgram: null,
   withoutGrade: null,
   withoutBoard: null,
+  withoutStream: null,
 };
 
 /**
@@ -100,6 +102,14 @@ export const buildLeadQueryParams = (filters = {}) => {
     params.boardIds = filters.boardIds;
     if (filters.boardIds.length === 1) {
       params.boardId = filters.boardIds[0];
+    }
+  }
+
+  // Streams
+  if (Array.isArray(filters.streamIds) && filters.streamIds.length > 0) {
+    params.streamIds = filters.streamIds;
+    if (filters.streamIds.length === 1) {
+      params.streamId = filters.streamIds[0];
     }
   }
 
@@ -188,6 +198,9 @@ export const buildLeadQueryParams = (filters = {}) => {
   if (filters.withoutBoard === true) {
     params.withoutBoard = true;
   }
+  if (filters.withoutStream === true) {
+    params.withoutStream = true;
+  }
 
   return params;
 };
@@ -247,9 +260,12 @@ export const parseFiltersFromSearchParams = (searchParams, state = null) => {
     const users = parseArrayParam(searchParams, 'assignedUserIds', 'assignedUserId', 'userId');
     if (users.length > 0) filters.assignedUserIds = users;
 
-    // Boards & Grades
+    // Boards, Streams & Grades
     const boards = parseArrayParam(searchParams, 'boardIds', 'boardId');
     if (boards.length > 0) filters.boardIds = boards;
+
+    const streams = parseArrayParam(searchParams, 'streamIds', 'streamId');
+    if (streams.length > 0) filters.streamIds = streams;
 
     const grades = parseArrayParam(searchParams, 'gradeIds', 'gradeId');
     if (grades.length > 0) filters.gradeIds = grades;
@@ -318,6 +334,7 @@ export const parseFiltersFromSearchParams = (searchParams, state = null) => {
     if (searchParams.get('withoutProgram') === 'true') filters.withoutProgram = true;
     if (searchParams.get('withoutGrade') === 'true') filters.withoutGrade = true;
     if (searchParams.get('withoutBoard') === 'true') filters.withoutBoard = true;
+    if (searchParams.get('withoutStream') === 'true') filters.withoutStream = true;
   }
 
   // Handle location.state fallback
@@ -349,6 +366,9 @@ export const parseFiltersFromSearchParams = (searchParams, state = null) => {
     if (state.boardIds || state.boardId) {
       addValues(filters.boardIds, state.boardIds || state.boardId);
     }
+    if (state.streamIds || state.streamId) {
+      addValues(filters.streamIds, state.streamIds || state.streamId);
+    }
     if (state.gradeIds || state.gradeId) {
       addValues(filters.gradeIds, state.gradeIds || state.gradeId);
     }
@@ -364,6 +384,7 @@ export const parseFiltersFromSearchParams = (searchParams, state = null) => {
     if (state.withoutProgram) filters.withoutProgram = true;
     if (state.withoutGrade) filters.withoutGrade = true;
     if (state.withoutBoard) filters.withoutBoard = true;
+    if (state.withoutStream) filters.withoutStream = true;
 
     // 2. Active filters array fallback
     if (Array.isArray(state.activeFilters) && state.activeFilters.length > 0) {
@@ -374,6 +395,8 @@ export const parseFiltersFromSearchParams = (searchParams, state = null) => {
           if (!filters.leadSourceIds.includes(f.value)) filters.leadSourceIds.push(f.value);
         } else if (f.type === 'board' && f.value) {
           if (!filters.boardIds.includes(f.value)) filters.boardIds.push(f.value);
+        } else if (f.type === 'stream' && f.value) {
+          if (!filters.streamIds.includes(f.value)) filters.streamIds.push(f.value);
         } else if (f.type === 'grade' && f.value) {
           if (!filters.gradeIds.includes(f.value)) filters.gradeIds.push(f.value);
         } else if (f.type === 'course' && f.value) {
@@ -407,6 +430,8 @@ export const parseFiltersFromSearchParams = (searchParams, state = null) => {
           filters.withoutGrade = true;
         } else if (f.type === 'withoutBoard') {
           filters.withoutBoard = true;
+        } else if (f.type === 'withoutStream') {
+          filters.withoutStream = true;
         }
       });
     }
@@ -475,6 +500,14 @@ export const syncFiltersToSearchParams = (filters) => {
       params.set('boardId', filters.boardIds[0]);
     } else {
       filters.boardIds.forEach(id => params.append('boardIds', id));
+    }
+  }
+
+  if (Array.isArray(filters.streamIds) && filters.streamIds.length > 0) {
+    if (filters.streamIds.length === 1) {
+      params.set('streamId', filters.streamIds[0]);
+    } else {
+      filters.streamIds.forEach(id => params.append('streamIds', id));
     }
   }
 
@@ -549,6 +582,9 @@ export const syncFiltersToSearchParams = (filters) => {
   if (filters.withoutBoard === true) {
     params.set('withoutBoard', 'true');
   }
+  if (filters.withoutStream === true) {
+    params.set('withoutStream', 'true');
+  }
 
   return params;
 };
@@ -571,6 +607,7 @@ export const countActiveFilters = (filters) => {
   if (filters.departmentIds?.length) count += filters.departmentIds.length;
   if (filters.assignedUserIds?.length) count += filters.assignedUserIds.length;
   if (filters.boardIds?.length) count += filters.boardIds.length;
+  if (filters.streamIds?.length) count += filters.streamIds.length;
   if (filters.gradeIds?.length) count += filters.gradeIds.length;
   if (filters.statusIds?.length) count += filters.statusIds.length;
   if (filters.leadStatusHistoryIds?.length) count += filters.leadStatusHistoryIds.length;
@@ -588,6 +625,7 @@ export const countActiveFilters = (filters) => {
   if (filters.withoutProgram) count++;
   if (filters.withoutGrade) count++;
   if (filters.withoutBoard) count++;
+  if (filters.withoutStream) count++;
   return count;
 };
 
@@ -605,6 +643,7 @@ export const buildFilterChips = (filters, lookups = {}) => {
     departments = [],
     users = [],
     boards = [],
+    streams = [],
     grades = [],
     statuses = [],
   } = lookups;
@@ -692,6 +731,15 @@ export const buildFilterChips = (filters, lookups = {}) => {
       key: 'boardIds',
       value: id,
       label: `Board: ${findName(boards, id)}`,
+    });
+  });
+
+  // Streams
+  (filters.streamIds || []).forEach(id => {
+    chips.push({
+      key: 'streamIds',
+      value: id,
+      label: `Stream: ${findName(streams, id)}`,
     });
   });
 
@@ -849,6 +897,13 @@ export const buildFilterChips = (filters, lookups = {}) => {
       label: 'Board: Unmapped',
     });
   }
+  if (filters.withoutStream === true) {
+    chips.push({
+      key: 'withoutStream',
+      value: true,
+      label: 'Stream: Unmapped',
+    });
+  }
 
   return chips;
 };
@@ -885,6 +940,9 @@ export const removeFilterFromState = (filters, chipKey, chipValue) => {
       break;
     case 'boardIds':
       next.boardIds = (next.boardIds || []).filter(id => id !== chipValue);
+      break;
+    case 'streamIds':
+      next.streamIds = (next.streamIds || []).filter(id => id !== chipValue);
       break;
     case 'gradeIds':
       next.gradeIds = (next.gradeIds || []).filter(id => id !== chipValue);
@@ -936,6 +994,9 @@ export const removeFilterFromState = (filters, chipKey, chipValue) => {
       break;
     case 'withoutBoard':
       next.withoutBoard = null;
+      break;
+    case 'withoutStream':
+      next.withoutStream = null;
       break;
     default:
       break;

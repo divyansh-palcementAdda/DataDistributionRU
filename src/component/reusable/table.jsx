@@ -115,9 +115,15 @@ const ReusableTable = ({
 
     return (
         <div className="w-full overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-xs">
+            {/* Hide scrollbar visually while keeping scroll functional */}
+            <style>{`
+                .reusable-table-scroll::-webkit-scrollbar { display: none; }
+                .reusable-table-scroll { scrollbar-width: none; -ms-overflow-style: none; }
+            `}</style>
             {/* Desktop Table */}
             <div 
                 ref={tableContainerRef}
+                className="reusable-table-scroll"
                 style={{ overflowX: 'auto', cursor: isDragging ? 'grabbing' : 'grab' }}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}

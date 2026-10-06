@@ -91,6 +91,49 @@ const LeadDetail = () => {
   const courseDropdownRef = useRef(null);
   const courseSearchDebounceRef = useRef(null);
 
+  // Resizable info panel state
+  const [panelWidth, setPanelWidth] = useState(384);
+  const panelDragRef = useRef(null);
+  const isDraggingRef = useRef(false);
+  const dragStartXRef = useRef(0);
+  const dragStartWidthRef = useRef(0);
+
+  const PANEL_MIN_WIDTH = 280;
+  const PANEL_MAX_WIDTH = 700;
+
+  const handlePanelDragStart = useCallback((e) => {
+    e.preventDefault();
+    isDraggingRef.current = true;
+    dragStartXRef.current = e.clientX;
+    dragStartWidthRef.current = panelWidth;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  }, [panelWidth]);
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isDraggingRef.current) return;
+      // Dragging left handle: moving mouse left increases width, moving right decreases width
+      const delta = dragStartXRef.current - e.clientX;
+      const newWidth = Math.min(PANEL_MAX_WIDTH, Math.max(PANEL_MIN_WIDTH, dragStartWidthRef.current + delta));
+      setPanelWidth(newWidth);
+    };
+
+    const handleMouseUp = () => {
+      if (!isDraggingRef.current) return;
+      isDraggingRef.current = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
+
   // Centralized full data loader to guarantee fresh data & prevent stale data
   const loadLeadData = useCallback(async (isInitial = false) => {
     if (!id) return;
@@ -1239,13 +1282,13 @@ const LeadDetail = () => {
         </div>
       )}
 
-      {/* Main Grid: Left 2 Cols (Content) | Right 1 Col (Info Panel) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <div className="flex flex-col gap-5 lg:col-span-2">
+      {/* Main Grid: Left (Content) | Right (Resizable Info Panel) */}
+      <div className="flex flex-col lg:flex-row gap-5 items-start">
+        <div className="flex flex-col gap-5 flex-1 min-w-0">
 
           {/* SECTION A: Lead Identity & Priority Overview Card */}
           <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-xs relative overflow-hidden">
-            <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+            <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex items-start gap-3.5">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white text-base font-bold shadow-sm shadow-blue-100 flex-shrink-0">
                   {canViewLeadField(hasPermission, 'fullName') ? initials : '?'}
@@ -1340,7 +1383,7 @@ const LeadDetail = () => {
               </div>
 
               {/* Quick Actions Header */}
-              <div className="flex items-center gap-2 self-end sm:self-start">
+              <div className="flex flex-wrap items-center gap-2 self-end">
                 {hasPermission('LEAD_UPDATE') && (
                   <button
                     onClick={handleEditLeadClick}
@@ -1472,7 +1515,7 @@ const LeadDetail = () => {
                   Contact & Location Details
                 </h3>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-y-4 gap-x-6 text-xs">
+                <div className="grid gap-y-4 gap-x-6 text-xs" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(9rem, 1fr))' }}>
                   {canViewLeadField(hasPermission, 'phoneNumber') && (
                     <div>
                       <div className="text-[11px] font-medium text-gray-400">Phone Number</div>
@@ -1492,7 +1535,7 @@ const LeadDetail = () => {
                   )}
 
                   {canViewLeadField(hasPermission, 'email') && (
-                    <div className="sm:col-span-2 md:col-span-2">
+                    <div className="col-span-2" style={{ gridColumn: 'span 2 / span 2' }}>
                       <div className="text-[11px] font-medium text-gray-400">Email Address</div>
                       <div className="text-sm font-bold text-gray-900 mt-1 flex items-center gap-1.5 truncate">
                         {leadDetails.email ? (
@@ -1573,7 +1616,7 @@ const LeadDetail = () => {
                   Academic & Course Information
                 </h3>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-y-4 gap-x-6 text-xs">
+                <div className="grid gap-y-4 gap-x-6 text-xs" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(9rem, 1fr))' }}>
                   {canViewLeadField(hasPermission, 'program') && (
                     <div>
                       <div className="text-[11px] font-medium text-gray-400">Program / School</div>
@@ -1681,7 +1724,7 @@ const LeadDetail = () => {
                 )}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-4 gap-x-6 text-xs">
+              <div className="grid gap-y-4 gap-x-6 text-xs" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(10rem, 1fr))' }}>
                 {canViewLeadField(hasPermission, 'leadSources') && (
                   <div>
                     <div className="text-[11px] font-medium text-gray-400">Primary Source</div>
@@ -1704,7 +1747,7 @@ const LeadDetail = () => {
                 )}
 
                 {canViewLeadField(hasPermission, 'leadSources') && leadDetails.leadSources?.length > 1 && (
-                  <div className="sm:col-span-2 md:col-span-1">
+                  <div>
                     <div className="text-[11px] font-medium text-gray-400">All Associated Sources</div>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {leadDetails.leadSources.map((source, idx) => (
@@ -1732,7 +1775,7 @@ const LeadDetail = () => {
                   Allotment & Availed Information
                 </h3>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs">
+                <div className="grid gap-6 text-xs" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(14rem, 1fr))' }}>
                   {/* Allotment Column */}
                   {(canViewLeadField(hasPermission, 'assignedTo') ||
                     canViewLeadField(hasPermission, 'department') ||
@@ -1748,36 +1791,35 @@ const LeadDetail = () => {
                         </div>
                         <div className="space-y-2">
                           {canViewLeadField(hasPermission, 'assignedTo') && (
-                            <div className="flex items-baseline justify-between border-b border-gray-50 pb-1.5">
-                              <span className="text-gray-400 font-medium">Assigned Counselor:</span>
-                              <span className="font-bold text-gray-900">{assignedToName}</span>
+                            <div className="flex flex-wrap items-baseline justify-between gap-x-2 border-b border-gray-50 pb-1.5">
+                              <span className="text-gray-400 font-medium shrink-0">Assigned Counselor:</span>
+                              <span className="font-bold text-gray-900 text-right">{assignedToName}</span>
                             </div>
                           )}
                           {canViewLeadField(hasPermission, 'department') && (
-                            <div className="flex items-baseline justify-between border-b border-gray-50 pb-1.5">
-                              <span className="text-gray-400 font-medium">Department:</span>
-                              <span className="font-semibold text-gray-800">{leadDetails.department?.name || 'UNMAPPED'}</span>
+                            <div className="flex flex-wrap items-baseline justify-between gap-x-2 border-b border-gray-50 pb-1.5">
+                              <span className="text-gray-400 font-medium shrink-0">Department:</span>
+                              <span className="font-semibold text-gray-800 text-right">{leadDetails.department?.name || 'UNMAPPED'}</span>
                             </div>
                           )}
                           {canViewLeadField(hasPermission, 'auditInfo') && (
-                            <div className="flex items-baseline justify-between border-b border-gray-50 pb-1.5">
-                              <span className="text-gray-400 font-medium">Created By:</span>
-                              <span className="text-gray-700">{createdByName} ({formatDate(leadDetails.createdAt)})</span>
+                            <div className="flex flex-wrap items-baseline justify-between gap-x-2 border-b border-gray-50 pb-1.5">
+                              <span className="text-gray-400 font-medium shrink-0">Created By:</span>
+                              <span className="text-gray-700 text-right">{createdByName} ({formatDate(leadDetails.createdAt)})</span>
                             </div>
                           )}
                           {canViewLeadField(hasPermission, 'auditInfo') && leadDetails.updatedAt && (
-                            <div className="flex items-baseline justify-between">
-                              <span className="text-gray-400 font-medium">Last Modified:</span>
-                              <span className="text-gray-700">{formatDateTime(leadDetails.updatedAt)}</span>
+                            <div className="flex flex-wrap items-baseline justify-between gap-x-2">
+                              <span className="text-gray-400 font-medium shrink-0">Last Modified:</span>
+                              <span className="text-gray-700 text-right">{formatDateTime(leadDetails.updatedAt)}</span>
                             </div>
                           )}
                         </div>
                       </div>
                     )}
 
-                  {/* Availed Column */}
                   {canViewLeadField(hasPermission, 'isAvailed') && (
-                    <div className="sm:border-l sm:border-gray-100 sm:pl-6">
+                    <div className="border-t pt-4 border-gray-100 [&:not(:first-child)]:border-t-0">
                       <div className="flex items-center gap-2 mb-3">
                         <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Availed Details</span>
                         <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${isAvailed ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-gray-100 text-gray-600 border border-gray-200'}`}>
@@ -1785,22 +1827,22 @@ const LeadDetail = () => {
                         </span>
                       </div>
                       <div className="space-y-2">
-                        <div className="flex items-baseline justify-between border-b border-gray-50 pb-1.5">
-                          <span className="text-gray-400 font-medium">Availed Since:</span>
-                          <span className="font-bold text-gray-900">{leadDetails.availedAt ? formatDateTime(leadDetails.availedAt) : 'Not Availed'}</span>
+                        <div className="flex flex-wrap items-baseline justify-between gap-x-2 border-b border-gray-50 pb-1.5">
+                          <span className="text-gray-400 font-medium shrink-0">Availed Since:</span>
+                          <span className="font-bold text-gray-900 text-right">{leadDetails.availedAt ? formatDateTime(leadDetails.availedAt) : 'Not Availed'}</span>
                         </div>
-                        <div className="flex items-baseline justify-between border-b border-gray-50 pb-1.5">
-                          <span className="text-gray-400 font-medium">Availed By:</span>
-                          <span className="font-semibold text-gray-800">
+                        <div className="flex flex-wrap items-baseline justify-between gap-x-2 border-b border-gray-50 pb-1.5">
+                          <span className="text-gray-400 font-medium shrink-0">Availed By:</span>
+                          <span className="font-semibold text-gray-800 text-right">
                             {leadDetails.availedBy
                               ? `${leadDetails.availedBy.firstName || ''} ${leadDetails.availedBy.lastName || ''}`.trim() || leadDetails.availedBy.username
                               : '-'}
                           </span>
                         </div>
                         {leadDetails.enrollmentId && (
-                          <div className="flex items-baseline justify-between">
-                            <span className="text-gray-400 font-medium">CMS Enrollment ID:</span>
-                            <span className="font-bold text-indigo-700">{leadDetails.enrollmentId}</span>
+                          <div className="flex flex-wrap items-baseline justify-between gap-x-2">
+                            <span className="text-gray-400 font-medium shrink-0">CMS Enrollment ID:</span>
+                            <span className="font-bold text-indigo-700 text-right">{leadDetails.enrollmentId}</span>
                           </div>
                         )}
                       </div>
@@ -1833,11 +1875,13 @@ const LeadDetail = () => {
                       Loading status history...
                     </div>
                   ) : (
-                    <ReusableTable
-                      columns={statusHistoryColumns}
-                      data={statusHistory}
-                      emptyMessage="No status history available"
-                    />
+                    <div className="overflow-x-auto w-full">
+                      <ReusableTable
+                        columns={statusHistoryColumns}
+                        data={statusHistory}
+                        emptyMessage="No status history available"
+                      />
+                    </div>
                   )}
                 </>
               )}
@@ -1862,11 +1906,13 @@ const LeadDetail = () => {
                       Loading follow-ups...
                     </div>
                   ) : (
-                    <ReusableTable
-                      columns={followUpsColumns}
-                      data={followUps}
-                      emptyMessage="No follow-ups scheduled for this lead"
-                    />
+                    <div className="overflow-x-auto w-full">
+                      <ReusableTable
+                        columns={followUpsColumns}
+                        data={followUps}
+                        emptyMessage="No follow-ups scheduled for this lead"
+                      />
+                    </div>
                   )}
                 </div>
               )}
@@ -1906,7 +1952,7 @@ const LeadDetail = () => {
           {/* University Visit Planning Card */}
           {canViewLeadField(hasPermission, 'visitPlanning') && (
             <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-xs">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3 pb-2.5 border-b border-gray-100">
+              <div className="flex flex-wrap items-center justify-between gap-3 mb-3 pb-2.5 border-b border-gray-100">
                 <div className="flex items-center gap-2">
                   <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-2">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="text-indigo-600">
@@ -1942,7 +1988,7 @@ const LeadDetail = () => {
               </div>
 
               {leadDetails.planningToVisitUniversity ? (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-y-3 gap-x-6 text-xs">
+                <div className="grid gap-y-3 gap-x-6 text-xs" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(10rem, 1fr))' }}>
                   <div>
                     <div className="text-[11px] font-medium text-gray-400">Visit Date</div>
                     <div className="text-sm font-semibold text-gray-900 mt-1 flex items-center gap-1.5">
@@ -1984,7 +2030,30 @@ const LeadDetail = () => {
         </div>
 
         {/* RIGHT SIDE: Info Panel & Actions */}
-        <div className="lg:col-span-1">
+        <div
+          className="relative flex-shrink-0 w-full lg:w-auto"
+          style={{ width: undefined }}
+          ref={el => {
+            // Apply inline width only on large screens where the drag resize is active
+            if (el) {
+              if (window.innerWidth >= 1024) {
+                el.style.width = panelWidth + 'px';
+              } else {
+                el.style.width = '';
+              }
+            }
+          }}
+        >
+          {/* Drag Handle — only shown on large screens */}
+          <div
+            ref={panelDragRef}
+            onMouseDown={handlePanelDragStart}
+            className="hidden lg:flex absolute left-0 top-0 h-full w-3 items-center justify-center cursor-col-resize z-10 group"
+            title="Drag to resize panel"
+            style={{ transform: 'translateX(-50%)' }}
+          >
+            <div className="w-1 h-12 rounded-full bg-gray-300 group-hover:bg-blue-400 transition-colors duration-150" />
+          </div>
           <div id="course-info-panel-section" className="bg-white border border-gray-200 rounded-xl p-5 shadow-xs w-full sticky top-4">
             <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 pb-2.5 border-b border-gray-100 flex items-center gap-2">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="text-blue-600">

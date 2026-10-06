@@ -34,12 +34,12 @@ const CallerInfoPanel = ({
     setTimeout(() => setCopiedKey(null), 2000);
   };
 
-  // Helper to split newline or semicolon-delimited string into list items
+  // Helper to split newline, semicolon, bullet, or pipe-delimited string into list items
   const parseList = (val) => {
     if (!val) return [];
     if (Array.isArray(val)) return val;
     return val
-      .split(/[\n;•]+/)
+      .split(/[\n;•|]+/)
       .map((item) => item.trim())
       .filter((item) => item.length > 0);
   };

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import CustomButton from '../CustomButton';
 import Toggle from '../custumToggle';
 import { updateLead } from '../../../Services/lead/leadService';
@@ -14,6 +14,9 @@ const PlanUniversityVisitModal = ({ isOpen, onClose, leadDetails, onSuccess }) =
   const [isSaving, setIsSaving] = useState(false);
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState('');
+
+  const dateInputRef = useRef(null);
+  const timeInputRef = useRef(null);
 
   useEffect(() => {
     if (isOpen && leadDetails) {
@@ -180,17 +183,26 @@ const PlanUniversityVisitModal = ({ isOpen, onClose, leadDetails, onSuccess }) =
                   <label className="form-label text-xs font-semibold text-gray-700 mb-1">
                     Visit Date <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="date"
-                    className={`form-control text-sm w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  <div
+                    className={`form-control flex items-center text-sm w-full px-3 py-2 border rounded-lg cursor-pointer focus-within:ring-2 focus-within:ring-blue-500 ${
                       errors.visitDate ? 'border-red-500' : 'border-gray-300'
                     }`}
-                    value={visitDate}
-                    onChange={(e) => {
-                      setVisitDate(e.target.value);
-                      if (errors.visitDate) setErrors((prev) => ({ ...prev, visitDate: null }));
+                    onClick={() => {
+                      dateInputRef.current?.focus();
+                      try { dateInputRef.current?.showPicker(); } catch (_) {}
                     }}
-                  />
+                  >
+                    <input
+                      ref={dateInputRef}
+                      type="date"
+                      className="flex-1 bg-transparent outline-none cursor-pointer min-w-0"
+                      value={visitDate}
+                      onChange={(e) => {
+                        setVisitDate(e.target.value);
+                        if (errors.visitDate) setErrors((prev) => ({ ...prev, visitDate: null }));
+                      }}
+                    />
+                  </div>
                   {errors.visitDate && (
                     <span className="text-[11px] text-red-500 mt-1 block">{errors.visitDate}</span>
                   )}
@@ -201,17 +213,26 @@ const PlanUniversityVisitModal = ({ isOpen, onClose, leadDetails, onSuccess }) =
                   <label className="form-label text-xs font-semibold text-gray-700 mb-1">
                     Visit Time <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="time"
-                    className={`form-control text-sm w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  <div
+                    className={`form-control flex items-center text-sm w-full px-3 py-2 border rounded-lg cursor-pointer focus-within:ring-2 focus-within:ring-blue-500 ${
                       errors.visitTime ? 'border-red-500' : 'border-gray-300'
                     }`}
-                    value={visitTime}
-                    onChange={(e) => {
-                      setVisitTime(e.target.value);
-                      if (errors.visitTime) setErrors((prev) => ({ ...prev, visitTime: null }));
+                    onClick={() => {
+                      timeInputRef.current?.focus();
+                      try { timeInputRef.current?.showPicker(); } catch (_) {}
                     }}
-                  />
+                  >
+                    <input
+                      ref={timeInputRef}
+                      type="time"
+                      className="flex-1 bg-transparent outline-none cursor-pointer min-w-0"
+                      value={visitTime}
+                      onChange={(e) => {
+                        setVisitTime(e.target.value);
+                        if (errors.visitTime) setErrors((prev) => ({ ...prev, visitTime: null }));
+                      }}
+                    />
+                  </div>
                   {errors.visitTime && (
                     <span className="text-[11px] text-red-500 mt-1 block">{errors.visitTime}</span>
                   )}

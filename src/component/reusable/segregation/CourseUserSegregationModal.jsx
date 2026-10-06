@@ -386,6 +386,8 @@ const CourseUserSegregationModal = ({
                                   sourceName: filterScope?.sourceName,
                                   boardId: filterScope?.boardId,
                                   boardName: filterScope?.boardName,
+                                  streamId: filterScope?.streamId,
+                                  streamName: filterScope?.streamName,
                                   gradeId: filterScope?.gradeId,
                                   gradeName: filterScope?.gradeName
                                 })
@@ -474,6 +476,8 @@ const CourseUserSegregationModal = ({
                                   sourceName: filterScope?.sourceName,
                                   boardId: filterScope?.boardId,
                                   boardName: filterScope?.boardName,
+                                  streamId: filterScope?.streamId,
+                                  streamName: filterScope?.streamName,
                                   gradeId: filterScope?.gradeId,
                                   gradeName: filterScope?.gradeName
                                 })

@@ -11,6 +11,7 @@ import {
   getCoursesDropdown,
   getGradesDropdown,
   getBoardsDropdown,
+  getStreamsDropdown,
   getLeadStatusesDropdown,
   getUsersDropdown,
   getCourseTypesDropdown,
@@ -106,6 +107,7 @@ const AddLeadModal = () => {
     courseId: '',
     registeredCourseId: '',
     boardId: '',
+    streamId: '',
     gradeId: '',
     programId: '',
     courseTypeId: '',
@@ -163,6 +165,7 @@ const AddLeadModal = () => {
   const [courses, setCourses] = useState([]);
   const [grades, setGrades] = useState([]);
   const [boards, setBoards] = useState([]);
+  const [streams, setStreams] = useState([]);
   const [courseTypes, setCourseTypes] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [leadStatuses, setLeadStatuses] = useState([]);
@@ -181,6 +184,7 @@ const AddLeadModal = () => {
     courses: false,
     grades: false,
     boards: false,
+    streams: false,
     courseTypes: false,
     departments: false,
     leadStatuses: false,
@@ -311,6 +315,20 @@ const AddLeadModal = () => {
       }
     };
 
+    const fetchStreams = async () => {
+      setDropdownLoading((prev) => ({ ...prev, streams: true }));
+      try {
+        const res = await getStreamsDropdown();
+        if (res?.success && res?.data) {
+          setStreams(res.data || []);
+        }
+      } catch (err) {
+        console.error('Failed to fetch streams:', err);
+      } finally {
+        setDropdownLoading((prev) => ({ ...prev, streams: false }));
+      }
+    };
+
     const fetchDepartments = async () => {
       setDropdownLoading((prev) => ({ ...prev, departments: true }));
       try {
@@ -350,6 +368,7 @@ const AddLeadModal = () => {
       fetchCourses();
       fetchGrades();
       fetchBoards();
+      fetchStreams();
       fetchLeadStatuses();
       fetchUsers();
       fetchCourseTypes();
@@ -394,6 +413,7 @@ const AddLeadModal = () => {
         courseId: toStr(courseId),
         registeredCourseId: toStr(registeredCourseId),
         boardId: toStr(boardId),
+        streamId: toStr(editLeadData.stream?.id || editLeadData.streamId || ''),
         gradeId: toStr(gradeId),
         programId: toStr(editProgramId),
         courseTypeId: toStr(courseTypeId),
@@ -623,6 +643,7 @@ const AddLeadModal = () => {
       courseId: '',
       registeredCourseId: '',
       boardId: '',
+      streamId: '',
       gradeId: '',
       programId: '',
       courseTypeId: '',
@@ -660,6 +681,7 @@ const AddLeadModal = () => {
       courseId: formData.courseId,
       registeredCourseId: formData.registeredCourseId,
       boardId: formData.boardId,
+      streamId: formData.streamId ? formData.streamId : null,
       gradeId: formData.gradeId,
       programId: formData.programId || null,
       courseTypeId: formData.courseTypeId,
@@ -1356,22 +1378,22 @@ const AddLeadModal = () => {
                   </SelectField>
                 )}
 
-                {isFieldVisible('grade') && (
+                {isFieldVisible('stream') && (
                   <SelectField
-                    label="Grade"
-                    readOnly={isEditMode && !canEditLeadField(hasPermission, 'grade')}
-                    value={formData.gradeId}
-                    onChange={handleChange('gradeId')}
-                    disabled={isFieldDisabled('grade', dropdownLoading.grades)}
-                    loading={dropdownLoading.grades}
-                    loadingText="Loading grades..."
+                    label="Stream"
+                    readOnly={isEditMode && !canEditLeadField(hasPermission, 'stream')}
+                    value={formData.streamId}
+                    onChange={handleChange('streamId')}
+                    disabled={isFieldDisabled('stream', dropdownLoading.streams)}
+                    loading={dropdownLoading.streams}
+                    loadingText="Loading streams..."
                   >
-                    <option value="">Select Grade</option>
-                    {grades.length > 0 ? grades.map((grade) => (
-                      <option key={grade.id} value={String(grade.id)}>
-                        {grade.name}
+                    <option value="">Select Stream</option>
+                    {streams.length > 0 ? streams.map((stream) => (
+                      <option key={stream.id} value={String(stream.id)}>
+                        {stream.name}{stream.code ? ` (${stream.code})` : ''}
                       </option>
-                    )) : <option disabled>No grades available</option>}
+                    )) : <option disabled>No streams available</option>}
                   </SelectField>
                 )}
 
@@ -1391,6 +1413,25 @@ const AddLeadModal = () => {
                         {board.name}
                       </option>
                     )) : <option disabled>No boards available</option>}
+                  </SelectField>
+                )}
+
+                {isFieldVisible('grade') && (
+                  <SelectField
+                    label="Grade"
+                    readOnly={isEditMode && !canEditLeadField(hasPermission, 'grade')}
+                    value={formData.gradeId}
+                    onChange={handleChange('gradeId')}
+                    disabled={isFieldDisabled('grade', dropdownLoading.grades)}
+                    loading={dropdownLoading.grades}
+                    loadingText="Loading grades..."
+                  >
+                    <option value="">Select Grade</option>
+                    {grades.length > 0 ? grades.map((grade) => (
+                      <option key={grade.id} value={String(grade.id)}>
+                        {grade.name}
+                      </option>
+                    )) : <option disabled>No grades available</option>}
                   </SelectField>
                 )}
               </div>

@@ -97,6 +97,12 @@ const DataSegregation = () => {
     return hasPermission('DATA_SEGREGATION_BOARD_VIEW');
   }, [canViewFullFlow, capabilities, hasPermission]);
 
+  const canViewStream = useMemo(() => {
+    if (canViewFullFlow) return true;
+    if (capabilities) return capabilities.canViewStream;
+    return hasPermission('DATA_SEGREGATION_STREAM_VIEW') || hasPermission('STREAM_VIEW');
+  }, [canViewFullFlow, capabilities, hasPermission]);
+
   const canViewGrade = useMemo(() => {
     if (canViewFullFlow) return true;
     if (capabilities) return capabilities.canViewGrade;
@@ -232,6 +238,11 @@ const DataSegregation = () => {
         if (canViewBoard) {
           s.boards?.forEach((b) => {
             all.add(`board-${s.sourceId}-${b.boardId}`);
+            if (canViewStream && b.streams) {
+              b.streams.forEach((st) => {
+                all.add(`stream-${s.sourceId}-${b.boardId}-${st.streamId}`);
+              });
+            }
           });
         }
       });
@@ -288,7 +299,20 @@ const DataSegregation = () => {
       }
     }
 
-    // 4. Grade (Unconditionally preserve)
+    // 4. Stream (Unconditionally preserve)
+    if (filters.streamId) {
+      activeFilters.push({
+        type: 'stream',
+        value: filters.streamId,
+        label: `Stream: ${filters.streamName || 'Selected Stream'}`
+      });
+      searchParams.set('streamId', filters.streamId);
+      if (filters.streamName) {
+        searchParams.set('streamName', filters.streamName);
+      }
+    }
+
+    // 5. Grade (Unconditionally preserve)
     if (filters.gradeId) {
       activeFilters.push({
         type: 'grade',
@@ -372,12 +396,13 @@ const DataSegregation = () => {
   // =========================================================================
   // Modal Open Handlers: User Analytics
   // =========================================================================
-  const handleOpenUserAnalytics = async ({ leadSourceId, sourceName, boardId, boardName, gradeId, gradeName }) => {
+  const handleOpenUserAnalytics = async ({ leadSourceId, sourceName, boardId, boardName, streamId, streamName, gradeId, gradeName }) => {
     if (!canViewUserAnalytics) return;
     const scopeParts = [
       selectedCourseType?.name,
       sourceName,
       canViewBoard ? boardName : null,
+      canViewStream ? streamName : null,
       canViewGrade ? gradeName : null
     ].filter(Boolean);
 
@@ -390,6 +415,7 @@ const DataSegregation = () => {
         courseTypeId: selectedCourseType.id,
         leadSourceId,
         boardId: (canViewBoard && boardId) ? boardId : undefined,
+        streamId: (canViewStream && streamId) ? streamId : undefined,
         gradeId: (canViewGrade && gradeId) ? gradeId : undefined
       });
       if (res?.success) {
@@ -405,12 +431,13 @@ const DataSegregation = () => {
   // =========================================================================
   // Modal Open Handlers: Status Analytics
   // =========================================================================
-  const handleOpenStatusAnalytics = async ({ leadSourceId, sourceName, boardId, boardName, gradeId, gradeName, totalLeads }) => {
+  const handleOpenStatusAnalytics = async ({ leadSourceId, sourceName, boardId, boardName, streamId, streamName, gradeId, gradeName, totalLeads }) => {
     if (!canViewStatusAnalytics) return;
     const scopeParts = [
       selectedCourseType?.name,
       sourceName,
       canViewBoard ? boardName : null,
+      canViewStream ? streamName : null,
       canViewGrade ? gradeName : null
     ].filter(Boolean);
 
@@ -424,6 +451,7 @@ const DataSegregation = () => {
         courseTypeId: selectedCourseType.id,
         leadSourceId,
         boardId: (canViewBoard && boardId) ? boardId : undefined,
+        streamId: (canViewStream && streamId) ? streamId : undefined,
         gradeId: (canViewGrade && gradeId) ? gradeId : undefined
       });
       if (res?.success) {
@@ -445,6 +473,8 @@ const DataSegregation = () => {
     sourceName,
     boardId,
     boardName,
+    streamId,
+    streamName,
     gradeId,
     gradeName
   } = {}) => {
@@ -454,6 +484,7 @@ const DataSegregation = () => {
       selectedCourseType?.name,
       sourceName,
       canViewBoard ? boardName : null,
+      canViewStream ? streamName : null,
       canViewGrade ? gradeName : null
     ].filter(Boolean);
 
@@ -464,6 +495,8 @@ const DataSegregation = () => {
       sourceName,
       boardId: (canViewBoard && boardId) ? boardId : undefined,
       boardName,
+      streamId: (canViewStream && streamId) ? streamId : undefined,
+      streamName,
       gradeId: (canViewGrade && gradeId) ? gradeId : undefined,
       gradeName
     };
@@ -478,6 +511,7 @@ const DataSegregation = () => {
         courseTypeId,
         leadSourceId: leadSourceId || undefined,
         boardId: (canViewBoard && boardId) ? boardId : undefined,
+        streamId: (canViewStream && streamId) ? streamId : undefined,
         gradeId: (canViewGrade && gradeId) ? gradeId : undefined,
         size: 1000
       });
@@ -515,6 +549,7 @@ const DataSegregation = () => {
       const res = await getCourseUserWiseSegregation(course.courseId, {
         leadSourceId: filterScope?.leadSourceId,
         boardId: filterScope?.boardId,
+        streamId: filterScope?.streamId,
         gradeId: filterScope?.gradeId,
         size: 1000
       });
@@ -547,6 +582,8 @@ const DataSegregation = () => {
       sourceName: params.sourceName,
       boardId: params.boardId,
       boardName: params.boardName,
+      streamId: params.streamId,
+      streamName: params.streamName,
       gradeId: params.gradeId,
       gradeName: params.gradeName,
       assignedUserId: params.assignedUserId,
@@ -566,11 +603,15 @@ const DataSegregation = () => {
       const matchBoard = canViewBoard && s.boards?.some(
         (b) =>
           b.boardName?.toLowerCase().includes(term) ||
+          (canViewStream && b.streams?.some((st) =>
+            st.streamName?.toLowerCase().includes(term) ||
+            (canViewGrade && st.grades?.some((g) => g.gradeName?.toLowerCase().includes(term)))
+          )) ||
           (canViewGrade && b.grades?.some((g) => g.gradeName?.toLowerCase().includes(term)))
       );
       return matchSource || matchBoard;
     });
-  }, [matrixData, searchTerm, canViewSource, canViewBoard, canViewGrade]);
+  }, [matrixData, searchTerm, canViewSource, canViewBoard, canViewStream, canViewGrade]);
 
   // Download Excel function
   const downloadExcel = () => {
@@ -616,8 +657,46 @@ const DataSegregation = () => {
               'Availed': board.availed || 0
             });
 
-            // Add grade level rows if permitted
-            if (canViewGrade && board.grades) {
+            // Add stream level rows if permitted
+            if (canViewStream && board.streams) {
+              board.streams.forEach((stream) => {
+                excelData.push({
+                  'S.No': sno++,
+                  'Level': 'Stream',
+                  'Category': selectedCourseType?.name || 'N/A',
+                  'Source': source.sourceName || 'N/A',
+                  'Source Code': source.sourceCode || 'N/A',
+                  'Specialization': board.boardName || 'N/A',
+                  'Stream': stream.streamName || 'N/A',
+                  'Grade': canViewGrade ? 'All Grades' : 'N/A',
+                  'Total Leads': stream.total || 0,
+                  'Allotted': stream.allotted || 0,
+                  'Unallotted': stream.unallotted || 0,
+                  'Availed': stream.availed || 0
+                });
+
+                // Add grade level rows under stream
+                if (canViewGrade && stream.grades) {
+                  stream.grades.forEach((grade) => {
+                    excelData.push({
+                      'S.No': sno++,
+                      'Level': 'Grade',
+                      'Category': selectedCourseType?.name || 'N/A',
+                      'Source': source.sourceName || 'N/A',
+                      'Source Code': source.sourceCode || 'N/A',
+                      'Specialization': board.boardName || 'N/A',
+                      'Stream': stream.streamName || 'N/A',
+                      'Grade': grade.gradeName || 'N/A',
+                      'Total Leads': grade.total || 0,
+                      'Allotted': grade.allotted || 0,
+                      'Unallotted': grade.unallotted || 0,
+                      'Availed': grade.availed || 0
+                    });
+                  });
+                }
+              });
+            } else if (canViewGrade && board.grades) {
+              // Fallback for boards without streams
               board.grades.forEach((grade) => {
                 excelData.push({
                   'S.No': sno++,
@@ -928,7 +1007,7 @@ const DataSegregation = () => {
                   <tr>
                     <th className="py-3.5 px-6 min-w-[320px]">
                       Hierarchy ({
-                        ['Source', canViewBoard ? 'Specialization' : null, canViewGrade ? 'Grade' : null]
+                        ['Source', canViewBoard ? 'Specialization' : null, canViewStream ? 'Stream' : null, canViewGrade ? 'Grade' : null]
                           .filter(Boolean)
                           .join(' → ')
                       })
@@ -1058,6 +1137,7 @@ const DataSegregation = () => {
                           source.boards.map((board) => {
                             const boardKey = `board-${source.sourceId}-${board.boardId}`;
                             const isBoardExpanded = expandedNodes.has(boardKey);
+                            const hasStreams = canViewStream && board.streams && board.streams.length > 0;
                             const hasGrades = canViewGrade && board.grades && board.grades.length > 0;
 
                             return (
@@ -1065,7 +1145,7 @@ const DataSegregation = () => {
                                 <tr className="bg-gray-50/80 hover:bg-indigo-50/40 transition-colors">
                                   <td className="py-2.5 px-6 pl-14">
                                     <div className="flex items-center gap-2.5">
-                                      {canViewGrade && hasGrades ? (
+                                      {(hasStreams || (canViewGrade && hasGrades)) ? (
                                         <button
                                           onClick={() => toggleNode(boardKey)}
                                           className={`p-1 rounded-md hover:bg-gray-200 transition-transform cursor-pointer ${
@@ -1156,10 +1236,229 @@ const DataSegregation = () => {
                                   </td>
                                 </tr>
 
-                                {/* LEVEL 3: GRADES (if permitted) */}
-                                {canViewGrade &&
+                                {/* LEVEL 3: STREAMS (if permitted and available) */}
+                                {hasStreams &&
                                   isBoardExpanded &&
-                                  hasGrades &&
+                                  board.streams.map((stream) => {
+                                    const streamKey = `stream-${source.sourceId}-${board.boardId}-${stream.streamId}`;
+                                    const isStreamExpanded = expandedNodes.has(streamKey);
+                                    const hasStreamGrades = canViewGrade && stream.grades && stream.grades.length > 0;
+
+                                    return (
+                                      <React.Fragment key={stream.streamId || stream.streamName}>
+                                        <tr className="bg-purple-50/25 hover:bg-purple-50/60 transition-colors">
+                                          <td className="py-2.5 px-6 pl-20">
+                                            <div className="flex items-center gap-2">
+                                              {canViewGrade && hasStreamGrades ? (
+                                                <button
+                                                  onClick={() => toggleNode(streamKey)}
+                                                  className={`p-1 rounded-md hover:bg-purple-200/60 transition-transform cursor-pointer ${
+                                                    isStreamExpanded ? 'rotate-90 text-purple-700' : 'text-gray-400'
+                                                  }`}
+                                                >
+                                                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
+                                                  </svg>
+                                                </button>
+                                              ) : (
+                                                <div className="w-5.5"></div>
+                                              )}
+                                              <span className="w-5.5 h-5.5 rounded-md bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-[10px]">
+                                                ST
+                                              </span>
+                                              <span className="font-semibold text-gray-800">{stream.streamName}</span>
+                                              {stream.streamCode && (
+                                                <span className="text-[11px] text-gray-500 font-mono">({stream.streamCode})</span>
+                                              )}
+                                            </div>
+                                          </td>
+                                          <td className="py-2.5 px-4 text-center font-bold text-gray-900">{stream.total}</td>
+                                          <td className="py-2.5 px-4 text-center text-indigo-600 font-medium">{stream.allotted}</td>
+                                          <td className="py-2.5 px-4 text-center text-amber-600 font-medium">{stream.unallotted}</td>
+                                          <td className="py-2.5 px-4 text-center text-emerald-600 font-medium">{stream.availed}</td>
+                                          <td className="py-2.5 px-6 text-right">
+                                            <div className="flex items-center justify-end gap-2">
+                                              <button
+                                                onClick={() =>
+                                                  navigateToLeads({
+                                                    courseTypeId: selectedCourseType?.id,
+                                                    leadSourceId: source.sourceId,
+                                                    sourceName: source.sourceName,
+                                                    boardId: board.boardId,
+                                                    boardName: board.boardName,
+                                                    streamId: stream.streamId,
+                                                    streamName: stream.streamName
+                                                  })
+                                                }
+                                                className="px-2 py-0.5 bg-white hover:bg-gray-100 text-blue-700 border border-blue-200 rounded text-xs font-medium cursor-pointer"
+                                              >
+                                                Leads
+                                              </button>
+                                              {canViewCourse && (
+                                                <button
+                                                  onClick={() =>
+                                                    handleOpenCourseSegregation({
+                                                      leadSourceId: source.sourceId,
+                                                      sourceName: source.sourceName,
+                                                      boardId: board.boardId,
+                                                      boardName: board.boardName,
+                                                      streamId: stream.streamId,
+                                                      streamName: stream.streamName
+                                                    })
+                                                  }
+                                                  className="px-2 py-0.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded text-xs font-medium cursor-pointer"
+                                                  title="View course breakdown"
+                                                >
+                                                  Courses
+                                                </button>
+                                              )}
+                                              {canViewUserAnalytics && (
+                                                <button
+                                                  onClick={() =>
+                                                    handleOpenUserAnalytics({
+                                                      leadSourceId: source.sourceId,
+                                                      sourceName: source.sourceName,
+                                                      boardId: board.boardId,
+                                                      boardName: board.boardName,
+                                                      streamId: stream.streamId,
+                                                      streamName: stream.streamName
+                                                    })
+                                                  }
+                                                  className="px-2 py-0.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded text-xs font-medium cursor-pointer"
+                                                >
+                                                  Users
+                                                </button>
+                                              )}
+                                              {canViewStatusAnalytics && (
+                                                <button
+                                                  onClick={() =>
+                                                    handleOpenStatusAnalytics({
+                                                      leadSourceId: source.sourceId,
+                                                      sourceName: source.sourceName,
+                                                      boardId: board.boardId,
+                                                      boardName: board.boardName,
+                                                      streamId: stream.streamId,
+                                                      streamName: stream.streamName,
+                                                      totalLeads: stream.total
+                                                    })
+                                                  }
+                                                  className="px-2 py-0.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded text-xs font-medium cursor-pointer"
+                                                >
+                                                  Status
+                                                </button>
+                                              )}
+                                            </div>
+                                          </td>
+                                        </tr>
+
+                                        {/* LEVEL 4: GRADES under STREAM (if permitted) */}
+                                        {canViewGrade &&
+                                          isStreamExpanded &&
+                                          hasStreamGrades &&
+                                          stream.grades.map((grade) => (
+                                            <tr key={grade.gradeId || grade.gradeName} className="bg-white hover:bg-gray-50/60 transition-colors">
+                                              <td className="py-2 px-6 pl-28">
+                                                <div className="flex items-center gap-2">
+                                                  <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                                                  <span className="w-5 h-5 rounded-md bg-gray-100 text-gray-600 flex items-center justify-center font-bold text-[10px]">
+                                                    G
+                                                  </span>
+                                                  <span className="text-gray-700 font-medium">{grade.gradeName}</span>
+                                                </div>
+                                              </td>
+                                              <td className="py-2 px-4 text-center font-semibold text-gray-800">{grade.total}</td>
+                                              <td className="py-2 px-4 text-center text-indigo-600 text-xs">{grade.allotted}</td>
+                                              <td className="py-2 px-4 text-center text-amber-600 text-xs">{grade.unallotted}</td>
+                                              <td className="py-2 px-4 text-center text-emerald-600 text-xs">{grade.availed}</td>
+                                              <td className="py-2 px-6 text-right">
+                                                <div className="flex items-center justify-end gap-2">
+                                                  <button
+                                                    onClick={() =>
+                                                      navigateToLeads({
+                                                        courseTypeId: selectedCourseType?.id,
+                                                        leadSourceId: source.sourceId,
+                                                        sourceName: source.sourceName,
+                                                        boardId: board.boardId,
+                                                        boardName: board.boardName,
+                                                        streamId: stream.streamId,
+                                                        streamName: stream.streamName,
+                                                        gradeId: grade.gradeId,
+                                                        gradeName: grade.gradeName
+                                                      })
+                                                    }
+                                                    className="px-2 py-0.5 bg-gray-50 hover:bg-gray-100 text-blue-600 border border-gray-200 rounded text-xs cursor-pointer"
+                                                  >
+                                                    Leads
+                                                  </button>
+                                                  {canViewCourse && (
+                                                    <button
+                                                      onClick={() =>
+                                                        handleOpenCourseSegregation({
+                                                          leadSourceId: source.sourceId,
+                                                          sourceName: source.sourceName,
+                                                          boardId: board.boardId,
+                                                          boardName: board.boardName,
+                                                          streamId: stream.streamId,
+                                                          streamName: stream.streamName,
+                                                          gradeId: grade.gradeId,
+                                                          gradeName: grade.gradeName
+                                                        })
+                                                      }
+                                                      className="px-2 py-0.5 bg-indigo-50/60 hover:bg-indigo-100 text-indigo-700 border border-indigo-100 rounded text-xs cursor-pointer"
+                                                      title="View course breakdown"
+                                                    >
+                                                      Courses
+                                                    </button>
+                                                  )}
+                                                  {canViewUserAnalytics && (
+                                                    <button
+                                                      onClick={() =>
+                                                        handleOpenUserAnalytics({
+                                                          leadSourceId: source.sourceId,
+                                                          sourceName: source.sourceName,
+                                                          boardId: board.boardId,
+                                                          boardName: board.boardName,
+                                                          streamId: stream.streamId,
+                                                          streamName: stream.streamName,
+                                                          gradeId: grade.gradeId,
+                                                          gradeName: grade.gradeName
+                                                        })
+                                                      }
+                                                      className="px-2 py-0.5 bg-blue-50/60 hover:bg-blue-100 text-blue-600 border border-blue-100 rounded text-xs cursor-pointer"
+                                                    >
+                                                      Users
+                                                    </button>
+                                                  )}
+                                                  {canViewStatusAnalytics && (
+                                                    <button
+                                                      onClick={() =>
+                                                        handleOpenStatusAnalytics({
+                                                          leadSourceId: source.sourceId,
+                                                          sourceName: source.sourceName,
+                                                          boardId: board.boardId,
+                                                          boardName: board.boardName,
+                                                          streamId: stream.streamId,
+                                                          streamName: stream.streamName,
+                                                          gradeId: grade.gradeId,
+                                                          gradeName: grade.gradeName,
+                                                          totalLeads: grade.total
+                                                        })
+                                                      }
+                                                      className="px-2 py-0.5 bg-purple-50/60 hover:bg-purple-100 text-purple-600 border border-purple-100 rounded text-xs cursor-pointer"
+                                                    >
+                                                      Status
+                                                    </button>
+                                                  )}
+                                                </div>
+                                              </td>
+                                            </tr>
+                                          ))}
+                                      </React.Fragment>
+                                    );
+                                  })}
+
+                                {/* LEVEL 3 FALLBACK: Direct GRADES under Board (for boards without streams) */}
+                                {(!hasStreams && canViewGrade && isBoardExpanded && hasGrades) &&
                                   board.grades.map((grade) => (
                                     <tr key={grade.gradeId || grade.gradeName} className="bg-white hover:bg-gray-50/60 transition-colors">
                                       <td className="py-2 px-6 pl-24">

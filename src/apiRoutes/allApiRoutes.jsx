@@ -5,6 +5,7 @@ const ApiRoutes = {
     Lead: {
         create: '/api/leads',
         getAllLeads: '/api/leads',
+        getAll: '/api/leads',
         update: '/api/leads',
         delete: '/api/leads',
         getById: '/api/leads',
@@ -174,6 +175,16 @@ const ApiRoutes = {
         toggle: '/api/boards/{id}/toggle-active'
     },
 
+    Streams: {
+        create: '/api/streams',
+        getAll: '/api/streams',
+        getById: '/api/streams/{id}',
+        update: '/api/streams/{id}',
+        delete: '/api/streams/{id}',
+        toggle: '/api/streams/{id}/toggle-active',
+        getActive: '/api/streams/active'
+    },
+
     CourseTemplate: {
         create: '/api/course-templates',
         getAll: '/api/course-templates',
@@ -196,6 +207,7 @@ const ApiRoutes = {
         grade: '/api/dashboard/grade',
         course: '/api/dashboard/course',
         board: '/api/dashboard/board',
+        stream: '/api/dashboard/stream',
         courseTypes: '/api/dashboard/course-types',
         recentActivity: '/api/dashboard/recent-activity',
         summary: '/api/dashboard/summary',
@@ -232,6 +244,7 @@ const ApiRoutes = {
 
     Dropdowns: {
         boards: '/api/dropdowns/boards',
+        streams: '/api/dropdowns/streams',
         courseTypes: '/api/dropdowns/course-types',
         programs: '/api/dropdowns/programs',
         courses: '/api/dropdowns/courses',

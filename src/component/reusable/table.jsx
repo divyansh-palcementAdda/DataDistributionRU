@@ -4,6 +4,7 @@ import { FiEye, FiEdit, FiTrash2 } from "react-icons/fi";
 const ReusableTable = ({
     columns = [],
     data = [],
+    pagination,
     actions,
     onView,
     onEdit,
@@ -31,19 +32,27 @@ const ReusableTable = ({
     const [scrollLeft, setScrollLeft] = useState(0);
     const tableContainerRef = useRef(null);
 
-    const currentPage = isServerSide ? serverCurrentPage : clientPage;
-    const rowsPerPage = isServerSide ? serverRowsPerPage : clientRows;
-    const totalPages = isServerSide ? serverTotalPages : Math.max(1, Math.ceil(data.length / rowsPerPage));
+    const isServer = isServerSide || Boolean(pagination);
+    const resolvedTotalElements = pagination?.totalElements ?? totalElements;
+    const resolvedTotalPages = pagination?.totalPages ?? serverTotalPages;
+    const resolvedCurrentPage = pagination?.currentPage ?? serverCurrentPage;
+    const resolvedRowsPerPage = pagination?.rowsPerPage ?? serverRowsPerPage;
+    const resolvedOnPageChange = pagination?.onPageChange ?? onPageChange;
+    const resolvedOnRowsPerPageChange = pagination?.onRowsPerPageChange ?? onRowsPerPageChange;
 
-    const startIndex = isServerSide ? ((currentPage - 1) * rowsPerPage) : ((clientPage - 1) * clientRows);
-    const currentData = isServerSide ? data : data.slice(startIndex, startIndex + clientRows);
+    const currentPage = isServer ? resolvedCurrentPage : clientPage;
+    const rowsPerPage = isServer ? resolvedRowsPerPage : clientRows;
+    const totalPages = isServer ? resolvedTotalPages : Math.max(1, Math.ceil(data.length / rowsPerPage));
+
+    const startIndex = isServer ? ((currentPage - 1) * rowsPerPage) : ((clientPage - 1) * clientRows);
+    const currentData = isServer ? data : data.slice(startIndex, startIndex + clientRows);
     
-    const totalItems = isServerSide ? totalElements : data.length;
+    const totalItems = isServer ? resolvedTotalElements : data.length;
 
     const handlePageChange = (newPage) => {
         if (newPage >= 1 && newPage <= totalPages) {
-            if (isServerSide && onPageChange) {
-                onPageChange(newPage);
+            if (isServer && resolvedOnPageChange) {
+                resolvedOnPageChange(newPage);
             } else {
                 setClientPage(newPage);
             }
@@ -52,8 +61,8 @@ const ReusableTable = ({
 
     const handleRowsPerPageChange = (e) => {
         const newRows = Number(e.target.value);
-        if (isServerSide && onRowsPerPageChange) {
-            onRowsPerPageChange(newRows);
+        if (isServer && resolvedOnRowsPerPageChange) {
+            resolvedOnRowsPerPageChange(newRows);
         } else {
             setClientRows(newRows);
             setClientPage(1);
@@ -180,7 +189,20 @@ const ReusableTable = ({
 
                                     {(actions || onView || onEdit || onDelete) && (
                                         <td className="px-4 py-3.5 text-center align-middle">
-                                            {actions ? actions(row) : (
+                                            {typeof actions === 'function' ? actions(row) : (Array.isArray(actions) && actions.length > 0) ? (
+                                                <div className="flex justify-center items-center gap-2">
+                                                    {actions.map((act, actIdx) => (
+                                                        <button
+                                                            key={actIdx}
+                                                            onClick={() => act.onClick && act.onClick(row)}
+                                                            className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 transition-colors bg-transparent border-none cursor-pointer"
+                                                            title={act.label}
+                                                        >
+                                                            {act.icon || act.label}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            ) : (
                                                 <div className="flex justify-center items-center gap-2">
                                                     {onView && (
                                                         <button

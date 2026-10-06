@@ -32,6 +32,7 @@ const UserAllocationTable = ({
   courseTypeId,
   leadSourceId,
   boardId,
+  streamId,
   gradeId,
   leadStatusId,
   filterRequest = {},
@@ -110,6 +111,7 @@ const UserAllocationTable = ({
       if (courseTypeId) params.courseTypeId = courseTypeId;
       if (leadSourceId) params.leadSourceId = leadSourceId;
       if (boardId) params.boardId = boardId;
+      if (streamId) params.streamId = streamId;
       if (gradeId) params.gradeId = gradeId;
       if (leadStatusId) params.leadStatusId = leadStatusId;
       if (searchTerm.trim()) params.search = searchTerm.trim();
@@ -131,7 +133,7 @@ const UserAllocationTable = ({
     } finally {
       setLoading(false);
     }
-  }, [isOpen, filterKey, courseId, courseTypeId, leadSourceId, boardId, gradeId, leadStatusId, activeWorkingFilter, searchTerm, page, size, sortBy, sortDirection]);
+  }, [isOpen, filterKey, courseId, courseTypeId, leadSourceId, boardId, streamId, gradeId, leadStatusId, activeWorkingFilter, searchTerm, page, size, sortBy, sortDirection]);
 
   useEffect(() => {
     fetchUsers();
@@ -254,6 +256,12 @@ const UserAllocationTable = ({
       searchParams.append('boardId', effectiveBoardId);
     }
 
+    // 5b. Stream Filter
+    const effectiveStreamId = streamId || filterRequest?.streamId || (Array.isArray(filterRequest?.streamIds) ? filterRequest.streamIds[0] : null);
+    if (effectiveStreamId) {
+      searchParams.append('streamId', effectiveStreamId);
+    }
+
     // 6. Grade Filter
     const effectiveGradeId = gradeId || filterRequest?.gradeId || (Array.isArray(filterRequest?.gradeIds) ? filterRequest.gradeIds[0] : null);
     if (effectiveGradeId) {
@@ -287,6 +295,7 @@ const UserAllocationTable = ({
       courseIds: effectiveCourseId ? [effectiveCourseId] : [],
       leadSourceIds: effectiveLeadSourceId ? [effectiveLeadSourceId] : [],
       boardIds: effectiveBoardId ? [effectiveBoardId] : [],
+      streamIds: effectiveStreamId ? [effectiveStreamId] : [],
       gradeIds: effectiveGradeId ? [effectiveGradeId] : [],
       statusIds: effectiveLeadStatusId ? [effectiveLeadStatusId] : [],
       activeFilters,

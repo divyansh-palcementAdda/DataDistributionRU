@@ -57,6 +57,8 @@ const CourseUserStatusAnalyticsSection = ({
             params.leadSourceId = contextId;
         } else if (contextType === 'specialization') {
             params.boardId = contextId;
+        } else if (contextType === 'stream') {
+            params.streamId = contextId;
         } else if (contextType === 'grade') {
             params.gradeId = contextId;
         } else if (contextType === 'counselor') {
@@ -78,6 +80,11 @@ const CourseUserStatusAnalyticsSection = ({
             const boardFilter = activeFilters.find((f) => f.type === 'board');
             if (boardFilter && boardFilter.value && contextType !== 'specialization') {
                 params.boardId = boardFilter.value;
+            }
+
+            const streamFilter = activeFilters.find((f) => f.type === 'stream');
+            if (streamFilter && streamFilter.value && contextType !== 'stream') {
+                params.streamId = streamFilter.value;
             }
 
             const gradeFilter = activeFilters.find((f) => f.type === 'grade');

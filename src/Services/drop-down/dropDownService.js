@@ -149,8 +149,19 @@ const getCitiesDropdown = async (state = '', search = '') => {
     }
 };
 
+const getStreamsDropdown = async (search = '') => {
+    try {
+        const params = search ? { search } : {};
+        const response = await axiosInstance.get(ApiRoutes.Dropdowns.streams, { params });
+        return response.data;
+    } catch (error) {
+        return error;
+    }
+};
+
 export {
     getBoardsDropdown,
+    getStreamsDropdown,
     getCourseTypesDropdown,
     getProgramsDropdown,
     getCoursesDropdown,

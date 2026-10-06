@@ -1606,6 +1606,7 @@ const LeadDetail = () => {
             canViewLeadField(hasPermission, 'courseType') ||
             canViewLeadField(hasPermission, 'course') ||
             canViewLeadField(hasPermission, 'interestedCourses') ||
+            canViewLeadField(hasPermission, 'stream') ||
             canViewLeadField(hasPermission, 'board') ||
             canViewLeadField(hasPermission, 'grade')) && (
               <div className="bg-white border border-gray-200/80 rounded-xl p-5 shadow-2xs">
@@ -1663,6 +1664,17 @@ const LeadDetail = () => {
                           <span className="text-blue-600 font-bold">{leadDetails.course.courseName}</span>
                         ) : (
                           <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">UNMAPPED</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {canViewLeadField(hasPermission, 'stream') && (
+                    <div>
+                      <div className="text-[11px] font-medium text-gray-400">Stream</div>
+                      <div className="text-sm font-semibold text-gray-900 mt-1">
+                        {leadDetails.stream?.name || (
+                          <span className="text-gray-400 font-normal italic">Not Defined</span>
                         )}
                       </div>
                     </div>

@@ -23,6 +23,7 @@ const UserAllocationSummaryCards = ({
   courseTypeId,
   leadSourceId,
   boardId,
+  streamId,
   gradeId,
   leadStatusId,
   filterRequest = {},
@@ -66,6 +67,7 @@ const UserAllocationSummaryCards = ({
         if (courseTypeId) params.courseTypeId = courseTypeId;
         if (leadSourceId) params.leadSourceId = leadSourceId;
         if (boardId) params.boardId = boardId;
+        if (streamId) params.streamId = streamId;
         if (gradeId) params.gradeId = gradeId;
         if (leadStatusId) params.leadStatusId = leadStatusId;
 
@@ -91,7 +93,7 @@ const UserAllocationSummaryCards = ({
     return () => {
       isCancelled = true;
     };
-  }, [courseId, courseTypeId, leadSourceId, boardId, gradeId, leadStatusId, filterKey, canViewAllottedUsers, canViewWorkingUsers]);
+  }, [courseId, courseTypeId, leadSourceId, boardId, streamId, gradeId, leadStatusId, filterKey, canViewAllottedUsers, canViewWorkingUsers]);
 
   if (!canViewAllottedUsers && !canViewWorkingUsers) {
     return null;

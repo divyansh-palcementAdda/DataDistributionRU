@@ -511,7 +511,7 @@ const LeadFilterDrawer = ({
           </FilterSection>
 
           {/* Section 2: Academic Filters */}
-          {(canViewLeadField(hasPermission, 'board') || canViewLeadField(hasPermission, 'grade')) && (
+          {(canViewLeadField(hasPermission, 'board') || canViewLeadField(hasPermission, 'stream') || canViewLeadField(hasPermission, 'grade')) && (
             <FilterSection title="2. Academic Filters" defaultOpen={false}>
               {canViewLeadField(hasPermission, 'board') && (
                 <SearchableMultiSelect
@@ -520,6 +520,16 @@ const LeadFilterDrawer = ({
                   selectedIds={draftFilters.boardIds}
                   onChange={(ids) => setDraftFilters(prev => ({ ...prev, boardIds: ids }))}
                   placeholder="All Boards"
+                />
+              )}
+
+              {canViewLeadField(hasPermission, 'stream') && (
+                <SearchableMultiSelect
+                  label="Stream"
+                  options={lookups.streams || []}
+                  selectedIds={draftFilters.streamIds}
+                  onChange={(ids) => setDraftFilters(prev => ({ ...prev, streamIds: ids }))}
+                  placeholder="All Streams"
                 />
               )}
 

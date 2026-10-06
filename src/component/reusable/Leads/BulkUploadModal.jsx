@@ -6,6 +6,7 @@ import {
   getProgramsDropdown,
   getGradesDropdown,
   getBoardsDropdown,
+  getStreamsDropdown,
   getLeadSourcesDropdown,
   getLeadStatusesDropdown,
   getDepartmentsDropdown,
@@ -30,6 +31,7 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
   const [filters, setFilters] = useState({
     programId: '',
     courseTypeId: '',
+    streamId: '',
     gradeId: '',
     boardId: '',
     leadSourceId: '',
@@ -41,6 +43,7 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
   /* ── data lists ── */
   const [programs, setPrograms] = useState([]);
   const [courseTypes, setCourseTypes] = useState([]);
+  const [streams, setStreams] = useState([]);
   const [grades, setGrades] = useState([]);
   const [boards, setBoards] = useState([]);
   const [leadSources, setLeadSources] = useState([]);
@@ -67,6 +70,7 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
     setFilters({
       programId: '',
       courseTypeId: '',
+      streamId: '',
       gradeId: '',
       boardId: '',
       leadSourceId: '',
@@ -79,9 +83,10 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
   const fetchMasterData = async () => {
     setDataLoading(true);
     try {
-      const [progRes, ctRes, gradeRes, boardRes, lsRes, lsStatusRes, deptRes, userRes] = await Promise.allSettled([
+      const [progRes, ctRes, streamRes, gradeRes, boardRes, lsRes, lsStatusRes, deptRes, userRes] = await Promise.allSettled([
         getProgramsDropdown(),
         getCourseTypesDropdown(),
+        getStreamsDropdown(),
         getGradesDropdown(),
         getBoardsDropdown(),
         getLeadSourcesDropdown(),
@@ -100,6 +105,12 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
       if (ctRes.status === 'fulfilled') {
         const d = ctRes.value;
         setCourseTypes(d?.data || []);
+      }
+
+      /* streams */
+      if (streamRes.status === 'fulfilled') {
+        const d = streamRes.value;
+        setStreams(d?.data || []);
       }
 
       /* grades */
@@ -184,6 +195,7 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
       const params = {};
       if (filters.programId)       params.programId         = filters.programId;
       if (filters.courseTypeId)    params.courseTypeId      = filters.courseTypeId;
+      if (filters.streamId)        params.streamId          = filters.streamId;
       if (filters.gradeId)         params.gradeId           = filters.gradeId;
       if (filters.boardId)         params.boardId           = filters.boardId;
       if (filters.leadSourceId)    params.leadSourceId      = filters.leadSourceId;
@@ -432,16 +444,6 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
                 labelKey="name"
               />
 
-              {/* Grade */}
-              <SelectField
-                label="Grade"
-                placeholder="— Grade —"
-                value={filters.gradeId}
-                onChange={(v) => setFilters((p) => ({ ...p, gradeId: v }))}
-                options={grades}
-                labelKey="name"
-              />
-
               {/* Board */}
               <SelectField
                 label="Board"
@@ -449,6 +451,26 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
                 value={filters.boardId}
                 onChange={(v) => setFilters((p) => ({ ...p, boardId: v }))}
                 options={boards}
+                labelKey="name"
+              />
+
+              {/* Stream */}
+              <SelectField
+                label="Stream"
+                placeholder="— Stream —"
+                value={filters.streamId}
+                onChange={(v) => setFilters((p) => ({ ...p, streamId: v }))}
+                options={streams}
+                labelKey="name"
+              />
+
+              {/* Grade */}
+              <SelectField
+                label="Grade"
+                placeholder="— Grade —"
+                value={filters.gradeId}
+                onChange={(v) => setFilters((p) => ({ ...p, gradeId: v }))}
+                options={grades}
                 labelKey="name"
               />
 

@@ -259,34 +259,41 @@ const LeadDetail = () => {
     }
   }, [leadDetails]);
 
-  // Search courses dropdown
-  useEffect(() => {
-    const fetchCourses = async () => {
-      setCoursesLoading(true);
-      try {
-        const res = await getCoursesDropdown('', '', courseSearch);
-        if (res?.success && res?.data) {
-          setCourses(res.data);
-        } else {
-          setCourses([]);
-        }
-      } catch (err) {
-        console.error("Failed to fetch courses", err);
+  // Fetch courses — immediate on mount (empty search), debounced when user types
+  const fetchCourses = useCallback(async (search = '') => {
+    setCoursesLoading(true);
+    try {
+      const res = await getCoursesDropdown('', '', search);
+      if (res?.success && res?.data) {
+        setCourses(res.data);
+      } else {
         setCourses([]);
-      } finally {
-        setCoursesLoading(false);
       }
-    };
+    } catch (err) {
+      console.error("Failed to fetch courses", err);
+      setCourses([]);
+    } finally {
+      setCoursesLoading(false);
+    }
+  }, []);
 
+  // Initial load — fetch all courses immediately without debounce
+  useEffect(() => {
+    fetchCourses('');
+  }, [fetchCourses]);
+
+  // Debounced re-fetch when user types in the course search box
+  useEffect(() => {
+    if (courseSearch === '') return; // already fetched by the initial effect
     if (courseSearchDebounceRef.current) clearTimeout(courseSearchDebounceRef.current);
     courseSearchDebounceRef.current = setTimeout(() => {
-      fetchCourses();
+      fetchCourses(courseSearch);
     }, 300);
 
     return () => {
       if (courseSearchDebounceRef.current) clearTimeout(courseSearchDebounceRef.current);
     };
-  }, [courseSearch]);
+  }, [courseSearch, fetchCourses]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -856,6 +863,10 @@ const LeadDetail = () => {
     setManualApproveCourseId(courseId);
     setManualApproveEnrollmentId(leadDetails?.enrollmentId || '');
     setManualApproveRemarks('');
+    // Ensure courses are loaded for the modal select
+    if (courses.length === 0) {
+      fetchCourses('');
+    }
     setIsManualApproveModalOpen(true);
   };
 
@@ -2254,7 +2265,7 @@ const LeadDetail = () => {
                   <option value="">-- Select Registered Course --</option>
                   {courses.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.courseName} {c.courseCode ? `(${c.courseCode})` : ''}
+                      {c.courseName || c.name} {(c.courseCode || c.code) ? `(${c.courseCode || c.code})` : ''}
                     </option>
                   ))}
                 </select>

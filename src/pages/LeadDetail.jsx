@@ -91,6 +91,9 @@ const LeadDetail = () => {
   const courseDropdownRef = useRef(null);
   const courseSearchDebounceRef = useRef(null);
 
+  // Interested Course "+N More" popover state
+  const [isCoursesPopoverOpen, setIsCoursesPopoverOpen] = useState(false);
+
   // Resizable info panel state
   const [panelWidth, setPanelWidth] = useState(384);
   const panelDragRef = useRef(null);
@@ -1654,11 +1657,20 @@ const LeadDetail = () => {
                       <div className="text-sm font-semibold text-gray-900 mt-1">
                         {leadDetails.interestedCourses?.length > 0 ? (
                           <div className="flex flex-wrap gap-1">
-                            {leadDetails.interestedCourses.map((c) => (
+                            {leadDetails.interestedCourses.slice(0, 3).map((c) => (
                               <span key={c.id} className="text-xs bg-blue-50 text-blue-700 font-semibold px-2 py-0.5 rounded border border-blue-100">
                                 {c.courseName || c.name}
                               </span>
                             ))}
+                            {leadDetails.interestedCourses.length > 3 && (
+                              <button
+                                type="button"
+                                onClick={() => setIsCoursesPopoverOpen(true)}
+                                className="text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 px-2 py-0.5 rounded transition-colors"
+                              >
+                                +{leadDetails.interestedCourses.length - 3} More
+                              </button>
+                            )}
                           </div>
                         ) : leadDetails.course?.courseName ? (
                           <span className="text-blue-600 font-bold">{leadDetails.course.courseName}</span>
@@ -2418,6 +2430,68 @@ const LeadDetail = () => {
         }}
         onSubmit={handleCompleteUpcomingFollowupModal}
       />
+
+      {/* Interested Courses - View All Popover */}
+      {isCoursesPopoverOpen && (
+        <div
+          className="fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
+          onClick={() => setIsCoursesPopoverOpen(false)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+              <div className="flex items-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="text-indigo-600">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+                </svg>
+                <h3 className="text-sm font-bold text-gray-900">All Interested Courses</h3>
+                <span className="text-[11px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">
+                  {leadDetails.interestedCourses.length} Total
+                </span>
+              </div>
+              <button
+                onClick={() => setIsCoursesPopoverOpen(false)}
+                className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+                aria-label="Close"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Course List */}
+            <div className="p-4 max-h-80 overflow-y-auto space-y-2">
+              {leadDetails.interestedCourses.map((c, idx) => (
+                <div
+                  key={c.id}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-blue-50/60 border border-blue-100"
+                >
+                  <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 text-[11px] font-bold flex items-center justify-center flex-shrink-0">
+                    {idx + 1}
+                  </span>
+                  <span className="text-sm font-semibold text-blue-800 leading-snug">
+                    {c.courseName || c.name}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Footer */}
+            <div className="px-4 py-3 border-t border-gray-100 flex justify-end">
+              <button
+                onClick={() => setIsCoursesPopoverOpen(false)}
+                className="px-4 py-1.5 text-xs font-semibold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Mandatory Lead Action Enforcement Blocking Modal */}
       {isActionRequiredModalOpen && (

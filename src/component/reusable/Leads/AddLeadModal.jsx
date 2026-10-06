@@ -34,9 +34,8 @@ const SelectField = ({ label, readOnly, children, disabled, value, onChange, loa
         value={value}
         onChange={onChange}
         disabled={disabled}
-        className={`w-full px-3.5 py-2 text-sm rounded-[8px] border transition-all outline-none cursor-pointer appearance-none bg-white pr-9 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 ${
-          !value ? 'text-gray-400' : 'text-gray-800 font-medium'
-        } ${disabled ? 'opacity-60 pointer-events-none bg-gray-50 border-gray-200' : 'border-gray-300 hover:border-gray-400'}`}
+        className={`w-full px-3.5 py-2 text-sm rounded-[8px] border transition-all outline-none cursor-pointer appearance-none bg-white pr-9 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 ${!value ? 'text-gray-400' : 'text-gray-800 font-medium'
+          } ${disabled ? 'opacity-60 pointer-events-none bg-gray-50 border-gray-200' : 'border-gray-300 hover:border-gray-400'}`}
       >
         {children}
       </select>
@@ -110,6 +109,7 @@ const AddLeadModal = () => {
     streamId: '',
     gradeId: '',
     programId: '',
+    programIds: [],
     courseTypeId: '',
     departmentId: '',
     remarks: '',
@@ -121,25 +121,33 @@ const AddLeadModal = () => {
 
   const [dropdownStates, setDropdownStates] = useState({
     course: false,
+    programs: false,
     leadSources: false,
     interestedCourses: false,
   });
 
   const [searchTerms, setSearchTerms] = useState({
     course: '',
+    programs: '',
     leadSources: '',
     interestedCourses: '',
   });
 
   const courseDropdownRef = useRef(null);
+  const programDropdownRef = useRef(null);
   const leadSourcesDropdownRef = useRef(null);
   const interestedCoursesDropdownRef = useRef(null);
+  const isSyncingRef = useRef(false);
+  const manuallySelectedPrograms = useRef(new Set());
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (courseDropdownRef.current && !courseDropdownRef.current.contains(event.target)) {
         setDropdownStates(prev => ({ ...prev, course: false }));
+      }
+      if (programDropdownRef.current && !programDropdownRef.current.contains(event.target)) {
+        setDropdownStates(prev => ({ ...prev, programs: false }));
       }
       if (leadSourcesDropdownRef.current && !leadSourcesDropdownRef.current.contains(event.target)) {
         setDropdownStates(prev => ({ ...prev, leadSources: false }));
@@ -231,10 +239,11 @@ const AddLeadModal = () => {
       }
     };
 
-    const fetchCourses = async (progId = formData.programId) => {
+    const fetchCourses = async (progIds = formData.programIds) => {
       setDropdownLoading((prev) => ({ ...prev, courses: true }));
       try {
-        const res = await getCoursesDropdown(formData.courseTypeId || '', progId || '');
+        const pIds = Array.isArray(progIds) ? progIds : (progIds ? [progIds] : []);
+        const res = await getCoursesDropdown(formData.courseTypeId || '', '', '', pIds);
         if (res?.success && res?.data) {
           setCourses(res.data || []);
         }
@@ -359,7 +368,7 @@ const AddLeadModal = () => {
         setPreferredLocationLoading((prev) => ({ ...prev, states: false }));
       }
     };
-    
+
     if (isAddLeadModalOpen) {
       fetchLeadSources();
       fetchCountries();
@@ -383,19 +392,28 @@ const AddLeadModal = () => {
 
   useEffect(() => {
     if (editLeadData) {
-      const { 
-        fullName, phoneNumber, alternatePhoneNumber, email, city, state, country, 
+      const {
+        fullName, phoneNumber, alternatePhoneNumber, email, city, state, country,
         preferredStudyState, preferredStudyCity,
         leadSourceIds, sourceDetails, interestedCourseIds,
-        courseId, registeredCourseId, boardId, gradeId, programId, courseTypeId, departmentId, remarks, 
-        assignedToUserId, statusId, active, nextFollowUpDate 
+        courseId, registeredCourseId, boardId, gradeId, programId, courseTypeId, departmentId, remarks,
+        assignedToUserId, statusId, active, nextFollowUpDate
       } = editLeadData;
-
-      const editProgramId = editLeadData.program?.id || editLeadData.programId || programId || '';
 
       // Convert all IDs to strings so they match HTML <select> / <option value="..."> comparisons
       const toStr = (v) => (v !== undefined && v !== null && v !== '') ? String(v) : '';
       const toStrArr = (arr) => Array.isArray(arr) ? arr.map(toStr).filter(Boolean) : [];
+
+      let editProgramIds = [];
+      if (Array.isArray(editLeadData.programs) && editLeadData.programs.length > 0) {
+        editProgramIds = editLeadData.programs.map(p => toStr(p?.id || p)).filter(Boolean);
+      } else if (Array.isArray(editLeadData.programIds) && editLeadData.programIds.length > 0) {
+        editProgramIds = editLeadData.programIds.map(toStr).filter(Boolean);
+      } else if (editLeadData.program?.id || editLeadData.programId || programId) {
+        editProgramIds = [toStr(editLeadData.program?.id || editLeadData.programId || programId)].filter(Boolean);
+      }
+      const editProgramId = editProgramIds[0] || '';
+      manuallySelectedPrograms.current = new Set(editProgramIds);
 
       setFormData({
         fullName: fullName || '',
@@ -416,6 +434,7 @@ const AddLeadModal = () => {
         streamId: toStr(editLeadData.stream?.id || editLeadData.streamId || ''),
         gradeId: toStr(gradeId),
         programId: toStr(editProgramId),
+        programIds: editProgramIds,
         courseTypeId: toStr(courseTypeId),
         departmentId: toStr(departmentId),
         remarks: remarks || '',
@@ -425,8 +444,8 @@ const AddLeadModal = () => {
         nextFollowUpDate: nextFollowUpDate ? (typeof nextFollowUpDate === 'string' ? nextFollowUpDate.slice(0, 10) : new Date(nextFollowUpDate).toLocaleDateString('en-CA')) : '',
       });
 
-      if (editProgramId) {
-        getCoursesDropdown(toStr(courseTypeId), toStr(editProgramId)).then(res => {
+      if (editProgramIds.length > 0) {
+        getCoursesDropdown(toStr(courseTypeId), '', '', editProgramIds).then(res => {
           if (res?.success && res?.data) {
             setCourses(res.data || []);
           }
@@ -480,11 +499,12 @@ const AddLeadModal = () => {
       fetchEditLocationData();
     } else {
       // Set default status to "raw" for new leads
-      const rawStatus = leadStatuses.find(status => 
-        status.name?.toLowerCase() === 'raw' || 
+      const rawStatus = leadStatuses.find(status =>
+        status.name?.toLowerCase() === 'raw' ||
         status.name?.toLowerCase() === 'main raw'
       );
-      
+
+      manuallySelectedPrograms.current.clear();
       setFormData({
         fullName: '',
         phoneNumber: '',
@@ -501,7 +521,10 @@ const AddLeadModal = () => {
         courseId: '',
         registeredCourseId: '',
         boardId: '',
+        streamId: '',
         gradeId: '',
+        programId: '',
+        programIds: [],
         courseTypeId: '',
         departmentId: '',
         remarks: '',
@@ -596,8 +619,8 @@ const AddLeadModal = () => {
   // Set default status to "raw" when leadStatuses are loaded and it's a new lead
   useEffect(() => {
     if (!editLeadData && leadStatuses.length > 0 && !formData.statusId) {
-      const rawStatus = leadStatuses.find(status => 
-        status.name?.toLowerCase() === 'raw' || 
+      const rawStatus = leadStatuses.find(status =>
+        status.name?.toLowerCase() === 'raw' ||
         status.name?.toLowerCase() === 'main raw'
       );
       if (rawStatus) {
@@ -606,9 +629,136 @@ const AddLeadModal = () => {
     }
   }, [leadStatuses, editLeadData, formData.statusId]);
 
+  const handleProgramToggle = async (pId, willBeChecked) => {
+    const pidStr = String(pId);
+    let newProgramIds;
+    if (willBeChecked) {
+      manuallySelectedPrograms.current.add(pidStr);
+      newProgramIds = Array.from(new Set([...formData.programIds, pidStr]));
+    } else {
+      manuallySelectedPrograms.current.delete(pidStr);
+      newProgramIds = formData.programIds.filter(id => id !== pidStr);
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      programIds: newProgramIds,
+      programId: newProgramIds[0] || '',
+    }));
+
+    setDropdownLoading((prev) => ({ ...prev, courses: true }));
+    try {
+      const res = await getCoursesDropdown(formData.courseTypeId || '', '', '', newProgramIds);
+      const newCourses = res?.data || [];
+      setCourses(newCourses);
+
+      if (newProgramIds.length > 0 && newCourses.length > 0) {
+        const validCourseIds = new Set(newCourses.map(c => String(c.id)));
+        setFormData((prev) => {
+          let updatedRegCourse = prev.registeredCourseId;
+          let updatedCourseId = prev.courseId;
+          if (updatedRegCourse && !validCourseIds.has(String(updatedRegCourse))) {
+            updatedRegCourse = '';
+            updatedCourseId = '';
+          }
+          const updatedInterested = prev.interestedCourseIds.filter(id => validCourseIds.has(String(id)));
+          return {
+            ...prev,
+            courseId: updatedCourseId,
+            registeredCourseId: updatedRegCourse,
+            interestedCourseIds: updatedInterested,
+          };
+        });
+      } else if (newProgramIds.length === 0) {
+        const allRes = await getCoursesDropdown(formData.courseTypeId || '', '', '', []);
+        setCourses(allRes?.data || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch courses for updated programs:', err);
+    } finally {
+      setDropdownLoading((prev) => ({ ...prev, courses: false }));
+    }
+  };
+
+  const handleClearAllPrograms = async () => {
+    manuallySelectedPrograms.current.clear();
+    setFormData((prev) => ({
+      ...prev,
+      programIds: [],
+      programId: '',
+    }));
+    setDropdownLoading((prev) => ({ ...prev, courses: true }));
+    try {
+      const res = await getCoursesDropdown(formData.courseTypeId || '', '', '', []);
+      setCourses(res?.data || []);
+    } catch (err) {
+      console.error('Failed to fetch all courses:', err);
+    } finally {
+      setDropdownLoading((prev) => ({ ...prev, courses: false }));
+    }
+  };
+
+  const handleCourseSelectionChange = async ({ regCourseId = null, interestedIds = null }) => {
+    if (isSyncingRef.current) return;
+    isSyncingRef.current = true;
+
+    try {
+      const targetRegCourseId = regCourseId !== null ? regCourseId : (formData.registeredCourseId || formData.courseId);
+      const targetInterestedIds = interestedIds !== null ? interestedIds : formData.interestedCourseIds;
+
+      const allSelectedCourseIds = [targetRegCourseId, ...targetInterestedIds].filter(Boolean).map(String);
+
+      const derivedProgramIds = new Set();
+      allSelectedCourseIds.forEach((cId) => {
+        const courseObj = courses.find((c) => String(c.id) === String(cId));
+        if (courseObj?.programIds && Array.isArray(courseObj.programIds)) {
+          courseObj.programIds.forEach((pId) => derivedProgramIds.add(String(pId)));
+        } else if (courseObj?.programId) {
+          derivedProgramIds.add(String(courseObj.programId));
+        }
+      });
+
+      const finalProgramSet = new Set([...manuallySelectedPrograms.current, ...derivedProgramIds]);
+      const finalProgramIds = Array.from(finalProgramSet);
+
+      const currentProgSet = new Set(formData.programIds.map(String));
+      const isDifferent = finalProgramIds.length !== currentProgSet.size ||
+        finalProgramIds.some((id) => !currentProgSet.has(id));
+
+      if (isDifferent) {
+        setFormData((prev) => ({
+          ...prev,
+          courseId: targetRegCourseId || '',
+          registeredCourseId: targetRegCourseId || '',
+          interestedCourseIds: targetInterestedIds,
+          programIds: finalProgramIds,
+          programId: finalProgramIds[0] || '',
+        }));
+
+        if (finalProgramIds.length > 0) {
+          const res = await getCoursesDropdown(formData.courseTypeId || '', '', '', finalProgramIds);
+          if (res?.success && res?.data) {
+            setCourses(res.data || []);
+          }
+        }
+      } else {
+        setFormData((prev) => ({
+          ...prev,
+          courseId: targetRegCourseId || '',
+          registeredCourseId: targetRegCourseId || '',
+          interestedCourseIds: targetInterestedIds,
+        }));
+      }
+    } catch (err) {
+      console.error('Failed during course selection synchronization:', err);
+    } finally {
+      isSyncingRef.current = false;
+    }
+  };
+
   const handleChange = (field) => (e) => {
     const value = e.target.value;
-    
+
     if (field === 'country') {
       setFormData((prev) => ({ ...prev, country: value, state: '', city: '' }));
     } else if (field === 'state') {
@@ -622,11 +772,12 @@ const AddLeadModal = () => {
 
   const resetForm = () => {
     // Set default status to "raw" when resetting form
-    const rawStatus = leadStatuses.find(status => 
-      status.name?.toLowerCase() === 'raw' || 
+    const rawStatus = leadStatuses.find(status =>
+      status.name?.toLowerCase() === 'raw' ||
       status.name?.toLowerCase() === 'main raw'
     );
-    
+
+    manuallySelectedPrograms.current.clear();
     setFormData({
       fullName: '',
       phoneNumber: '',
@@ -646,6 +797,7 @@ const AddLeadModal = () => {
       streamId: '',
       gradeId: '',
       programId: '',
+      programIds: [],
       courseTypeId: '',
       departmentId: '',
       remarks: '',
@@ -683,7 +835,8 @@ const AddLeadModal = () => {
       boardId: formData.boardId,
       streamId: formData.streamId ? formData.streamId : null,
       gradeId: formData.gradeId,
-      programId: formData.programId || null,
+      programId: formData.programIds?.[0] || formData.programId || null,
+      programIds: formData.programIds || [],
       courseTypeId: formData.courseTypeId,
       departmentId: formData.departmentId,
       remarks: formData.remarks,
@@ -739,7 +892,7 @@ const AddLeadModal = () => {
     }
     
     .custom-dropdown-header {
-      padding: 8px 12px;
+      padding: 6px 12px;
       border: 1px solid #CBD5E1;
       border-radius: 8px;
       background: white;
@@ -748,7 +901,6 @@ const AddLeadModal = () => {
       justify-content: space-between;
       align-items: center;
       min-height: 38px;
-      height: 38px;
       font-size: 14px;
       color: #1e293b;
       transition: all 0.15s ease;
@@ -1144,42 +1296,136 @@ const AddLeadModal = () => {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
                 {isFieldVisible('program') && (
-                  <SelectField
-                    label="Program"
-                    readOnly={isEditMode && !canEditLeadField(hasPermission, 'program')}
-                    value={formData.programId || ''}
-                    disabled={isFieldDisabled('program', dropdownLoading.programs)}
-                    onChange={async (e) => {
-                      const selectedProgramId = e.target.value;
-                      setFormData((prev) => ({
-                        ...prev,
-                        programId: selectedProgramId,
-                        courseId: '',
-                        registeredCourseId: '',
-                        interestedCourseIds: [],
-                      }));
-                      setDropdownLoading((prev) => ({ ...prev, courses: true }));
-                      try {
-                        const res = await getCoursesDropdown(formData.courseTypeId || '', selectedProgramId || '');
-                        if (res?.success && res?.data) {
-                          setCourses(res.data || []);
-                        }
-                      } catch (err) {
-                        console.error('Failed to fetch courses for program:', err);
-                      } finally {
-                        setDropdownLoading((prev) => ({ ...prev, courses: false }));
-                      }
-                    }}
-                    loading={dropdownLoading.programs}
-                    loadingText="Loading programs..."
-                  >
-                    <option value="">Select Program</option>
-                    {programs.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name} {p.code ? `(${p.code})` : ''}
-                      </option>
-                    ))}
-                  </SelectField>
+                  <div className="flex flex-col gap-1 w-full">
+                    <label className="text-xs font-semibold text-gray-700 ml-0.5 flex items-center justify-between">
+                      <span>Program(s)</span>
+                      {isEditMode && !canEditLeadField(hasPermission, 'program') && (
+                        <span className="text-[10px] text-gray-400 font-normal">🔒 Read-only</span>
+                      )}
+                    </label>
+                    <div className="custom-dropdown-container" ref={programDropdownRef}>
+                      <div
+                        className={`custom-dropdown-header ${isFieldDisabled('program', dropdownLoading.programs) ? 'opacity-60 pointer-events-none bg-gray-50' : ''}`}
+                        onClick={() => {
+                          if (isFieldDisabled('program', dropdownLoading.programs)) return;
+                          setDropdownStates((prev) => ({ ...prev, programs: !prev.programs }));
+                        }}
+                      >
+                        <div className="flex items-center gap-1.5 flex-wrap overflow-hidden flex-1 mr-1">
+                          {formData.programIds.length === 0 ? (
+                            <span className="text-gray-400">Select Program(s)</span>
+                          ) : (
+                            formData.programIds.map((pId) => {
+                              const prog = programs.find((p) => String(p.id) === String(pId));
+                              const progName = prog ? `${prog.name}${prog.code ? ` (${prog.code})` : ''}` : pId;
+                              return (
+                                <span
+                                  key={pId}
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-700 text-xs font-medium rounded-md border border-blue-200"
+                                >
+                                  <span className="truncate max-w-[140px]">{progName}</span>
+                                  {!isFieldDisabled('program') && (
+                                    <button
+                                      type="button"
+                                      className="hover:text-blue-900 focus:outline-none cursor-pointer"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleProgramToggle(pId, false);
+                                      }}
+                                    >
+                                      ✕
+                                    </button>
+                                  )}
+                                </span>
+                              );
+                            })
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          {formData.programIds.length > 0 && !isFieldDisabled('program') && (
+                            <button
+                              type="button"
+                              className="text-xs text-gray-400 hover:text-red-500 font-medium px-1 cursor-pointer"
+                              title="Clear all"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleClearAllPrograms();
+                              }}
+                            >
+                              Clear
+                            </button>
+                          )}
+                          <span className="custom-dropdown-arrow">▼</span>
+                        </div>
+                      </div>
+                      {dropdownStates.programs && !isFieldDisabled('program') && (
+                        <div className="custom-dropdown-content">
+                          <div className="custom-dropdown-search">
+                            <input
+                              type="text"
+                              placeholder="Search programs..."
+                              value={searchTerms.programs}
+                              onChange={(e) => setSearchTerms((prev) => ({ ...prev, programs: e.target.value }))}
+                              className="custom-search-input"
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                          <div className="custom-dropdown-options">
+                            {programs
+                              .filter((prog) => {
+                                const term = (searchTerms.programs || '').toLowerCase();
+                                return (
+                                  (prog.name || '').toLowerCase().includes(term) ||
+                                  (prog.code || '').toLowerCase().includes(term)
+                                );
+                              })
+                              .map((prog) => {
+                                const pidStr = String(prog.id);
+                                const isChecked = formData.programIds.includes(pidStr);
+                                return (
+                                  <div
+                                    key={prog.id}
+                                    className={`custom-dropdown-option ${isChecked ? 'selected' : ''}`}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleProgramToggle(pidStr, !isChecked);
+                                    }}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      id={`custom-prog-${prog.id}`}
+                                      value={prog.id}
+                                      checked={isChecked}
+                                      onChange={(e) => {
+                                        e.stopPropagation();
+                                        handleProgramToggle(pidStr, e.target.checked);
+                                      }}
+                                    />
+                                    <label
+                                      htmlFor={`custom-prog-${prog.id}`}
+                                      className="custom-option-label"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      {prog.name} {prog.code ? `(${prog.code})` : ''}
+                                    </label>
+                                  </div>
+                                );
+                              })}
+                            {programs.filter((prog) => {
+                              const term = (searchTerms.programs || '').toLowerCase();
+                              return (
+                                (prog.name || '').toLowerCase().includes(term) ||
+                                (prog.code || '').toLowerCase().includes(term)
+                              );
+                            }).length === 0 && (
+                              <div className="custom-no-options">No programs found</div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    {dropdownLoading.programs && <small className="text-muted ml-0.5 text-[10px]">Loading programs...</small>}
+                  </div>
                 )}
 
                 {isFieldVisible('course') && (
@@ -1191,7 +1437,7 @@ const AddLeadModal = () => {
                       )}
                     </label>
                     <div className="custom-dropdown-container" ref={courseDropdownRef}>
-                      <div 
+                      <div
                         className={`custom-dropdown-header ${isFieldDisabled('course') ? 'opacity-60 pointer-events-none bg-gray-50' : ''}`}
                         onClick={() => {
                           if (isFieldDisabled('course')) return;
@@ -1201,8 +1447,8 @@ const AddLeadModal = () => {
                         <span className={!(formData.registeredCourseId || formData.courseId) ? 'text-gray-400' : 'text-gray-800 font-medium'}>
                           {(formData.registeredCourseId || formData.courseId)
                             ? (courses.find(c => String(c.id) === String(formData.registeredCourseId || formData.courseId))?.name ||
-                               courses.find(c => String(c.id) === String(formData.registeredCourseId || formData.courseId))?.courseName ||
-                               'Select Registered Course')
+                              courses.find(c => String(c.id) === String(formData.registeredCourseId || formData.courseId))?.courseName ||
+                              'Select Registered Course')
                             : 'Select Registered Course'
                           }
                         </span>
@@ -1221,49 +1467,39 @@ const AddLeadModal = () => {
                           </div>
                           <div className="custom-dropdown-options">
                             {courses
-                              .filter(course => 
+                              .filter(course =>
                                 (course.name || course.courseName || '')
                                   .toLowerCase()
                                   .includes(searchTerms.course.toLowerCase())
                               )
                               .map((course) => (
-                              <div 
-                                key={course.id} 
-                                className={`custom-dropdown-option ${String(formData.registeredCourseId || formData.courseId) === String(course.id) ? 'selected' : ''}`}
-                              >
-                                <input
-                                  type="checkbox"
-                                  id={`custom-course-${course.id}`}
-                                  value={course.id}
-                                  checked={String(formData.registeredCourseId || formData.courseId) === String(course.id)}
-                                  onChange={(e) => {
-                                    if (e.target.checked) {
-                                      setFormData((prev) => ({
-                                        ...prev,
-                                        courseId: String(course.id),
-                                        registeredCourseId: String(course.id),
-                                      }));
-                                    } else {
-                                      setFormData((prev) => ({
-                                        ...prev,
-                                        courseId: '',
-                                        registeredCourseId: '',
-                                      }));
-                                    }
-                                  }}
-                                />
-                                <label htmlFor={`custom-course-${course.id}`} className="custom-option-label">
-                                  {course.name || course.courseName}
-                                </label>
-                              </div>
-                            ))}
-                            {courses.filter(course => 
+                                <div
+                                  key={course.id}
+                                  className={`custom-dropdown-option ${String(formData.registeredCourseId || formData.courseId) === String(course.id) ? 'selected' : ''}`}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    id={`custom-course-${course.id}`}
+                                    value={course.id}
+                                    checked={String(formData.registeredCourseId || formData.courseId) === String(course.id)}
+                                    onChange={(e) => {
+                                      const isChecked = e.target.checked;
+                                      const selectedCourseId = isChecked ? String(course.id) : '';
+                                      handleCourseSelectionChange({ regCourseId: selectedCourseId });
+                                    }}
+                                  />
+                                  <label htmlFor={`custom-course-${course.id}`} className="custom-option-label">
+                                    {course.name || course.courseName}
+                                  </label>
+                                </div>
+                              ))}
+                            {courses.filter(course =>
                               (course.name || course.courseName || '')
                                 .toLowerCase()
                                 .includes(searchTerms.course.toLowerCase())
                             ).length === 0 && (
-                              <div className="custom-no-options">No registered courses found</div>
-                            )}
+                                <div className="custom-no-options">No registered courses found</div>
+                              )}
                           </div>
                         </div>
                       )}
@@ -1281,7 +1517,7 @@ const AddLeadModal = () => {
                       )}
                     </label>
                     <div className="custom-dropdown-container" ref={interestedCoursesDropdownRef}>
-                      <div 
+                      <div
                         className={`custom-dropdown-header ${isFieldDisabled('interestedCourses') ? 'opacity-60 pointer-events-none bg-gray-50' : ''}`}
                         onClick={() => {
                           if (isFieldDisabled('interestedCourses')) return;
@@ -1289,7 +1525,7 @@ const AddLeadModal = () => {
                         }}
                       >
                         <span className={formData.interestedCourseIds.length === 0 ? 'text-gray-400' : 'text-gray-800 font-medium'}>
-                          {formData.interestedCourseIds.length > 0 
+                          {formData.interestedCourseIds.length > 0
                             ? `${formData.interestedCourseIds.length} course(s) selected`
                             : 'Select Interested Courses'
                           }
@@ -1309,48 +1545,41 @@ const AddLeadModal = () => {
                           </div>
                           <div className="custom-dropdown-options">
                             {courses
-                              .filter(course => 
+                              .filter(course =>
                                 (course.name || course.courseName || '')
                                   .toLowerCase()
                                   .includes(searchTerms.interestedCourses.toLowerCase())
                               )
                               .map((course) => (
-                              <div 
-                                key={course.id} 
-                                className={`custom-dropdown-option ${formData.interestedCourseIds.includes(String(course.id)) ? 'selected' : ''}`}
-                              >
-                                <input
-                                  type="checkbox"
-                                  id={`custom-interested-course-${course.id}`}
-                                  value={course.id}
-                                  checked={formData.interestedCourseIds.includes(String(course.id))}
-                                  onChange={(e) => {
-                                    const cid = String(course.id);
-                                    if (e.target.checked) {
-                                      setFormData((prev) => ({
-                                        ...prev,
-                                        interestedCourseIds: [...prev.interestedCourseIds, cid],
-                                      }));
-                                    } else {
-                                      setFormData((prev) => ({
-                                        ...prev,
-                                        interestedCourseIds: prev.interestedCourseIds.filter((id) => id !== cid),
-                                      }));
-                                    }
-                                  }}
-                                />
-                                <label htmlFor={`custom-interested-course-${course.id}`} className="custom-option-label">
-                                  {course.name || course.courseName}
-                                </label>
-                              </div>
-                            ))}
-                            {courses.filter(course => 
+                                <div
+                                  key={course.id}
+                                  className={`custom-dropdown-option ${formData.interestedCourseIds.includes(String(course.id)) ? 'selected' : ''}`}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    id={`custom-interested-course-${course.id}`}
+                                    value={course.id}
+                                    checked={formData.interestedCourseIds.includes(String(course.id))}
+                                    onChange={(e) => {
+                                      const cid = String(course.id);
+                                      const updatedInterested = e.target.checked
+                                        ? [...formData.interestedCourseIds, cid]
+                                        : formData.interestedCourseIds.filter((id) => id !== cid);
+                                      handleCourseSelectionChange({ interestedIds: updatedInterested });
+                                    }}
+                                  />
+                                  <label htmlFor={`custom-interested-course-${course.id}`} className="custom-option-label">
+                                    {course.name || course.courseName}
+                                  </label>
+                                </div>
+                              ))}
+                            {courses.filter(course =>
                               (course.name || course.courseName || '')
                                 .toLowerCase()
                                 .includes(searchTerms.interestedCourses.toLowerCase())
                             ).length === 0 && (
-                              <div className="custom-no-options">No courses found</div>
-                            )}
+                                <div className="custom-no-options">No courses found</div>
+                              )}
                           </div>
                         </div>
                       )}
@@ -1456,7 +1685,7 @@ const AddLeadModal = () => {
                       )}
                     </label>
                     <div className="custom-dropdown-container" ref={leadSourcesDropdownRef}>
-                      <div 
+                      <div
                         className={`custom-dropdown-header ${isFieldDisabled('leadSources') ? 'opacity-60 pointer-events-none bg-gray-50' : ''}`}
                         onClick={() => {
                           if (isFieldDisabled('leadSources')) return;
@@ -1464,7 +1693,7 @@ const AddLeadModal = () => {
                         }}
                       >
                         <span className={formData.leadSourceIds.length === 0 ? 'text-gray-400' : 'text-gray-800 font-medium'}>
-                          {formData.leadSourceIds.length > 0 
+                          {formData.leadSourceIds.length > 0
                             ? `${formData.leadSourceIds.length} source(s) selected`
                             : 'Select Lead Sources'
                           }
@@ -1484,44 +1713,44 @@ const AddLeadModal = () => {
                           </div>
                           <div className="custom-dropdown-options">
                             {leadSources
-                              .filter(source => 
+                              .filter(source =>
                                 source.name?.toLowerCase().includes(searchTerms.leadSources.toLowerCase())
                               )
                               .map((source) => (
-                              <div 
-                                key={source.id} 
-                                className={`custom-dropdown-option ${formData.leadSourceIds.includes(String(source.id)) ? 'selected' : ''}`}
-                              >
-                                <input
-                                  type="checkbox"
-                                  id={`custom-source-${source.id}`}
-                                  value={source.id}
-                                  checked={formData.leadSourceIds.includes(String(source.id))}
-                                  onChange={(e) => {
-                                    const sid = String(source.id);
-                                    if (e.target.checked) {
-                                      setFormData((prev) => ({
-                                        ...prev,
-                                        leadSourceIds: [...prev.leadSourceIds, sid],
-                                      }));
-                                    } else {
-                                      setFormData((prev) => ({
-                                        ...prev,
-                                        leadSourceIds: prev.leadSourceIds.filter((id) => id !== sid),
-                                      }));
-                                    }
-                                  }}
-                                />
-                                <label htmlFor={`custom-source-${source.id}`} className="custom-option-label">
-                                  {source.name}
-                                </label>
-                              </div>
-                            ))}
-                            {leadSources.filter(source => 
+                                <div
+                                  key={source.id}
+                                  className={`custom-dropdown-option ${formData.leadSourceIds.includes(String(source.id)) ? 'selected' : ''}`}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    id={`custom-source-${source.id}`}
+                                    value={source.id}
+                                    checked={formData.leadSourceIds.includes(String(source.id))}
+                                    onChange={(e) => {
+                                      const sid = String(source.id);
+                                      if (e.target.checked) {
+                                        setFormData((prev) => ({
+                                          ...prev,
+                                          leadSourceIds: [...prev.leadSourceIds, sid],
+                                        }));
+                                      } else {
+                                        setFormData((prev) => ({
+                                          ...prev,
+                                          leadSourceIds: prev.leadSourceIds.filter((id) => id !== sid),
+                                        }));
+                                      }
+                                    }}
+                                  />
+                                  <label htmlFor={`custom-source-${source.id}`} className="custom-option-label">
+                                    {source.name}
+                                  </label>
+                                </div>
+                              ))}
+                            {leadSources.filter(source =>
                               source.name?.toLowerCase().includes(searchTerms.leadSources.toLowerCase())
                             ).length === 0 && (
-                              <div className="custom-no-options">No lead sources found</div>
-                            )}
+                                <div className="custom-no-options">No lead sources found</div>
+                              )}
                           </div>
                         </div>
                       )}
@@ -1562,10 +1791,10 @@ const AddLeadModal = () => {
                     {users
                       .filter((user) => user.username !== 'admin' && user.username !== 'superadmin')
                       .map((user) => (
-                      <option key={user.id} value={String(user.id)}>
-                        {user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username}
-                      </option>
-                    ))}
+                        <option key={user.id} value={String(user.id)}>
+                          {user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username}
+                        </option>
+                      ))}
                   </SelectField>
                 )}
 
@@ -1601,9 +1830,8 @@ const AddLeadModal = () => {
                       value={formData.nextFollowUpDate}
                       onChange={handleChange('nextFollowUpDate')}
                       disabled={isFieldDisabled('nextFollowUpDate')}
-                      className={`w-full px-3.5 py-2 text-sm rounded-[8px] border transition-all outline-none cursor-pointer bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 ${
-                        isFieldDisabled('nextFollowUpDate') ? 'opacity-60 pointer-events-none bg-gray-50 border-gray-200' : 'border-gray-300 hover:border-gray-400'
-                      }`}
+                      className={`w-full px-3.5 py-2 text-sm rounded-[8px] border transition-all outline-none cursor-pointer bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 ${isFieldDisabled('nextFollowUpDate') ? 'opacity-60 pointer-events-none bg-gray-50 border-gray-200' : 'border-gray-300 hover:border-gray-400'
+                        }`}
                     />
                   </div>
                 )}
@@ -1623,9 +1851,8 @@ const AddLeadModal = () => {
                     value={formData.remarks}
                     onChange={handleChange('remarks')}
                     disabled={isFieldDisabled('remarks')}
-                    className={`w-full px-3.5 py-2 text-sm rounded-[8px] border transition-all outline-none resize-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 ${
-                      isFieldDisabled('remarks') ? 'opacity-60 pointer-events-none bg-gray-50 border-gray-200' : 'border-gray-300 hover:border-gray-400 bg-white placeholder:text-gray-400'
-                    }`}
+                    className={`w-full px-3.5 py-2 text-sm rounded-[8px] border transition-all outline-none resize-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 ${isFieldDisabled('remarks') ? 'opacity-60 pointer-events-none bg-gray-50 border-gray-200' : 'border-gray-300 hover:border-gray-400 bg-white placeholder:text-gray-400'
+                      }`}
                   />
                 </div>
               )}
@@ -1672,4 +1899,4 @@ const AddLeadModal = () => {
   );
 };
 
-export default AddLeadModal;
+export default AddLeadModal;

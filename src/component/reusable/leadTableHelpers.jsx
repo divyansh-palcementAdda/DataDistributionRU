@@ -158,7 +158,12 @@ export const isLeadUnmapped = (row) => {
     row.sourceDetails ||
     row.leadSource?.name
   );
-  const hasProgram = Boolean(row.program?.name || row.programName || (typeof row.program === 'string' && row.program));
+  const hasProgram = Boolean(
+    (Array.isArray(row.programs) && row.programs.length > 0) ||
+    row.program?.name ||
+    row.programName ||
+    (typeof row.program === 'string' && row.program)
+  );
 
   return !hasCourse || !hasGrade || !hasBoard || !hasSource || !hasProgram || !hasCourseType;
 };

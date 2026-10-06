@@ -694,7 +694,8 @@ const LeadDetail = () => {
     }
 
     // Program / School
-    if (!leadDetails.program?.name && canViewLeadField(hasPermission, 'program')) {
+    const hasPrograms = (Array.isArray(leadDetails.programs) && leadDetails.programs.length > 0) || Boolean(leadDetails.program?.name);
+    if (!hasPrograms && canViewLeadField(hasPermission, 'program')) {
       missing.push({ key: 'program', label: 'Program / School' });
     }
 
@@ -1622,7 +1623,19 @@ const LeadDetail = () => {
                     <div>
                       <div className="text-[11px] font-medium text-gray-400">Program / School</div>
                       <div className="text-sm font-semibold text-gray-900 mt-1">
-                        {leadDetails.program?.name || <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">UNMAPPED</span>}
+                        {leadDetails.programs?.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {leadDetails.programs.map((p) => (
+                              <span key={p.id} className="text-xs bg-blue-50 text-blue-700 font-semibold px-2 py-0.5 rounded border border-blue-100">
+                                {p.name}{p.code ? ` (${p.code})` : ''}
+                              </span>
+                            ))}
+                          </div>
+                        ) : leadDetails.program?.name ? (
+                          leadDetails.program.name
+                        ) : (
+                          <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded">UNMAPPED</span>
+                        )}
                       </div>
                     </div>
                   )}

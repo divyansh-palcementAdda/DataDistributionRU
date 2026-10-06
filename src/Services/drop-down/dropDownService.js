@@ -31,11 +31,14 @@ const getProgramsDropdown = async (search = '') => {
     }
 };
 
-const getCoursesDropdown = async (courseTypeId = '', programId = '', search = '') => {
+const getCoursesDropdown = async (courseTypeId = '', programId = '', search = '', programIds = []) => {
     try {
         const params = {};
         if (courseTypeId) params.courseTypeId = courseTypeId;
-        if (programId) params.programId = programId;
+        if (programId && (!programIds || programIds.length === 0)) params.programId = programId;
+        if (programIds && programIds.length > 0) {
+            params.programIds = Array.isArray(programIds) ? programIds.join(',') : programIds;
+        }
         if (search) params.search = search;
         const response = await axiosInstance.get(ApiRoutes.Dropdowns.courses, { params });
         return response.data;

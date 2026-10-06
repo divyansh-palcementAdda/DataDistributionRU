@@ -11,6 +11,7 @@ export const DEFAULT_LEAD_FILTERS = {
   interestedCourseIds: [],
   registeredCourseId: null,
   courseTypeIds: [],
+  programIds: [],
   departmentIds: [],
   assignedUserIds: [],
   boardIds: [],
@@ -65,6 +66,17 @@ export const buildLeadQueryParams = (filters = {}) => {
     if (filters.courseTypeIds.length === 1) {
       params.courseTypeId = filters.courseTypeIds[0];
     }
+  }
+
+  // Programs
+  if (Array.isArray(filters.programIds) && filters.programIds.length > 0) {
+    params.programIds = filters.programIds;
+    if (filters.programIds.length === 1) {
+      params.programId = filters.programIds[0];
+    }
+  } else if (filters.programId) {
+    params.programId = filters.programId;
+    params.programIds = [filters.programId];
   }
 
   // Courses (Exclusively Interested Courses - send interestedCourseIds instead of courseIds/courseId)
@@ -241,6 +253,10 @@ export const parseFiltersFromSearchParams = (searchParams, state = null) => {
     // Course Types
     const courseTypes = parseArrayParam(searchParams, 'courseTypeIds', 'courseTypeId');
     if (courseTypes.length > 0) filters.courseTypeIds = courseTypes;
+
+    // Programs
+    const programs = parseArrayParam(searchParams, 'programIds', 'programId');
+    if (programs.length > 0) filters.programIds = programs;
 
     // Courses
     const courses = parseArrayParam(searchParams, 'interestedCourseIds', 'interestedCourseId', 'courseIds', 'courseId');
@@ -463,6 +479,14 @@ export const syncFiltersToSearchParams = (filters) => {
       params.set('courseTypeId', filters.courseTypeIds[0]);
     } else {
       filters.courseTypeIds.forEach(id => params.append('courseTypeIds', id));
+    }
+  }
+
+  if (Array.isArray(filters.programIds) && filters.programIds.length > 0) {
+    if (filters.programIds.length === 1) {
+      params.set('programId', filters.programIds[0]);
+    } else {
+      filters.programIds.forEach(id => params.append('programIds', id));
     }
   }
 
@@ -920,6 +944,10 @@ export const removeFilterFromState = (filters, chipKey, chipValue) => {
       break;
     case 'courseTypeIds':
       next.courseTypeIds = (next.courseTypeIds || []).filter(id => id !== chipValue);
+      break;
+    case 'programIds':
+    case 'programId':
+      next.programIds = (next.programIds || []).filter(id => id !== chipValue);
       break;
     case 'leadSourceIds':
       next.leadSourceIds = (next.leadSourceIds || []).filter(id => id !== chipValue);

@@ -1418,8 +1418,8 @@ const AddLeadModal = () => {
                                 (prog.code || '').toLowerCase().includes(term)
                               );
                             }).length === 0 && (
-                              <div className="custom-no-options">No programs found</div>
-                            )}
+                                <div className="custom-no-options">No programs found</div>
+                              )}
                           </div>
                         </div>
                       )}

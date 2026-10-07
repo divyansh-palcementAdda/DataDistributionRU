@@ -7,6 +7,8 @@ import { getAllUser, deleteUser } from '../../Services/user/user';
 import AddUserModal from '../../component/reusable/user/addUser';
 import ViewUserModal from '../../component/reusable/user/viewUser';
 import DeleteModal from '../../component/reusable/deleteModel';
+import UserBulkUploadModal from '../../component/reusable/user/UserBulkUploadModal';
+import * as XLSX from 'xlsx';
 import { usePermissions } from '../../PermissionContext';
 import { 
   FiUsers, 
@@ -87,6 +89,39 @@ const UserManagement = () => {
   const [isDeleteUserModalOpen, setIsDeleteUserModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
   const [isDeletingUser, setIsDeletingUser] = useState(false);
+  const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false);
+
+  // Download Excel function for Users
+  const downloadExcel = () => {
+    try {
+      const excelData = sortedAndFilteredUsers.map((u, index) => {
+        const name = `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.name || 'N/A';
+        const userRoles = Array.isArray(u.roles) ? u.roles.join(', ') : (u.roles || 'N/A');
+        const deptName = u.departments?.map(d => d.name).join(', ') || u.department || 'N/A';
+        return {
+          'S.No': index + 1,
+          'Name': name,
+          'Email': u.email || 'N/A',
+          'Phone': u.phone || 'N/A',
+          'Username': u.username || 'N/A',
+          'Roles': userRoles,
+          'Department': deptName,
+          'Status': u.active ? 'Active' : 'Inactive',
+          'Created Date': u.createdAt ? new Date(u.createdAt).toLocaleDateString() : 'N/A'
+        };
+      });
+
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Users');
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+      XLSX.writeFile(workbook, `users_${timestamp}.xlsx`);
+      showToast('Users exported successfully', 'success');
+    } catch (err) {
+      console.error('Failed to export users:', err);
+      showToast('Failed to export users', 'error');
+    }
+  };
 
   // Fetch Users from API
   const fetchUsers = useCallback(async (search = '') => {
@@ -601,6 +636,35 @@ const UserManagement = () => {
               <FiRefreshCw className={`text-sm ${loadingUsers ? 'animate-spin text-indigo-600' : ''}`} />
             </button>
 
+            {/* Export Excel Button */}
+            <button
+              type="button"
+              onClick={downloadExcel}
+              disabled={sortedAndFilteredUsers.length === 0}
+              className="text-xs py-2 px-3 border border-emerald-200 text-emerald-700 bg-emerald-50/50 hover:bg-emerald-50 rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 font-semibold disabled:opacity-50"
+              title="Export all filtered users to Excel"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+              </svg>
+              Export Excel
+            </button>
+
+            {/* Bulk Upload Button */}
+            {(hasPermission('USER_BULK_UPLOAD') || hasPermission('USER_CREATE')) && (
+              <button
+                type="button"
+                onClick={() => setIsBulkUploadModalOpen(true)}
+                className="text-xs py-2 px-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                title="Bulk upload users from Excel"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+                </svg>
+                Bulk Upload
+              </button>
+            )}
+
             {/* Add User Button */}
             {hasPermission('USER_CREATE') && (
               <CustomButton
@@ -661,6 +725,15 @@ const UserManagement = () => {
         title="Delete User"
         message={`Are you sure you want to delete user "${userToDelete?.name || userToDelete?.firstName || userToDelete?.username || 'this user'}"? This action cannot be undone.`}
         isLoading={isDeletingUser}
+      />
+
+      <UserBulkUploadModal
+        isOpen={isBulkUploadModalOpen}
+        onClose={() => setIsBulkUploadModalOpen(false)}
+        onSuccess={() => {
+          fetchUsers(searchQuery);
+          showToast('Users imported successfully', 'success');
+        }}
       />
     </div>
   );

@@ -709,6 +709,8 @@ const AddLeadModal = () => {
       const allSelectedCourseIds = [targetRegCourseId, ...targetInterestedIds].filter(Boolean).map(String);
 
       const derivedProgramIds = new Set();
+      let derivedCourseTypeId = null;
+
       allSelectedCourseIds.forEach((cId) => {
         const courseObj = courses.find((c) => String(c.id) === String(cId));
         if (courseObj?.programIds && Array.isArray(courseObj.programIds)) {
@@ -716,38 +718,33 @@ const AddLeadModal = () => {
         } else if (courseObj?.programId) {
           derivedProgramIds.add(String(courseObj.programId));
         }
+        if (courseObj?.courseTypeId && !derivedCourseTypeId) {
+          derivedCourseTypeId = String(courseObj.courseTypeId);
+        }
       });
 
       const finalProgramSet = new Set([...manuallySelectedPrograms.current, ...derivedProgramIds]);
       const finalProgramIds = Array.from(finalProgramSet);
 
       const currentProgSet = new Set(formData.programIds.map(String));
-      const isDifferent = finalProgramIds.length !== currentProgSet.size ||
+      const isProgramDifferent = finalProgramIds.length !== currentProgSet.size ||
         finalProgramIds.some((id) => !currentProgSet.has(id));
 
-      if (isDifferent) {
-        setFormData((prev) => ({
-          ...prev,
-          courseId: targetRegCourseId || '',
-          registeredCourseId: targetRegCourseId || '',
-          interestedCourseIds: targetInterestedIds,
-          programIds: finalProgramIds,
-          programId: finalProgramIds[0] || '',
-        }));
+      setFormData((prev) => ({
+        ...prev,
+        courseId: targetRegCourseId || '',
+        registeredCourseId: targetRegCourseId || '',
+        interestedCourseIds: targetInterestedIds,
+        programIds: isProgramDifferent ? finalProgramIds : prev.programIds,
+        programId: isProgramDifferent ? (finalProgramIds[0] || '') : prev.programId,
+        courseTypeId: derivedCourseTypeId || prev.courseTypeId,
+      }));
 
-        if (finalProgramIds.length > 0) {
-          const res = await getCoursesDropdown(formData.courseTypeId || '', '', '', finalProgramIds);
-          if (res?.success && res?.data) {
-            setCourses(res.data || []);
-          }
+      if (isProgramDifferent && finalProgramIds.length > 0) {
+        const res = await getCoursesDropdown('', '', '', finalProgramIds);
+        if (res?.success && res?.data) {
+          setCourses(res.data || []);
         }
-      } else {
-        setFormData((prev) => ({
-          ...prev,
-          courseId: targetRegCourseId || '',
-          registeredCourseId: targetRegCourseId || '',
-          interestedCourseIds: targetInterestedIds,
-        }));
       }
     } catch (err) {
       console.error('Failed during course selection synchronization:', err);

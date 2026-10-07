@@ -66,6 +66,10 @@ const ApiRoutes = {
         courseMatrix: "/api/users/{userId}/lead-matrix/course",
         programMatrix: "/api/users/{userId}/lead-matrix/program",
         creationOptions: "/api/users/creation-options",
+        bulkUpload: "/api/users/bulk-upload",
+        bulkUploadValidate: "/api/users/bulk-upload/validate",
+        bulkUploadTemplate: "/api/users/bulk-upload/template",
+        bulkUploadErrorFile: "/api/users/bulk-upload/{importId}/error-file"
     },
     Role: {
         getPermissions: '/api/roles',
@@ -239,7 +243,11 @@ const ApiRoutes = {
         toggle: '/api/departments/{id}/toggle-active',
         getUsers: '/api/departments/{id}/users',
         getHods: '/api/departments/{id}/hods',
-        getCounsellors: '/api/departments/{id}/counsellors'
+        getCounsellors: '/api/departments/{id}/counsellors',
+        bulkUpload: '/api/departments/bulk-upload',
+        bulkUploadValidate: '/api/departments/bulk-upload/validate',
+        bulkUploadTemplate: '/api/departments/bulk-upload/template',
+        bulkUploadErrorFile: '/api/departments/bulk-upload/{importId}/error-file'
     },
 
     Dropdowns: {

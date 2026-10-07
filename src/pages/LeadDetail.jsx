@@ -671,6 +671,7 @@ const LeadDetail = () => {
     // Course Type
     const hasCourseType = Boolean(
       (Array.isArray(leadDetails.interestedCourseTypes) && leadDetails.interestedCourseTypes.length > 0) ||
+      leadDetails.courseType?.name ||
       leadDetails.course?.courseType
     );
     if (!hasCourseType && canViewLeadField(hasPermission, 'courseType')) {
@@ -1655,6 +1656,10 @@ const LeadDetail = () => {
                               </span>
                             ))}
                           </div>
+                        ) : leadDetails.courseType?.name ? (
+                          <span className="text-xs bg-purple-50 text-purple-700 font-semibold px-2 py-0.5 rounded border border-purple-100">
+                            {leadDetails.courseType.name}
+                          </span>
                         ) : leadDetails.course?.courseType?.name ? (
                           leadDetails.course.courseType.name
                         ) : (

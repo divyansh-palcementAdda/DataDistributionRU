@@ -133,6 +133,81 @@ const getDepartmentCounsellors = async (id) => {
     }
 };
 
+const downloadDepartmentTemplate = async () => {
+    try {
+        const response = await axiosInstance.get(ApiRoutes.Department.bulkUploadTemplate, {
+            responseType: 'blob'
+        });
+        const blob = new Blob([response.data], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        });
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.setAttribute('download', 'department_bulk_upload_template.xlsx');
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(downloadUrl);
+        return true;
+    } catch (error) {
+        throw error.response?.data || error.message || error;
+    }
+};
+
+const validateDepartmentBulkUpload = async (file) => {
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await axiosInstance.post(ApiRoutes.Department.bulkUploadValidate, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message || error;
+    }
+};
+
+const bulkUploadDepartments = async (file) => {
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await axiosInstance.post(ApiRoutes.Department.bulkUpload, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error.message || error;
+    }
+};
+
+const downloadDepartmentErrorFile = async (importId) => {
+    try {
+        const url = ApiRoutes.Department.bulkUploadErrorFile.replace('{importId}', importId);
+        const response = await axiosInstance.get(url, {
+            responseType: 'blob'
+        });
+        const blob = new Blob([response.data], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        });
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.setAttribute('download', `department_bulk_upload_errors_${importId}.xlsx`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(downloadUrl);
+        return true;
+    } catch (error) {
+        throw error.response?.data || error.message || error;
+    }
+};
+
 export {
     createDepartment,
     getAllDepartments,
@@ -142,6 +217,10 @@ export {
     toggleDepartmentStatus,
     getDepartmentUsers,
     getDepartmentHods,
-    getDepartmentCounsellors
+    getDepartmentCounsellors,
+    downloadDepartmentTemplate,
+    validateDepartmentBulkUpload,
+    bulkUploadDepartments,
+    downloadDepartmentErrorFile
 };
 

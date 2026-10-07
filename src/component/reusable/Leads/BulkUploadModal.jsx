@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { FiUploadCloud, FiX, FiFile, FiAlertCircle, FiDownload } from 'react-icons/fi';
+import { FiUploadCloud, FiX, FiFile, FiAlertCircle, FiDownload, FiCheck, FiChevronDown, FiChevronUp } from 'react-icons/fi';
+import * as XLSX from 'xlsx';
 import CustomButton from '../CustomButton';
 import {
   getCourseTypesDropdown,
@@ -14,6 +15,26 @@ import {
 } from '../../../Services/drop-down/dropDownService';
 import axiosInstance from '../../../axiosInstance/axios';
 
+const LEAD_TARGET_FIELDS = [
+  { key: 'fullName', label: 'Full Name / Name', aliases: ['full name', 'name', 'student name', 'candidate name', 'fullname', 'student', 'candidatename', 'studentname'] },
+  { key: 'phoneNumber', label: 'Mobile / Phone Number', aliases: ['phone number', 'phone', 'mobile', 'mobile number', 'contact', 'contact number', 'contact no', 'phonenumber', 'mobilenumber', 'contactno'] },
+  { key: 'alternatePhoneNumber', label: 'Alternate Phone Number', aliases: ['alternate phone number', 'alternate phone', 'alt phone', 'alternate mobile', 'alt mobile', 'altphone'] },
+  { key: 'email', label: 'Email Address', aliases: ['email', 'email id', 'email address', 'mail', 'emailid'] },
+  { key: 'course', label: 'Interested Course', aliases: ['interested course', 'course', 'course interested', 'course name', 'course code', 'courseinterested', 'interestedcourse'] },
+  { key: 'program', label: 'Program / School', aliases: ['program', 'school', 'faculty', 'institute', 'program name', 'program code', 'programs'] },
+  { key: 'courseType', label: 'Course Type (UG/PG)', aliases: ['course type', 'coursetype', 'type of course', 'degree type', 'course_type'] },
+  { key: 'leadSource', label: 'Lead Source', aliases: ['lead source', 'source', 'leadsource', 'source name', 'lead_source'] },
+  { key: 'sourceDetails', label: 'Source Details', aliases: ['source details', 'sourcedetails', 'source note', 'campaign', 'event', 'source_details'] },
+  { key: 'board', label: 'Board', aliases: ['board', 'education board', 'board name'] },
+  { key: 'grade', label: 'Grade / Class', aliases: ['grade', 'class', 'standard', 'grade name'] },
+  { key: 'stream', label: 'Stream', aliases: ['stream', 'stream name', 'discipline'] },
+  { key: 'department', label: 'Department', aliases: ['department', 'dept', 'department name', 'dept name'] },
+  { key: 'city', label: 'City', aliases: ['city', 'town'] },
+  { key: 'state', label: 'State', aliases: ['state', 'province'] },
+  { key: 'country', label: 'Country', aliases: ['country', 'nation'] },
+  { key: 'remarks', label: 'Remarks / Notes', aliases: ['remarks', 'remark', 'notes', 'note', 'comment', 'comments'] },
+];
+
 /**
  * BulkUploadModal
  * Props:
@@ -26,6 +47,11 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
   const fileInputRef = useRef(null);
   const [file, setFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
+
+  /* ── column mapping state ── */
+  const [detectedHeaders, setDetectedHeaders] = useState([]);
+  const [columnMapping, setColumnMapping] = useState({});
+  const [isMappingExpanded, setIsMappingExpanded] = useState(true);
 
   /* ── filter dropdowns ── */
   const [filters, setFilters] = useState({
@@ -66,6 +92,9 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
 
   const resetState = () => {
     setFile(null);
+    setDetectedHeaders([]);
+    setColumnMapping({});
+    setIsMappingExpanded(true);
     setError('');
     setFilters({
       programId: '',
@@ -156,6 +185,45 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
   };
 
   /* ── file helpers ── */
+  const parseFileHeaders = (fileObj) => {
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const data = new Uint8Array(evt.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        if (!workbook.SheetNames || workbook.SheetNames.length === 0) return;
+        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+        if (!rows || rows.length === 0) {
+          setDetectedHeaders([]);
+          setColumnMapping({});
+          return;
+        }
+        const rawHeaders = (rows[0] || [])
+          .map((h) => String(h || '').trim())
+          .filter(Boolean);
+        setDetectedHeaders(rawHeaders);
+
+        // Auto match headers based on field definitions and aliases
+        const initialMap = {};
+        rawHeaders.forEach((col) => {
+          const norm = col.toLowerCase().replace(/[^a-z0-9]/g, '');
+          const matched = LEAD_TARGET_FIELDS.find((field) => {
+            const normKey = field.key.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const normLabel = field.label.toLowerCase().replace(/[^a-z0-9]/g, '');
+            if (norm === normKey || norm === normLabel) return true;
+            return field.aliases.some((alias) => alias.toLowerCase().replace(/[^a-z0-9]/g, '') === norm);
+          });
+          initialMap[col] = matched ? matched.key : '';
+        });
+        setColumnMapping(initialMap);
+      } catch (err) {
+        console.warn('Failed to parse Excel file headers for preview', err);
+      }
+    };
+    reader.readAsArrayBuffer(fileObj);
+  };
+
   const handleFileChange = (e) => {
     const selected = e.target.files?.[0];
     if (selected) validateAndSetFile(selected);
@@ -169,6 +237,7 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
     }
     setError('');
     setFile(f);
+    parseFileHeaders(f);
   };
 
   const handleDrop = (e) => {
@@ -191,16 +260,37 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
       const formData = new FormData();
       formData.append('file', file);
 
+      /* Build column mapping JSON array */
+      const mappingArray = Object.entries(columnMapping)
+        .filter(([_, targetField]) => Boolean(targetField))
+        .map(([excelColumn, targetField]) => ({
+          excelColumn,
+          targetField,
+        }));
+
+      /* Rule 35: Frontend dev-mode logging */
+      if (import.meta.env?.DEV) {
+        console.group('LEAD BULK MAPPING');
+        mappingArray.forEach((m) => {
+          console.log(`Excel Column: ${m.excelColumn}\nTarget Field: ${m.targetField}\n`);
+        });
+        console.groupEnd();
+      }
+
+      if (mappingArray.length > 0) {
+        formData.append('mapping', JSON.stringify(mappingArray));
+      }
+
       /* build query params – only include filled ones */
       const params = {};
-      if (filters.programId)       params.programId         = filters.programId;
-      if (filters.courseTypeId)    params.courseTypeId      = filters.courseTypeId;
-      if (filters.streamId)        params.streamId          = filters.streamId;
-      if (filters.gradeId)         params.gradeId           = filters.gradeId;
-      if (filters.boardId)         params.boardId           = filters.boardId;
-      if (filters.leadSourceId)    params.leadSourceId      = filters.leadSourceId;
-      if (filters.statusId)        params.statusId          = filters.statusId;
-      if (filters.departmentId)    params.departmentId      = filters.departmentId;
+      if (filters.programId)        params.programId        = filters.programId;
+      if (filters.courseTypeId)     params.courseTypeId     = filters.courseTypeId;
+      if (filters.streamId)         params.streamId         = filters.streamId;
+      if (filters.gradeId)          params.gradeId          = filters.gradeId;
+      if (filters.boardId)          params.boardId          = filters.boardId;
+      if (filters.leadSourceId)     params.leadSourceId     = filters.leadSourceId;
+      if (filters.statusId)         params.statusId         = filters.statusId;
+      if (filters.departmentId)     params.departmentId     = filters.departmentId;
       if (filters.assignedToUserId) params.assignedToUserId = filters.assignedToUserId;
 
       const response = await axiosInstance.post('/api/leads/bulk-upload', formData, {
@@ -369,7 +459,13 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
                   </p>
                 </div>
                 <button
-                  onClick={(e) => { e.stopPropagation(); setFile(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setFile(null);
+                    setDetectedHeaders([]);
+                    setColumnMapping({});
+                    if (fileInputRef.current) fileInputRef.current.value = '';
+                  }}
                   style={{
                     marginLeft: 'auto', background: 'none', border: 'none',
                     cursor: 'pointer', color: 'var(--gray-400)', padding: 4,
@@ -404,6 +500,138 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
             >
               <FiAlertCircle size={15} style={{ color: '#dc2626', flexShrink: 0, marginTop: 1 }} />
               <span style={{ fontSize: 12, color: '#dc2626' }}>{error}</span>
+            </div>
+          )}
+
+          {/* Column Mapping Section */}
+          {file && detectedHeaders.length > 0 && (
+            <div
+              style={{
+                marginBottom: 16,
+                border: '1px solid var(--gray-200, #e5e7eb)',
+                borderRadius: 8,
+                overflow: 'hidden',
+                background: '#fff',
+              }}
+            >
+              <div
+                onClick={() => setIsMappingExpanded(!isMappingExpanded)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '10px 14px',
+                  background: 'var(--gray-50, #f9fafb)',
+                  cursor: 'pointer',
+                  userSelect: 'none',
+                  borderBottom: isMappingExpanded ? '1px solid var(--gray-200, #e5e7eb)' : 'none',
+                }}
+              >
+                <div>
+                  <span
+                    style={{
+                      fontSize: 12,
+                      fontWeight: 700,
+                      color: 'var(--gray-700)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                    }}
+                  >
+                    Column Mapping
+                  </span>
+                  <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--gray-500)' }}>
+                    ({detectedHeaders.length} Excel column{detectedHeaders.length > 1 ? 's' : ''} detected)
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span
+                    style={{
+                      fontSize: 11,
+                      color: 'var(--primary, #16a34a)',
+                      fontWeight: 600,
+                      background: '#f0fdf4',
+                      padding: '2px 8px',
+                      borderRadius: 12,
+                      border: '1px solid #bbf7d0',
+                    }}
+                  >
+                    {Object.values(columnMapping).filter(Boolean).length} mapped
+                  </span>
+                  {isMappingExpanded ? (
+                    <FiChevronUp size={16} color="var(--gray-500)" />
+                  ) : (
+                    <FiChevronDown size={16} color="var(--gray-500)" />
+                  )}
+                </div>
+              </div>
+
+              {isMappingExpanded && (
+                <div style={{ padding: '12px 14px', maxHeight: 220, overflowY: 'auto' }}>
+                  <p style={{ margin: '0 0 10px', fontSize: 11, color: 'var(--gray-500)', lineHeight: 1.4 }}>
+                    Select how each Excel column maps to Lead fields. All fields are optional. Leave unmapped or blank to skip.
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {detectedHeaders.map((header) => {
+                      const mappedField = columnMapping[header] || '';
+                      return (
+                        <div
+                          key={header}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: 10,
+                            padding: '6px 10px',
+                            background: mappedField ? '#fafafa' : '#fff',
+                            border: `1px solid ${mappedField ? 'var(--primary, #22c55e)' : 'var(--gray-200, #e5e7eb)'}`,
+                            borderRadius: 6,
+                            transition: 'border-color 0.2s',
+                          }}
+                        >
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <span
+                              style={{
+                                fontSize: 12,
+                                fontWeight: 600,
+                                color: 'var(--gray-800)',
+                                wordBreak: 'break-word',
+                              }}
+                            >
+                              {header}
+                            </span>
+                          </div>
+                          <span style={{ color: 'var(--gray-400)', fontSize: 12, flexShrink: 0 }}>→</span>
+                          <div style={{ width: '55%' }}>
+                            <select
+                              className="form-control"
+                              value={mappedField}
+                              onChange={(e) =>
+                                setColumnMapping((prev) => ({
+                                  ...prev,
+                                  [header]: e.target.value,
+                                }))
+                              }
+                              style={{
+                                fontSize: 12,
+                                padding: '4px 8px',
+                                height: 32,
+                                borderColor: mappedField ? 'var(--primary, #22c55e)' : 'var(--gray-300)',
+                              }}
+                            >
+                              <option value="">— Skip / Do not map —</option>
+                              {LEAD_TARGET_FIELDS.map((f) => (
+                                <option key={f.key} value={f.key}>
+                                  {f.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

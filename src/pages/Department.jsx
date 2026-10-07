@@ -10,6 +10,7 @@ import StatsCard from '../component/reusable/StatsCard';
 import CustomButton from '../component/reusable/CustomButton';
 import DeleteModal from '../component/reusable/deleteModel';
 import AddDepartmentModal from '../component/reusable/department/addDepartmentModel';
+import DepartmentBulkUploadModal from '../component/reusable/department/DepartmentBulkUploadModal';
 
 // Services
 import {
@@ -70,6 +71,7 @@ const Department = () => {
     // Modal States
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [editData, setEditData] = useState(null);
+    const [isBulkUploadModalOpen, setIsBulkUploadModalOpen] = useState(false);
 
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [departmentToDelete, setDepartmentToDelete] = useState(null);
@@ -570,6 +572,37 @@ const Department = () => {
                         Download
                     </button>
 
+                    {(hasPermission('DEPARTMENT_BULK_UPLOAD') || hasPermission('DEPARTMENT_CREATE')) && (
+                        <button
+                            onClick={() => setIsBulkUploadModalOpen(true)}
+                            style={{
+                                backgroundColor: '#2563eb',
+                                color: 'white',
+                                border: 'none',
+                                padding: '8px 16px',
+                                fontSize: '13px',
+                                borderRadius: '8px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                fontWeight: '600',
+                                transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = '#1d4ed8';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = '#2563eb';
+                            }}
+                        >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+                            </svg>
+                            Bulk Upload
+                        </button>
+                    )}
+
                     {hasPermission('DEPARTMENT_CREATE') && (
                         <CustomButton
                             variant="primary"
@@ -780,6 +813,16 @@ const Department = () => {
                 title="Delete Department"
                 message={`Are you sure you want to delete "${departmentToDelete?.name}" (${departmentToDelete?.code})? This will unlink assigned members.`}
                 isLoading={isDeleting}
+            />
+
+            {/* 3. Department Bulk Upload Modal */}
+            <DepartmentBulkUploadModal
+                isOpen={isBulkUploadModalOpen}
+                onClose={() => setIsBulkUploadModalOpen(false)}
+                onSuccess={() => {
+                    fetchDepartments();
+                    toast.success('Departments imported successfully');
+                }}
             />
         </div>
     );

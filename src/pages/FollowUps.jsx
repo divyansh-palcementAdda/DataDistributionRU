@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
 import { usePermissions } from '../PermissionContext';
 import ReusableTable from '../component/reusable/table';
@@ -44,6 +44,12 @@ const FollowUps = () => {
   const { showToast, navTo } = useAppContext();
   const { hasPermission } = usePermissions();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+
+  // assignedUserId comes from URL search param — single source of truth.
+  // /followups                      → null   → All Follow-ups
+  // /followups?assignedUserId=123   → '123'  → My Follow-ups
+  const assignedUserId = searchParams.get('assignedUserId') ?? null;
 
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -67,21 +73,24 @@ const FollowUps = () => {
   const [selectedFollowup, setSelectedFollowup] = useState(null);
   const [activeTab, setActiveTab] = useState(location.state?.activeTab || "ALL");
   const [selectedLeadStatusId, setSelectedLeadStatusId] = useState(null);
-  const [assignedUserId, setAssignedUserId] = useState(location.state?.assignedUserId ?? null);
 
   const debounceRef = useRef(null);
 
+  // Sync activeTab if dashboard navigates here with { state: { activeTab: 'TODAY' } }
   useEffect(() => {
     if (location.state?.activeTab) {
       setActiveTab(location.state.activeTab);
     }
   }, [location.state?.activeTab]);
 
+  // Reset filters when assignedUserId changes (All Follow-ups ↔ My Follow-ups navigation)
   useEffect(() => {
-    if (location.state?.assignedUserId !== undefined) {
-      setAssignedUserId(location.state.assignedUserId === null ? null : location.state.assignedUserId);
-    }
-  }, [location.state?.assignedUserId]);
+    setActiveTab("ALL");
+    setSearch("");
+    setSearchInput("");
+    setSelectedLeadStatusId(null);
+    setPage(0);
+  }, [assignedUserId]);
 
   const handleCardClick = (filter) => {
     if (filter.type === 'leadStatus') {

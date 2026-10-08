@@ -54,6 +54,21 @@ const CallModal = ({
     const statusName = currentStatus?.name || currentStatus?.code || studentData?.status || '';
     const followUpStatus = currentStatus?.followUpStatus || false;
     const currentStatusCode = (currentStatus?.code || currentStatus?.name || '').toUpperCase();
+    const registrationStatus = (studentData?.registrationStatus || '').toUpperCase();
+
+    // Canonical registered status check
+    const isLeadRegistered = Boolean(
+        currentStatusCode === 'REGISTERED' ||
+        currentStatusCode.includes('REGISTER') ||
+        statusName.toUpperCase() === 'REGISTERED' ||
+        statusName.toUpperCase().includes('REGISTER') ||
+        registrationStatus === 'COMPLETED_MATCHED' ||
+        registrationStatus === 'MANUALLY_APPROVED' ||
+        registrationStatus === 'REGISTERED_VERIFIED' ||
+        registrationStatus === 'VERIFIED' ||
+        Boolean(studentData?.isRegistrationVerified) ||
+        Boolean(studentData?.registrationVerified)
+    );
 
     // Derived connection/stage states
     const isConnected = overrideState
@@ -68,7 +83,7 @@ const CallModal = ({
         ? (overrideState === 'interested')
         : (currentStatusCode === 'INTERESTED');
 
-    if (!isOpen) return null;
+    if (!isOpen || isLeadRegistered) return null;
 
     // Check if any followup has MISSED status
     const hasMissedFollowup = followups?.some(f => f.status === 'MISSED');
@@ -80,7 +95,7 @@ const CallModal = ({
     const hasActiveFollowup = Boolean(activeFollowup || hasPendingFollowup);
 
     // Determine visibility conditions
-    const shouldShowConnectionButtons = (!followUpStatus || hasMissedFollowup) && !hasActiveFollowup;
+    const shouldShowConnectionButtons = !isLeadRegistered && (!followUpStatus || hasMissedFollowup) && !hasActiveFollowup;
 
     const leadPhone = phoneNumber || studentData?.phoneNumber || studentData?.mobile || studentData?.contactNo || '';
     const leadName = studentData?.fullName || studentData?.name || 'Unnamed Lead';
@@ -551,7 +566,7 @@ const CallModal = ({
 
                     {/* Step Action Prompts & Controls */}
                     <div className="space-y-3">
-                        {!isFinallyNotConnected && currentStatusCode !== 'FINALLY_NOT_CONNECTED' && (
+                        {!isFinallyNotConnected && !isLeadRegistered && currentStatusCode !== 'FINALLY_NOT_CONNECTED' && (
                             <>
                                 {/* ACTIVE (UPCOMING OR PENDING) FOLLOW-UP ACTIONS */}
                                 {hasActiveFollowup && !followupActionCompleted && (

@@ -226,7 +226,25 @@ const LeadDetail = () => {
     }
   }, [loadLeadData]);
 
-  const isActionRequired = Boolean(leadDetails?.actionEnforcement?.restricted);
+  // Canonical registered check
+  const isRegistered = useMemo(() => {
+    if (!leadDetails) return false;
+    const currentStatus = leadDetails.currentStatus;
+    const currentStatusCode = (currentStatus?.code || currentStatus?.name || leadDetails?.status || '').toUpperCase();
+    const regStatus = (leadDetails?.registrationStatus || '').toUpperCase();
+    return Boolean(
+      currentStatusCode === 'REGISTERED' ||
+      currentStatusCode.includes('REGISTER') ||
+      regStatus === 'COMPLETED_MATCHED' ||
+      regStatus === 'MANUALLY_APPROVED' ||
+      regStatus === 'REGISTERED_VERIFIED' ||
+      regStatus === 'VERIFIED' ||
+      leadDetails?.isRegistrationVerified ||
+      leadDetails?.registrationVerified
+    );
+  }, [leadDetails]);
+
+  const isActionRequired = !isRegistered && Boolean(leadDetails?.actionEnforcement?.restricted);
 
   // Initial fetch on route id change (clearing previous state immediately to avoid ghost/stale data)
   useEffect(() => {
@@ -1243,7 +1261,7 @@ const LeadDetail = () => {
             </CustomButton>
           )}
 
-          {!isFinallyNotConnected && statusName !== 'Registered' && (
+          {!isFinallyNotConnected && !isRegistered && statusName !== 'Registered' && (
             <CustomButton
               variant="primary"
               onClick={handleRegisteredClick}
@@ -1257,7 +1275,7 @@ const LeadDetail = () => {
             </CustomButton>
           )}
 
-          {leadDetails.assignedTo && !isFinallyNotConnected && !hasPendingFollowup && (
+          {leadDetails.assignedTo && !isFinallyNotConnected && !isRegistered && !hasPendingFollowup && (
             <CustomButton
               variant="primary"
               onClick={() => setIsScheduleModalOpen(true)}
@@ -1466,9 +1484,9 @@ const LeadDetail = () => {
                   </button>
                 )}
 
-                {!isFinallyNotConnected && (
+                {!isFinallyNotConnected && !isRegistered && (
                   <button
-                    onClick={() => setIsCallModalOpen(true)}
+                    onClick={() => !isRegistered && setIsCallModalOpen(true)}
                     className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3.5 py-1.5 rounded-lg transition-colors shadow-xs"
                     title="Call Lead"
                   >
@@ -2001,6 +2019,14 @@ const LeadDetail = () => {
                       </svg>
                       Follow-ups
                     </h3>
+                    {isRegistered && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                        Terminal / No Action Required
+                      </span>
+                    )}
                   </div>
 
                   {followUpsLoading ? (
@@ -2015,7 +2041,7 @@ const LeadDetail = () => {
                       <ReusableTable
                         columns={followUpsColumns}
                         data={followUps}
-                        emptyMessage="No follow-ups scheduled for this lead"
+                        emptyMessage={isRegistered ? "Lead is registered. No outstanding follow-up required." : "No follow-ups scheduled for this lead"}
                       />
                     </div>
                   )}
@@ -2339,7 +2365,7 @@ const LeadDetail = () => {
       />
 
       <CallModal
-        isOpen={isCallModalOpen}
+        isOpen={isCallModalOpen && !isRegistered}
         onClose={() => setIsCallModalOpen(false)}
         studentData={leadDetails}
         phoneNumber={leadDetails?.phoneNumber}

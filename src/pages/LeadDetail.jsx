@@ -330,20 +330,8 @@ const LeadDetail = () => {
   useEffect(() => {
     const handlePopState = (e) => {
       if (forceLogoutRef.current || window.__forceLogout) return;
-
-      // Still resolving (fetch in flight) — ignore.
       if (isResolvingActionRef.current) return;
-
-      if (!isActionRequiredRef.current) {
-        // Action is no longer required. If we pushed a guard entry earlier,
-        // the user just hit it — step them through to the real previous page.
-        if (actionGuardPushedRef.current) {
-          actionGuardPushedRef.current = false;
-          navigateRef.current(-1);
-        }
-        return;
-      }
-
+      if (!isActionRequiredRef.current) return;
       // Action still required — re-push to keep the user on the page.
       window.history.pushState({ __leadGuard: true }, '', window.location.href);
       toast.warn('Please complete the required action before leaving this page.', {

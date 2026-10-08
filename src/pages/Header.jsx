@@ -76,7 +76,7 @@ const Header = () => {
       <div className="header-right">
 
         {/* Notification */}
-        <div className="dropdown" ref={notifRef}>
+        {/* <div className="dropdown" ref={notifRef}>
           <button className="icon-btn" onClick={() => { setIsNotifOpen(p => !p); setIsProfileOpen(false); }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/>
@@ -127,7 +127,7 @@ const Header = () => {
               </div>
             </div>
           )}
-        </div>
+        </div> */}
 
         {/* Dark mode */}
         {/* <button className="icon-btn" onClick={toggleDarkMode} title="Toggle dark mode">

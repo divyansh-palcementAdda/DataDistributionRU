@@ -745,6 +745,8 @@ const LeadDetail = () => {
       programId: leadDetails.program?.id || '',
       boardId: leadDetails.board?.id || '',
       gradeId: leadDetails.grade?.id || '',
+      // courseType pre-fill: use interestedCourseTypes first, fallback to courseType object
+      courseTypeId: leadDetails.interestedCourseTypes?.[0]?.id || leadDetails.courseType?.id || '',
       departmentId: leadDetails.department?.id || '',
       remarks: leadDetails.remarks || '',
       assignedToUserId: leadDetails.assignedTo?.id || '',

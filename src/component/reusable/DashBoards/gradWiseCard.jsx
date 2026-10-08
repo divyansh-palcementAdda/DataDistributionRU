@@ -65,11 +65,13 @@ const GradWiseCard = ({ data, onCardClick, activeFilters = [], courseTypeId, lea
         .filter(([, val]) => val > 0)
         .map(([key, val]) => ({ id: key, code: key, name: key, count: val, percentage: 0 }));
 
-  // Filter items based on permissions: DASHBOARD_CARD_GRADE_GRADE_<NAME>
-  // item.name = "Grade A" → "GRADE_A" → key = "DASHBOARD_CARD_GRADE_GRADE_A"
+  // Filter items based on permissions using item.code directly
+  // item.code = "GRADE_A" → key = "DASHBOARD_CARD_GRADE_GRADE_A"
+  // item.code = "B_GRADE" → key = "DASHBOARD_CARD_GRADE_B_GRADE"
+  // Fallback: derive from item.name if code is missing
   const visibleItems = items.filter((item) => {
-    const namePart = (item.name || item.code || '').toString().toUpperCase().replace(/\s+/g, '_').replace(/^GRADE_/, '');
-    const permissionKey = `DASHBOARD_CARD_GRADE_GRADE_${namePart}`;
+    const code = (item.code || item.name || '').toString().toUpperCase().replace(/\s+/g, '_');
+    const permissionKey = `DASHBOARD_CARD_GRADE_${code}`;
     return hasPermission(permissionKey);
   });
 

@@ -719,18 +719,18 @@ const DataSegregation = () => {
 
       // Create worksheet
       const worksheet = XLSX.utils.json_to_sheet(excelData);
-      
+
       // Create workbook
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Data Segregation');
-      
+
       // Generate filename with timestamp
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
       const filename = `data_segregation_${selectedCourseType?.name || 'all'}_${timestamp}.xlsx`;
-      
+
       // Download the file
       XLSX.writeFile(workbook, filename);
-      
+
       toast.success('Excel file downloaded successfully');
     } catch (error) {
       console.error('Error downloading Excel:', error);
@@ -765,7 +765,7 @@ const DataSegregation = () => {
 
   return (
     <div className="min-h-screen bg-gray-50/50 p-4 md:p-6 space-y-6">
-      
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-gray-200/80 shadow-xs">
         <div>
@@ -860,11 +860,10 @@ const DataSegregation = () => {
                   <div
                     key={ct.id}
                     onClick={() => setSelectedCourseType(ct)}
-                    className={`relative p-4 rounded-2xl border transition-all cursor-pointer select-none flex flex-col justify-between ${
-                      isSelected
+                    className={`relative p-4 rounded-2xl border transition-all cursor-pointer select-none flex flex-col justify-between ${isSelected
                         ? 'bg-gradient-to-br from-blue-600 to-indigo-700 text-white border-blue-600 shadow-md scale-[1.02]'
                         : 'bg-white hover:bg-gray-50/80 text-gray-800 border-gray-200 shadow-2xs hover:border-blue-300'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-start justify-between gap-1 mb-2">
                       <span className={`text-xs font-semibold uppercase tracking-wider line-clamp-1 ${isSelected ? 'text-blue-100' : 'text-gray-500'}`}>
@@ -928,7 +927,7 @@ const DataSegregation = () => {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Unallocated Data</p>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Unalloated Data</p>
                   <h3 className="text-2xl font-bold text-amber-700">{matrixData.unallottedLeads}</h3>
                 </div>
               </div>
@@ -952,7 +951,7 @@ const DataSegregation = () => {
       {/* Main Hierarchical Matrix Table Card (if source viewing permitted) */}
       {canViewSource ? (
         <div className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden">
-          
+
           {/* Table Toolbar */}
           <div className="p-4 border-b border-gray-200 flex flex-wrap items-center justify-between gap-3 bg-gray-50/50">
             <div className="relative flex-1 min-w-[240px] max-w-md">
@@ -965,8 +964,8 @@ const DataSegregation = () => {
                   canViewGrade
                     ? 'Search Source, Specialization, Grade...'
                     : canViewBoard
-                    ? 'Search Source, Specialization...'
-                    : 'Search Source...'
+                      ? 'Search Source, Specialization...'
+                      : 'Search Source...'
                 }
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -1034,9 +1033,8 @@ const DataSegregation = () => {
                               {canViewBoard && hasBoards ? (
                                 <button
                                   onClick={() => toggleNode(sourceKey)}
-                                  className={`p-1 rounded-md hover:bg-blue-200/60 transition-transform cursor-pointer ${
-                                    isSourceExpanded ? 'rotate-90 text-blue-700' : 'text-gray-500'
-                                  }`}
+                                  className={`p-1 rounded-md hover:bg-blue-200/60 transition-transform cursor-pointer ${isSourceExpanded ? 'rotate-90 text-blue-700' : 'text-gray-500'
+                                    }`}
                                   title={isSourceExpanded ? 'Collapse' : 'Expand'}
                                 >
                                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1148,9 +1146,8 @@ const DataSegregation = () => {
                                       {(hasStreams || (canViewGrade && hasGrades)) ? (
                                         <button
                                           onClick={() => toggleNode(boardKey)}
-                                          className={`p-1 rounded-md hover:bg-gray-200 transition-transform cursor-pointer ${
-                                            isBoardExpanded ? 'rotate-90 text-indigo-700' : 'text-gray-400'
-                                          }`}
+                                          className={`p-1 rounded-md hover:bg-gray-200 transition-transform cursor-pointer ${isBoardExpanded ? 'rotate-90 text-indigo-700' : 'text-gray-400'
+                                            }`}
                                         >
                                           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
@@ -1252,9 +1249,8 @@ const DataSegregation = () => {
                                               {canViewGrade && hasStreamGrades ? (
                                                 <button
                                                   onClick={() => toggleNode(streamKey)}
-                                                  className={`p-1 rounded-md hover:bg-purple-200/60 transition-transform cursor-pointer ${
-                                                    isStreamExpanded ? 'rotate-90 text-purple-700' : 'text-gray-400'
-                                                  }`}
+                                                  className={`p-1 rounded-md hover:bg-purple-200/60 transition-transform cursor-pointer ${isStreamExpanded ? 'rotate-90 text-purple-700' : 'text-gray-400'
+                                                    }`}
                                                 >
                                                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />

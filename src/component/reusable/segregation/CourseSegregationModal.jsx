@@ -118,7 +118,7 @@ const CourseSegregationModal = ({
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
       <div className="w-full max-w-7xl rounded-2xl bg-white shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-200">
-        
+
         {/* Modal Header */}
         <div className="bg-gradient-to-r from-blue-700 via-indigo-700 to-blue-800 text-white p-5 flex items-center justify-between shrink-0">
           <div>
@@ -173,7 +173,7 @@ const CourseSegregationModal = ({
               <div className="text-xl font-bold text-blue-700 mt-0.5">{data.allottedLeads?.toLocaleString() || 0}</div>
             </div>
             <div className="bg-white p-3 rounded-xl border border-amber-100 shadow-2xs">
-              <div className="text-xs font-semibold text-amber-600 uppercase tracking-wider">Unallocated Data</div>
+              <div className="text-xs font-semibold text-amber-600 uppercase tracking-wider">Unalloated Data</div>
               <div className="text-xl font-bold text-amber-700 mt-0.5">{data.unallottedLeads?.toLocaleString() || 0}</div>
             </div>
             <div className="bg-white p-3 rounded-xl border border-emerald-100 shadow-2xs">
@@ -335,9 +335,8 @@ const CourseSegregationModal = ({
                           return (
                             <td
                               key={col.statusId}
-                              className={`py-3 px-3 text-center text-xs font-medium ${
-                                count > 0 ? 'text-gray-900 font-semibold' : 'text-gray-400'
-                              }`}
+                              className={`py-3 px-3 text-center text-xs font-medium ${count > 0 ? 'text-gray-900 font-semibold' : 'text-gray-400'
+                                }`}
                             >
                               {count}
                             </td>

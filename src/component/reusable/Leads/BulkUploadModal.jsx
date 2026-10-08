@@ -268,7 +268,7 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
           targetField,
         }));
 
-      /* Rule 35: Frontend dev-mode logging */
+      /* Dev-mode structured logging: LEAD BULK MAPPING */
       if (import.meta.env?.DEV) {
         console.group('LEAD BULK MAPPING');
         mappingArray.forEach((m) => {
@@ -292,6 +292,22 @@ const BulkUploadModal = ({ isOpen, onClose, onSuccess }) => {
       if (filters.statusId)         params.statusId         = filters.statusId;
       if (filters.departmentId)     params.departmentId     = filters.departmentId;
       if (filters.assignedToUserId) params.assignedToUserId = filters.assignedToUserId;
+
+      /* Dev-mode end-to-end trace for Course Type (spec §21) */
+      if (import.meta.env?.DEV) {
+        console.group('IMPORT_START — Master-Data Filters');
+        console.log('COURSE_TYPE_TRACE');
+        console.log('  selectedCourseTypeId (filters.courseTypeId):', filters.courseTypeId || 'null');
+        console.log('  params.courseTypeId sent to API            :', params.courseTypeId || 'null (not included in request)');
+        console.log('  programId  :', params.programId || 'null');
+        console.log('  streamId   :', params.streamId || 'null');
+        console.log('  gradeId    :', params.gradeId || 'null');
+        console.log('  boardId    :', params.boardId || 'null');
+        console.log('  statusId   :', params.statusId || 'null');
+        console.log('  departmentId:', params.departmentId || 'null');
+        console.log('  assignedTo :', params.assignedToUserId || 'null');
+        console.groupEnd();
+      }
 
       const response = await axiosInstance.post('/api/leads/bulk-upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },

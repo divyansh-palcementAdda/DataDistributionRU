@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../AppContext';
 import { usePermissions } from '../PermissionContext';
 
@@ -9,6 +10,7 @@ const BRAND_SUBTITLE = 'Education Lead Management';
 const Sidebar = () => {
   const { currentPage, navTo, isSidebarOpen, toggleSidebar, isSettingsExpanded, toggleSettingsExpanded } = useAppContext();
   const { hasPermission } = usePermissions();
+  const navigate = useNavigate();
 
   // Get user role to determine which dashboard to show in sidebar
   const userRole = localStorage.getItem('userRole');
@@ -157,17 +159,22 @@ const Sidebar = () => {
               key={item.id}
               className={`nav-item ${activeSidebarItem === item.id ? 'active' : ''}`}
               onClick={() => {
-                const navParams = {};
-                // Send assignedUserId for "My Leads" and "My Follow-up"
-                if (item.id === 'my-leads' || item.id === 'my-followups') {
-                  navParams.assignedUserId = currentUserId;
-                }
-                // Clear assignedUserId for regular "Leads" and "Follow-up" to show all data
-                if (item.id === 'leads' || item.id === 'followups') {
-                  navParams.assignedUserId = null;
-                }
                 setActiveSidebarItem(item.id);
-                navTo(item.navigateTo || item.id, navParams);
+                if (item.id === 'my-leads') {
+                  // My Leads → /leads?assignedUserId=<currentUserId>
+                  navigate(`/leads?assignedUserId=${currentUserId}`);
+                } else if (item.id === 'my-followups') {
+                  // My Follow-ups → /followups?assignedUserId=<currentUserId>
+                  navigate(`/followups?assignedUserId=${currentUserId}`);
+                } else if (item.id === 'leads') {
+                  // All Leads → /leads (no query param)
+                  navigate('/leads');
+                } else if (item.id === 'followups') {
+                  // All Follow-ups → /followups (no query param)
+                  navigate('/followups');
+                } else {
+                  navTo(item.navigateTo || item.id);
+                }
               }}
               dangerouslySetInnerHTML={{ __html: item.icon + item.label + (item.badge ? `<span class="nav-badge">${item.badge}</span>` : '') }}
             >

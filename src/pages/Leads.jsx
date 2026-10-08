@@ -58,16 +58,16 @@ const Leads = () => {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Check if assignedUserId is coming from navigation state (for "My Leads")
-  const myLeadsUserId = location.state?.assignedUserId;
-
-  // Canonical filter state
+  // Canonical filter state — assignedUserId from URL is authoritative for My/All Leads.
+  // Other filters (from dashboard navigation via location.state) are still supported.
+  // /leads               → assignedUserIds = []         (All Leads)
+  // /leads?assignedUserId=123 → assignedUserIds = ['123'] (My Leads)
   const [filters, setFilters] = useState(() => {
+    // Parse all other filters from location.state (dashboard card clicks etc.)
     const parsedFilters = parseFiltersFromSearchParams(searchParams, location.state);
-    // If assignedUserId is in location.state, set it in filters
-    if (myLeadsUserId) {
-      parsedFilters.assignedUserIds = [myLeadsUserId];
-    }
+    // But assignedUserIds always comes from URL only — never from location.state
+    const urlAssignedUserId = searchParams.get('assignedUserId');
+    parsedFilters.assignedUserIds = urlAssignedUserId ? [urlAssignedUserId] : [];
     return parsedFilters;
   });
   const [search, setSearch] = useState(() => searchParams.get('search') || '');
@@ -219,24 +219,22 @@ const Leads = () => {
     return () => clearTimeout(timer);
   }, [search]);
 
-  // Sync state from URL search params (or router state)
+  // When assignedUserId in URL changes (All Leads ↔ My Leads switch),
+  // When assignedUserId in URL changes (All Leads ↔ My Leads switch), do a full
+  // filter reset so no stale filters (availed, source, status etc.) carry forward
+  // from a previous context (e.g. dashboard card → My Leads).
+  // Only assignedUserIds is seeded from the URL; everything else goes to defaults.
+  const assignedUserIdFromUrl = searchParams.get('assignedUserId');
+
   useEffect(() => {
-    const parsed = parseFiltersFromSearchParams(searchParams, location.state);
-    // If assignedUserId is in location.state, set it in filters
-    if (location.state?.assignedUserId !== undefined) {
-      if (location.state.assignedUserId === null) {
-        // Clear the filter to show all leads
-        parsed.assignedUserIds = [];
-      } else {
-        parsed.assignedUserIds = [location.state.assignedUserId];
-      }
-    }
-    setFilters(parsed);
-    if (parsed.search !== undefined && parsed.search !== search) {
-      setSearch(parsed.search || '');
-      setDebouncedSearch(parsed.search || '');
-    }
-  }, [location.search, location.state]);
+    setFilters({
+      ...DEFAULT_LEAD_FILTERS,
+      assignedUserIds: assignedUserIdFromUrl ? [assignedUserIdFromUrl] : [],
+    });
+    setSearch('');
+    setDebouncedSearch('');
+    setPage(0);
+  }, [assignedUserIdFromUrl]);
 
   // Single authoritative filter request object for cards, table, and export
   const filterRequest = useMemo(() => buildLeadQueryParams(filters), [filters]);

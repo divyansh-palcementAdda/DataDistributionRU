@@ -68,7 +68,7 @@ const CategorywiseCard = ({ data, onCardClick, activeFilters = [], filterRequest
   // Responsive styles
   const gridStyle = {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
     gap: '16px',
   };
 
@@ -244,42 +244,42 @@ const CategorywiseCard = ({ data, onCardClick, activeFilters = [], filterRequest
         /* Categorywise Container Responsive */
         @media (max-width: 1400px) {
           .categorywise-responsive-grid {
-            grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)) !important;
+            grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)) !important;
             gap: 15px !important;
           }
         }
 
         @media (max-width: 1200px) {
           .categorywise-responsive-grid {
-            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)) !important;
             gap: 14px !important;
           }
         }
 
         @media (max-width: 1024px) {
           .categorywise-responsive-grid {
-            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)) !important;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)) !important;
             gap: 13px !important;
           }
         }
 
         @media (max-width: 768px) {
           .categorywise-responsive-grid {
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
             gap: 12px !important;
           }
         }
 
         @media (max-width: 480px) {
           .categorywise-responsive-grid {
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important;
             gap: 10px !important;
           }
         }
 
         @media (max-width: 360px) {
           .categorywise-responsive-grid {
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)) !important;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important;
             gap: 8px !important;
           }
         }

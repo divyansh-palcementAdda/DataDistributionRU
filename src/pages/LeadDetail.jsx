@@ -34,6 +34,10 @@ import { completeFollowup, cancelFollowup, markFollowupNotConnected, openFollowU
 const LeadDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  // Keep navigate in a ref so the popstate handler (empty-deps effect) can
+  // always call the latest version without stale closure.
+  const navigateRef = useRef(navigate);
+  useEffect(() => { navigateRef.current = navigate; }, [navigate]);
   const { navTo, showToast, openAddLeadModal, leadRefreshTrigger, setNavGuard, clearNavGuard } = useAppContext();
   const { hasPermission } = usePermissions();
 
@@ -45,6 +49,14 @@ const LeadDetail = () => {
   const [isActionRequiredModalOpen, setIsActionRequiredModalOpen] = useState(false);
   const [navBlockedTarget, setNavBlockedTarget] = useState(null);
   const [followUpJustCompleted, setFollowUpJustCompleted] = useState(false);
+  // True while we are fetching fresh data after a status-changing action —
+  // prevents stale leadDetails from re-opening the modal during the refresh.
+  const [isResolvingAction, setIsResolvingAction] = useState(false);
+  // Guards against duplicate loadLeadData() calls from multiple CallModal callbacks
+  // (onStatusChanged + onComplete + onDataRefresh all fire for one status change).
+  const actionRefreshInFlightRef = useRef(false);
+  // Tracks whether we have an extra history entry pushed by the action guard.
+  const actionGuardPushedRef = useRef(false);
 
   // Modals state
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
@@ -191,6 +203,29 @@ const LeadDetail = () => {
     }
   }, [id, hasPermission, showToast]);
 
+  // Called by CallModal callbacks after a successful status-changing action.
+  // Deduplicates the triple callback pattern (onStatusChanged + onComplete + onDataRefresh)
+  // so only one refresh cycle runs, and prevents stale restricted=true data from
+  // re-opening the modal while the fresh data is in flight.
+  const handleActionResolved = useCallback(async () => {
+    // If a refresh is already in flight from this same action, skip.
+    if (actionRefreshInFlightRef.current) return;
+    actionRefreshInFlightRef.current = true;
+
+    // 1. Immediately close the modal and clear the nav guard.
+    setIsActionRequiredModalOpen(false);
+    setIsResolvingAction(true);
+
+    try {
+      // 2. Fetch fresh lead data — backend restricted value is authoritative.
+      await loadLeadData(false);
+    } finally {
+      // 3. Allow the next action-resolved call through (e.g., a subsequent status change).
+      actionRefreshInFlightRef.current = false;
+      setIsResolvingAction(false);
+    }
+  }, [loadLeadData]);
+
   const isActionRequired = Boolean(leadDetails?.actionEnforcement?.restricted);
 
   // Initial fetch on route id change (clearing previous state immediately to avoid ghost/stale data)
@@ -200,6 +235,9 @@ const LeadDetail = () => {
     setFollowUps([]);
     setIsActionRequiredModalOpen(false);
     setFollowUpJustCompleted(false);
+    setIsResolvingAction(false);
+    actionRefreshInFlightRef.current = false;
+    actionGuardPushedRef.current = false;
     loadLeadData(true);
   }, [id, loadLeadData]);
 
@@ -215,12 +253,21 @@ const LeadDetail = () => {
     isActionRequiredRef.current = isActionRequired;
   }, [isActionRequired]);
 
+  // Keep a ref of isResolvingAction so the popstate listener (empty-deps effect) can
+  // read the current value without closing over a stale copy.
+  const isResolvingActionRef = useRef(isResolvingAction);
+  useEffect(() => {
+    isResolvingActionRef.current = isResolvingAction;
+  }, [isResolvingAction]);
+
   // Register a nav guard in AppContext so sidebar (and every navTo caller) is blocked.
   // The guard callback receives (targetPage, targetParams) and returns true to block.
   useEffect(() => {
-    if (!isActionRequired) {
+    // While resolving a just-completed action, do NOT let stale restricted===true
+    // re-register the guard — the fresh fetch will settle it correctly.
+    if (!isActionRequired || isResolvingAction) {
       clearNavGuard();
-      setIsActionRequiredModalOpen(false);
+      if (!isResolvingAction) setIsActionRequiredModalOpen(false);
       return;
     }
     setNavGuard((targetPage, targetParams) => {
@@ -234,7 +281,7 @@ const LeadDetail = () => {
       return true; // block navigation
     });
     return () => clearNavGuard();
-  }, [isActionRequired, setNavGuard, clearNavGuard]);
+  }, [isActionRequired, isResolvingAction, setNavGuard, clearNavGuard]);
 
   // Force logout: release ALL guards immediately so logout redirect is not blocked
   const forceLogoutRef = useRef(false);
@@ -257,22 +304,48 @@ const LeadDetail = () => {
       setIsActionRequiredModalOpen(true);
       return;
     }
+    // If a guard history entry was pushed earlier, skip over it so the user
+    // lands on the real previous page in one click instead of two.
+    if (args.length === 1 && args[0] === -1 && actionGuardPushedRef.current) {
+      actionGuardPushedRef.current = false;
+      navigate(-2);
+      return;
+    }
     navigate(...args);
   }, [navigate]);
 
-  // Push state when action is required so browser Back button triggers popstate
+  // Push an extra history entry when the action guard becomes active.
+  // The ref stays true until the popstate handler consumes it (user presses Back
+  // after the action is resolved) so it can call navigate(-1) exactly once.
   useEffect(() => {
-    if (isActionRequired) {
-      window.history.pushState(null, '', window.location.href);
+    if (isActionRequired && !actionGuardPushedRef.current) {
+      window.history.pushState({ __leadGuard: true }, '', window.location.href);
+      actionGuardPushedRef.current = true;
     }
+    // When action is no longer required we intentionally leave actionGuardPushedRef
+    // as true — the popstate handler reads it to decide whether to call navigate(-1).
   }, [isActionRequired]);
 
   // Single-registration listeners for popstate and beforeunload.
   useEffect(() => {
-    const handlePopState = () => {
+    const handlePopState = (e) => {
       if (forceLogoutRef.current || window.__forceLogout) return;
-      if (!isActionRequiredRef.current) return;
-      window.history.pushState(null, '', window.location.href);
+
+      // Still resolving (fetch in flight) — ignore.
+      if (isResolvingActionRef.current) return;
+
+      if (!isActionRequiredRef.current) {
+        // Action is no longer required. If we pushed a guard entry earlier,
+        // the user just hit it — step them through to the real previous page.
+        if (actionGuardPushedRef.current) {
+          actionGuardPushedRef.current = false;
+          navigateRef.current(-1);
+        }
+        return;
+      }
+
+      // Action still required — re-push to keep the user on the page.
+      window.history.pushState({ __leadGuard: true }, '', window.location.href);
       toast.warn('Please complete the required action before leaving this page.', {
         toastId: 'nav-blocked-lead-status',
       });
@@ -2283,9 +2356,9 @@ const LeadDetail = () => {
         studentData={leadDetails}
         phoneNumber={leadDetails?.phoneNumber}
         followups={followUps}
-        onComplete={() => loadLeadData(false)}
-        onDataRefresh={() => loadLeadData(false)}
-        onStatusChanged={() => loadLeadData(false)}
+        onComplete={() => handleActionResolved()}
+        onDataRefresh={() => handleActionResolved()}
+        onStatusChanged={() => handleActionResolved()}
         onCompleteFollowup={handleCompleteFollowup}
         onCancelFollowup={handleCancelFollowup}
         onFollowupNotConnected={handleFollowupNotConnected}

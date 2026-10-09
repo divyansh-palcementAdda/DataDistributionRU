@@ -210,6 +210,7 @@ const Leads = () => {
         const trimmed = search.trim();
         if ((prev.search || '') === trimmed) return prev;
         const next = { ...prev, search: trimmed };
+        isInternalSearchParamsUpdate.current = true;
         const params = syncFiltersToSearchParams(next);
         setSearchParams(params, { replace: true });
         return next;
@@ -220,21 +221,45 @@ const Leads = () => {
   }, [search]);
 
   // When assignedUserId in URL changes (All Leads ↔ My Leads switch),
-  // When assignedUserId in URL changes (All Leads ↔ My Leads switch), do a full
-  // filter reset so no stale filters (availed, source, status etc.) carry forward
-  // from a previous context (e.g. dashboard card → My Leads).
-  // Only assignedUserIds is seeded from the URL; everything else goes to defaults.
+  // isInternalSearchParamsUpdate: set to true before any setSearchParams call we make
+  // ourselves (card clicks, drawer, chips). The location.key effect checks this flag
+  // and skips if it was an internal update — preventing a reset loop.
+  const isInternalSearchParamsUpdate = useRef(false);
+
+  // Single effect that handles ALL navigation into /leads:
+  // 1. Dashboard card click  → location.state.activeFilters → apply those filters
+  // 2. My Leads / All Leads  → assignedUserId in URL      → reset + set assignedUserIds
+  // 3. Plain /leads           → no state, no URL param     → reset to defaults
+  //
+  // location.key is unique per navigation event (React Router) — fires reliably
+  // every time the user navigates here from outside.
   const assignedUserIdFromUrl = searchParams.get('assignedUserId');
 
   useEffect(() => {
-    setFilters({
-      ...DEFAULT_LEAD_FILTERS,
-      assignedUserIds: assignedUserIdFromUrl ? [assignedUserIdFromUrl] : [],
-    });
-    setSearch('');
-    setDebouncedSearch('');
+    // Skip if we triggered this ourselves via setSearchParams (card/drawer/chip interactions)
+    if (isInternalSearchParamsUpdate.current) {
+      isInternalSearchParamsUpdate.current = false;
+      return;
+    }
+    if (location.state?.activeFilters) {
+      // Dashboard card click — parse filters from state, keep assignedUserIds from URL
+      const parsed = parseFiltersFromSearchParams(searchParams, location.state);
+      parsed.assignedUserIds = assignedUserIdFromUrl ? [assignedUserIdFromUrl] : [];
+      setFilters(parsed);
+      setSearch(parsed.search || '');
+      setDebouncedSearch(parsed.search || '');
+    } else {
+      // Sidebar navigation (All Leads / My Leads) or plain /leads — full reset
+      setFilters({
+        ...DEFAULT_LEAD_FILTERS,
+        assignedUserIds: assignedUserIdFromUrl ? [assignedUserIdFromUrl] : [],
+      });
+      setSearch('');
+      setDebouncedSearch('');
+    }
     setPage(0);
-  }, [assignedUserIdFromUrl]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.key]);
 
   // Single authoritative filter request object for cards, table, and export
   const filterRequest = useMemo(() => buildLeadQueryParams(filters), [filters]);
@@ -353,6 +378,7 @@ const Leads = () => {
           : [...current, cardInfo.value];
       }
 
+      isInternalSearchParamsUpdate.current = true;
       const params = syncFiltersToSearchParams(next);
       setSearchParams(params, { replace: true });
       return next;
@@ -366,6 +392,7 @@ const Leads = () => {
     setSearch(newFilters.search || '');
     setDebouncedSearch(newFilters.search || '');
     setPage(0);
+    isInternalSearchParamsUpdate.current = true;
     const params = syncFiltersToSearchParams(newFilters);
     setSearchParams(params, { replace: true });
   };
@@ -377,6 +404,7 @@ const Leads = () => {
         setSearch('');
         setDebouncedSearch('');
       }
+      isInternalSearchParamsUpdate.current = true;
       const params = syncFiltersToSearchParams(next);
       setSearchParams(params, { replace: true });
       return next;
@@ -389,6 +417,7 @@ const Leads = () => {
     setSearch('');
     setDebouncedSearch('');
     setPage(0);
+    isInternalSearchParamsUpdate.current = true;
     setSearchParams({}, { replace: true });
   };
 

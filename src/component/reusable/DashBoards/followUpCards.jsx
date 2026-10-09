@@ -11,7 +11,6 @@ const FollowUpCards = ({ onCardClick, activeFilters = [] }) => {
         setLoading(true);
         console.log('FollowUpCards fetching data');
         const response = await getFollowupStatusCounts();
-        console.log('FollowUpCards response:', response);
         setFollowUpData(response.data?.data || []);
       } catch (error) {
         console.error('Error fetching follow-up status counts:', error);

@@ -329,16 +329,21 @@ const LeadCards = ({ onCardClick, activeFilters = [], filterRequest = {}, course
                     color: cardStyle.isHighlighted ? '#FF8C00' : '#1e293b',
                     lineHeight: '1.3',
                     flex: 1,
+                    minWidth: 0,
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
                   }}>
                     {item.name}
                   </div>
                 </div>
                 <div className="lead-card-count" style={{
-                  fontSize: cardStyle.isHighlighted ? '26px' : '24px',
+                  fontSize: cardStyle.isHighlighted ? '24px' : '22px',
                   fontWeight: cardStyle.isHighlighted ? '700' : '700',
                   color: cardStyle.isHighlighted ? '#FF8C00' : '#1e293b',
                   flexShrink: 0,
-                  marginLeft: '12px',
+                  marginLeft: '8px',
+                  lineHeight: '1',
+                  textAlign: 'right',
                 }}>
                   {item.count !== undefined ? item.count.toLocaleString() : '0'}
                 </div>

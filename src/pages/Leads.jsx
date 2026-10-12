@@ -860,7 +860,7 @@ const Leads = () => {
       </div>
 
       {/* ── New Lead Status Cards ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '20px' }}>
+      <div className="leads-top-cards-grid">
         <UnallottedCard 
           onCardClick={handleCardClick}
           activeFilters={activeCardFilters}
@@ -894,6 +894,38 @@ const Leads = () => {
           title="All Unmapped Data"
         />
       </div>
+      <style>{`
+        .leads-top-cards-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+          gap: 16px;
+          margin-bottom: 20px;
+        }
+        @media (min-width: 1180px) and (max-width: 1749px) {
+          .leads-top-cards-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 16px;
+          }
+        }
+        @media (min-width: 1750px) {
+          .leads-top-cards-grid {
+            grid-template-columns: repeat(6, minmax(0, 1fr));
+            gap: 16px;
+          }
+        }
+        @media (min-width: 640px) and (max-width: 1179px) {
+          .leads-top-cards-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+          }
+        }
+        @media (max-width: 639px) {
+          .leads-top-cards-grid {
+            grid-template-columns: 1fr;
+            gap: 10px;
+          }
+        }
+      `}</style>
 
       {/* ── Category / Course Type breakdown ── */}
       <CategorywiseCard

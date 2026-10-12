@@ -221,16 +221,21 @@ const CategorywiseCard = ({ data, onCardClick, activeFilters = [], filterRequest
                     color: '#1e293b',
                     lineHeight: '1.3',
                     flex: 1,
+                    minWidth: 0,
+                    wordBreak: 'break-word',
+                    overflowWrap: 'break-word',
                   }}>
                     {label}
                   </div>
                 </div>
                 <div className="categorywise-count" style={{
-                  fontSize: '28px',
+                  fontSize: '24px',
                   fontWeight: '700',
                   color: '#1e293b',
                   flexShrink: 0,
-                  marginLeft: '12px',
+                  marginLeft: '8px',
+                  lineHeight: '1',
+                  textAlign: 'right',
                 }}>
                   {count}
                 </div>

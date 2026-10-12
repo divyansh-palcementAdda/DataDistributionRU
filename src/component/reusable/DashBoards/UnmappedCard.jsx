@@ -151,19 +151,21 @@ const UnmappedCard = ({
   const cardStyle = {
     background: '#ffffff',
     borderRadius: '12px',
-    padding: '16px',
+    padding: '14px 16px',
     boxShadow: isSelected
       ? '0 0 0 2px #f43f5e, 0 4px 16px rgba(244,63,94,0.18)'
       : '0 2px 8px rgba(0,0,0,0.08)',
     border: isSelected ? '2px solid #f43f5e' : '1px solid #e5e7eb',
     transition: 'all 0.3s ease',
     cursor: 'pointer',
-    height: '100px',
+    minHeight: '92px',
+    height: '100%',
     position: 'relative',
     overflow: 'hidden',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: '8px',
   };
 
   const iconContainerStyle = {
@@ -184,14 +186,19 @@ const UnmappedCard = ({
     color: '#1e293b',
     lineHeight: '1.3',
     flex: 1,
+    minWidth: 0,
+    wordBreak: 'break-word',
+    overflowWrap: 'break-word',
   };
 
   const countStyle = {
-    fontSize: '28px',
+    fontSize: '24px',
     fontWeight: '700',
     color: '#be123c',
     flexShrink: 0,
-    marginLeft: '12px',
+    marginLeft: '8px',
+    lineHeight: '1',
+    textAlign: 'right',
   };
 
   const handleMouseEnter = (e) => {
@@ -246,42 +253,74 @@ const UnmappedCard = ({
             <div style={iconContainerStyle}>
               <UnmappedIcon />
             </div>
-            <div>
-              <div style={labelStyle}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="unmapped-label" style={labelStyle}>
                 {displayTitle}
               </div>
               {subtitle && (
-                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
+                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {subtitle}
                 </div>
               )}
             </div>
           </div>
 
-          <div style={countStyle}>
+          <div className="unmapped-count" style={countStyle}>
             {count.toLocaleString()}
           </div>
         </div>
       )}
       <style>{`
+        /* Unmapped Label & Count Responsive */
+        @media (max-width: 1440px) {
+          .unmapped-label {
+            font-size: 13px !important;
+          }
+          .unmapped-count {
+            font-size: 22px !important;
+            margin-left: 6px !important;
+          }
+        }
+
         @media (max-width: 1024px) {
           .unmapped-card-item {
-            height: 95px !important;
-            padding: 14px !important;
+            min-height: 85px !important;
+            padding: 12px !important;
+          }
+          .unmapped-label {
+            font-size: 13px !important;
+          }
+          .unmapped-count {
+            font-size: 20px !important;
+            margin-left: 6px !important;
           }
         }
         @media (max-width: 768px) {
           .unmapped-card-item {
-            height: 90px !important;
-            padding: 12px !important;
+            min-height: 80px !important;
+            padding: 10px 12px !important;
             border-radius: 10px !important;
+          }
+          .unmapped-label {
+            font-size: 12px !important;
+          }
+          .unmapped-count {
+            font-size: 19px !important;
+            margin-left: 4px !important;
           }
         }
         @media (max-width: 480px) {
           .unmapped-card-item {
-            height: 85px !important;
-            padding: 10px !important;
+            min-height: 75px !important;
+            padding: 8px 10px !important;
             border-radius: 8px !important;
+          }
+          .unmapped-label {
+            font-size: 11px !important;
+          }
+          .unmapped-count {
+            font-size: 18px !important;
+            margin-left: 4px !important;
           }
         }
       `}</style>

@@ -173,11 +173,11 @@ const LeadSource = ({ data, onCardClick, activeFilters = [], filterRequest = {},
                     }}>
                       <div className="lead-source-icon" style={{ color: clr.iconStroke }}><SourceIcon /></div>
                     </div>
-                    <div className="lead-source-label" style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', lineHeight: '1.3', flex: 1 }}>
+                    <div className="lead-source-label" style={{ fontSize: '14px', fontWeight: '600', color: '#1e293b', lineHeight: '1.3', flex: 1, minWidth: 0, wordBreak: 'break-word', overflowWrap: 'break-word' }}>
                       {item.name}
                     </div>
                   </div>
-                  <div className="lead-source-count" style={{ fontSize: '28px', fontWeight: '700', color: '#1e293b', flexShrink: 0, marginLeft: '12px' }}>
+                  <div className="lead-source-count" style={{ fontSize: '24px', fontWeight: '700', color: '#1e293b', flexShrink: 0, marginLeft: '8px', lineHeight: '1', textAlign: 'right' }}>
                     {item.count !== undefined ? item.count.toLocaleString() : '0'}
                   </div>
                 </div>

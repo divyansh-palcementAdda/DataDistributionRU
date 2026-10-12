@@ -64,19 +64,21 @@ const TodayFollowUpsCard = ({ data, onCardClick, activeFilters = [], filterReque
   const cardStyle = {
     background: '#ffffff',
     borderRadius: '12px',
-    padding: '16px',
+    padding: '14px 16px',
     boxShadow: isSelected
       ? '0 0 0 2px #6366f1, 0 4px 16px rgba(99,102,241,0.18)'
       : '0 2px 8px rgba(0,0,0,0.08)',
     border: isSelected ? '2px solid #6366f1' : '1px solid #e5e7eb',
     transition: 'all 0.3s ease',
     cursor: 'pointer',
-    height: '100px',
+    minHeight: '92px',
+    height: '100%',
     position: 'relative',
     overflow: 'hidden',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: '8px',
   };
 
   const iconContainerStyle = {
@@ -96,14 +98,19 @@ const TodayFollowUpsCard = ({ data, onCardClick, activeFilters = [], filterReque
     color: '#1e293b',
     lineHeight: '1.3',
     flex: 1,
+    minWidth: 0,
+    wordBreak: 'break-word',
+    overflowWrap: 'break-word',
   };
 
   const countStyle = {
-    fontSize: '28px',
+    fontSize: '24px',
     fontWeight: '700',
     color: '#1e293b',
     flexShrink: 0,
-    marginLeft: '12px',
+    marginLeft: '8px',
+    lineHeight: '1',
+    textAlign: 'right',
   };
 
   const handleMouseEnter = (e) => {

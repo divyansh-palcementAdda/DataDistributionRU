@@ -78,19 +78,21 @@ const MultiSourceCard = ({ data, onCardClick, activeFilters = [], filterRequest 
   const cardStyle = {
     background: '#ffffff',
     borderRadius: '12px',
-    padding: '16px',
+    padding: '14px 16px',
     boxShadow: isSelected
       ? '0 0 0 2px #9333EA, 0 4px 16px rgba(147,51,234,0.18)'
       : '0 2px 8px rgba(0,0,0,0.08)',
     border: isSelected ? '2px solid #9333EA' : '1px solid #e5e7eb',
     transition: 'all 0.3s ease',
     cursor: 'pointer',
-    height: '100px',
+    minHeight: '92px',
+    height: '100%',
     position: 'relative',
     overflow: 'hidden',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: '8px',
   };
 
   const iconContainerStyle = {
@@ -110,14 +112,19 @@ const MultiSourceCard = ({ data, onCardClick, activeFilters = [], filterRequest 
     color: '#1e293b',
     lineHeight: '1.3',
     flex: 1,
+    minWidth: 0,
+    wordBreak: 'break-word',
+    overflowWrap: 'break-word',
   };
 
   const countStyle = {
-    fontSize: '28px',
+    fontSize: '24px',
     fontWeight: '700',
     color: '#1e293b',
     flexShrink: 0,
-    marginLeft: '12px',
+    marginLeft: '8px',
+    lineHeight: '1',
+    textAlign: 'right',
   };
 
   const handleMouseEnter = (e) => {
@@ -265,6 +272,16 @@ const MultiSourceCard = ({ data, onCardClick, activeFilters = [], filterRequest 
           .multi-source-icon svg {
             width: 12px !important;
             height: 12px !important;
+          }
+        }
+
+        /* Multi Source Label Responsive */
+        @media (max-width: 1440px) {
+          .multi-source-label {
+            font-size: 13px !important;
+          }
+          .multi-source-count {
+            font-size: 22px !important;
           }
         }
 

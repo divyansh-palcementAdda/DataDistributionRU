@@ -84,19 +84,21 @@ const RegistrationRejectedCard = ({
   const cardStyle = {
     background: '#ffffff',
     borderRadius: '12px',
-    padding: '16px',
+    padding: '14px 16px',
     boxShadow: isSelected
       ? '0 0 0 2px #e11d48, 0 4px 16px rgba(225,29,72,0.18)'
       : '0 2px 8px rgba(0,0,0,0.08)',
     border: isSelected ? '2px solid #e11d48' : '1px solid #e5e7eb',
     transition: 'all 0.3s ease',
     cursor: 'pointer',
-    height: '100px',
+    minHeight: '92px',
+    height: '100%',
     position: 'relative',
     overflow: 'hidden',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: '8px',
   };
 
   const iconContainerStyle = {
@@ -117,14 +119,19 @@ const RegistrationRejectedCard = ({
     color: '#1e293b',
     lineHeight: '1.3',
     flex: 1,
+    minWidth: 0,
+    wordBreak: 'break-word',
+    overflowWrap: 'break-word',
   };
 
   const countStyle = {
-    fontSize: '28px',
+    fontSize: '24px',
     fontWeight: '700',
     color: '#e11d48',
     flexShrink: 0,
-    marginLeft: '12px',
+    marginLeft: '8px',
+    lineHeight: '1',
+    textAlign: 'right',
   };
 
   const handleMouseEnter = (e) => {
@@ -175,35 +182,67 @@ const RegistrationRejectedCard = ({
             <div style={iconContainerStyle}>
               <RejectedIcon />
             </div>
-            <div style={labelStyle}>
+            <div className="registration-rejected-label" style={labelStyle}>
               Reg Check Rejected
             </div>
           </div>
 
-          <div style={countStyle}>
+          <div className="registration-rejected-count" style={countStyle}>
             {count.toLocaleString()}
           </div>
         </div>
       )}
       <style>{`
+        /* Registration Rejected Label & Count Responsive */
+        @media (max-width: 1440px) {
+          .registration-rejected-label {
+            font-size: 13px !important;
+          }
+          .registration-rejected-count {
+            font-size: 22px !important;
+            margin-left: 6px !important;
+          }
+        }
+
         @media (max-width: 1024px) {
           .registration-rejected-card-item {
-            height: 95px !important;
-            padding: 14px !important;
+            min-height: 85px !important;
+            padding: 12px !important;
+          }
+          .registration-rejected-label {
+            font-size: 13px !important;
+          }
+          .registration-rejected-count {
+            font-size: 20px !important;
+            margin-left: 6px !important;
           }
         }
         @media (max-width: 768px) {
           .registration-rejected-card-item {
-            height: 90px !important;
-            padding: 12px !important;
+            min-height: 80px !important;
+            padding: 10px 12px !important;
             border-radius: 10px !important;
+          }
+          .registration-rejected-label {
+            font-size: 12px !important;
+          }
+          .registration-rejected-count {
+            font-size: 19px !important;
+            margin-left: 4px !important;
           }
         }
         @media (max-width: 480px) {
           .registration-rejected-card-item {
-            height: 85px !important;
-            padding: 10px !important;
+            min-height: 75px !important;
+            padding: 8px 10px !important;
             border-radius: 8px !important;
+          }
+          .registration-rejected-label {
+            font-size: 11px !important;
+          }
+          .registration-rejected-count {
+            font-size: 18px !important;
+            margin-left: 4px !important;
           }
         }
       `}</style>

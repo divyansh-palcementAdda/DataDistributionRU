@@ -36,7 +36,7 @@ const Header = () => {
 
     <button
       onClick={toggleSidebar}
-      className="md:hidden flex items-center justify-center p-2 rounded-lg border"
+      className="lg:hidden flex items-center justify-center p-2 rounded-lg border"
     >
       {isSidebarOpen ? (
         <svg
@@ -62,11 +62,11 @@ const Header = () => {
     </button>
 
   <h1 className="font-bold text-gray-900">
-  <span className="md:hidden text-lg">
+  <span className="lg:hidden text-lg">
     DDS
   </span>
 
-  <span className="hidden md:inline text-2xl">
+  <span className="hidden lg:inline text-2xl">
     Data Distribution System
   </span>
 </h1>

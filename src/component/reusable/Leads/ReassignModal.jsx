@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import CustomButton from '../CustomButton';
 import { getUsersDropdown } from '../../../Services/drop-down/dropDownService';
 import { reassignLeads, reassignDistributeLeads, reassignFollowUps, reassignDistributeFollowUps } from '../../../Services/lead/leadService';
@@ -38,9 +38,38 @@ const ReassignModal = ({
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersError, setUsersError] = useState('');
 
+  // search state — shared between single & multiple steps
+  const [userSearch, setUserSearch] = useState('');
+  const searchDebounceRef = useRef(null);
+
   // loading / error
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // fetch users — reused on open and on search change
+  const fetchUsers = useCallback(async (search = '') => {
+    setUsersLoading(true);
+    setUsersError('');
+    try {
+      const res = await getUsersDropdown('', '', search);
+      const list = Array.isArray(res?.data) ? res.data : [];
+      // Filter out Admin and Super Admin users
+      const filteredUsers = list.filter(
+        (user) =>
+          user.username?.toLowerCase() !== 'admin' &&
+          user.username?.toLowerCase() !== 'superadmin'
+      );
+      // Filter out current counselor from the list
+      const finalFilteredUsers = filteredUsers.filter(
+        (user) => (user.id || user.userId) !== currentAssignedUserId
+      );
+      setUsers(finalFilteredUsers);
+    } catch (err) {
+      setUsersError('Users load karne mein error aaya.');
+    } finally {
+      setUsersLoading(false);
+    }
+  }, [currentAssignedUserId]);
 
   // fetch all users when modal opens
   useEffect(() => {
@@ -52,33 +81,20 @@ const ReassignModal = ({
     setMaximumDataPerUser('');
     setReason('');
     setError('');
+    setUserSearch('');
 
-    const fetchUsers = async () => {
-      setUsersLoading(true);
-      setUsersError('');
-      try {
-        const res = await getUsersDropdown();
-        // API returns { success: true, data: [...], ... }
-        const list = Array.isArray(res?.data) ? res.data : [];
-        // Filter out Admin and Super Admin users based on exact username match
-        const filteredUsers = list.filter(
-          (user) =>
-            user.username?.toLowerCase() !== 'admin' &&
-            user.username?.toLowerCase() !== 'superadmin'
-        );
-        // Filter out current counselor from the list
-        const finalFilteredUsers = filteredUsers.filter(user => (user.id || user.userId) !== currentAssignedUserId);
-        setUsers(finalFilteredUsers);
-        setSingleSelectedUserId('');
-      } catch (err) {
-        setUsersError('Users load karne mein error aaya.');
-      } finally {
-        setUsersLoading(false);
-      }
-    };
+    fetchUsers('');
+  }, [isOpen, fetchUsers]);
 
-    fetchUsers();
-  }, [isOpen, currentAssignedUserId]);
+  // debounced search — fires whenever userSearch changes
+  useEffect(() => {
+    if (!isOpen) return;
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => {
+      fetchUsers(userSearch.trim());
+    }, 350);
+    return () => clearTimeout(searchDebounceRef.current);
+  }, [userSearch, isOpen, fetchUsers]);
 
   // ── helpers ────────────────────────────────────────────────
   const toggleUser = (id) => {
@@ -357,39 +373,96 @@ const ReassignModal = ({
                 <label className="form-label" style={{ fontWeight: '600', color: 'var(--gray-700)', marginBottom: '8px', display: 'block' }}>
                   Select User <span style={{ color: '#dc2626' }}>*</span>
                 </label>
-                <select
-                  className="form-control"
-                  value={singleSelectedUserId}
-                  onChange={(e) => setSingleSelectedUserId(e.target.value)}
-                  disabled={loading}
+
+                {/* Search input */}
+                <div style={{ position: 'relative', marginBottom: '8px' }}>
+                  <svg
+                    width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                    style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--gray-400)', pointerEvents: 'none' }}
+                  >
+                    <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Search users..."
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                    disabled={loading}
+                    style={{ paddingLeft: '32px', fontSize: '13px' }}
+                  />
+                  {userSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setUserSearch('')}
+                      style={{
+                        position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)',
+                        background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-400)',
+                        display: 'flex', alignItems: 'center', padding: '2px',
+                      }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+
+                <div
                   style={{
-                    width: '100%',
-                    padding: '10px 12px',
-                    borderRadius: '8px',
                     border: '1px solid var(--gray-200)',
+                    borderRadius: '8px',
+                    maxHeight: '220px',
+                    overflowY: 'auto',
                     backgroundColor: '#fff',
-                    fontSize: '14px',
-                    color: 'var(--gray-800)',
                   }}
                 >
-                  <option value="">-- Select a user --</option>
                   {usersLoading ? (
-                    <option disabled>Loading users...</option>
+                    <div style={{ padding: '20px', textAlign: 'center', color: 'var(--gray-400)', fontSize: '13px' }}>
+                      Loading users...
+                    </div>
                   ) : usersError ? (
-                    <option disabled>Error loading users</option>
+                    <div style={{ padding: '16px', textAlign: 'center', color: '#dc2626', fontSize: '13px' }}>
+                      {usersError}
+                    </div>
                   ) : users.length === 0 ? (
-                    <option disabled>No users available</option>
+                    <div style={{ padding: '16px', textAlign: 'center', color: 'var(--gray-400)', fontSize: '13px' }}>
+                      {userSearch ? `No users found for "${userSearch}"` : 'No users available'}
+                    </div>
                   ) : (
                     users.map((user) => {
                       const uid = user.id || user.userId;
+                      const selected = singleSelectedUserId === uid;
                       return (
-                        <option key={uid} value={uid}>
-                          {user.name}
-                        </option>
+                        <label
+                          key={uid}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '10px',
+                            padding: '10px 14px',
+                            cursor: loading ? 'not-allowed' : 'pointer',
+                            borderBottom: '1px solid var(--gray-100)',
+                            backgroundColor: selected ? 'var(--primary-50, #eff6ff)' : 'transparent',
+                            transition: 'background 0.15s',
+                          }}
+                        >
+                          <input
+                            type="radio"
+                            name="singleUser"
+                            checked={selected}
+                            onChange={() => setSingleSelectedUserId(uid)}
+                            disabled={loading}
+                            style={{ width: '15px', height: '15px', accentColor: 'var(--primary-600, #2563eb)', cursor: 'pointer' }}
+                          />
+                          <span style={{ fontSize: '13px', color: 'var(--gray-800)', fontWeight: selected ? '600' : '400' }}>
+                            {user.name}
+                          </span>
+                        </label>
                       );
                     })
                   )}
-                </select>
+                </div>
               </div>
 
               {/* Reason field */}
@@ -434,6 +507,41 @@ const ReassignModal = ({
                     </span>
                   )}
                 </label>
+
+                {/* Search input */}
+                <div style={{ position: 'relative', marginBottom: '8px' }}>
+                  <svg
+                    width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                    style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--gray-400)', pointerEvents: 'none' }}
+                  >
+                    <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Search users..."
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                    disabled={loading}
+                    style={{ paddingLeft: '32px', fontSize: '13px' }}
+                  />
+                  {userSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setUserSearch('')}
+                      style={{
+                        position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)',
+                        background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-400)',
+                        display: 'flex', alignItems: 'center', padding: '2px',
+                      }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+
                 <div
                   style={{
                     border: '1px solid var(--gray-200)',
@@ -453,7 +561,7 @@ const ReassignModal = ({
                     </div>
                   ) : users.length === 0 ? (
                     <div style={{ padding: '16px', textAlign: 'center', color: 'var(--gray-400)', fontSize: '13px' }}>
-                      No other users available
+                      {userSearch ? `No users found for "${userSearch}"` : 'No other users available'}
                     </div>
                   ) : (
                     users.map((user) => {

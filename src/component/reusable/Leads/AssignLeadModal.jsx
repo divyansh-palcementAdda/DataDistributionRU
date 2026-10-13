@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import CustomButton from '../CustomButton';
 import { previewLeadDistribution, distributeLeads } from '../../../Services/lead/leadService';
 import { getUsersDropdown } from '../../../Services/drop-down/dropDownService';
@@ -37,6 +37,8 @@ const AssignLeadModal = ({
   const [users, setUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersError, setUsersError] = useState('');
+  const [userSearch, setUserSearch] = useState('');
+  const searchDebounceRef = useRef(null);
 
   // preview result
   const [previewResult, setPreviewResult] = useState(null);
@@ -77,6 +79,26 @@ const AssignLeadModal = ({
     return [];
   }, [selectedLeadIds, leadIds, currentLead]);
 
+  // fetch users — called on open and whenever search changes
+  const fetchUsers = useCallback(async (search = '') => {
+    setUsersLoading(true);
+    setUsersError('');
+    try {
+      const res = await getUsersDropdown('', '', search);
+      const list = res?.data || [];
+      const filteredList = list.filter(
+        (user) =>
+          user.username?.toLowerCase() !== 'admin' &&
+          user.username?.toLowerCase() !== 'superadmin'
+      );
+      setUsers(filteredList);
+    } catch (err) {
+      setUsersError('Failed to load users list.');
+    } finally {
+      setUsersLoading(false);
+    }
+  }, []);
+
   // fetch all users when modal opens
   useEffect(() => {
     if (!isOpen) return;
@@ -86,29 +108,20 @@ const AssignLeadModal = ({
     setMaximumNumber('');
     setPreviewResult(null);
     setError('');
+    setUserSearch('');
 
-    const fetchUsers = async () => {
-      setUsersLoading(true);
-      setUsersError('');
-      try {
-        const res = await getUsersDropdown();
-        const list = res?.data || [];
-        // Filter out Admin and Super Admin users based on exact username match
-        const filteredList = list.filter(
-          (user) =>
-            user.username?.toLowerCase() !== 'admin' &&
-            user.username?.toLowerCase() !== 'superadmin'
-        );
-        setUsers(filteredList);
-      } catch (err) {
-        setUsersError('Failed to load users list.');
-      } finally {
-        setUsersLoading(false);
-      }
-    };
+    fetchUsers('');
+  }, [isOpen, fetchUsers]);
 
-    fetchUsers();
-  }, [isOpen]);
+  // debounced search
+  useEffect(() => {
+    if (!isOpen) return;
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    searchDebounceRef.current = setTimeout(() => {
+      fetchUsers(userSearch.trim());
+    }, 350);
+    return () => clearTimeout(searchDebounceRef.current);
+  }, [userSearch, isOpen, fetchUsers]);
 
   // ── helpers ────────────────────────────────────────────────
   const buildPayload = () => {
@@ -327,6 +340,42 @@ const AssignLeadModal = ({
                   )}
                 </div>
 
+                {/* Search input */}
+                <div style={{ position: 'relative', marginBottom: '8px' }}>
+                  <svg
+                    width="14" height="14"
+                    viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                    style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--gray-400)', pointerEvents: 'none' }}
+                  >
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                  </svg>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Search counselors..."
+                    value={userSearch}
+                    onChange={(e) => setUserSearch(e.target.value)}
+                    disabled={loading}
+                    style={{ paddingLeft: '32px', fontSize: '13px' }}
+                  />
+                  {userSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setUserSearch('')}
+                      style={{
+                        position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)',
+                        background: 'none', border: 'none', cursor: 'pointer', color: 'var(--gray-400)',
+                        display: 'flex', alignItems: 'center', padding: '2px',
+                      }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
+
                 <div
                   style={{
                     border: '1px solid var(--gray-200)',
@@ -346,7 +395,7 @@ const AssignLeadModal = ({
                     </div>
                   ) : users.length === 0 ? (
                     <div style={{ padding: '16px', textAlign: 'center', color: 'var(--gray-400)', fontSize: '13px' }}>
-                      No users available
+                      {userSearch ? `No users found for "${userSearch}"` : 'No users available'}
                     </div>
                   ) : (
                     users.map((user) => {

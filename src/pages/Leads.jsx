@@ -671,9 +671,26 @@ const Leads = () => {
         render: (value, row) =>
           renderLeadInfoCell(
             row,
-            (r) => {
+            async (r) => {
               const leadId = r?.id ?? r?.leadId;
-              if (leadId) navTo(`lead-detail/${leadId}`);
+              if (!leadId) return;
+              try {
+                const res = await getLeadById(leadId);
+                const leadDetails = res?.data?.data;
+                const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+                const currentUserId = userInfo?.id || userInfo?.userId;
+                const shouldCallAvail =
+                  (leadDetails?.isAvailed === false || leadDetails?.isAvailed === null) &&
+                  (leadDetails?.assignedTo === null || leadDetails?.assignedTo?.id === currentUserId);
+                if (shouldCallAvail) {
+                  await availLead(leadId);
+                  showToast('Lead marked as availed successfully');
+                  fetchLeads();
+                }
+              } catch (error) {
+                console.error('Error:', error);
+              }
+              navTo(`lead-detail/${leadId}`);
             },
             showToast
           ),

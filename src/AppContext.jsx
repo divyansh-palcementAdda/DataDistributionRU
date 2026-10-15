@@ -59,6 +59,7 @@ useEffect(() => {
 // Update currentPage when location changes
 useEffect(() => {
   const path = location.pathname;
+  const search = location.search;
   let newPage = 'dashboard';
   
   if (path === '/callers-dashboard') {
@@ -89,12 +90,16 @@ useEffect(() => {
     newPage = 'programs';
   } else if (path.startsWith('/lead-source-details')) {
     newPage = 'lead-source';
+  } else if (path === '/followups' && search.includes('assignedUserId=')) {
+    newPage = 'my-followups';
+  } else if (path === '/leads' && search.includes('assignedUserId=')) {
+    newPage = 'my-leads';
   } else if (path.startsWith('/')) {
     newPage = path.replace('/', '') || 'dashboard';
   }
   
   setCurrentPage(newPage);
-}, [location.pathname]);
+}, [location.pathname, location.search]);
 
 // Auto-expand settings when on a settings page
 useEffect(() => {

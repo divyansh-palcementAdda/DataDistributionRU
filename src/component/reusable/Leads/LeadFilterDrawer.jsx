@@ -7,7 +7,7 @@ import { canViewLeadField } from '../../../config/leadFieldPermissions';
 /**
  * Reusable searchable multi-select dropdown component
  */
-const SearchableMultiSelect = ({ label, options = [], selectedIds = [], onChange, placeholder = 'Select...', nameKey = 'name' }) => {
+const SearchableMultiSelect = ({ label, options = [], selectedIds = [], onChange, placeholder = 'Select...', nameKey = 'name', showSelectAll = false }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
   const dropdownRef = useRef(null);
@@ -39,18 +39,79 @@ const SearchableMultiSelect = ({ label, options = [], selectedIds = [], onChange
     }
   };
 
+  // Select All / Deselect All for filtered options
+  const allFilteredIds = filteredOptions.map(opt => opt.id);
+  const allFilteredSelected = allFilteredIds.length > 0 && allFilteredIds.every(id => selectedIds.includes(id));
+  const someFilteredSelected = allFilteredIds.some(id => selectedIds.includes(id)) && !allFilteredSelected;
+
+  const handleSelectAll = (e) => {
+    e.stopPropagation();
+    if (allFilteredSelected) {
+      // Deselect all filtered
+      onChange(selectedIds.filter(id => !allFilteredIds.includes(id)));
+    } else {
+      // Select all filtered (merge with existing)
+      const merged = [...new Set([...selectedIds, ...allFilteredIds])];
+      onChange(merged);
+    }
+  };
+
   const selectedCount = selectedIds.length;
 
   return (
     <div className="filter-select-group" ref={dropdownRef} style={{ position: 'relative', marginBottom: '14px' }}>
-      <label style={{ display: 'block', fontSize: '12px', fontWeight: '600', color: '#334155', marginBottom: '5px' }}>
-        {label}
-        {selectedCount > 0 && (
-          <span style={{ marginLeft: '6px', fontSize: '11px', background: '#EEF2FF', color: '#4F46E5', padding: '1px 6px', borderRadius: '10px', fontWeight: '700' }}>
-            {selectedCount}
-          </span>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '5px' }}>
+        <label style={{ fontSize: '12px', fontWeight: '600', color: '#334155', display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
+          {label}
+          {selectedCount > 0 && (
+            <span style={{ fontSize: '11px', background: '#EEF2FF', color: '#4F46E5', padding: '1px 6px', borderRadius: '10px', fontWeight: '700' }}>
+              {selectedCount}
+            </span>
+          )}
+        </label>
+        {showSelectAll && options.length > 0 && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (selectedCount === options.length) {
+                onChange([]);
+              } else {
+                onChange(options.map(o => o.id));
+              }
+            }}
+            style={{
+              background: selectedCount === options.length ? '#F3E8FF' : '#FAF5FF',
+              border: `1px solid ${selectedCount === options.length ? '#C084FC' : '#E9D5FF'}`,
+              borderRadius: '6px',
+              padding: '2px 8px',
+              fontSize: '11px',
+              fontWeight: '600',
+              color: selectedCount === options.length ? '#7C3AED' : '#9333EA',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+              transition: 'all 0.15s ease',
+              whiteSpace: 'nowrap',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = '#F3E8FF'}
+            onMouseLeave={(e) => e.currentTarget.style.background = selectedCount === options.length ? '#F3E8FF' : '#FAF5FF'}
+          >
+            {selectedCount === options.length ? (
+              <>
+                <FiX style={{ fontSize: '11px' }} />
+                Deselect All
+              </>
+            ) : (
+              <>
+                <FiCheck style={{ fontSize: '11px' }} />
+                Select All
+              </>
+            )}
+          </button>
         )}
-      </label>
+      </div>
 
       <div
         onClick={() => setIsOpen(!isOpen)}
@@ -72,6 +133,21 @@ const SearchableMultiSelect = ({ label, options = [], selectedIds = [], onChange
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', flex: 1, minWidth: 0 }}>
           {selectedCount === 0 ? (
             <span style={{ fontSize: '13px', color: '#94A3B8' }}>{placeholder}</span>
+          ) : showSelectAll && selectedCount === options.length ? (
+            <span style={{
+              background: '#F3E8FF',
+              color: '#7C3AED',
+              fontSize: '11px',
+              fontWeight: '600',
+              padding: '2px 8px',
+              borderRadius: '6px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}>
+              <FiCheck style={{ fontSize: '11px' }} />
+              All {options.length} Selected
+            </span>
           ) : (
             options
               .filter(opt => selectedIds.includes(opt.id))
@@ -115,15 +191,16 @@ const SearchableMultiSelect = ({ label, options = [], selectedIds = [], onChange
             border: '1px solid #E2E8F0',
             boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
             zIndex: 99,
-            maxHeight: '220px',
+            maxHeight: '260px',
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
           }}
         >
-          {options.length > 5 && (
-            <div style={{ padding: '8px', borderBottom: '1px solid #F1F5F9' }}>
-              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          {/* Search + Select All row inside dropdown */}
+          <div style={{ padding: '8px', borderBottom: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {options.length > 5 && (
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', flex: 1 }}>
                 <FiSearch style={{ position: 'absolute', left: '8px', color: '#94A3B8', fontSize: '13px' }} />
                 <input
                   type="text"
@@ -141,8 +218,44 @@ const SearchableMultiSelect = ({ label, options = [], selectedIds = [], onChange
                   }}
                 />
               </div>
-            </div>
-          )}
+            )}
+            {showSelectAll && filteredOptions.length > 0 && (
+              <button
+                type="button"
+                onClick={handleSelectAll}
+                style={{
+                  background: allFilteredSelected ? '#F3E8FF' : '#FAF5FF',
+                  border: `1px solid ${allFilteredSelected ? '#C084FC' : '#E9D5FF'}`,
+                  borderRadius: '6px',
+                  padding: '4px 10px',
+                  fontSize: '11px',
+                  fontWeight: '600',
+                  color: allFilteredSelected ? '#7C3AED' : '#9333EA',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                  transition: 'all 0.15s ease',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = '#F3E8FF'}
+                onMouseLeave={(e) => e.currentTarget.style.background = allFilteredSelected ? '#F3E8FF' : '#FAF5FF'}
+              >
+                {allFilteredSelected ? (
+                  <>
+                    <FiX style={{ fontSize: '11px' }} />
+                    Deselect All
+                  </>
+                ) : (
+                  <>
+                    <FiCheck style={{ fontSize: '11px' }} />
+                    {search.trim() ? `Select ${filteredOptions.length}` : 'Select All'}
+                  </>
+                )}
+              </button>
+            )}
+          </div>
 
           <div style={{ overflowY: 'auto', flex: 1, padding: '4px' }}>
             {filteredOptions.length === 0 ? (
@@ -193,6 +306,41 @@ const SearchableMultiSelect = ({ label, options = [], selectedIds = [], onChange
               })
             )}
           </div>
+
+          {/* Footer summary inside dropdown */}
+          {showSelectAll && selectedCount > 0 && (
+            <div style={{
+              padding: '6px 10px',
+              borderTop: '1px solid #F1F5F9',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: '#FAFAFA',
+            }}>
+              <span style={{ fontSize: '11px', color: '#64748B' }}>
+                {selectedCount} of {options.length} selected
+              </span>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onChange([]); }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#EF4444',
+                  fontSize: '11px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  padding: '2px 4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '3px',
+                }}
+              >
+                <FiX style={{ fontSize: '11px' }} />
+                Clear
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -462,6 +610,7 @@ const LeadFilterDrawer = ({
                 selectedIds={draftFilters.leadSourceIds}
                 onChange={(ids) => setDraftFilters(prev => ({ ...prev, leadSourceIds: ids }))}
                 placeholder="All Sources"
+                showSelectAll={true}
               />
             )}
 
@@ -472,6 +621,7 @@ const LeadFilterDrawer = ({
                 selectedIds={draftFilters.courseTypeIds}
                 onChange={(ids) => setDraftFilters(prev => ({ ...prev, courseTypeIds: ids }))}
                 placeholder="All Categories"
+                showSelectAll={true}
               />
             )}
 
@@ -483,6 +633,7 @@ const LeadFilterDrawer = ({
                 onChange={(ids) => setDraftFilters(prev => ({ ...prev, courseIds: ids }))}
                 placeholder="All Courses"
                 nameKey="courseName"
+                showSelectAll={true}
               />
             )}
 
@@ -493,6 +644,7 @@ const LeadFilterDrawer = ({
                 selectedIds={draftFilters.departmentIds}
                 onChange={(ids) => setDraftFilters(prev => ({ ...prev, departmentIds: ids }))}
                 placeholder="All Departments"
+                showSelectAll={true}
               />
             )}
 
@@ -506,6 +658,7 @@ const LeadFilterDrawer = ({
                 selectedIds={draftFilters.assignedUserIds}
                 onChange={(ids) => setDraftFilters(prev => ({ ...prev, assignedUserIds: ids }))}
                 placeholder="All Counselors"
+                showSelectAll={true}
               />
             )}
           </FilterSection>

@@ -37,6 +37,7 @@ const ApiRoutes = {
         getToday: '/api/followups/today',
         getPending: '/api/followups/pending',
         getCompleted: '/api/followups/completed',
+        dashboardStats: '/api/followups/dashboard',
         reschedule: '/api/followups/{id}/reschedule',
         complete: '/api/followups/{id}/complete',
         cancel: '/api/followups/{id}/cancel',

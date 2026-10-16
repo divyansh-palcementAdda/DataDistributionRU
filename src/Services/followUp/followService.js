@@ -9,11 +9,21 @@ export const getAllFollowups = async ({
     sortDirection = "",
     search = "",
     date = "",
+    dueDate = "",
+    fromDate = "",
+    toDate = "",
     status = "",
+    followUpStatus = "",
+    outcome = "",
+    followUpOutcome = "",
+    category = "",
     userId = "",
+    assignedUserId = "",
+    departmentId = "",
     leadId = "",
+    leadStatusId = "",
     leadStatusIds = "",
-}) => {
+} = {}) => {
     try {
         const followUpRoute =
             ApiRoutes.FollowUp?.getAllFollowUps ||
@@ -27,12 +37,22 @@ export const getAllFollowups = async ({
                     size,
                     sortBy,
                     sortDirection,
-                    search,
-                    date,
-                    status,
-                    userId,
-                    leadId,
-                    leadStatusIds: Array.isArray(leadStatusIds) ? leadStatusIds.join(',') : leadStatusIds,
+                    search: search || undefined,
+                    date: date || undefined,
+                    dueDate: dueDate || undefined,
+                    fromDate: fromDate || undefined,
+                    toDate: toDate || undefined,
+                    status: status || undefined,
+                    followUpStatus: followUpStatus || undefined,
+                    outcome: outcome || undefined,
+                    followUpOutcome: followUpOutcome || undefined,
+                    category: category || undefined,
+                    userId: userId || undefined,
+                    assignedUserId: assignedUserId || undefined,
+                    departmentId: departmentId || undefined,
+                    leadId: leadId || undefined,
+                    leadStatusId: leadStatusId || undefined,
+                    leadStatusIds: Array.isArray(leadStatusIds) && leadStatusIds.length > 0 ? leadStatusIds.join(',') : (leadStatusIds || undefined),
                 },
             }
         );
@@ -44,20 +64,23 @@ export const getAllFollowups = async ({
 };
 
 /**
- * Get today's follow-ups for counselors/admins (RBAC: FOLLOWUP_VIEW).
+ * Get today's follow-ups for counselors/admins (delegates to canonical getAllFollowups with category=TODAY).
  */
-export const getTodayFollowups = async ({
-    page = 0,
-    size = 10,
-    sortBy = "followUpDate",
-    sortDirection = "ASC",
-    search = "",
-} = {}) => {
+export const getTodayFollowups = async (params = {}) => {
+    return getAllFollowups({ ...params, category: "TODAY" });
+};
+
+/**
+ * Get follow-up category counters from canonical dashboard stats endpoint.
+ */
+export const getFollowUpDashboardStats = async (params = {}) => {
     try {
-        const route = ApiRoutes.FollowUp?.getToday || "/api/followups/today";
-        const response = await axiosInstance.get(route, {
-            params: { page, size, sortBy, sortDirection, search: search || undefined },
-        });
+        const route = ApiRoutes.FollowUp?.dashboardStats || "/api/followups/dashboard";
+        const queryParams = { ...params };
+        if (Array.isArray(queryParams.leadStatusIds) && queryParams.leadStatusIds.length > 0) {
+            queryParams.leadStatusIds = queryParams.leadStatusIds.join(',');
+        }
+        const response = await axiosInstance.get(route, { params: queryParams });
         return response.data;
     } catch (error) {
         throw error.response?.data || error.message;

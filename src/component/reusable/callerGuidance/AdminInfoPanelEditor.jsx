@@ -642,7 +642,7 @@ const AdminInfoPanelEditor = ({ courseId, courseDetails, showToast }) => {
 
       {/* 5. Competitor Add / Edit Modal */}
       {isCompetitorModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-2xs flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-100 bg-black/50 backdrop-blur-2xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl max-w-xl w-full max-h-[90vh] overflow-y-auto p-6 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-gray-100">
               <h4 className="text-sm font-bold text-gray-900">

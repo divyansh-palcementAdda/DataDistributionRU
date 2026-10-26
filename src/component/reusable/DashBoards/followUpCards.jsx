@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getFollowupStatusCounts } from '../../../Services/cards/cardService';
 
-const FollowUpCards = ({ onCardClick, activeFilters = [] }) => {
+const FollowUpCards = ({ onCardClick, activeFilters = [], assignedUserId = null }) => {
   const [followUpData, setFollowUpData] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -9,8 +9,7 @@ const FollowUpCards = ({ onCardClick, activeFilters = [] }) => {
     const fetchFollowUpStatusData = async () => {
       try {
         setLoading(true);
-        console.log('FollowUpCards fetching data');
-        const response = await getFollowupStatusCounts();
+        const response = await getFollowupStatusCounts({ userId: assignedUserId || undefined });
         setFollowUpData(response.data?.data || []);
       } catch (error) {
         console.error('Error fetching follow-up status counts:', error);
@@ -20,7 +19,7 @@ const FollowUpCards = ({ onCardClick, activeFilters = [] }) => {
     };
 
     fetchFollowUpStatusData();
-  }, []);
+  }, [assignedUserId]);
 
   // Responsive styles
   const gridStyle = {
@@ -196,13 +195,30 @@ const FollowUpCards = ({ onCardClick, activeFilters = [] }) => {
                   </div>
                 </div>
                 <div style={{
-                  fontSize: '24px',
-                  fontWeight: '700',
-                  color: '#1e293b',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'flex-end',
                   flexShrink: 0,
                   marginLeft: '12px',
                 }}>
-                  {item.count !== undefined ? item.count.toLocaleString() : '0'}
+                  <div style={{
+                    fontSize: '24px',
+                    fontWeight: '700',
+                    color: '#1e293b',
+                    lineHeight: '1.1',
+                  }}>
+                    {item.followUpCount !== undefined ? item.followUpCount.toLocaleString() : (item.count !== undefined ? item.count.toLocaleString() : '0')}
+                  </div>
+                  {item.leadCount !== undefined && (
+                    <div style={{
+                      fontSize: '11px',
+                      fontWeight: '500',
+                      color: '#64748b',
+                      marginTop: '2px',
+                    }}>
+                      {item.leadCount} {item.leadCount === 1 ? 'lead' : 'leads'}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

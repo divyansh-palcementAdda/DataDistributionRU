@@ -40,8 +40,17 @@ const Login = () => {
         // Success
         setLoading(false);
         toast.success("Login successful!");
-        Cookies.set('accessToken', response.data.data.accessToken);
-        Cookies.set('refreshToken', response.data.data.refreshToken);
+        //ye yaha token change kiya for autotab login 
+        // Cookies.set('accessToken', response.data.data.accessToken);
+        // Cookies.set('refreshToken', response.data.data.refreshToken);
+        Cookies.set('accessToken', response.data.data.accessToken, { 
+  sameSite: 'lax', 
+  secure: false // Use true if you have HTTPS
+});
+Cookies.set('refreshToken', response.data.data.refreshToken, { 
+  sameSite: 'lax', 
+  secure: false
+});
 
 
         // Store role information

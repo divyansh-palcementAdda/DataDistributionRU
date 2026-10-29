@@ -400,12 +400,6 @@ const FollowUps = () => {
     },
 
     {
-      key: "remarks",
-      header: "Remarks",
-      render: (value) => value || "-",
-    },
-
-    {
       key: "status",
       header: "Status",
       render: (value) => {
@@ -417,6 +411,12 @@ const FollowUps = () => {
           </span>
         );
       },
+    },
+
+    {
+      key: "remarks",
+      header: "Remarks",
+      render: (value) => value || "-",
     },
 
     {

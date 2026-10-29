@@ -184,12 +184,11 @@ const PlanUniversityVisitModal = ({ isOpen, onClose, leadDetails, onSuccess }) =
                     Visit Date <span className="text-red-500">*</span>
                   </label>
                   <div
-                    className={`form-control flex items-center text-sm w-full px-3 py-2 border rounded-lg cursor-pointer focus-within:ring-2 focus-within:ring-blue-500 ${
-                      errors.visitDate ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    className={`form-control flex items-center text-sm w-full px-3 py-2 border rounded-lg cursor-pointer focus-within:ring-2 focus-within:ring-blue-500 ${errors.visitDate ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     onClick={() => {
                       dateInputRef.current?.focus();
-                      try { dateInputRef.current?.showPicker(); } catch (_) {}
+                      try { dateInputRef.current?.showPicker(); } catch (_) { }
                     }}
                   >
                     <input
@@ -214,12 +213,11 @@ const PlanUniversityVisitModal = ({ isOpen, onClose, leadDetails, onSuccess }) =
                     Visit Time <span className="text-red-500">*</span>
                   </label>
                   <div
-                    className={`form-control flex items-center text-sm w-full px-3 py-2 border rounded-lg cursor-pointer focus-within:ring-2 focus-within:ring-blue-500 ${
-                      errors.visitTime ? 'border-red-500' : 'border-gray-300'
-                    }`}
+                    className={`form-control flex items-center text-sm w-full px-3 py-2 border rounded-lg cursor-pointer focus-within:ring-2 focus-within:ring-blue-500 ${errors.visitTime ? 'border-red-500' : 'border-gray-300'
+                      }`}
                     onClick={() => {
                       timeInputRef.current?.focus();
-                      try { timeInputRef.current?.showPicker(); } catch (_) {}
+                      try { timeInputRef.current?.showPicker(); } catch (_) { }
                     }}
                   >
                     <input
@@ -246,9 +244,8 @@ const PlanUniversityVisitModal = ({ isOpen, onClose, leadDetails, onSuccess }) =
                 </label>
                 <textarea
                   rows="3"
-                  className={`form-control text-sm w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                    errors.visitRemarks ? 'border-red-500' : 'border-gray-300'
-                  }`}
+                  className={`form-control text-sm w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.visitRemarks ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   placeholder="e.g. Student wants to visit campus with parents on Saturday morning..."
                   value={visitRemarks}
                   onChange={(e) => {

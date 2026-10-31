@@ -46,6 +46,9 @@ export const getUserPerformance = async (params = {}) => {
                 departmentId: params.departmentId || "",
                 status: params.status || "",
                 currentlyWorking: params.currentlyWorking !== undefined ? params.currentlyWorking : "",
+                period: params.period || "TODAY",
+                startDate: params.startDate || "",
+                endDate: params.endDate || "",
             },
         });
         return response;

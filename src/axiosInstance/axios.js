@@ -174,6 +174,47 @@ const initializeInactivityTimer = () => {
   }, remainingTime);
 };
 
+
+// ======================================================
+// SERVER PRESENCE HEARTBEAT
+// ======================================================
+let lastHeartbeatSent = 0;
+let isHeartbeatPending = false;
+
+export const sendHeartbeat = async () => {
+  const accessToken = Cookies.get("accessToken");
+  if (!accessToken || isSessionExpiredByInactivity || isLoggingOut || isHeartbeatPending) {
+    return;
+  }
+
+  const now = Date.now();
+  // Throttle to at most once per 30 seconds
+  if (now - lastHeartbeatSent < 30000) {
+    return;
+  }
+
+  isHeartbeatPending = true;
+  lastHeartbeatSent = now;
+
+  try {
+    const tokenType = Cookies.get("tokenType") || "Bearer";
+    await axios.post(
+      `${BASE_URL}/api/user-activity/heartbeat`,
+      {},
+      {
+        timeout: 5000,
+        headers: {
+          Authorization: `${tokenType} ${accessToken}`,
+        },
+      }
+    );
+  } catch (err) {
+    // Fail silently so as not to interrupt user
+  } finally {
+    isHeartbeatPending = false;
+  }
+};
+
 // ======================================================
 // USER ACTIVITY EVENTS & MULTI-TAB SYNC
 // ======================================================
@@ -200,6 +241,11 @@ const handleUserActivity = () => {
 
   activityThrottle = true;
   resetInactivityTimer();
+
+  // Send heartbeat if 60 seconds have passed since last heartbeat
+  if (Date.now() - lastHeartbeatSent >= 60000) {
+    sendHeartbeat();
+  }
 
   setTimeout(() => {
     activityThrottle = false;
@@ -235,8 +281,21 @@ window.addEventListener("storage", (e) => {
   }
 });
 
-// Initialize timer on load
+// Initialize timer and send presence heartbeat on load
 initializeInactivityTimer();
+sendHeartbeat();
+
+// Periodic heartbeat every 60 seconds while window is visible and active
+if (typeof window !== "undefined") {
+  setInterval(() => {
+    if (typeof document !== "undefined" && document.visibilityState === "visible") {
+      const lastActivity = Number(localStorage.getItem(LAST_ACTIVITY_KEY) || 0);
+      if (lastActivity && Date.now() - lastActivity < INACTIVITY_LIMIT) {
+        sendHeartbeat();
+      }
+    }
+  }, 60000);
+}
 
 // ======================================================
 // REQUEST INTERCEPTOR

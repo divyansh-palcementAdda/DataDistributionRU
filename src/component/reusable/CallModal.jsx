@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
 import { changeLeadStatus } from '../../Services/lead/leadService';
 import { cancelFollowup } from '../../Services/followUp/followService';
+import ConfirmModal from './ConfirmModal';
 
 const CallModal = ({
     isOpen,
@@ -30,11 +31,17 @@ const CallModal = ({
     const [followupActionCompleted, setFollowupActionCompleted] = useState(null);
     const [phoneCopied, setPhoneCopied] = useState(false);
 
+    // Confirmation modal states
+    const [notConnectedConfirmModal, setNotConnectedConfirmModal] = useState(false);
+    const [badLeadConfirmModal, setBadLeadConfirmModal] = useState(false);
+
     const handleClose = useCallback(() => {
         if (isSubmitting) return;
         setFollowupActionCompleted(null);
         setActiveAction(null);
         setOverrideState(null);
+        setNotConnectedConfirmModal(false);
+        setBadLeadConfirmModal(false);
         onClose();
     }, [isSubmitting, onClose]);
 
@@ -408,33 +415,53 @@ const CallModal = ({
                 label: 'Not Connected',
                 badge: '2nd Attempt',
                 actionId: 'NOT_CONNECTED_2',
-                onClick: handleMarkAsNotConnected2
+                onClick: () => setNotConnectedConfirmModal(true)
             };
         } else if (currentStatusCode === 'NOT_CONNECTED_2') {
             return {
                 label: 'Not Connected',
                 badge: '3rd Attempt',
                 actionId: 'NOT_CONNECTED_3',
-                onClick: handleMarkAsNotConnected3
+                onClick: () => setNotConnectedConfirmModal(true)
             };
         } else if (currentStatusCode === 'NOT_CONNECTED_3') {
             return {
                 label: 'Finally Not Connected',
                 badge: 'Final Attempt',
                 actionId: 'FINALLY_NOT_CONNECTED',
-                onClick: handleFinallyNotConnected
+                onClick: () => setNotConnectedConfirmModal(true)
             };
         } else {
             return {
                 label: 'Not Connected',
                 badge: '1st Attempt',
                 actionId: 'NOT_CONNECTED_1',
-                onClick: handleMarkAsNotConnected
+                onClick: () => setNotConnectedConfirmModal(true)
             };
         }
     };
 
     const notConnectedConfig = getNotConnectedConfig();
+
+    // Confirmation handlers
+    const handleConfirmNotConnected = async () => {
+        setNotConnectedConfirmModal(false);
+        // Close the main modal after the action completes (handled by existing handlers)
+        if (currentStatusCode === 'NOT_CONNECTED_1') {
+            await handleMarkAsNotConnected2();
+        } else if (currentStatusCode === 'NOT_CONNECTED_2') {
+            await handleMarkAsNotConnected3();
+        } else if (currentStatusCode === 'NOT_CONNECTED_3') {
+            await handleFinallyNotConnected();
+        } else {
+            await handleMarkAsNotConnected();
+        }
+    };
+
+    const handleConfirmBadLead = async () => {
+        setBadLeadConfirmModal(false);
+        await handleBad();
+    };
 
     return (
         <div
@@ -753,7 +780,7 @@ const CallModal = ({
                                             </span>
                                             <button
                                                 type="button"
-                                                onClick={handleBad}
+                                                onClick={() => setBadLeadConfirmModal(true)}
                                                 disabled={isSubmitting}
                                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
                                             >
@@ -835,7 +862,7 @@ const CallModal = ({
                                             </span>
                                             <button
                                                 type="button"
-                                                onClick={handleBad}
+                                                onClick={() => setBadLeadConfirmModal(true)}
                                                 disabled={isSubmitting}
                                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 border border-slate-300 transition-colors disabled:opacity-50 disabled:pointer-events-none cursor-pointer"
                                             >
@@ -992,6 +1019,32 @@ const CallModal = ({
                     </button>
                 </div>
             </div>
+
+            {/* Not Connected Confirmation Modal */}
+            <ConfirmModal
+                isOpen={notConnectedConfirmModal}
+                onClose={() => setNotConnectedConfirmModal(false)}
+                onConfirm={handleConfirmNotConnected}
+                title={notConnectedConfig.label === 'Finally Not Connected' ? 'Confirm Finally Not Connected' : 'Confirm Not Connected'}
+                message={`Are you sure you want to mark this lead as ${notConnectedConfig.label.toLowerCase()}?`}
+                confirmText="Confirm"
+                cancelText="Cancel"
+                isLoading={isSubmitting}
+                variant="warning"
+            />
+
+            {/* Bad Lead Confirmation Modal */}
+            <ConfirmModal
+                isOpen={badLeadConfirmModal}
+                onClose={() => setBadLeadConfirmModal(false)}
+                onConfirm={handleConfirmBadLead}
+                title="Confirm Mark as Bad Lead"
+                message="Are you sure you want to mark this lead as Bad / Invalid Data?"
+                confirmText="Confirm"
+                cancelText="Cancel"
+                isLoading={isSubmitting}
+                variant="danger"
+            />
         </div>
     );
 };

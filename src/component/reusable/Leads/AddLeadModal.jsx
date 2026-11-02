@@ -852,7 +852,13 @@ const AddLeadModal = () => {
         response = await createLead(payload);
       }
       if (response?.status === 200 || response?.status === 201) {
-        showToast(editLeadData ? 'Lead updated successfully!' : 'Lead added successfully!');
+        const leadData = response?.data?.data;
+        const isMatched = Boolean(leadData?.isExistingLeadMatched || leadData?.creationOutcome === 'MATCHED' || (!editLeadData && response?.status === 200));
+        let successMsg = editLeadData ? 'Lead updated successfully!' : 'Lead added successfully!';
+        if (!editLeadData && isMatched) {
+          successMsg = response?.data?.message || `Existing lead matched (${leadData?.leadCode || ''}). Information and interests updated.`;
+        }
+        showToast(successMsg, 'success');
         resetForm();
         closeAddLeadModal();
         triggerLeadRefresh(); // 🔄 Leads page ko refresh signal bhejo

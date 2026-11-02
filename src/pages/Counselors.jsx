@@ -60,6 +60,52 @@ const Counselors = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [workingFilter, setWorkingFilter] = useState('');
 
+  /* ── Date Filter ── */
+  const [dropdownPreset, setDropdownPreset] = useState('TODAY');
+  const [appliedPeriod, setAppliedPeriod] = useState('TODAY');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
+  const [appliedStartDate, setAppliedStartDate] = useState('');
+  const [appliedEndDate, setAppliedEndDate] = useState('');
+
+  const handlePresetChange = (newPreset) => {
+    setDropdownPreset(newPreset);
+    if (newPreset !== 'CUSTOM') {
+      setAppliedPeriod(newPreset);
+      setCustomStartDate('');
+      setCustomEndDate('');
+      setAppliedStartDate('');
+      setAppliedEndDate('');
+      setPage(0);
+    }
+    // Note: If 'CUSTOM' is chosen, do NOT trigger API or wipe table until user fills dates and clicks Apply!
+  };
+
+  const handleApplyCustomDate = () => {
+    if (!customStartDate || !customEndDate) {
+      showToast('Please select both start date and end date', 'error');
+      return;
+    }
+    if (customStartDate > customEndDate) {
+      showToast('Start date cannot be after end date', 'error');
+      return;
+    }
+    setAppliedStartDate(customStartDate);
+    setAppliedEndDate(customEndDate);
+    setAppliedPeriod('CUSTOM');
+    setPage(0);
+  };
+
+  const handleResetDate = () => {
+    setDropdownPreset('TODAY');
+    setAppliedPeriod('TODAY');
+    setCustomStartDate('');
+    setCustomEndDate('');
+    setAppliedStartDate('');
+    setAppliedEndDate('');
+    setPage(0);
+  };
+
   /* ── Modal state ── */
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
 
@@ -107,6 +153,9 @@ const Counselors = () => {
           search,
           status: statusFilter,
           currentlyWorking: workingFilter !== '' ? workingFilter === 'true' : undefined,
+          period: appliedPeriod,
+          startDate: appliedPeriod === 'CUSTOM' ? appliedStartDate : undefined,
+          endDate: appliedPeriod === 'CUSTOM' ? appliedEndDate : undefined,
         });
         const payload = res?.data?.data || res?.data || {};
         const content = Array.isArray(payload.content) ? payload.content : (Array.isArray(payload) ? payload : []);
@@ -119,7 +168,7 @@ const Counselors = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, size, sortBy, sortDirection, search, statusFilter, workingFilter, showToast, lowDataMode, usersNotLoggedInMode, followupNotLoggedIn11amMode]);
+  }, [page, size, sortBy, sortDirection, search, statusFilter, workingFilter, appliedPeriod, appliedStartDate, appliedEndDate, showToast, lowDataMode, usersNotLoggedInMode, followupNotLoggedIn11amMode]);
 
   useEffect(() => {
     fetchData();
@@ -160,6 +209,9 @@ const Counselors = () => {
           search,
           status: statusFilter,
           currentlyWorking: workingFilter !== '' ? workingFilter === 'true' : undefined,
+          period: appliedPeriod,
+          startDate: appliedPeriod === 'CUSTOM' ? appliedStartDate : undefined,
+          endDate: appliedPeriod === 'CUSTOM' ? appliedEndDate : undefined,
         });
       }
       
@@ -215,7 +267,7 @@ const Counselors = () => {
             'Total Availed': row.totalAvailedData ?? 0,
             'RAW': row.rawDataCount ?? 0,
             'Registered': row.registeredDataCount ?? 0,
-            "Today's Followups": row.todayFollowupsCount ?? 0,
+            [appliedPeriod === 'TODAY' ? "Today's Followups" : appliedPeriod === 'YESTERDAY' ? "Yesterday's Followups" : "Followups"]: row.todayFollowupsCount ?? 0,
             'Scheduled': row.todayFollowupsScheduled ?? 0,
             'Missed': row.todayMissedFollowups ?? 0,
             'Upcoming': row.todayUpcomingFollowups ?? 0,
@@ -527,14 +579,37 @@ const Counselors = () => {
           const name = row.userName || row.name || row.username || 'Unknown User';
           const color = getColor(name);
           const initials = getInitials(name);
+          const isOnline = Boolean(row.currentlyWorking);
           return (
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs flex-shrink-0"
-                style={{ backgroundColor: color }}>
-                {initials}
+              <div style={{ position: 'relative', display: 'inline-block', flexShrink: 0 }}>
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-xs"
+                  style={{ backgroundColor: color }}>
+                  {initials}
+                </div>
+                <span
+                  style={{
+                    position: 'absolute',
+                    bottom: '-1px',
+                    right: '-1px',
+                    width: '10px',
+                    height: '10px',
+                    borderRadius: '50%',
+                    backgroundColor: isOnline ? '#16a34a' : '#9ca3af',
+                    border: '2px solid #ffffff',
+                  }}
+                  title={isOnline ? 'Online' : 'Offline'}
+                />
               </div>
               <div style={{ minWidth: '120px' }}>
-                <div className="font-semibold text-gray-900 text-sm">{name}</div>
+                <div className="font-semibold text-gray-900 text-sm flex items-center gap-1.5">
+                  {name}
+                  {isOnline && (
+                    <span style={{ fontSize: '10px', fontWeight: 600, color: '#16a34a', background: '#dcfce7', padding: '1px 6px', borderRadius: '8px' }}>
+                      Online
+                    </span>
+                  )}
+                </div>
                 <div className="text-xs text-gray-400">{row.email || '—'}</div>
               </div>
             </div>
@@ -581,7 +656,7 @@ const Counselors = () => {
       },
       {
         key: 'todayFollowupsCount',
-        header: <SortHeader col="todayFollowupsCount" label="Today's Followups" />,
+        header: <SortHeader col="todayFollowupsCount" label={appliedPeriod === 'TODAY' ? "Today's Followups" : appliedPeriod === 'YESTERDAY' ? "Yesterday's Followups" : "Followups"} />,
         render: (val) => <span style={badge('#fef3c7', '#b45309')}>{val ?? 0}</span>,
       },
       {
@@ -633,7 +708,7 @@ const Counselors = () => {
         header: <SortHeader col="currentlyWorking" label="Currently Working" />,
         render: (val) => (
           <span style={badge(val ? '#dcfce7' : '#f3f4f6', val ? '#15803d' : '#6b7280')}>
-            {val ? '● Working' : '○ Offline'}
+            {val ? '● Online' : '○ Offline'}
           </span>
         ),
       },
@@ -829,6 +904,77 @@ const Counselors = () => {
               <option value="ACTIVE">Active</option>
               <option value="INACTIVE">Inactive</option>
             </select>
+
+            {/* Date Range Selector (Clean UI without emojis, properly sized) */}
+            <select
+              className="form-control"
+              style={{ width: 'auto', minWidth: '160px', fontSize: '13px' }}
+              value={dropdownPreset}
+              onChange={(e) => handlePresetChange(e.target.value)}
+            >
+              <option value="TODAY">Today</option>
+              <option value="YESTERDAY">Yesterday</option>
+              <option value="THIS_WEEK">This Week</option>
+              <option value="THIS_MONTH">This Month</option>
+              <option value="THIS_YEAR">This Year</option>
+              <option value="CUSTOM">Custom Date Range</option>
+            </select>
+
+            {/* Custom Range Picker */}
+            {dropdownPreset === 'CUSTOM' && (
+              <div className="flex items-center gap-2 flex-wrap" style={{ background: '#f8fafc', padding: '3px 10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 500 }}>From:</span>
+                <input
+                  type="date"
+                  className="form-control"
+                  style={{ width: '135px', fontSize: '12px', padding: '2px 8px', height: '30px' }}
+                  value={customStartDate}
+                  onChange={(e) => setCustomStartDate(e.target.value)}
+                />
+                <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 500 }}>To:</span>
+                <input
+                  type="date"
+                  className="form-control"
+                  style={{ width: '135px', fontSize: '12px', padding: '2px 8px', height: '30px' }}
+                  value={customEndDate}
+                  onChange={(e) => setCustomEndDate(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  style={{ padding: '0 12px', fontSize: '12px', height: '30px', display: 'inline-flex', alignItems: 'center' }}
+                  onClick={handleApplyCustomDate}
+                >
+                  Apply
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  style={{ padding: '0 10px', fontSize: '12px', height: '30px', display: 'inline-flex', alignItems: 'center', background: '#e2e8f0', color: '#334155', border: 'none' }}
+                  onClick={handleResetDate}
+                >
+                  Reset
+                </button>
+              </div>
+            )}
+
+            {/* Active Date Range Indicator Badge */}
+            {appliedPeriod === 'CUSTOM' && appliedStartDate && appliedEndDate && (
+              <span style={{
+                fontSize: '11px',
+                fontWeight: 600,
+                background: '#e0e7ff',
+                color: '#3730a3',
+                padding: '4px 10px',
+                borderRadius: '12px',
+                border: '1px solid #c7d2fe',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}>
+                Filtered: {appliedStartDate} → {appliedEndDate}
+              </span>
+            )}
           </>
         )}
       </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
-import { changeLeadStatus } from '../../Services/lead/leadService';
+import { changeLeadStatus, updateLeadRemarks } from '../../Services/lead/leadService';
 import { cancelFollowup } from '../../Services/followUp/followService';
 import ConfirmModal from './ConfirmModal';
 
@@ -34,6 +34,8 @@ const CallModal = ({
     // Confirmation modal states
     const [notConnectedConfirmModal, setNotConnectedConfirmModal] = useState(false);
     const [badLeadConfirmModal, setBadLeadConfirmModal] = useState(false);
+    const [notConnectedRemark, setNotConnectedRemark] = useState('');
+    const [notConnectedRemarkError, setNotConnectedRemarkError] = useState('');
 
     const handleClose = useCallback(() => {
         if (isSubmitting) return;
@@ -42,6 +44,8 @@ const CallModal = ({
         setOverrideState(null);
         setNotConnectedConfirmModal(false);
         setBadLeadConfirmModal(false);
+        setNotConnectedRemark('');
+        setNotConnectedRemarkError('');
         onClose();
     }, [isSubmitting, onClose]);
 
@@ -445,8 +449,27 @@ const CallModal = ({
 
     // Confirmation handlers
     const handleConfirmNotConnected = async () => {
+        // Validate remark
+        if (!notConnectedRemark || !notConnectedRemark.trim()) {
+            setNotConnectedRemarkError('Please enter a remark before confirming.');
+            return;
+        }
+        setNotConnectedRemarkError('');
         setNotConnectedConfirmModal(false);
-        // Close the main modal after the action completes (handled by existing handlers)
+
+        const leadId = studentData?.id;
+        // Save remark silently (non-blocking — proceed even if remark save fails)
+        if (leadId) {
+            try {
+                await updateLeadRemarks(leadId, notConnectedRemark.trim());
+            } catch (e) {
+                console.warn('Could not save remark:', e);
+            }
+        }
+
+        // Reset remark state
+        setNotConnectedRemark('');
+
         if (currentStatusCode === 'NOT_CONNECTED_1') {
             await handleMarkAsNotConnected2();
         } else if (currentStatusCode === 'NOT_CONNECTED_2') {
@@ -1023,7 +1046,11 @@ const CallModal = ({
             {/* Not Connected Confirmation Modal */}
             <ConfirmModal
                 isOpen={notConnectedConfirmModal}
-                onClose={() => setNotConnectedConfirmModal(false)}
+                onClose={() => {
+                    setNotConnectedConfirmModal(false);
+                    setNotConnectedRemark('');
+                    setNotConnectedRemarkError('');
+                }}
                 onConfirm={handleConfirmNotConnected}
                 title={notConnectedConfig.label === 'Finally Not Connected' ? 'Confirm Finally Not Connected' : 'Confirm Not Connected'}
                 message={`Are you sure you want to mark this lead as ${notConnectedConfig.label.toLowerCase()}?`}
@@ -1031,6 +1058,15 @@ const CallModal = ({
                 cancelText="Cancel"
                 isLoading={isSubmitting}
                 variant="warning"
+                showRemark={true}
+                remarkValue={notConnectedRemark}
+                onRemarkChange={(val) => {
+                    setNotConnectedRemark(val);
+                    if (notConnectedRemarkError) setNotConnectedRemarkError('');
+                }}
+                remarkPlaceholder="Enter reason / remark for not connected..."
+                remarkLabel="Remark"
+                remarkError={notConnectedRemarkError}
             />
 
             {/* Bad Lead Confirmation Modal */}

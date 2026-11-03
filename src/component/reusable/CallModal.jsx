@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
-import { changeLeadStatus, updateLeadRemarks } from '../../Services/lead/leadService';
+import { changeLeadStatus } from '../../Services/lead/leadService';
 import { cancelFollowup } from '../../Services/followUp/followService';
 import ConfirmModal from './ConfirmModal';
 
@@ -457,27 +457,45 @@ const CallModal = ({
         setNotConnectedRemarkError('');
         setNotConnectedConfirmModal(false);
 
-        const leadId = studentData?.id;
-        // Save remark silently (non-blocking — proceed even if remark save fails)
-        if (leadId) {
-            try {
-                await updateLeadRemarks(leadId, notConnectedRemark.trim());
-            } catch (e) {
-                console.warn('Could not save remark:', e);
-            }
-        }
-
-        // Reset remark state
+        const remark = notConnectedRemark.trim();
         setNotConnectedRemark('');
 
+        // Determine next status code based on current status
+        let nextStatusCode;
+        let toastMessage;
         if (currentStatusCode === 'NOT_CONNECTED_1') {
-            await handleMarkAsNotConnected2();
+            nextStatusCode = 'NOT_CONNECTED_2';
+            toastMessage = 'Marked as Not Connected (2nd Attempt)';
         } else if (currentStatusCode === 'NOT_CONNECTED_2') {
-            await handleMarkAsNotConnected3();
+            nextStatusCode = 'NOT_CONNECTED_3';
+            toastMessage = 'Marked as Not Connected (3rd Attempt)';
         } else if (currentStatusCode === 'NOT_CONNECTED_3') {
-            await handleFinallyNotConnected();
+            nextStatusCode = 'FINALLY_NOT_CONNECTED';
+            toastMessage = 'Marked as Finally Not Connected';
         } else {
-            await handleMarkAsNotConnected();
+            nextStatusCode = 'NOT_CONNECTED_1';
+            toastMessage = 'Marked as Not Connected (1st Attempt)';
+        }
+
+        setIsSubmitting(true);
+        setActiveAction(nextStatusCode);
+        try {
+            await changeLeadStatus(studentData?.id, {
+                newStatusId: studentData?.currentStatus?.id,
+                statusCode: nextStatusCode,
+                feedback: remark,
+            });
+            setOverrideState('not_connected');
+            toast.info(toastMessage);
+            if (onStatusChanged) onStatusChanged();
+            if (onComplete) onComplete();
+            if (onDataRefresh) onDataRefresh();
+        } catch (error) {
+            console.error('Error marking as not connected:', error);
+            toast.error(error?.response?.data?.message || 'Failed to update status');
+        } finally {
+            setIsSubmitting(false);
+            setActiveAction(null);
         }
     };
 

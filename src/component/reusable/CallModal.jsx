@@ -36,6 +36,8 @@ const CallModal = ({
     const [badLeadConfirmModal, setBadLeadConfirmModal] = useState(false);
     const [notConnectedRemark, setNotConnectedRemark] = useState('');
     const [notConnectedRemarkError, setNotConnectedRemarkError] = useState('');
+    const [badLeadRemark, setBadLeadRemark] = useState('');
+    const [badLeadRemarkError, setBadLeadRemarkError] = useState('');
 
     const handleClose = useCallback(() => {
         if (isSubmitting) return;
@@ -46,6 +48,8 @@ const CallModal = ({
         setBadLeadConfirmModal(false);
         setNotConnectedRemark('');
         setNotConnectedRemarkError('');
+        setBadLeadRemark('');
+        setBadLeadRemarkError('');
         onClose();
     }, [isSubmitting, onClose]);
 
@@ -500,8 +504,35 @@ const CallModal = ({
     };
 
     const handleConfirmBadLead = async () => {
+        if (!badLeadRemark || !badLeadRemark.trim()) {
+            setBadLeadRemarkError('Please enter a remark before confirming.');
+            return;
+        }
+        setBadLeadRemarkError('');
         setBadLeadConfirmModal(false);
-        await handleBad();
+
+        const remark = badLeadRemark.trim();
+        setBadLeadRemark('');
+
+        setIsSubmitting(true);
+        setActiveAction('BAD');
+        try {
+            await changeLeadStatus(studentData?.id, {
+                newStatusId: studentData?.currentStatus?.id,
+                statusCode: 'BAD',
+                feedback: remark,
+            });
+            toast.warning('Lead marked as Bad / Invalid Data');
+            if (onStatusChanged) onStatusChanged();
+            if (onComplete) onComplete();
+            if (onDataRefresh) onDataRefresh();
+        } catch (error) {
+            console.error('Error changing status to Bad:', error);
+            toast.error(error?.response?.data?.message || 'Failed to update status');
+        } finally {
+            setIsSubmitting(false);
+            setActiveAction(null);
+        }
     };
 
     return (
@@ -1090,7 +1121,11 @@ const CallModal = ({
             {/* Bad Lead Confirmation Modal */}
             <ConfirmModal
                 isOpen={badLeadConfirmModal}
-                onClose={() => setBadLeadConfirmModal(false)}
+                onClose={() => {
+                    setBadLeadConfirmModal(false);
+                    setBadLeadRemark('');
+                    setBadLeadRemarkError('');
+                }}
                 onConfirm={handleConfirmBadLead}
                 title="Confirm Mark as Bad Lead"
                 message="Are you sure you want to mark this lead as Bad / Invalid Data?"
@@ -1098,6 +1133,15 @@ const CallModal = ({
                 cancelText="Cancel"
                 isLoading={isSubmitting}
                 variant="danger"
+                showRemark={true}
+                remarkValue={badLeadRemark}
+                onRemarkChange={(val) => {
+                    setBadLeadRemark(val);
+                    if (badLeadRemarkError) setBadLeadRemarkError('');
+                }}
+                remarkPlaceholder="Enter reason / remark for marking as bad lead..."
+                remarkLabel="Remark"
+                remarkError={badLeadRemarkError}
             />
         </div>
     );

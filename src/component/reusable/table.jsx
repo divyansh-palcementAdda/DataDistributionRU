@@ -24,6 +24,7 @@ const ReusableTable = ({
     sortDirection,
     onSort,
     headerClassName = "bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-600 text-white shadow-xs border-b border-indigo-800",
+    getRowClassName,
 }) => {
     const [clientPage, setClientPage] = useState(1);
     const [clientRows, setClientRows] = useState(10);
@@ -172,7 +173,7 @@ const ReusableTable = ({
                             currentData.map((row, index) => (
                                 <tr
                                     key={index}
-                                    className="border-b border-slate-100 hover:bg-slate-50/70 transition-colors duration-150 group"
+                                    className={`border-b border-slate-100 hover:bg-slate-50/70 transition-colors duration-150 group${getRowClassName ? ` ${getRowClassName(row, index)}` : ''}`}
                                 >
                                     {columns.map((column) => (
                                         <td

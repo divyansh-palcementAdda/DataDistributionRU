@@ -421,6 +421,13 @@ const Leads = () => {
     setSearchParams({}, { replace: true });
   };
 
+  // Navigate to lead detail and remember which lead was viewed for row highlighting on return
+  const navigateToLeadDetail = (leadId) => {
+    sessionStorage.setItem('lastViewedLeadId', String(leadId));
+    setHighlightedLeadId(null); // clear old highlight immediately
+    navTo(`lead-detail/${leadId}`);
+  };
+
   const fetchLeads = async () => {
     const currentRequestId = ++requestIdRef.current;
     setLoading(true);
@@ -485,6 +492,16 @@ const Leads = () => {
   const [isAllotModalOpen, setIsAllotModalOpen] = useState(false);
   const [selectedLeadForAllot, setSelectedLeadForAllot] = useState(null);
   const [usersData, setUsersData] = useState([]);
+
+  // ── Lead Highlight: restore the last-viewed lead ID when returning from detail ──
+  const [highlightedLeadId, setHighlightedLeadId] = useState(() => {
+    const stored = sessionStorage.getItem('lastViewedLeadId');
+    if (stored) {
+      sessionStorage.removeItem('lastViewedLeadId');
+      return Number(stored) || stored;
+    }
+    return null;
+  });
   
 
   // Remark system functions commented out
@@ -690,7 +707,7 @@ const Leads = () => {
               } catch (error) {
                 console.error('Error:', error);
               }
-              navTo(`lead-detail/${leadId}`);
+              navigateToLeadDetail(leadId);
             },
             showToast
           ),
@@ -942,6 +959,11 @@ const Leads = () => {
             gap: 10px;
           }
         }
+        .lead-highlight-row {
+          background-color: #eef2ff !important;
+          outline: 2px solid #6366f1;
+          outline-offset: -1px;
+        }
       `}</style>
 
       {/* ── Category / Course Type breakdown ── */}
@@ -1148,7 +1170,7 @@ const Leads = () => {
                           console.error('Error:', error);
                           // Still navigate even if avail API fails
                         }
-                        navTo(`lead-detail/${leadId}`);
+                        navigateToLeadDetail(leadId);
                       }}
                     >
                       <FiEye size={17} />
@@ -1260,6 +1282,15 @@ const Leads = () => {
               );
             }}
             emptyMessage={loading ? "Loading..." : "No leads match your filters."}
+            getRowClassName={(row) => {
+              const rowId = typeof row.id === 'object' ? row.id?.id : row.id;
+              const rowLeadId = typeof row.leadId === 'object' ? row.leadId?.id : row.leadId;
+              const id = rowId || rowLeadId;
+              if (highlightedLeadId && String(id) === String(highlightedLeadId)) {
+                return 'lead-highlight-row';
+              }
+              return '';
+            }}
           />
       </div>
 

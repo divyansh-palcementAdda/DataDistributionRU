@@ -87,6 +87,16 @@ const FollowUps = () => {
 
   const [dashboardStats, setDashboardStats] = useState(null);
 
+  // ── Lead Highlight: restore the last-viewed lead ID when returning from detail ──
+  const [highlightedLeadId, setHighlightedLeadId] = useState(() => {
+    const stored = sessionStorage.getItem('lastViewedFollowUpLeadId');
+    if (stored) {
+      sessionStorage.removeItem('lastViewedFollowUpLeadId');
+      return Number(stored) || stored;
+    }
+    return null;
+  });
+
   const debounceRef = useRef(null);
 
   // Sync activeTab if dashboard navigates here with { state: { activeTab: 'TODAY' } }
@@ -221,6 +231,8 @@ const FollowUps = () => {
       }
     }
     if (leadId) {
+      sessionStorage.setItem('lastViewedFollowUpLeadId', String(leadId));
+      setHighlightedLeadId(null);
       navTo(`lead-detail/${leadId}`);
     }
   };
@@ -939,6 +951,13 @@ const FollowUps = () => {
             sortBy={sortBy}
             sortDirection={sortDirection}
             onSort={handleSort}
+            getRowClassName={(row) => {
+              const leadId = row.leadId || row.lead?.id || row.id;
+              if (highlightedLeadId && String(leadId) === String(highlightedLeadId)) {
+                return 'followup-highlight-row';
+              }
+              return '';
+            }}
           />
         )}
       </div>
@@ -1039,6 +1058,14 @@ const FollowUps = () => {
           </div>
         </div>
       )}
+
+      <style>{`
+        .followup-highlight-row {
+          background-color: #eef2ff !important;
+          outline: 2px solid #6366f1;
+          outline-offset: -1px;
+        }
+      `}</style>
     </div>
   );
 };

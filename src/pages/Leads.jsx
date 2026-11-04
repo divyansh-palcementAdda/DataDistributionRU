@@ -144,7 +144,7 @@ const Leads = () => {
   // Table pagination & sorting
   const [leadsData, setLeadsData] = useState([]);
   const [page, setPage] = useState(0);
-  const [size, setSize] = useState(10);
+  const [size, setSize] = useState(50);
   const [totalElements, setTotalElements] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(false);

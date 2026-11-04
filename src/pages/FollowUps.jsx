@@ -66,7 +66,7 @@ const FollowUps = () => {
   const [totalPages, setTotalPages] = useState(0);
 
   const [page, setPage] = useState(0);
-  const [size, setSize] = useState(10);
+  const [size, setSize] = useState(50);
 
   const [sortBy, setSortBy] = useState("followUpDate");
   const [sortDirection, setSortDirection] = useState("asc");

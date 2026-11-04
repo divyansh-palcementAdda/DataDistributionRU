@@ -1061,8 +1061,8 @@ const FollowUps = () => {
 
       <style>{`
         .followup-highlight-row {
-          background-color: #eef2ff !important;
-          outline: 2px solid #6366f1;
+          background-color: #a5b4fc !important;
+          outline: 2px solid #4338ca;
           outline-offset: -1px;
         }
       `}</style>

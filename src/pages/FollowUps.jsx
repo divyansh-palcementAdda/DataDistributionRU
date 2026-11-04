@@ -69,7 +69,7 @@ const FollowUps = () => {
   const [size, setSize] = useState(50);
 
   const [sortBy, setSortBy] = useState("followUpDate");
-  const [sortDirection, setSortDirection] = useState("asc");
+  const [sortDirection, setSortDirection] = useState("desc");
 
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");

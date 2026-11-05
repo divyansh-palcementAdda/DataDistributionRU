@@ -157,11 +157,16 @@ const Counselors = () => {
           startDate: appliedPeriod === 'CUSTOM' ? appliedStartDate : undefined,
           endDate: appliedPeriod === 'CUSTOM' ? appliedEndDate : undefined,
         });
-        const payload = res?.data?.data || res?.data || {};
-        const content = Array.isArray(payload.content) ? payload.content : (Array.isArray(payload) ? payload : []);
-        setData(content);
-        setTotalElements(payload.totalElements ?? content.length ?? 0);
-        setTotalPages(payload.totalPages ?? 0);
+        if (res instanceof Error || (res?.response && res.response.status >= 400)) {
+          const msg = res?.response?.data?.message || 'Error fetching user performance data';
+          showToast(msg, 'error');
+        } else {
+          const payload = res?.data?.data || res?.data || {};
+          const content = Array.isArray(payload.content) ? payload.content : (Array.isArray(payload) ? payload : []);
+          setData(content);
+          setTotalElements(payload.totalElements ?? content.length ?? 0);
+          setTotalPages(payload.totalPages ?? 0);
+        }
       }
     } catch (err) {
       showToast('Error fetching user performance data', 'error');
@@ -602,13 +607,27 @@ const Counselors = () => {
                 />
               </div>
               <div style={{ minWidth: '120px' }}>
-                <div className="font-semibold text-gray-900 text-sm flex items-center gap-1.5">
+                <div className="font-semibold text-gray-900 text-sm flex items-center gap-2">
                   {name}
-                  {isOnline && (
-                    <span style={{ fontSize: '10px', fontWeight: 600, color: '#16a34a', background: '#dcfce7', padding: '1px 6px', borderRadius: '8px' }}>
-                      Online
-                    </span>
-                  )}
+                  <span style={{
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    color: isOnline ? '#15803d' : '#6b7280',
+                    background: isOnline ? '#dcfce7' : '#f3f4f6',
+                    padding: '1px 8px',
+                    borderRadius: '12px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                  }}>
+                    <span style={{
+                      width: '6px',
+                      height: '6px',
+                      borderRadius: '50%',
+                      backgroundColor: isOnline ? '#16a34a' : '#9ca3af',
+                    }} />
+                    {isOnline ? 'Online' : 'Offline'}
+                  </span>
                 </div>
                 <div className="text-xs text-gray-400">{row.email || '—'}</div>
               </div>
@@ -908,7 +927,7 @@ const Counselors = () => {
             {/* Date Range Selector (Clean UI without emojis, properly sized) */}
             <select
               className="form-control"
-              style={{ width: 'auto', minWidth: '160px', fontSize: '13px' }}
+              style={{ width: 'auto', minWidth: '175px', fontSize: '13px' }}
               value={dropdownPreset}
               onChange={(e) => handlePresetChange(e.target.value)}
             >
@@ -922,27 +941,36 @@ const Counselors = () => {
 
             {/* Custom Range Picker */}
             {dropdownPreset === 'CUSTOM' && (
-              <div className="flex items-center gap-2 flex-wrap" style={{ background: '#f8fafc', padding: '3px 10px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
-                <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 500 }}>From:</span>
+              <div
+                className="flex items-center gap-2 flex-wrap"
+                style={{
+                  background: '#f8fafc',
+                  padding: '4px 10px',
+                  borderRadius: '6px',
+                  border: '1px solid #cbd5e1',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                }}
+              >
+                <span style={{ fontSize: '12px', color: '#475569', fontWeight: 600 }}>From:</span>
                 <input
                   type="date"
                   className="form-control"
-                  style={{ width: '135px', fontSize: '12px', padding: '2px 8px', height: '30px' }}
+                  style={{ width: '135px', fontSize: '12px', padding: '3px 8px', height: '32px' }}
                   value={customStartDate}
                   onChange={(e) => setCustomStartDate(e.target.value)}
                 />
-                <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 500 }}>To:</span>
+                <span style={{ fontSize: '12px', color: '#475569', fontWeight: 600 }}>To:</span>
                 <input
                   type="date"
                   className="form-control"
-                  style={{ width: '135px', fontSize: '12px', padding: '2px 8px', height: '30px' }}
+                  style={{ width: '135px', fontSize: '12px', padding: '3px 8px', height: '32px' }}
                   value={customEndDate}
                   onChange={(e) => setCustomEndDate(e.target.value)}
                 />
                 <button
                   type="button"
                   className="btn btn-primary btn-sm"
-                  style={{ padding: '0 12px', fontSize: '12px', height: '30px', display: 'inline-flex', alignItems: 'center' }}
+                  style={{ padding: '0 12px', fontSize: '12px', height: '32px', display: 'inline-flex', alignItems: 'center', fontWeight: 500 }}
                   onClick={handleApplyCustomDate}
                 >
                   Apply
@@ -950,7 +978,7 @@ const Counselors = () => {
                 <button
                   type="button"
                   className="btn btn-secondary btn-sm"
-                  style={{ padding: '0 10px', fontSize: '12px', height: '30px', display: 'inline-flex', alignItems: 'center', background: '#e2e8f0', color: '#334155', border: 'none' }}
+                  style={{ padding: '0 10px', fontSize: '12px', height: '32px', display: 'inline-flex', alignItems: 'center', background: '#e2e8f0', color: '#334155', border: 'none', fontWeight: 500 }}
                   onClick={handleResetDate}
                 >
                   Reset

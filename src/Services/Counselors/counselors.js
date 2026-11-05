@@ -34,22 +34,26 @@ export const getAllCounselors = async (params = {}) => {
 
 export const getUserPerformance = async (params = {}) => {
     try {
+        const queryParams = {
+            page: params.page ?? 0,
+            size: params.size ?? 10,
+            sortBy: params.sortBy || "userName",
+            sortDirection: params.sortDirection || "ASC",
+            period: params.period || "TODAY",
+        };
+        if (params.search) queryParams.search = params.search;
+        if (params.role) queryParams.role = params.role;
+        if (params.roles) queryParams.roles = params.roles;
+        if (params.departmentId) queryParams.departmentId = params.departmentId;
+        if (params.status) queryParams.status = params.status;
+        if (params.currentlyWorking !== undefined && params.currentlyWorking !== "") {
+            queryParams.currentlyWorking = params.currentlyWorking;
+        }
+        if (params.startDate) queryParams.startDate = params.startDate;
+        if (params.endDate) queryParams.endDate = params.endDate;
+
         const response = await axiosInstance.get(ApiRoutes.Counselors.getUserPerformance, {
-            params: {
-                page: params.page ?? 0,
-                size: params.size ?? 10,
-                sortBy: params.sortBy || "userName",
-                sortDirection: params.sortDirection || "ASC",
-                search: params.search || "",
-                role: params.role || "",
-                roles: params.roles || "",
-                departmentId: params.departmentId || "",
-                status: params.status || "",
-                currentlyWorking: params.currentlyWorking !== undefined ? params.currentlyWorking : "",
-                period: params.period || "TODAY",
-                startDate: params.startDate || "",
-                endDate: params.endDate || "",
-            },
+            params: queryParams,
         });
         return response;
     } catch (error) {

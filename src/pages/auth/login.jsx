@@ -40,8 +40,17 @@ const Login = () => {
         // Success
         setLoading(false);
         toast.success("Login successful!");
-        Cookies.set('accessToken', response.data.data.accessToken);
-        Cookies.set('refreshToken', response.data.data.refreshToken);
+        //ye yaha token change kiya for autotab login 
+        // Cookies.set('accessToken', response.data.data.accessToken);
+        // Cookies.set('refreshToken', response.data.data.refreshToken);
+        Cookies.set('accessToken', response.data.data.accessToken, { 
+  sameSite: 'lax', 
+  secure: false // Use true if you have HTTPS
+});
+Cookies.set('refreshToken', response.data.data.refreshToken, { 
+  sameSite: 'lax', 
+  secure: false
+});
 
 
         // Store role information
@@ -56,6 +65,9 @@ const Login = () => {
           role: response.data.data.role
         };
         localStorage.setItem('userInfo', JSON.stringify(userData));
+
+        // Notify app and notification context of login
+        window.dispatchEvent(new CustomEvent('authStateChanged'));
 
         // Fetch permissions using roleId
         if (roleId) {

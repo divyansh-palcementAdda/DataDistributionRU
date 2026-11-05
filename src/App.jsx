@@ -2,6 +2,8 @@ import { BrowserRouter } from "react-router-dom";
 import Allroutes from "./Allroutes";
 import { AppProvider, useAppContext } from "./AppContext";
 import { PermissionProvider } from "./PermissionContext";
+import { NotificationProvider } from "./context/NotificationContext";
+import NotificationToastContainer from "./component/reusable/NotificationToastContainer";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import AccessDeniedModal from "./component/reusable/AccessDeniedModal";
@@ -30,6 +32,7 @@ function AppContent() {
         onClose={closeAccessDeniedModal}
         onBackToDashboard={handleAccessDeniedBackToDashboard}
       />
+      <NotificationToastContainer />
       <ToastContainer 
         position="top-right" 
         autoClose={3000}
@@ -44,7 +47,9 @@ function App() {
     <PermissionProvider>
       <BrowserRouter>
         <AppProvider>
-          <AppContent />
+          <NotificationProvider>
+            <AppContent />
+          </NotificationProvider>
         </AppProvider>
       </BrowserRouter>
     </PermissionProvider>

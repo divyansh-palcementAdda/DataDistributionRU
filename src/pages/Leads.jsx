@@ -144,7 +144,7 @@ const Leads = () => {
   // Table pagination & sorting
   const [leadsData, setLeadsData] = useState([]);
   const [page, setPage] = useState(0);
-  const [size, setSize] = useState(10);
+  const [size, setSize] = useState(50);
   const [totalElements, setTotalElements] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -421,6 +421,13 @@ const Leads = () => {
     setSearchParams({}, { replace: true });
   };
 
+  // Navigate to lead detail and remember which lead was viewed for row highlighting on return
+  const navigateToLeadDetail = (leadId) => {
+    sessionStorage.setItem('lastViewedLeadId', String(leadId));
+    setHighlightedLeadId(null); // clear old highlight immediately
+    navTo(`lead-detail/${leadId}`);
+  };
+
   const fetchLeads = async () => {
     const currentRequestId = ++requestIdRef.current;
     setLoading(true);
@@ -477,14 +484,35 @@ const Leads = () => {
     fetchLeads();
   }, [page, size, sortBy, sortDirection, leadRefreshTrigger, filterRequestKey]);
 
-  // Remark system commented out
-  // const [isRemarkModalOpen, setIsRemarkModalOpen] = useState(false);
-  // const [selectedLeadForRemark, setSelectedLeadForRemark] = useState(null);
+  // Remark view modal state
+  const [isRemarkViewOpen, setIsRemarkViewOpen] = useState(false);
+  const [remarkViewText, setRemarkViewText] = useState('');
+
+  const openRemarkView = (remark) => {
+    setRemarkViewText(remark || '');
+    setIsRemarkViewOpen(true);
+  };
+
+  const closeRemarkView = () => {
+    setIsRemarkViewOpen(false);
+    setRemarkViewText('');
+  };
+
   const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isAllotModalOpen, setIsAllotModalOpen] = useState(false);
   const [selectedLeadForAllot, setSelectedLeadForAllot] = useState(null);
   const [usersData, setUsersData] = useState([]);
+
+  // ── Lead Highlight: restore the last-viewed lead ID when returning from detail ──
+  const [highlightedLeadId, setHighlightedLeadId] = useState(() => {
+    const stored = sessionStorage.getItem('lastViewedLeadId');
+    if (stored) {
+      sessionStorage.removeItem('lastViewedLeadId');
+      return Number(stored) || stored;
+    }
+    return null;
+  });
   
 
   // Remark system functions commented out
@@ -690,7 +718,7 @@ const Leads = () => {
               } catch (error) {
                 console.error('Error:', error);
               }
-              navTo(`lead-detail/${leadId}`);
+              navigateToLeadDetail(leadId);
             },
             showToast
           ),
@@ -786,6 +814,40 @@ const Leads = () => {
         render: (value, row) => renderFollowUpCell(row),
       });
     }
+
+    // Remarks (truncated to 10 words, click to view full)
+    cols.push({
+      key: 'remarks',
+      header: (
+        <span className="inline-flex items-center gap-1.5 font-bold text-white" style={{ color: '#ffffff' }}>
+          <span className="w-2 h-2 rounded-full bg-yellow-300 shadow-[0_0_6px_rgba(253,224,71,0.8)]"></span>
+          <span>Remarks</span>
+        </span>
+      ),
+      sortable: false,
+      render: (value, row) => {
+        const remark = row.remarks || value;
+        if (!remark) {
+          return <span className="text-slate-400 text-xs italic">—</span>;
+        }
+        const words = remark.trim().split(/\s+/);
+        const isTruncated = words.length > 10;
+        const preview = isTruncated ? words.slice(0, 10).join(' ') + '...' : remark;
+        return (
+          <button
+            type="button"
+            onClick={() => openRemarkView(remark)}
+            className="text-left text-xs text-slate-600 hover:text-indigo-700 max-w-[180px] bg-transparent border-none cursor-pointer p-0 leading-snug"
+            title={isTruncated ? 'Click to view full remark' : remark}
+          >
+            <span className="line-clamp-2">{preview}</span>
+            {isTruncated && (
+              <span className="text-indigo-500 font-semibold ml-1 hover:underline text-[11px]">view more</span>
+            )}
+          </button>
+        );
+      },
+    });
 
     // Lead Date (Created Date & Availed Status - 100% Non-PII)
     cols.push({
@@ -941,6 +1003,11 @@ const Leads = () => {
             grid-template-columns: 1fr;
             gap: 10px;
           }
+        }
+        .lead-highlight-row {
+          background-color: #a5b4fc !important;
+          outline: 2px solid #4338ca;
+          outline-offset: -1px;
         }
       `}</style>
 
@@ -1148,7 +1215,7 @@ const Leads = () => {
                           console.error('Error:', error);
                           // Still navigate even if avail API fails
                         }
-                        navTo(`lead-detail/${leadId}`);
+                        navigateToLeadDetail(leadId);
                       }}
                     >
                       <FiEye size={17} />
@@ -1260,9 +1327,58 @@ const Leads = () => {
               );
             }}
             emptyMessage={loading ? "Loading..." : "No leads match your filters."}
+            getRowClassName={(row) => {
+              const rowId = typeof row.id === 'object' ? row.id?.id : row.id;
+              const rowLeadId = typeof row.leadId === 'object' ? row.leadId?.id : row.leadId;
+              const id = rowId || rowLeadId;
+              if (highlightedLeadId && String(id) === String(highlightedLeadId)) {
+                return 'lead-highlight-row';
+              }
+              return '';
+            }}
           />
       </div>
 
+
+      {/* Remark View Modal */}
+      {isRemarkViewOpen && (
+        <div
+          className="fixed inset-0 z-100 flex items-center justify-center"
+          style={{ backgroundColor: 'rgba(0,0,0,0.45)' }}
+          onClick={closeRemarkView}
+        >
+          <div
+            className="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 bg-slate-50">
+              <h3 className="text-sm font-bold text-slate-800">Remark</h3>
+              <button
+                onClick={closeRemarkView}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 transition-colors bg-transparent border-none cursor-pointer"
+              >
+                <FiX size={16} />
+              </button>
+            </div>
+            {/* Body */}
+            <div className="px-5 py-4 max-h-72 overflow-y-auto">
+              <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
+                {remarkViewText}
+              </p>
+            </div>
+            {/* Footer */}
+            <div className="px-5 py-3 border-t border-slate-100 flex justify-end">
+              <button
+                onClick={closeRemarkView}
+                className="px-4 py-1.5 text-xs font-semibold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors border-none cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Lead Remark Modal - commented out */}
       {/* <LeadRemarkModal

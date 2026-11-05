@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppContext } from '../AppContext';
 import { logoutUser } from '../axiosInstance/axios';
-import Cookies from 'js-cookie';
+import NotificationBell from '../component/reusable/NotificationBell';
 
 const Header = () => {
-  const { toggleSidebar, toggleDarkMode, isSidebarOpen } = useAppContext();
+  const { toggleSidebar, isSidebarOpen } = useAppContext();
 
   // Get user data from localStorage
   const userData = JSON.parse(localStorage.getItem('userInfo') || '{}');
@@ -15,15 +15,13 @@ const Header = () => {
   const handleLogout = async () => {
     await logoutUser('MANUAL_LOGOUT');
   };
-  const [isNotifOpen, setIsNotifOpen] = useState(false);
+
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const notifRef = useRef(null);
   const profileRef = useRef(null);
 
-  // Close on outside click
+  // Close profile on outside click
   useEffect(() => {
     const handler = (e) => {
-      if (notifRef.current && !notifRef.current.contains(e.target)) setIsNotifOpen(false);
       if (profileRef.current && !profileRef.current.contains(e.target)) setIsProfileOpen(false);
     };
     document.addEventListener('mousedown', handler);
@@ -33,145 +31,91 @@ const Header = () => {
   return (
     <nav className="header">
       <div className="flex items-center gap-3">
-
-    <button
-      onClick={toggleSidebar}
-      className="lg:hidden flex items-center justify-center p-2 rounded-lg border"
-    >
-      {isSidebarOpen ? (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
+        <button
+          onClick={toggleSidebar}
+          className="lg:hidden flex items-center justify-center p-2 rounded-lg border"
         >
-          <path d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      ) : (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          viewBox="0 0 24 24"
-        >
-          <path d="M4 6h16M4 12h16M4 18h16" />
-        </svg>
-      )}
-    </button>
+          {isSidebarOpen ? (
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
+              <path d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          ) : (
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
+              <path d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          )}
+        </button>
 
-  <h1 className="font-bold text-gray-900">
-  <span className="lg:hidden text-lg">
-    DDS
-  </span>
+        <h1 className="font-bold text-gray-900">
+          <span className="lg:hidden text-lg">
+            DDS
+          </span>
 
-  <span className="hidden lg:inline text-2xl">
-    Data Distribution System
-  </span>
-</h1>
-  </div>
+          <span className="hidden lg:inline text-2xl">
+            Data Distribution System
+          </span>
+        </h1>
+      </div>
 
       {/* Right side */}
-      <div className="header-right">
-
-        {/* Notification */}
-        {/* <div className="dropdown" ref={notifRef}>
-          <button className="icon-btn" onClick={() => { setIsNotifOpen(p => !p); setIsProfileOpen(false); }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/>
-            </svg>
-            <span className="notif-dot"></span>
-          </button>
-
-          {isNotifOpen && (
-            <div className="dropdown-menu open" style={{ minWidth: '300px' }}>
-              <div className="dropdown-header">
-                Notifications
-                <span style={{ color: 'var(--primary)', fontWeight: 700 }}>5 new</span>
-              </div>
-              <div className="dropdown-item">
-                <div className="notif-dot2"></div>
-                <div>
-                  <div className="notif-text">Priya Sharma registered for Full Stack Dev</div>
-                  <div className="notif-time">2 min ago · Rahul Singh</div>
-                </div>
-              </div>
-              <div className="dropdown-item">
-                <div className="notif-dot2"></div>
-                <div>
-                  <div className="notif-text">3 follow-ups are overdue today</div>
-                  <div className="notif-time">15 min ago</div>
-                </div>
-              </div>
-              <div className="dropdown-item">
-                <div className="notif-dot2" style={{ background: '#F59E0B' }}></div>
-                <div>
-                  <div className="notif-text">Amit Verma marked as Interested</div>
-                  <div className="notif-time">1 hour ago · Neha Joshi</div>
-                </div>
-              </div>
-              <div className="dropdown-item">
-                <div style={{ width: '8px', flexShrink: 0 }}></div>
-                <div>
-                  <div className="notif-text">New lead allotted: Kiran Patel</div>
-                  <div className="notif-time">2 hours ago</div>
-                </div>
-              </div>
-              <div className="dropdown-item">
-                <div style={{ width: '8px', flexShrink: 0 }}></div>
-                <div>
-                  <div className="notif-text">Monthly report for May is ready</div>
-                  <div className="notif-time">Yesterday</div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div> */}
-
-        {/* Dark mode */}
-        {/* <button className="icon-btn" onClick={toggleDarkMode} title="Toggle dark mode">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
-          </svg>
-        </button> */}
+      <div className="header-right flex items-center gap-3">
+        {/* Reusable In-App Notification Bell & Dropdown */}
+        <NotificationBell />
 
         {/* Profile */}
         <div className="dropdown" ref={profileRef}>
-          <div className="avatar" style={{ cursor: 'pointer' }} onClick={() => { setIsProfileOpen(p => !p); setIsNotifOpen(false); }}>
+          <div
+            className="avatar"
+            style={{ cursor: 'pointer' }}
+            onClick={() => setIsProfileOpen((p) => !p)}
+          >
             {initials}
           </div>
 
           {isProfileOpen && (
             <div className="dropdown-menu open" style={{ minWidth: '200px' }}>
-              <div className="dropdown-header" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '2px' }}>
-                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--gray-900)' }}>{userName}</span>
-                <span style={{ fontSize: '11px', color: 'var(--gray-400)', fontWeight: 400 }}>{userRole}</span>
+              <div
+                className="dropdown-header"
+                style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '2px' }}
+              >
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--gray-900)' }}>
+                  {userName}
+                </span>
+                <span style={{ fontSize: '11px', color: 'var(--gray-400)', fontWeight: 400 }}>
+                  {userRole}
+                </span>
               </div>
-              {/* <div className="dropdown-item">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
-                  <circle cx="12" cy="7" r="4"/>
-                </svg>
-                <div className="notif-text">My Profile</div>
-              </div> */}
-              {/* <div className="dropdown-item">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="3"/>
-                  <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33"/>
-                </svg>
-                <div className="notif-text">Settings</div>
-              </div> */}
+
               <div className="dropdown-item" onClick={handleLogout}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/>
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
                 </svg>
-                <div className="notif-text" style={{ color: '#EF4444' }}>Sign out</div>
+                <div className="notif-text" style={{ color: '#EF4444' }}>
+                  Sign out
+                </div>
               </div>
             </div>
           )}
         </div>
-
       </div>
     </nav>
   );

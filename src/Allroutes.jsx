@@ -22,6 +22,7 @@ import CallersDashboard from "./pages/Dashboards/callersDashboard";
 import Leads from "./pages/Leads";
 import LeadDetail from "./pages/LeadDetail";
 import FollowUps from "./pages/FollowUps";
+import NotificationInbox from "./pages/Notifications";
 import Counselors from "./pages/Counselors";
 import Reports from "./pages/Reports";
 import Courses from "./pages/Courses";
@@ -122,6 +123,8 @@ const Allroutes = () => {
             <FollowUps />
           </PermissionRoute>
         } />
+
+        <Route path="/notifications" element={<NotificationInbox />} />
 
         <Route path="/my-followups" element={<Navigate to="/followups" replace />} />
 

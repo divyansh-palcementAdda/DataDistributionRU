@@ -66,6 +66,9 @@ Cookies.set('refreshToken', response.data.data.refreshToken, {
         };
         localStorage.setItem('userInfo', JSON.stringify(userData));
 
+        // Notify app and notification context of login
+        window.dispatchEvent(new CustomEvent('authStateChanged'));
+
         // Fetch permissions using roleId
         if (roleId) {
           try {

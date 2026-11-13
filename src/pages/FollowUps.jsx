@@ -355,7 +355,12 @@ const FollowUps = () => {
             ? payload.data
             : [];
 
-      setData(content);
+      const sorted = [...content].sort((a, b) => {
+        if (a.status === 'PENDING' && b.status !== 'PENDING') return -1;
+        if (a.status !== 'PENDING' && b.status === 'PENDING') return 1;
+        return 0;
+      });
+      setData(sorted);
       setTotalElements(payload?.totalElements || content.length || 0);
       setTotalPages(payload?.totalPages || 1);
     } catch (err) {

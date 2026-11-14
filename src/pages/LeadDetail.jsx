@@ -621,8 +621,12 @@ const LeadDetail = () => {
         const statusValue = value || '-';
         let statusColor = 'bg-gray-100 text-gray-700';
         if (statusValue === 'PENDING') statusColor = 'bg-amber-100 text-amber-800';
+        if (statusValue === 'UPCOMING') statusColor = 'bg-blue-100 text-blue-700';
         if (statusValue === 'COMPLETED') statusColor = 'bg-green-100 text-green-700';
-        if (statusValue === 'CANCELLED') statusColor = 'bg-red-100 text-red-700';
+        if (statusValue === 'MISSED') statusColor = 'bg-red-100 text-red-700';
+        if (statusValue === 'MISSED_COMPLETED') statusColor = 'bg-teal-100 text-teal-800 border border-teal-300';
+        if (statusValue === 'NOT_CONNECTED') statusColor = 'bg-purple-100 text-purple-700';
+        if (statusValue === 'CANCELLED') statusColor = 'bg-gray-200 text-gray-700';
         return (
           <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusColor}`}>
             {statusValue}

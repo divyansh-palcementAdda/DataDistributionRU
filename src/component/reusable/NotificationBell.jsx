@@ -19,6 +19,11 @@ const NotificationBell = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Sync notifications on mount
+  useEffect(() => {
+    refresh();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Fetch when opened
   const toggleDropdown = () => {
     setIsOpen((prev) => {

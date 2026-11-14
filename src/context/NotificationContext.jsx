@@ -124,25 +124,32 @@ export const NotificationProvider = ({ children }) => {
       ]);
 
       // 1. Update unread count
-      if (countData && typeof countData.unreadCount === "number") {
-        setUnreadCount(countData.unreadCount);
-      } else if (pageData && typeof pageData.unreadCount === "number") {
-        setUnreadCount(pageData.unreadCount);
+      const rawCount = countData?.unreadCount ?? countData?.data?.unreadCount ?? pageData?.unreadCount ?? pageData?.data?.unreadCount;
+      if (typeof rawCount === "number") {
+        setUnreadCount(rawCount);
       }
 
       // 2. Update notifications list
-      if (pageData && Array.isArray(pageData.content)) {
-        setNotifications(pageData.content);
+      const items = Array.isArray(pageData?.content)
+        ? pageData.content
+        : Array.isArray(pageData?.data?.content)
+        ? pageData.data.content
+        : Array.isArray(pageData)
+        ? pageData
+        : null;
+
+      if (items !== null) {
+        setNotifications(items);
 
         if (!initialFetchDoneRef.current) {
           // On first load, seed seen IDs so historical notifications NEVER trigger toasts
-          pageData.content.forEach((n) => {
+          items.forEach((n) => {
             if (n?.id) seenNotificationIdsRef.current.add(n.id);
           });
           initialFetchDoneRef.current = true;
         } else {
           // On subsequent syncs (e.g., polling fallback), detect newly added notifications
-          pageData.content.forEach((n) => {
+          items.forEach((n) => {
             if (n?.id && !seenNotificationIdsRef.current.has(n.id)) {
               seenNotificationIdsRef.current.add(n.id);
               triggerToast(n);

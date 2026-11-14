@@ -2068,9 +2068,9 @@ const LeadDetail = () => {
                 </button>
               </div>
 
-              {leadDetails.remarks ? (
+              {(leadDetails.latestStatusRemark || leadDetails.remarks) ? (
                 <div className="p-3.5 bg-gray-50/80 rounded-lg text-xs text-gray-800 leading-relaxed font-normal border border-gray-100">
-                  {leadDetails.remarks}
+                  {leadDetails.latestStatusRemark || leadDetails.remarks}
                 </div>
               ) : (
                 <div className="py-2 text-xs text-gray-400 italic">

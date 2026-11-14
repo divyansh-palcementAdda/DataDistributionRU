@@ -375,7 +375,7 @@ const buildFollowUpColumns = (page, size, isReassignableMode = false, selectedRo
             header: 'Remarks',
             render: (value, row) => (
                 <div className="text-sm text-gray-600">
-                    {row.remarks || 'N/A'}
+                    {row.latestStatusRemark || row.remarks || 'N/A'}
                 </div>
             ),
         },

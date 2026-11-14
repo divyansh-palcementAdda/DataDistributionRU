@@ -609,7 +609,7 @@ const Leads = () => {
           'Follow-up Date': lead.nextFollowUpDate ? new Date(lead.nextFollowUpDate).toLocaleDateString() : 'None',
           'Created By': typeof lead.createdBy === 'object' ? `${lead.createdBy.firstName || ''} ${lead.createdBy.lastName || ''}`.trim() || 'N/A' : lead.createdBy || 'N/A',
           'Created Date': lead.createdAt ? new Date(lead.createdAt).toLocaleDateString() : 'N/A',
-          'Remarks': lead.remarks || 'N/A',
+          'Remarks': lead.latestStatusRemark || lead.remarks || 'N/A',
           'City': typeof lead.city === 'object' ? lead.city?.name || '' : lead.city || 'N/A',
           'State': typeof lead.state === 'object' ? lead.state?.name || '' : lead.state || 'N/A',
           'Country': typeof lead.country === 'object' ? lead.country?.name || '' : lead.country || 'N/A'
@@ -826,7 +826,7 @@ const Leads = () => {
       ),
       sortable: false,
       render: (value, row) => {
-        const remark = row.remarks || value;
+        const remark = row.latestStatusRemark || row.remarks || value;
         if (!remark) {
           return <span className="text-slate-400 text-xs italic">—</span>;
         }

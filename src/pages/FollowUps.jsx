@@ -36,6 +36,8 @@ const getStatusClass = (value) => {
       return "bg-green-100 text-green-700";
     case "MISSED":
       return "bg-red-100 text-red-700";
+    case "MISSED_COMPLETED":
+      return "bg-teal-100 text-teal-800 border border-teal-300 font-semibold";
     case "RESCHEDULED":
       return "bg-blue-100 text-blue-700";
     case "NOT_CONNECTED":
@@ -565,6 +567,19 @@ const FollowUps = () => {
           <circle cx="12" cy="12" r="10" />
           <line x1="15" y1="9" x2="9" y2="15" />
           <line x1="9" y1="9" x2="15" y2="15" />
+        </svg>
+      )
+    },
+    {
+      value: "MISSED_COMPLETED",
+      label: "MISSED COMPLETED",
+      count: dashboardStats?.missedCompletedFollowUps,
+      iconBg: '#CCFBF1',
+      iconStroke: '#0D9488',
+      icon: (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M8 12l3 3 5-5" />
         </svg>
       )
     },

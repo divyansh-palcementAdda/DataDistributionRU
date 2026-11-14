@@ -259,6 +259,15 @@ activityEvents.forEach((event) => {
   });
 });
 
+// Reset inactivity timer and flags when user logs in or auth state changes
+if (typeof window !== "undefined") {
+  window.addEventListener("authStateChanged", () => {
+    isSessionExpiredByInactivity = false;
+    isLoggingOut = false;
+    resetInactivityTimer();
+  });
+}
+
 // Multi-tab sync for activity and logout
 window.addEventListener("storage", (e) => {
   if (e.key === LAST_ACTIVITY_KEY && e.newValue) {
@@ -342,14 +351,20 @@ axiosInstance.interceptors.response.use(
     // 401 Unauthorized
     if (error.response.status === 401 && !originalRequest?._retry) {
       // 1. Check if user is inactive (>= 15 minutes without activity)
-      const lastActivity = Number(localStorage.getItem(LAST_ACTIVITY_KEY) || 0);
+      const lastActivityStr = localStorage.getItem(LAST_ACTIVITY_KEY);
+      const lastActivity = lastActivityStr ? Number(lastActivityStr) : null;
       const isInactive =
-        !lastActivity || Date.now() - lastActivity >= INACTIVITY_LIMIT;
+        lastActivity !== null && !isNaN(lastActivity) && Date.now() - lastActivity >= INACTIVITY_LIMIT;
 
       if (isInactive || isSessionExpiredByInactivity) {
         isSessionExpiredByInactivity = true;
         logoutUser("AUTO_LOGOUT_INACTIVITY");
         return Promise.reject(error);
+      }
+
+      // If lastActivity timestamp wasn't initialized yet, reset it now
+      if (!lastActivity) {
+        resetInactivityTimer();
       }
 
       // 2. Prevent recursion if the failed request itself is refresh-token or login
@@ -422,6 +437,9 @@ axiosInstance.interceptors.response.use(
         if (tokenType) {
           Cookies.set("tokenType", tokenType);
         }
+
+        // Reset inactivity timer on successful token refresh
+        resetInactivityTimer();
 
         // Update default header
         axiosInstance.defaults.headers.common["Authorization"] = `${tokenType || "Bearer"} ${accessToken}`;
